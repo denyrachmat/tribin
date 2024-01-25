@@ -578,11 +578,14 @@ class QuotationController extends Controller
 
             if (count($checkItemTruck) === 0) {
                 $this->fpdf->Cell(30, 5, 'Freq/Volt', 1, 0, 'C');
+                $this->fpdf->Cell(10, 5, 'Qty', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Harga Sewa', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
+            } else {
+                $this->fpdf->Cell(30, 5, 'Qty', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Harga Sewa', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
             }
-
-            $this->fpdf->Cell(10, 5, 'Qty', 1, 0, 'C');
-            $this->fpdf->Cell(25, 5, 'Harga Sewa', 1, 0, 'C');
-            $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
 
             $y = 77;
             $NomorUrut = 1;

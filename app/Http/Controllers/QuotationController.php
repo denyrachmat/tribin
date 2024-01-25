@@ -562,8 +562,8 @@ class QuotationController extends Controller
         $this->fpdf->SetXY(7, 61);
         $this->fpdf->MultiCell(0, 5, 'Dengan hormat,', 0, 'J');
 
-        // $convertToArr = (clone $RSDetail)->toArray();
-        $checkItemTruck = array_filter($RSDetail, function($f){
+        $convertToArr = (clone $RSDetail)->toArray();
+        $checkItemTruck = array_filter($convertToArr, function($f){
             return str_contains($f->MITM_ITMCD, 'MB-');
         });
 

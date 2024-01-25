@@ -32,6 +32,7 @@
     </style>
     <!-- Custom styles for this template -->
     <link href=" {{ url('assets/bootstrap/ovrcss/signin.css') }}" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 </head>
 
 <body>
@@ -100,6 +101,11 @@
                 _token: '{{ csrf_token() }}',
             }
             e.target.disabled = true
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
             $.ajax({
                 type: "POST",
                 url: "{{route('actionlogin')}}",

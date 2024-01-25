@@ -473,6 +473,7 @@ class QuotationController extends Controller
         $RSDetail = T_QUODETA::on($this->dedicatedConnection)->select(
             'TQUODETA_ITMCD',
             'MITM_BRAND',
+            'MITM_ITMCD',
             'MITM_ITMNM',
             'MITM_MODEL',
             'TQUODETA_USAGE_DESCRIPTION',
@@ -561,6 +562,10 @@ class QuotationController extends Controller
         $this->fpdf->SetXY(7, 61);
         $this->fpdf->MultiCell(0, 5, 'Dengan hormat,', 0, 'J');
 
+        $checkItemTruck = array_values(array_filter($RSDetail, function($f){
+            return str_contains($f->MITM_ITMCD, 'MB-');
+        }));
+
         if ($RSHeader->TQUO_TYPE === '1') {
             $this->fpdf->SetXY(7, 66);
             $this->fpdf->MultiCell(0, 5, 'Bersama ini kami sampaikan ' . $TQUO_SBJCT . ' dengan data sebagai berikut :', 0, 'J');
@@ -569,7 +574,11 @@ class QuotationController extends Controller
             $this->fpdf->Cell(7, 5, 'No', 1, 0, 'L');
             $this->fpdf->Cell(30, 5, 'Item', 1, 0, 'L');
             $this->fpdf->Cell(45, 5, 'Pemakaian', 1, 0, 'L');
-            $this->fpdf->Cell(30, 5, 'Freq/Volt', 1, 0, 'C');
+
+            if (count($checkItemTruck) === 0) {
+                $this->fpdf->Cell(30, 5, 'Freq/Volt', 1, 0, 'C');
+            }
+
             $this->fpdf->Cell(10, 5, 'Qty', 1, 0, 'C');
             $this->fpdf->Cell(25, 5, 'Harga Sewa', 1, 0, 'C');
             $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
@@ -597,18 +606,20 @@ class QuotationController extends Controller
                 $this->fpdf->SetXY(43, $y);
                 $this->fpdf->MultiCell(45, 5, $r['TQUODETA_USAGE_DESCRIPTION'], 0, 'L');
 
-                $this->fpdf->SetXY(88, $y);
-                $this->fpdf->SetFont('Arial', '', 9);
-                $ttlwidth = $this->fpdf->GetStringWidth($r['TQUODETA_ELECTRICITY']);
-                if ($ttlwidth > 35) {
-                    $ukuranfont = 8.5;
-                    while ($ttlwidth > 35) {
-                        $this->fpdf->SetFont('Arial', '', $ukuranfont);
-                        $ttlwidth = $this->fpdf->GetStringWidth($r['TQUODETA_ELECTRICITY']);
-                        $ukuranfont = $ukuranfont - 0.5;
+                if (count($checkItemTruck) === 0) {
+                    $this->fpdf->SetXY(88, $y);
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $ttlwidth = $this->fpdf->GetStringWidth($r['TQUODETA_ELECTRICITY']);
+                    if ($ttlwidth > 35) {
+                        $ukuranfont = 8.5;
+                        while ($ttlwidth > 35) {
+                            $this->fpdf->SetFont('Arial', '', $ukuranfont);
+                            $ttlwidth = $this->fpdf->GetStringWidth($r['TQUODETA_ELECTRICITY']);
+                            $ukuranfont = $ukuranfont - 0.5;
+                        }
                     }
+                    $this->fpdf->Cell(30, 10, $r['TQUODETA_ELECTRICITY'], 1, 0, 'C');
                 }
-                $this->fpdf->Cell(30, 10, $r['TQUODETA_ELECTRICITY'], 1, 0, 'C');
 
                 $this->fpdf->SetFont('Arial', '', 9);
                 $this->fpdf->Cell(10, 10, $r['TQUODETA_ITMQT'], 1, 0, 'C');

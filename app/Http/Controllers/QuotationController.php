@@ -620,12 +620,17 @@ class QuotationController extends Controller
                         }
                     }
                     $this->fpdf->Cell(30, 10, $r['TQUODETA_ELECTRICITY'], 1, 0, 'C');
-                }
 
-                $this->fpdf->SetFont('Arial', '', 9);
-                $this->fpdf->Cell(10, 10, $r['TQUODETA_ITMQT'], 1, 0, 'C');
-                $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC']), 1, 0, 'C');
-                $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC'] * $r['TQUODETA_ITMQT']), 1, 0, 'C');
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $this->fpdf->Cell(10, 10, $r['TQUODETA_ITMQT'], 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC']), 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC'] * $r['TQUODETA_ITMQT']), 1, 0, 'C');
+                } else {
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $this->fpdf->Cell(30, 10, $r['TQUODETA_ITMQT'], 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC']), 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC'] * $r['TQUODETA_ITMQT']), 1, 0, 'C');
+                }
 
                 $y += 10;
             }

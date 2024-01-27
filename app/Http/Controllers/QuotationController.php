@@ -567,6 +567,28 @@ class QuotationController extends Controller
             return str_contains($f['MITM_ITMCD'], 'MB-');
         });
 
+        $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $y = 15;
+        $this->fpdf->SetFont('Arial', 'B', 10);
+        $this->fpdf->SetXY(6, $y);
+        $this->fpdf->Cell(80, 5, 'BANK', 1, 0, 'C');
+        $this->fpdf->Cell(70, 5, 'Atas Nama', 1, 0, 'C');
+        $this->fpdf->Cell(50, 5, 'Nomor Rekening', 1, 0, 'C');
+
+        $y += 5;
+        $this->fpdf->SetFont('Arial', '', 10);
+        foreach ($branchPaymentAccount as $r) {
+            $this->fpdf->SetXY(6, $y);
+            $this->fpdf->Cell(80, 5, $r->bank_name, 1, 0, 'C');
+            $this->fpdf->Cell(70, 5, $r->bank_account_name, 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, $r->bank_account_number, 1, 0, 'C');
+            $y += 5;
+        }
+
         if ($RSHeader->TQUO_TYPE === '1') {
             $this->fpdf->SetXY(7, 66);
             $this->fpdf->MultiCell(0, 5, 'Bersama ini kami sampaikan ' . $TQUO_SBJCT . ' dengan data sebagai berikut :', 0, 'J');
@@ -587,7 +609,7 @@ class QuotationController extends Controller
                 $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
             }
 
-            $y = 77;
+            $y += 77;
             $NomorUrut = 1;
             foreach ($RSDetail as $r) {
                 $this->fpdf->SetXY(6, $y);
@@ -730,28 +752,6 @@ class QuotationController extends Controller
                 $y += 5 + $YExtra;
                 $orderNo++;
             }
-        }
-
-        $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
-            ->where('BRANCH', Auth::user()->branch)
-            ->whereNull('deleted_at')
-            ->get();
-
-        $y += 15;
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(6, $y);
-        $this->fpdf->Cell(80, 5, 'BANK', 1, 0, 'C');
-        $this->fpdf->Cell(70, 5, 'Atas Nama', 1, 0, 'C');
-        $this->fpdf->Cell(50, 5, 'Nomor Rekening', 1, 0, 'C');
-
-        $y += 5;
-        $this->fpdf->SetFont('Arial', '', 10);
-        foreach ($branchPaymentAccount as $r) {
-            $this->fpdf->SetXY(6, $y);
-            $this->fpdf->Cell(80, 5, $r->bank_name, 1, 0, 'C');
-            $this->fpdf->Cell(70, 5, $r->bank_account_name, 1, 0, 'C');
-            $this->fpdf->Cell(50, 5, $r->bank_account_number, 1, 0, 'C');
-            $y += 5;
         }
 
         $y += 10;
@@ -918,5 +918,10 @@ class QuotationController extends Controller
         ]);
 
         return ['message' => 'OK'];
+    }
+
+    // Add On from deny
+    function exportPDF() {
+
     }
 }

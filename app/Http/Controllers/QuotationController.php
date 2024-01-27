@@ -1166,11 +1166,133 @@ class QuotationController extends Controller
                 $y += 5 + $YExtra;
                 $orderNo++;
             }
+        } else {
+            $this->fpdf->SetXY(7, 66);
+            $this->fpdf->MultiCell(0, 5, 'Sebelumnya kami ucapkan terima kasih atas kepercayaan yang diberikan kepada kami,', 0, 'J');
+            $this->fpdf->SetXY(7, 71);
+            $this->fpdf->MultiCell(0, 5, 'dengan ini kami sampaikan surat penawaran dengan rincian sebagai berikut :', 0, 'J');
+            $this->fpdf->SetXY(7, 76);
+            $this->fpdf->Cell(7, 5, 'No', 1, 0, 'L');
+            $this->fpdf->Cell(85, 5, 'Keterangan', 1, 0, 'L');
+            $this->fpdf->Cell(20, 5, 'Jumlah', 1, 0, 'C');
+            $this->fpdf->Cell(21, 5, 'Satuan', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, 'Harga', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, 'Total', 1, 0, 'C');
+            $y = 81;
+            $nomor = 1;
+            $GrandTotal = 0;
+            $SubTotal = 0;
+            foreach ($RSDetail as $r) {
+                $LineTotal = $r['TQUODETA_PRC'] * $r['TQUODETA_ITMQT'];
+                $this->fpdf->SetXY(7, $y);
+                $this->fpdf->Cell(7, 5, $nomor++, 1, 0, 'L');
+                $ttlwidth = $this->fpdf->GetStringWidth($r['MITM_ITMNM']);
+                if ($ttlwidth > 85) {
+                    $ukuranfont = 8.5;
+                    while ($ttlwidth > 85) {
+                        $this->fpdf->SetFont('Arial', '', $ukuranfont);
+                        $ttlwidth = $this->fpdf->GetStringWidth($r['MITM_ITMNM']);
+                        $ukuranfont = $ukuranfont - 0.5;
+                    }
+                }
+                $this->fpdf->Cell(85, 5, $r['MITM_ITMNM'], 1, 0, 'L');
+                $this->fpdf->SetFont('Arial', '', 9);
+                $this->fpdf->Cell(20, 5, $r['TQUODETA_ITMQT'], 1, 0, 'C');
+                $this->fpdf->Cell(21, 5, $r['MITM_STKUOM'], 1, 0, 'C');
+                $this->fpdf->Cell(30, 5, number_format($r['TQUODETA_PRC']), 1, 0, 'C');
+                $this->fpdf->Cell(30, 5, number_format($LineTotal), 1, 0, 'C');
+                $y += 5;
+                $SubTotal += $LineTotal;
+            }
+            $GrandTotal = $SubTotal + $RSHeader->TQUO_SERVTRANS_COST;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->Cell(7, 5, '', 1, 0, 'L');
+            $this->fpdf->Cell(85, 5, 'Total', 1, 0, 'L');
+            $this->fpdf->Cell(20, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(21, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, number_format($SubTotal), 1, 0, 'C');
+            $y += 5;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->Cell(7, 5, '', 1, 0, 'L');
+            $this->fpdf->Cell(85, 5, 'Jasa Service & Transportasi', 1, 0, 'L');
+            $this->fpdf->Cell(20, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(21, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, number_format($RSHeader->TQUO_SERVTRANS_COST), 1, 0, 'C');
+            $y += 5;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->Cell(7, 5, '', 1, 0, 'L');
+            $this->fpdf->Cell(85 + 20 + 21 + 30, 5, 'Grand Total', 1, 0, 'C');
+            $this->fpdf->Cell(30, 5, number_format($GrandTotal), 1, 0, 'C');
+
+            $y += 10;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->Cell(20, 5, 'Note :', 0, 0, 'L');
+            $y += 5;
+            $orderNo = 1;
+            foreach ($RSCondition as $r) {
+                $this->fpdf->SetXY(9, $y);
+                $this->fpdf->Cell(5, 5, $orderNo . '.', 0, 0, 'L');
+                $this->fpdf->MultiCell(0, 5, $r['TQUOCOND_CONDI'], 0, 'J');
+                $YExtra_candidate = $this->fpdf->GetY();
+                $YExtra = $YExtra_candidate != $y ? $YExtra = $YExtra_candidate - $y - 5 : 0;
+                $y += 5 + $YExtra;
+                $orderNo++;
+            }
         }
+
+        $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $y += 15;
+        $this->fpdf->SetFont('Arial', 'B', 10);
+        $this->fpdf->SetXY(6, $y);
+        $this->fpdf->Cell(80, 5, 'BANK', 1, 0, 'C');
+        $this->fpdf->Cell(70, 5, 'Atas Nama', 1, 0, 'C');
+        $this->fpdf->Cell(50, 5, 'Nomor Rekening', 1, 0, 'C');
+
+        $y += 5;
+        $this->fpdf->SetFont('Arial', '', 10);
+        foreach ($branchPaymentAccount as $r) {
+            $this->fpdf->SetXY(6, $y);
+            $this->fpdf->Cell(80, 5, $r->bank_name, 1, 0, 'C');
+            $this->fpdf->Cell(70, 5, $r->bank_account_name, 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, $r->bank_account_number, 1, 0, 'C');
+            $y += 5;
+        }
+
+        $y += 10;
+        $this->fpdf->SetXY(7, $y);
+        $this->fpdf->Cell(20, 5, 'Hormat kami,', 0, 0, 'L');
+        $y += 5;
+        $this->fpdf->SetXY(7, $y);
+        $this->fpdf->Cell(20, 5, 'Dibuat oleh', 0, 0, 'L');
+        $this->fpdf->Cell(130, 5, ' Diketahui oleh,', 0, 0, 'C');
+        $this->fpdf->Cell(40, 5, ' Disetujui oleh,', 0, 0, 'C');
+
+        $y += 25;
+        $this->fpdf->SetXY(7, $y);
+        $this->fpdf->Image(storage_path('app/public/mkt_sign.jpg'), 7, $y - 19, 15, 15);
+        if (!empty($TQUO_APPRVDT)) {
+            $this->fpdf->Image(storage_path('app/public/dir_sign.jpg'), 85, $y - 19, 15, 15);
+        }
+        $y -= 5;
+        $this->fpdf->SetXY(7, $y);
+        $this->fpdf->Cell(20, 5, 'Marketing Dept.', 0, 0, 'L');
+        $this->fpdf->Cell(130, 5, ' Pimpinan,', 0, 0, 'C');
+        $this->fpdf->Cell(40, 5, ' Penyewa/pembeli', 0, 0, 'C');
+
+        $this->fpdf->SetXY(6, $this->fpdf->GetPageHeight() - 9);
+        $this->fpdf->Cell(0, 5, 'Cetakan dari system komputer tidak memerlukan tanda tangan basah', 1, 0, 'C');
+        $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
+        exit;
 
         // List Penawaran End
 
-        $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
-        exit;
+        // $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
+        // exit;
     }
 }

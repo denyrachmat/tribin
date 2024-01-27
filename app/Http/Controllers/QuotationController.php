@@ -1000,6 +1000,9 @@ class QuotationController extends Controller
         $this->fpdf->line(7, 28, 202, 28);
 
         // Header Ends
+
+        // Judul Start
+
         $this->fpdf->SetFont('Arial', '', 9);
         $this->fpdf->SetXY(7, 31);
         $this->fpdf->Cell(15, 5, 'To', 0, 0, 'L');
@@ -1042,6 +1045,107 @@ class QuotationController extends Controller
         $this->fpdf->SetXY(140, 51);
         $this->fpdf->Cell(15, 5, 'Fax', 0, 0, 'L');
         $this->fpdf->Cell(5, 5, ': ' . $RSCG->fax, 0, 0, 'L');
+
+        // Judul End
+
+        // List Penawaran Start
+
+        $checkItemTruck = array_filter($RSDetail, function($f){
+            return str_contains($f['MITM_ITMCD'], 'MB-');
+        });
+
+        if ($RSHeader->TQUO_TYPE === '1') {
+            $this->fpdf->SetXY(7, 66);
+            $this->fpdf->MultiCell(0, 5, 'Bersama ini kami sampaikan ' . $TQUO_SBJCT . ' dengan data sebagai berikut :', 0, 'J');
+
+            $this->fpdf->SetXY(6, 72);
+            $this->fpdf->Cell(7, 5, 'No', 1, 0, 'L');
+            $this->fpdf->Cell(30, 5, 'Item', 1, 0, 'L');
+            $this->fpdf->Cell(45, 5, 'Pemakaian', 1, 0, 'L');
+
+            if (count($checkItemTruck) === 0) {
+                $this->fpdf->Cell(30, 5, 'Freq/Volt', 1, 0, 'C');
+                $this->fpdf->Cell(10, 5, 'Qty', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Harga Sewa', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
+            } else {
+                $this->fpdf->Cell(30, 5, 'Qty', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Harga Sewa', 1, 0, 'C');
+                $this->fpdf->Cell(25, 5, 'Total', 1, 0, 'C');
+            }
+
+            $y = 77;
+            $NomorUrut = 1;
+            foreach ($RSDetail as $r) {
+                $this->fpdf->SetXY(6, $y);
+                $this->fpdf->Cell(7, 10, $NomorUrut++, 1, 0, 'L');
+
+                $this->fpdf->Cell(30, 10, '', 1, 0, 'L');
+                $ttlwidth = $this->fpdf->GetStringWidth($r['MITM_ITMNM']);
+                if ($ttlwidth > 30) {
+                    $ukuranfont = 8.5;
+                    while ($ttlwidth > 30) {
+                        $this->fpdf->SetFont('Arial', '', $ukuranfont);
+                        $ttlwidth = $this->fpdf->GetStringWidth($r['MITM_ITMNM']);
+                        $ukuranfont = $ukuranfont - 0.5;
+                    }
+                }
+                $this->fpdf->Text(14, $y + 4, $r['MITM_ITMNM']);
+
+                $this->fpdf->SetFont('Arial', '', 9);
+                $this->fpdf->Cell(45, 10, '', 1, 0, 'L');
+                $this->fpdf->SetXY(43, $y);
+                $this->fpdf->MultiCell(45, 5, $r['TQUODETA_USAGE_DESCRIPTION'], 0, 'L');
+
+                if (count($checkItemTruck) === 0) {
+                    $this->fpdf->SetXY(88, $y);
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $ttlwidth = $this->fpdf->GetStringWidth($r['TQUODETA_ELECTRICITY']);
+                    if ($ttlwidth > 35) {
+                        $ukuranfont = 8.5;
+                        while ($ttlwidth > 35) {
+                            $this->fpdf->SetFont('Arial', '', $ukuranfont);
+                            $ttlwidth = $this->fpdf->GetStringWidth($r['TQUODETA_ELECTRICITY']);
+                            $ukuranfont = $ukuranfont - 0.5;
+                        }
+                    }
+                    $this->fpdf->Cell(30, 10, $r['TQUODETA_ELECTRICITY'], 1, 0, 'C');
+
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $this->fpdf->Cell(10, 10, $r['TQUODETA_ITMQT'], 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC']), 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC'] * $r['TQUODETA_ITMQT']), 1, 0, 'C');
+                } else {
+                    $this->fpdf->SetXY(88, $y);
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $this->fpdf->Cell(30, 10, $r['TQUODETA_ITMQT'], 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC']), 1, 0, 'C');
+                    $this->fpdf->Cell(25, 10, number_format($r['TQUODETA_PRC'] * $r['TQUODETA_ITMQT']), 1, 0, 'C');
+                }
+
+                $y += 10;
+            }
+            $y += 5;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->Cell(20, 5, 'RENTAL CONDITION :', 0, 0, 'L');
+            $y += 5;
+            $orderNo = 1;
+            foreach ($RSCondition as $r) {
+                $this->fpdf->SetXY(9, $y);
+                $this->fpdf->Cell(5, 5, $orderNo . '.', 0, 0, 'L');
+                $this->fpdf->MultiCell(0, 5, $r['TQUOCOND_CONDI'], 0, 'J');
+                $YExtra_candidate = $this->fpdf->GetY();
+                $YExtra = $YExtra_candidate != $y ? $YExtra = $YExtra_candidate - $y - 5 : 0;
+                $y += 5 + $YExtra;
+                $orderNo++;
+            }
+
+            $y += 5;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->MultiCell(0, 5, 'Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu. Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami ucapkan banyak terima kasih.', 0, 'J');
+        }
+
+        // List Penawaran End
 
         $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
         exit;

@@ -670,8 +670,10 @@ class DeliveryController extends Controller
 
             $Yfocus += 5;
             $this->fpdf->SetXY(7, $Yfocus);
+            $this->fpdf->Cell(50, 5, 'Terbilang', 0, 0, 'L');
+            $this->fpdf->Cell(3, 5, ':', 0, 0, 'L');
             $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
-            $this->fpdf->Cell(0, 5, '( ' . $terbilang  . ' )', 0, 0, 'C');
+            $this->fpdf->Cell(0, 5, '( ' . $terbilang  . ' Rupiah )', 0, 0, 'C');
 
             $this->fpdf->SetFont('Arial', '', 10);
             $Yfocus += 10;

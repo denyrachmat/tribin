@@ -570,7 +570,7 @@ class DeliveryController extends Controller
             $this->fpdf->Cell(20, 5, ': ' . $subjek, 0, 0, 'L');
             $this->fpdf->SetXY(7, 47);
             $this->fpdf->Cell(20, 5, 'Lokasi', 0, 0, 'L');
-            $this->fpdf->Cell(20, 5, ': ' . $RSHeader->MCUS_ADDR1, 0, 0, 'L');
+            $this->fpdf->Cell(20, 5, ': ' . $Attn->TSLO_ADDRESS_DESCRIPTION, 0, 0, 'L');
 
             $this->fpdf->SetXY(130, 27);
             $this->fpdf->Cell(20, 5, 'No', 0, 0, 'L');
@@ -582,7 +582,7 @@ class DeliveryController extends Controller
             $this->fpdf->Cell(20, 5, 'Telp. / Fax', 0, 0, 'L');
             $this->fpdf->Cell(20, 5, ': ' . $Company->phone, 0, 0, 'L');
 
-            $this->fpdf->SetXY(7, 50);
+            $this->fpdf->SetXY(7, 60);
             $this->fpdf->Cell(20, 5, 'Dengan hormat,', 0, 0, 'L');
             $this->fpdf->SetXY(7, 55);
             $this->fpdf->MultiCell(195, 5, 'Bersama ini kami lakukan penagihan atas ' . $subjek . ' dengan rincian sebagai berikut :');

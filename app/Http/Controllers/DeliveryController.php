@@ -743,7 +743,7 @@ class DeliveryController extends Controller
                 $PPNAmount = $totalHargaSewa * 11 / 100;
             }
             $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
-            $this->fpdf->AddPage("P", 'A5');
+            $this->fpdf->AddPage("P", 'A4');
             $this->fpdf->SetFont('Arial', 'B', 10);
             $this->fpdf->SetXY(7, 5);
             $this->fpdf->Cell(0, 8, $Company->name, 0, 0, 'L');

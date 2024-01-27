@@ -1125,6 +1125,33 @@ class QuotationController extends Controller
 
                 $y += 10;
             }
+
+            $y += 5;
+            $this->fpdf->SetXY(7, $y);
+            $this->fpdf->MultiCell(0, 5, 'Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu. Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami ucapkan banyak terima kasih.', 0, 'J');
+
+            $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
+                ->where('BRANCH', Auth::user()->branch)
+                ->whereNull('deleted_at')
+                ->get();
+
+            $y += 15;
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(6, $y);
+            $this->fpdf->Cell(80, 5, 'BANK', 1, 0, 'C');
+            $this->fpdf->Cell(70, 5, 'Atas Nama', 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Nomor Rekening', 1, 0, 'C');
+
+            $y += 5;
+            $this->fpdf->SetFont('Arial', '', 10);
+            foreach ($branchPaymentAccount as $r) {
+                $this->fpdf->SetXY(6, $y);
+                $this->fpdf->Cell(80, 5, $r->bank_name, 1, 0, 'C');
+                $this->fpdf->Cell(70, 5, $r->bank_account_name, 1, 0, 'C');
+                $this->fpdf->Cell(50, 5, $r->bank_account_number, 1, 0, 'C');
+                $y += 5;
+            }
+
             $y += 5;
             $this->fpdf->SetXY(7, $y);
             $this->fpdf->Cell(20, 5, 'RENTAL CONDITION :', 0, 0, 'L');
@@ -1139,10 +1166,6 @@ class QuotationController extends Controller
                 $y += 5 + $YExtra;
                 $orderNo++;
             }
-
-            $y += 5;
-            $this->fpdf->SetXY(7, $y);
-            $this->fpdf->MultiCell(0, 5, 'Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu. Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami ucapkan banyak terima kasih.', 0, 'J');
         }
 
         // List Penawaran End

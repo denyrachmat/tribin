@@ -473,11 +473,11 @@ class DeliveryController extends Controller
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(150, 10);
             $this->fpdf->MultiCell(55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM, 0, 'L');
-            $this->fpdf->SetXY(150, 15);
-            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
-            $this->fpdf->SetXY(150, 20);
-            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_REFF_MKT, 0, 'L');
             $this->fpdf->SetXY(150, 25);
+            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
+            $this->fpdf->SetXY(150, 30);
+            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_REFF_MKT, 0, 'L');
+            $this->fpdf->SetXY(150, 45);
             $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_TELNO, 0, 'L');
 
             $this->fpdf->SetFont('Arial', 'U', 10);

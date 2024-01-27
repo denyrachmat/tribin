@@ -901,7 +901,7 @@ class QuotationController extends Controller
     function revise(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'remark' => 'required|max:50',
+            'remark' => 'required|max:255',
         ]);
 
         if ($validator->fails()) {

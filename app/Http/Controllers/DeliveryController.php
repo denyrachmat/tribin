@@ -568,6 +568,9 @@ class DeliveryController extends Controller
             $this->fpdf->SetXY(7, 42);
             $this->fpdf->Cell(20, 5, 'Subject', 0, 0, 'L');
             $this->fpdf->Cell(20, 5, ': ' . $subjek, 0, 0, 'L');
+            $this->fpdf->SetXY(7, 47);
+            $this->fpdf->Cell(20, 5, 'Lokasi', 0, 0, 'L');
+            $this->fpdf->Cell(20, 5, ': ' . $RSHeader->MCUS_ADDR1, 0, 0, 'L');
 
             $this->fpdf->SetXY(130, 27);
             $this->fpdf->Cell(20, 5, 'No', 0, 0, 'L');
@@ -673,7 +676,7 @@ class DeliveryController extends Controller
             $this->fpdf->Cell(50, 5, 'Terbilang', 0, 0, 'L');
             $this->fpdf->Cell(3, 5, ':', 0, 0, 'L');
             $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
-            $this->fpdf->Cell(0, 5, '( ' . $terbilang  . ' Rupiah )', 0, 0, 'C');
+            $this->fpdf->Cell(0, 5, '( ' . $terbilang  . ' Rupiah )', 0, 0, 'L');
 
             $this->fpdf->SetFont('Arial', '', 10);
             $Yfocus += 10;
@@ -819,7 +822,7 @@ class DeliveryController extends Controller
             $this->fpdf->SetXY(10, $Yfocus);
             $this->fpdf->Cell(50, 5, 'Jumlah', 0, 0, 'L');
             $this->fpdf->Cell(50, 5, ': Rp. ' . number_format($PPNAmount + $totalHargaSewa), 0, 0, 'L');
-            $Yfocus += 20;
+            $Yfocus += 25;
             $this->fpdf->SetXY(120, $Yfocus);
             $this->fpdf->Cell(50, 5, 'Syapril, S.T', 0, 0, 'L');
             $Yfocus += 9;

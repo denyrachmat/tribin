@@ -467,7 +467,7 @@ class DeliveryController extends Controller
             $this->fpdf->SetXY(3, 10);
             $this->fpdf->MultiCell(70, 4, $Company->address . ' Telp.' . $Company->phone, 0, 'L');
 
-            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 5);
             $this->fpdf->Cell(45, 5, $Branch->MBRANCH_NM . ', ' . $DOIssuDate, 0, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 10);

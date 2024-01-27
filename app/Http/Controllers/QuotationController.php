@@ -921,7 +921,126 @@ class QuotationController extends Controller
     }
 
     // Add On from deny
-    function exportPDF() {
+    function toPDF2(Request $request) {
+        $RSCG = COMPANY_BRANCH::on($this->dedicatedConnection)->select('name', 'address', 'phone', 'fax', 'letter_head')
+            ->where('connection', $this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->first();
 
+        $doc = base64_decode($request->id);
+        $RSHeader = T_QUOHEAD::on($this->dedicatedConnection)->select(
+            'MCUS_CUSNM',
+            'TQUO_ATTN',
+            'MCUS_TELNO',
+            'TQUO_SBJCT',
+            'TQUO_ISSUDT',
+            'TQUO_APPRVDT',
+            'TQUO_TYPE',
+            'TQUO_SERVTRANS_COST',
+            'T_QUOHEAD.created_by',
+            'TQUO_PROJECT_LOCATION'
+        )
+            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
+            ->where("TQUO_QUOCD", $doc)
+            ->where('TQUO_BRANCH', Auth::user()->branch)
+            ->first();
+        $MCUS_CUSNM = $RSHeader->MCUS_CUSNM;
+        $TQUO_ATTN = $RSHeader->TQUO_ATTN;
+        $MCUS_TELNO = $RSHeader->MCUS_TELNO;
+        $TQUO_SBJCT = $RSHeader->TQUO_SBJCT;
+        $_ISSUDT = explode('-', $RSHeader->TQUO_ISSUDT);
+        $TQUO_ISSUDT = $_ISSUDT[2] . '/' . $_ISSUDT[1] . '/' . $_ISSUDT[0];
+        $TQUO_APPRVDT = $RSHeader->TQUO_APPRVDT;
+
+        $RSDetail = T_QUODETA::on($this->dedicatedConnection)->select(
+            'TQUODETA_ITMCD',
+            'MITM_BRAND',
+            'MITM_ITMCD',
+            'MITM_ITMNM',
+            'MITM_MODEL',
+            'TQUODETA_USAGE_DESCRIPTION',
+            'TQUODETA_PRC',
+            'TQUODETA_OPRPRC',
+            'TQUODETA_MOBDEMOB',
+            'TQUODETA_ITMQT',
+            'MITM_STKUOM',
+            'TQUODETA_ELECTRICITY'
+        )
+            ->leftJoin("M_ITM", function ($join) {
+                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMCD")
+                    ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->whereNull("deleted_at")
+            ->where("TQUODETA_QUOCD", $doc)
+            ->where('TQUODETA_BRANCH', Auth::user()->branch)
+            ->get()->toArray();
+
+        $RSCondition = T_QUOCOND::on($this->dedicatedConnection)->select('TQUOCOND_CONDI')
+            ->where('TQUOCOND_QUOCD', $doc)
+            ->whereNull("deleted_at")
+            ->where('TQUOCOND_BRANCH', Auth::user()->branch)
+            ->get()->toArray();
+        $User = User::where('nick_name', $RSHeader->created_by)->select('name', 'phone')->first();
+
+        $this->fpdf->SetFont('Arial', 'BU', 24);
+
+        // Header
+        $this->fpdf->SetAutoPageBreak(true, 1);
+        $this->fpdf->AddPage("P", 'A4');
+        $this->fpdf->SetXY(7, 3);
+        $this->fpdf->Cell(0, 8, $RSCG->letter_head, 0, 0, 'C');
+        $this->fpdf->SetFont('Arial', 'B', 12);
+        $this->fpdf->SetXY(7, 13);
+        $this->fpdf->Cell(0, 5, 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK', 0, 0, 'C');
+
+        $this->fpdf->SetFont('Arial', 'B', 10);
+        $this->fpdf->SetXY(7, 18);
+        $this->fpdf->MultiCell(0, 5, $RSCG->address, 0, 'C');
+        $this->fpdf->line(7, 29, 202, 29);
+        $this->fpdf->line(7, 28, 202, 28);
+
+        // Header Ends
+        $this->fpdf->SetFont('Arial', '', 9);
+        $this->fpdf->SetXY(7, 31);
+        $this->fpdf->Cell(15, 5, 'To', 0, 0, 'L');
+        $this->fpdf->Cell(10, 5, '', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $MCUS_CUSNM, 0, 0, 'L');
+        $this->fpdf->SetXY(7, 36);
+        $this->fpdf->Cell(15, 5, 'Attn', 0, 0, 'L');
+        $this->fpdf->Cell(10, 5, '', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $TQUO_ATTN, 0, 0, 'L');
+        $this->fpdf->SetXY(7, 41);
+        $this->fpdf->Cell(15, 5, 'Telp', 0, 0, 'L');
+        $this->fpdf->Cell(10, 5, '', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $MCUS_TELNO, 0, 0, 'L');
+        $this->fpdf->SetXY(7, 46);
+        $this->fpdf->Cell(15, 5, 'Email', 0, 0, 'L');
+        $this->fpdf->Cell(10, 5, '', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ':', 0, 0, 'L');
+        $this->fpdf->SetXY(7, 51);
+        $this->fpdf->Cell(15, 5, 'Subject', 0, 0, 'L');
+        $this->fpdf->Cell(10, 5, '', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $TQUO_SBJCT, 0, 0, 'L');
+        $this->fpdf->SetXY(7, 56);
+        $this->fpdf->Cell(15, 5, 'Project Location', 0, 0, 'L');
+        $this->fpdf->Cell(10, 5, '', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $RSHeader->TQUO_PROJECT_LOCATION, 0, 0, 'L');
+
+        $this->fpdf->SetFont('Arial', '', 9);
+        $this->fpdf->SetXY(140, 31);
+        $this->fpdf->Cell(15, 5, 'Date', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $TQUO_ISSUDT, 0, 0, 'L');
+        $this->fpdf->SetXY(140, 36);
+        $this->fpdf->Cell(15, 5, 'Our Ref', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $doc, 0, 0, 'L');
+        $this->fpdf->SetXY(140, 41);
+        $this->fpdf->Cell(15, 5, 'From', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $User->name, 0, 0, 'L');
+        $this->fpdf->SetXY(140, 46);
+        $this->fpdf->Cell(15, 5, 'Telp', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $User->phone, 0, 0, 'L');
+        $this->fpdf->SetXY(140, 51);
+        $this->fpdf->Cell(15, 5, 'Fax', 0, 0, 'L');
+        $this->fpdf->Cell(5, 5, ': ' . $RSCG->fax, 0, 0, 'L');
     }
 }

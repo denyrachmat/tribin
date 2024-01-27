@@ -280,7 +280,7 @@ Route::middleware('auth')->group(function () {
 
     #Terkait laporan berupa Pdf
     Route::prefix('PDF')->group(function () {
-        Route::get('quotation/{id}', [QuotationController::class, 'toPDF']);
+        Route::get('quotation/{id}', [QuotationController::class, 'toPDF2']);
         Route::get('purchase-request/{id}', [PurchaseController::class, 'toPDF']);
         Route::get('purchase-order/{id}', [PurchaseController::class, 'POtoPDF']);
         Route::get('delivery-order/{id}', [DeliveryController::class, 'toPDF']);

@@ -584,7 +584,7 @@ class DeliveryController extends Controller
 
             $this->fpdf->SetXY(7, 60);
             $this->fpdf->Cell(20, 5, 'Dengan hormat,', 0, 0, 'L');
-            $this->fpdf->SetXY(7, 55);
+            $this->fpdf->SetXY(7, 65);
             $this->fpdf->MultiCell(195, 5, 'Bersama ini kami lakukan penagihan atas ' . $subjek . ' dengan rincian sebagai berikut :');
             $Yfocus = $this->fpdf->GetY();
             $Yfocus += 5;

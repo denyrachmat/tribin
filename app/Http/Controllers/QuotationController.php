@@ -1042,5 +1042,8 @@ class QuotationController extends Controller
         $this->fpdf->SetXY(140, 51);
         $this->fpdf->Cell(15, 5, 'Fax', 0, 0, 'L');
         $this->fpdf->Cell(5, 5, ': ' . $RSCG->fax, 0, 0, 'L');
+
+        $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
+        exit;
     }
 }

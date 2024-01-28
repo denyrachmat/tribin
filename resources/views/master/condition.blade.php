@@ -16,6 +16,15 @@
     </div>
     <div class="row">
         <div class="col-md-6 mb-1">
+            <select class="form-select" id="reportChoose">
+                <option value="do">Delivery Order</option>
+                <option value="inv">Invoice</option>
+                <option value="rcp">Receipt</option>
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <span class="input-group-text">Code</span>
                 <input type="text" id="conditionCode" class="form-control" placeholder="Condition Code" maxlength="7">
@@ -124,6 +133,7 @@
 <script>
     function btnNewOnclick() {
         conditionCode.value = ''
+        reportChoose.value = 'do'
         conditionId.value = 0
         conditionCode.disabled = false
         conditionCode.focus()
@@ -137,14 +147,23 @@
             alertify.warning(`Code is required`)
             return
         }
+
         if (conditionName.value.trim().length <= 2) {
             conditionName.focus()
             alertify.warning(`Name is required`)
             return
         }
+
+        if (reportChoose.value.trim().length <= 2) {
+            reportChoose.focus()
+            alertify.warning(`Report Destination is Required`)
+            return
+        }
+
         const data = {
             MCONDITION_ORDER_NUMBER: conditionCode.value.trim(),
             MCONDITION_DESCRIPTION: conditionName.value.trim(),
+            MCONDITION_RPT_STAT: reportChoose.value.trim(),
             _token: '{{ csrf_token() }}',
         }
         if (conditionInputMode.value === '0') {
@@ -323,7 +342,7 @@
     }
 
     function btnDeleteOnClick(pthis) {
-        if(conditionId.value == 0) {
+        if (conditionId.value == 0) {
             alertify.warning('there is nothing to be deleted')
             return
         }

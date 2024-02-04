@@ -142,10 +142,30 @@
                     </div>
 
                     <hr>
-
-                    @foreach ($getConditions as $listConditions)
-                        {{$listConditions->MCONDITION_DESCRIPTION}}
-                    @endforeach
+                    <table id="conditionTabel" class="table table-sm table-striped table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th></th>
+                                <th>Code</th>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($getConditions as $listConditions)
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="conditions[]" value="{{$listConditions->id}}"/>
+                                    </td>
+                                    <td>
+                                        {{$listConditions->id}}
+                                    </td>
+                                    <td>
+                                        {{$listConditions->MCONDITION_DESCRIPTION}}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

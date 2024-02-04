@@ -25,7 +25,7 @@ class ConditionController extends Controller
         return view('master.condition', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
-            'getConditions' => M_Condition::get()
+            'getConditions' => M_Condition::on($this->dedicatedConnection)->get()
         ]);
     }
 

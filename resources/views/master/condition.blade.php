@@ -139,6 +139,16 @@
                                 <input type="text" id="conditionGroupName" class="form-control" placeholder="Group Name" maxlength="50">
                             </div>
                         </div>
+                        <div class="col-md-6 mb-1">
+                            <div class="btn-toolbar mb-2 mb-md-0">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" id="btnNewAssign" onclick="btnNewOnclickAssign(this)"><i class="fas fa-file"></i></button>
+                                    <button type="button" class="btn btn-outline-primary" id="btnSaveAssign" onclick="btnSaveOnclick(this)"><i class="fas fa-save"></i></button>
+                                    <button type="button" class="btn btn-outline-primary" id="btnImportAssign" onclick="btnShowImportDataModal()" title="Import"><i class="fas fa-file-import"></i></button>
+                                    <button type="button" class="btn btn-outline-danger" id="btnDeleteAssign" onclick="btnDeleteOnClick(this)" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <hr>
@@ -152,17 +162,17 @@
                         </thead>
                         <tbody>
                             @foreach ($getConditions as $listConditions)
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" name="conditions[]" value="{{$listConditions->id}}"/>
-                                    </td>
-                                    <td>
-                                        {{$listConditions->id}}
-                                    </td>
-                                    <td>
-                                        {{$listConditions->MCONDITION_DESCRIPTION}}
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="conditions[]" value="{{$listConditions->id}}" />
+                                </td>
+                                <td>
+                                    {{$listConditions->id}}
+                                </td>
+                                <td>
+                                    {{$listConditions->MCONDITION_DESCRIPTION}}
+                                </td>
+                            </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -180,6 +190,11 @@
         conditionCode.focus()
         tribinClearTextBox()
         conditionInputMode.value = 0
+    }
+
+
+    function btnNewOnclickAssign() {
+        $('[name="conditions[]"]').value = ''
     }
 
     function btnSaveOnclick(pthis) {

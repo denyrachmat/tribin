@@ -139,7 +139,7 @@
                                 <input type="text" id="conditionGroupName" class="form-control" placeholder="Group Name" maxlength="50">
                             </div>
                         </div>
-                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <div class="col-md-6 mb-1 text-right">
                             <div class="btn-toolbar mb-2 mb-md-0">
                                 <div class="btn-group btn-group-sm">
                                     <button type="button" class="btn btn-outline-primary" id="btnNewAssign" onclick="btnNewOnclickAssign(this)"><i class="fas fa-file"></i></button>

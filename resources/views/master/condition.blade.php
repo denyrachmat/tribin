@@ -2,7 +2,7 @@
     <h1 class="h2">Condition Master</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnNewOnclick(this)">Assign Condition Group</button>
+            <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnShowGroupAssign(this)">Assign Condition Group</button>
             <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnNewOnclick(this)"><i class="fas fa-file"></i></button>
             <button type="button" class="btn btn-outline-primary" id="btnSave" onclick="btnSaveOnclick(this)"><i class="fas fa-save"></i></button>
             <button type="button" class="btn btn-outline-primary" id="btnImport" onclick="btnShowImportDataModal()" title="Import"><i class="fas fa-file-import"></i></button>
@@ -122,6 +122,21 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="conditionAssignModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Assign Condition Group</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     function btnNewOnclick() {
         conditionCode.value = ''
@@ -235,6 +250,14 @@
     function btnShowConditionModal() {
         const myModal = new bootstrap.Modal(document.getElementById('conditionModal'), {})
         conditionModal.addEventListener('shown.bs.modal', () => {
+            conditionSearch.focus()
+        })
+        myModal.show()
+    }
+
+    function btnShowGroupAssign() {
+        const myModal = new bootstrap.Modal(document.getElementById('conditionAssignModal'), {})
+        conditionAssignModal.addEventListener('shown.bs.modal', () => {
             conditionSearch.focus()
         })
         myModal.show()

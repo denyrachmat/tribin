@@ -144,7 +144,7 @@
                     <hr>
 
                     @foreach ($getConditions as $listConditions)
-                        {{$listConditions}}
+                        {{$listConditions->MCONDITION_DESCRIPTION}}
                     @endforeach
                 </div>
             </div>

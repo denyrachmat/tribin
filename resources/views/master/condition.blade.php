@@ -17,17 +17,6 @@
     <div class="row">
         <div class="col-md-6 mb-1">
             <div class="input-group input-group-sm mb-1">
-                <select class="form-select" id="reportChoose">
-                    <option value="do">Delivery Order</option>
-                    <option value="inv">Invoice</option>
-                    <option value="rcp">Receipt</option>
-                </select>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-6 mb-1">
-            <div class="input-group input-group-sm mb-1">
                 <span class="input-group-text">Code</span>
                 <input type="text" id="conditionCode" class="form-control" placeholder="Condition Code" maxlength="7">
                 <button class="btn btn-primary" type="button" onclick="btnShowConditionModal()"><i class="fas fa-search"></i></button>

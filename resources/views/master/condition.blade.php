@@ -194,9 +194,9 @@
 
 
     function btnNewOnclickAssign() {
-        $.each($("input[name='conditions']:checked"), function(conditions) {
-            $(this).val() = ''
-        });
+        console.log('masuk sini yaa')
+        $('input[type=checkbox]').prop('checked',false);
+        // $.each($("input[name='conditions']:checked")).removeAttr('checked');;
     }
 
     function btnSaveOnclick(pthis) {

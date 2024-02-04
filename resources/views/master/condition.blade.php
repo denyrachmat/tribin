@@ -2,6 +2,7 @@
     <h1 class="h2">Condition Master</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnNewOnclick(this)">Assign Condition Group</button>
             <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnNewOnclick(this)"><i class="fas fa-file"></i></button>
             <button type="button" class="btn btn-outline-primary" id="btnSave" onclick="btnSaveOnclick(this)"><i class="fas fa-save"></i></button>
             <button type="button" class="btn btn-outline-primary" id="btnImport" onclick="btnShowImportDataModal()" title="Import"><i class="fas fa-file-import"></i></button>

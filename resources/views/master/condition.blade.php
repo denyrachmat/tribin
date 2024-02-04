@@ -194,7 +194,9 @@
 
 
     function btnNewOnclickAssign() {
-        $('[name="conditions[]"]').value = ''
+        $.each($("input[name='conditions']:checked"), function(conditions) {
+            conditions.push($(this).val());
+        });
     }
 
     function btnSaveOnclick(pthis) {

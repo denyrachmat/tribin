@@ -133,13 +133,13 @@
             <div class="modal-body">
                 <div class="container-fluid">
                     <div class="row">
-                        <div class="col-md-6 mb-1">
+                        <div class="col-md-10 mb-1">
                             <div class="input-group input-group-sm mb-1">
                                 <span class="input-group-text">Group Name</span>
                                 <input type="text" id="conditionGroupName" class="form-control" placeholder="Group Name" maxlength="50">
                             </div>
                         </div>
-                        <div class="col-md-6 mb-1 text-right">
+                        <div class="col-md-6 mb-1">
                             <div class="btn-toolbar mb-2 mb-md-0">
                                 <div class="btn-group btn-group-sm">
                                     <button type="button" class="btn btn-outline-primary" id="btnNewAssign" onclick="btnNewOnclickAssign(this)"><i class="fas fa-file"></i></button>

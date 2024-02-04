@@ -155,12 +155,12 @@
                     <table id="conditionTabel" class="table table-sm table-striped table-bordered table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th></th>
+                                <th><input type="checkbox" id="checkAll"/></th>
                                 <th>Code</th>
                                 <th>Name</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="checkboxes">
                             @foreach ($getConditions as $listConditions)
                             <tr>
                                 <td>
@@ -182,6 +182,12 @@
     </div>
 </div>
 <script>
+    $(document).ready(function() {
+        $('#checkAll').click(function() {
+            var checked = $(this).prop('checked');
+            $('#checkboxes').find('input[name=conditions]').prop('checked', checked);
+        });
+    })
     function btnNewOnclick() {
         conditionCode.value = ''
         reportChoose.value = 'do'
@@ -194,9 +200,8 @@
 
 
     function btnNewOnclickAssign() {
-        console.log('masuk sini yaa')
-        $('input[type=checkbox]').prop('checked',false);
-        // $.each($("input[name='conditions']:checked")).removeAttr('checked');;
+        conditionGroupName.value = ''
+        $('input[name=conditions]').prop('checked',false);
     }
 
     function btnSaveOnclick(pthis) {

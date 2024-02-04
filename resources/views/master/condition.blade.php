@@ -132,6 +132,20 @@
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6 mb-1">
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text">Group Name</span>
+                                <input type="text" id="conditionGroupName" class="form-control" placeholder="Group Name" maxlength="50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    @foreach ($getConditions as $listConditions)
+                        {{$listConditions}}
+                    @endforeach
                 </div>
             </div>
         </div>

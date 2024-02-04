@@ -185,9 +185,10 @@
     $(document).ready(function() {
         $('#checkAll').click(function() {
             var checked = $(this).prop('checked');
-            $('#checkboxes').find('input[name=conditions]').prop('checked', checked);
+            $('#checkboxes').find('input[name=conditions[]]').prop('checked', checked);
         });
     })
+
     function btnNewOnclick() {
         conditionCode.value = ''
         reportChoose.value = 'do'
@@ -201,7 +202,7 @@
 
     function btnNewOnclickAssign() {
         conditionGroupName.value = ''
-        $('input[name=conditions]').prop('checked',false);
+        $('input[name=conditions[]').prop('checked',false);
     }
 
     function btnSaveOnclick(pthis) {

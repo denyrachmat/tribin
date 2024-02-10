@@ -29,6 +29,11 @@ class ConditionController extends Controller
         ]);
     }
 
+    public function getData()
+    {
+        return  M_Condition::on($this->dedicatedConnection)->get();
+    }
+
     public function importFromAnotherCompany(Request $request)
     {
         $currentDBName = DB::connection($this->dedicatedConnection)->getDatabaseName();

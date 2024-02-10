@@ -1,12 +1,16 @@
 {
     "private": true,
     "scripts": {
-        "dev": "vite",
-        "build": "vite build"
+        "dev": "cd ./tribinapp && yarn quasar dev",
+        "build": "cd ./tribinapp && yarn quasar build"
     },
     "devDependencies": {
         "axios": "^1.1.2",
         "laravel-vite-plugin": "^0.7.2",
         "vite": "^4.0.0"
+    },
+    "dependencies": {
+        "@quasar/cli": "^2.3.0",
+        "laravel-mix": "^6.0.49"
     }
 }

@@ -367,6 +367,10 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard-resource', [HomeController::class, 'supportDashboard']);
 });
 
+Route::get('tribinapp/{path?}', function(){
+    return view('tribinapp');
+})->where('any','.*');
+
 
 
 #Terkait config

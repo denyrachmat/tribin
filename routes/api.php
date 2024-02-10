@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccessRulesController;
+use App\Http\Controllers\ConditionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
@@ -32,6 +33,11 @@ Route::get('/logout', function (Request $request) {
     return ['message' => 'ok logout'];
 })->middleware('auth:sanctum');
 
+Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
+    Route::group(['prefix' => 'conditions'], function() {
+        Route::get('getdata', [ConditionController::class, 'getData']);
+    });
+});
 
 # Terkait API Menu
 Route::get('/menu', [AccessRulesController::class, 'getMenu'])->middleware('auth:sanctum');

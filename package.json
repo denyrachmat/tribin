@@ -2,7 +2,7 @@
     "private": true,
     "scripts": {
         "dev": "cd ./tribinapp && yarn quasar dev",
-        "build": "cd ./tribinapp && yarn quasar build"
+        "build": "cd ./tribinapp && yarn quasar build && cd .. && npx mix"
     },
     "devDependencies": {
         "axios": "^1.1.2",

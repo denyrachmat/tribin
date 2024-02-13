@@ -1,19 +1,29 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" transition-show="slide-up" transition-hide="slide-down" full-width>
-    <q-card class="q-dialog-plugin bg-white q-pa-md">
+  <q-dialog
+    ref="dialogRef"
+    @hide="onDialogHide"
+    transition-show="slide-up"
+    transition-hide="slide-down"
+    full-width
+  >
+    <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
         <div class="text-h6">List Conditions</div>
       </q-card-section>
 
-      <q-card-section class="q-pa-md">
+      <q-card-section class="q-pa-sm">
         <q-list bordered class="rounded-borders">
           <q-table
             class="my-sticky-header-table"
-            flat bordered
+            flat
+            bordered
             title="Conditions"
             :rows="rows"
             :columns="columns"
-            row-key="name"
+            row-key="id"
+            dense
+            @row-click="(evt, row, index) => onClickTable(row)"
+            :pagination="initialPagination"
           />
         </q-list>
       </q-card-section>
@@ -31,25 +41,42 @@ import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api } from "boot/axios";
 
 const columns = ref([
-  { name: 'MCONDITION_DESCRIPTION', align: 'left', label: 'Description', field: 'MCONDITION_DESCRIPTION', sortable: true },
+  {
+    name: "MCONDITION_DESCRIPTION",
+    align: "left",
+    label: "Description",
+    field: "MCONDITION_DESCRIPTION",
+    sortable: true,
+  },
 ]);
+const rows = ref([]);
+const initialPagination = ref({
+  sortBy: "desc",
+  descending: false,
+  rowsPerPage: 0,
+  // rowsNumber: xx if getting data from a server
+});
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
 onMounted(() => {
-  getData()
-})
+  getData();
+});
 
 const getData = async () => {
-  const data = await api.get('/master/conditions/getData').then((response) => {
-    console.log(response)
+  const data = await api.get("/master/conditions/getdata").then((response) => {
+    console.log(response);
+    rows.value = response.data;
   });
-}
+};
 
-const onOKClick = () => {
+const onClickTable = (val) => {
+  console.log(val);
+  onDialogOK(val);
+};
 
-}
+const onOKClick = () => {};
 </script>
 <style lang="sass">
 .my-sticky-header-table

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Route;
 
 class ConditionController extends Controller
 {
@@ -22,6 +23,7 @@ class ConditionController extends Controller
 
     public function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'condition']);
         return view('master.condition', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
@@ -32,6 +34,30 @@ class ConditionController extends Controller
     public function getData()
     {
         return  M_Condition::on($this->dedicatedConnection)->get();
+    }
+
+    public function getDataGroup()
+    {
+        $group = M_Condition::on($this->dedicatedConnection)
+            ->select('MCONDITION_RPT_STAT')
+            ->whereNotNull('MCONDITION_RPT_STAT')
+            ->groupBy('MCONDITION_RPT_STAT')
+            ->get()
+            ->pluck('MCONDITION_RPT_STAT');
+
+        $data = [];
+        foreach ($group as $key => $value) {
+            $data[] = [
+                'MCONDITION_RPT_STAT' => $value,
+                'group' => M_Condition::on($this->dedicatedConnection)->where('MCONDITION_RPT_STAT', $value)->get()
+            ];
+        }
+
+        return [
+            'status' => true,
+            'message' => 'Data fetched !',
+            'data' => $data
+        ];
     }
 
     public function importFromAnotherCompany(Request $request)
@@ -58,7 +84,7 @@ class ConditionController extends Controller
             'MCONDITION_DESCRIPTION' => [
                 Rule::unique($this->dedicatedConnection . '.M_CONDITIONS', 'MCONDITION_DESCRIPTION')->where('MCONDITION_BRANCH', Auth::user()->branch)
             ],
-            'MCONDITION_ORDER_NUMBER' => 'required',
+            // 'MCONDITION_ORDER_NUMBER' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -67,7 +93,7 @@ class ConditionController extends Controller
 
         $creator = M_Condition::on($this->dedicatedConnection)->create([
             'MCONDITION_DESCRIPTION' => $request->MCONDITION_DESCRIPTION,
-            'MCONDITION_ORDER_NUMBER' => $request->MCONDITION_ORDER_NUMBER,
+            'MCONDITION_ORDER_NUMBER' => M_Condition::on($this->dedicatedConnection)->orderBy('MCONDITION_ORDER_NUMBER', 'desc')->first()->MCONDITION_ORDER_NUMBER + 1,
             'MCONDITION_BRANCH' => Auth::user()->branch,
             'created_by' => Auth::user()->nick_name,
         ]);
@@ -90,12 +116,22 @@ class ConditionController extends Controller
 
     function update(Request $request)
     {
+        $getData = M_Condition::on($this->dedicatedConnection)
+            ->where('id', base64_decode($request->id))
+            ->first();
+
         $affectedRow = M_Condition::on($this->dedicatedConnection)
             ->where('id', base64_decode($request->id))
             ->where('MCONDITION_BRANCH', Auth::user()->branch)
             ->update([
                 'MCONDITION_DESCRIPTION' => $request->MCONDITION_DESCRIPTION,
-                'MCONDITION_ORDER_NUMBER' => $request->MCONDITION_ORDER_NUMBER,
+                'MCONDITION_ORDER_NUMBER' => $request->has('MCONDITION_ORDER_NUMBER') && !empty($request->MCONDITION_ORDER_NUMBER)
+                    ? $request->MCONDITION_ORDER_NUMBER
+                    : (
+                        empty($getData->MCONDITION_ORDER_NUMBER)
+                        ? M_Condition::on($this->dedicatedConnection)->orderBy('MCONDITION_ORDER_NUMBER', 'desc')->first()->MCONDITION_ORDER_NUMBER + 1
+                        : $getData->MCONDITION_ORDER_NUMBER
+                    ),
                 'updated_by' => Auth::user()->nick_name,
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
@@ -108,5 +144,39 @@ class ConditionController extends Controller
             ->where('MCONDITION_BRANCH', Auth::user()->branch)
             ->delete();
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
+    }
+
+    public function assignGroup(Request $request){
+        M_Condition::on($this->dedicatedConnection)
+                ->where('MCONDITION_RPT_STAT', $request->MCONDITION_RPT_STAT)
+                ->update([
+                    'MCONDITION_RPT_STAT' => '',
+                    'MCONDITION_ORDER_NUMBER' => null
+                ]);
+
+        foreach ($request->data as $key => $value) {
+            M_Condition::on($this->dedicatedConnection)
+                ->where('id', $value['id'])
+                ->update([
+                    'MCONDITION_RPT_STAT' => $request->MCONDITION_RPT_STAT,
+                    'MCONDITION_ORDER_NUMBER' => $key + 1
+                ]);
+        }
+
+        return [
+            'status' => true,
+            'message' => 'Update success !!'
+        ];
+    }
+
+    public function deleteDataGroup($id) {
+        $affectedRow = M_Condition::on($this->dedicatedConnection)
+            ->where('MCONDITION_RPT_STAT', base64_decode($id))
+            ->update([
+                'MCONDITION_RPT_STAT' => '',
+                'MCONDITION_ORDER_NUMBER' => null,
+            ]);
+
+        return ['msg' => $affectedRow ? 'Data Deleted !!' : 'No changes'];
     }
 }

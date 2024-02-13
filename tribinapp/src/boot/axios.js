@@ -1,5 +1,8 @@
 import { boot } from 'quasar/wrappers'
 import axios from 'axios'
+import { Notify } from 'quasar'
+
+// const $q = useQuasar()
 
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
@@ -7,7 +10,126 @@ import axios from 'axios'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: process.env.API})
+// const api = axios.create({ baseURL: process.env.API})
+const api = axios.create({ baseURL: 'http://tribin.test/api/'})
+const api_web = axios.create({ baseURL: 'http://tribin.test/'})
+
+api.interceptors.request.use((config) => {
+  config.withCredentials = true
+
+  return config
+})
+
+api_web.interceptors.request.use((config) => {
+  config.withCredentials = true
+
+  return config
+})
+
+api.interceptors.response.use(function (response) {
+  // Any status code that lie within the range of 2xx cause this function to trigger
+  // Do something with response data
+  return response;
+}, function (e) {
+  // Any status codes that falls outside the range of 2xx cause this function to trigger
+  // Do something with response error
+  if (e.response) {
+    if (e.response.status == 422) {
+      // console.log(e.response.data);
+      let errors = e.response.data.message;
+      if (errors) {
+        Object.keys(errors).map((val) => {
+          errors[val].map((val_det) => {
+            Notify.create({
+              color: "negative",
+              message: val_det,
+            });
+          });
+        });
+      } else {
+        if (blob) {
+          var decodedString = String.fromCharCode.apply(
+            null,
+            new Uint8Array(e.response.data)
+          );
+
+          Notify.create({
+            color: "negative",
+            message: decodedString,
+          });
+        } else {
+          Notify.create({
+            color: "negative",
+            message: "Undefined error!!",
+          });
+        }
+      }
+    }
+
+    if (e.response.status == 401) {
+      Notify.create({
+        color: "negative",
+        message: "You need to login to access this function!",
+      });
+    }
+  }
+  return Promise.reject(error);
+});
+
+api_web.interceptors.response.use(function (response) {
+  // Any status code that lie within the range of 2xx cause this function to trigger
+  // Do something with response data
+  Notify.create({
+    color: "green",
+    message: response.data.message ? response.data.message : response.data.msg,
+  });
+
+  return response;
+}, function (e) {
+  // Any status codes that falls outside the range of 2xx cause this function to trigger
+  // Do something with response error
+  if (e.response) {
+    if (e.response.status == 422) {
+      // console.log(e.response.data);
+      let errors = e.response.data.message;
+      if (errors) {
+        Object.keys(errors).map((val) => {
+          errors[val].map((val_det) => {
+            Notify.create({
+              color: "negative",
+              message: val_det,
+            });
+          });
+        });
+      } else {
+        if (blob) {
+          var decodedString = String.fromCharCode.apply(
+            null,
+            new Uint8Array(e.response.data)
+          );
+
+          Notify.create({
+            color: "negative",
+            message: decodedString,
+          });
+        } else {
+          Notify.create({
+            color: "negative",
+            message: "Undefined error!!",
+          });
+        }
+      }
+    }
+
+    if (e.response.status == 401) {
+      Notify.create({
+        color: "negative",
+        message: "You need to login to access this function!",
+      });
+    }
+  }
+  return Promise.reject(error);
+});
 
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
@@ -19,6 +141,10 @@ export default boot(({ app }) => {
   app.config.globalProperties.$api = api
   // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
   //       so you can easily perform requests against your app's API
+
+  app.config.globalProperties.$api_web = api_web
+  // ^ ^ ^ this will allow you to use this.$api_web (for Vue Options API form)
+  //       so you can easily perform requests against your app's API
 })
 
-export { api }
+export { api, api_web }

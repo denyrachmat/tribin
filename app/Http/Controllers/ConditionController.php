@@ -36,6 +36,13 @@ class ConditionController extends Controller
         return  M_Condition::on($this->dedicatedConnection)->get();
     }
 
+    public function getCompaniesDetail() : Array {
+        return [
+            'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
+            'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
+        ];
+    }
+
     public function getDataGroup()
     {
         $group = M_Condition::on($this->dedicatedConnection)

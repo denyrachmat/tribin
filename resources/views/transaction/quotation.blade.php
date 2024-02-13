@@ -248,6 +248,7 @@
                                         <input type="text" id="quotationCondition" class="form-control" onkeypress="quotationConditionOnKeyPress(event)" maxlength="450">
                                         <button class="btn btn-primary" type="button" id="btnAddCondition" onclick="addCondition()"><i class="fas fa-plus"></i></button>
                                         <button class="btn btn-primary" type="button" id="btnModalCondition" onclick="btnShowConditionModal()" title="pick from template"><i class="fas fa-search"></i></button>
+                                        <button class="btn btn-primary" type="button" id="btnModalConditionGroup" onclick="btnShowConditionGroupModal()" title="Pick from group"><i class="fas fa-object-group"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -438,6 +439,47 @@
                                         <tr>
                                             <th>...</th>
                                             <th>Condition</th>
+                                            <th>Order</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="container">
+                    <div class="row">
+                        <div class="col text-center">
+                            <button class="btn btn-primary btn-sm" onclick="addSelectedConditionsToList()">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Condition Group Modal -->
+<div class="modal fade" id="conditionGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Conditions Group List</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col">
+                            <div class="table-responsive" id="conditionTabelContainer">
+                                <table id="conditionTabel" class="table table-sm table-striped table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Group Name</th>
                                             <th>Order</th>
                                         </tr>
                                     </thead>

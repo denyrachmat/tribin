@@ -36,6 +36,7 @@ Route::get('/logout', function (Request $request) {
 Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
     Route::group(['prefix' => 'conditions'], function() {
         Route::get('getdata', [ConditionController::class, 'getData']);
+        Route::get('getCompaniesDetail', [ConditionController::class, 'getCompaniesDetail']);
         Route::get('getdataGroup', [ConditionController::class, 'getDataGroup']);
         Route::post('assignGroup', [ConditionController::class, 'assignGroup']);
         Route::delete('deleteDataGroup/{id}', [ConditionController::class, 'deleteDataGroup']);

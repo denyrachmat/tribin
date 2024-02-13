@@ -18,7 +18,7 @@
           <q-btn outline color="blue" icon="save" @click="saveData">
             <q-tooltip>Save</q-tooltip>
           </q-btn>
-          <q-btn outline color="blue" icon="send">
+          <q-btn outline color="blue" icon="send" @click="onOpenImportData">
             <q-tooltip>Import Data</q-tooltip>
           </q-btn>
           <q-btn
@@ -63,17 +63,52 @@
   </div>
 </template>
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import chooseConditions from "./chooseConditions.vue";
 import assignConditions from "./assignConditions.vue";
+import importData from "./importData.vue";
 
 const $q = useQuasar();
 
 const id = ref("");
 const MCONDITION_DESCRIPTION = ref("");
+const getCGID = ref("");
+const dataComp = ref([]);
+
+onMounted(() => {
+  let username = getCookie("CGID");
+
+  getCGID.value = username;
+});
+
+// Init Function DONT DELETE
+const getCookie = (name) => {
+  var nameEQ = name + "=";
+  var ca = document.cookie.split(";");
+  for (var i = 0; i < ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == " ") c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const onOpenImportData = () => {
+  $q.dialog({
+    component: importData,
+    // componentProps: {
+    //   datas: data.data,
+    // },
+    // persistent: true,
+  }).onOk(async (val) => {
+
+  })
+}
+
+// Custom Function
 
 const saveData = () => {
   $q.dialog({
@@ -129,11 +164,9 @@ const onDeleteCondition = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    await api_web
-      .delete(`condition/${btoa(id.value)}`)
-      .then((response) => {
-        newData();
-      });
+    await api_web.delete(`condition/${btoa(id.value)}`).then((response) => {
+      newData();
+    });
   });
 };
 

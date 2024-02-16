@@ -5,7 +5,8 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'condition', component: () => import('pages/master/conditions/conditionsMaster.vue') }
+      { path: 'condition', component: () => import('pages/master/conditions/conditionsMaster.vue') },
+      { path: 'quotation', component: () => import('pages/transaction/sales/quotation/quotationView.vue') }
     ]
   },
 

@@ -24,11 +24,11 @@ class ConditionController extends Controller
     public function index()
     {
         return view('tribinapp_layouts', ['routeApp' => 'condition']);
-        return view('master.condition', [
-            'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
-            'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
-            'getConditions' => M_Condition::on($this->dedicatedConnection)->get()
-        ]);
+        // return view('master.condition', [
+        //     'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
+        //     'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
+        //     'getConditions' => M_Condition::on($this->dedicatedConnection)->get()
+        // ]);
     }
 
     public function getData()

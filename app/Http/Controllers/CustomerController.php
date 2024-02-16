@@ -149,6 +149,20 @@ class CustomerController extends Controller
         return ['data' => $RS];
     }
 
+    function searchAPI(Request $request)
+    {
+        $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*')
+            ->where('MCUS_BRANCH', Auth::user()->branch);
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSTemp)->where('MCUS_CUSNM', 'like', '%' . $request->searchValue . '%')->get();
+        } else {
+            $RS = (clone $RSTemp)->take(5)->get();
+        }
+
+        return ['data' => $RS];
+    }
+
     function update(Request $request)
     {
         $affectedRow = M_CUS::on($this->dedicatedConnection)

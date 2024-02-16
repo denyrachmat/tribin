@@ -167,6 +167,7 @@ Route::middleware('auth')->group(function () {
         Route::post('import', [CustomerController::class, 'importFromAnotherCompany']);
         Route::get('file/{id}', [CustomerController::class, 'showFile']);
         Route::get('', [CustomerController::class, 'search']);
+        Route::post('searchAPI', [CustomerController::class, 'searchAPI']);
         Route::post('', [CustomerController::class, 'simpan']);
         Route::post('file/{id}', [CustomerController::class, 'changeFile']);
         Route::put('{id}', [CustomerController::class, 'update']);
@@ -238,6 +239,7 @@ Route::middleware('auth')->group(function () {
         Route::get('form', [QuotationController::class, 'index']);
         Route::post('', [QuotationController::class, 'save']);
         Route::get('', [QuotationController::class, 'search']);
+        Route::post('search', [QuotationController::class, 'search']);
         Route::put('{id}', [QuotationController::class, 'update']);
         Route::get('{id}', [QuotationController::class, 'loadById']);
         Route::delete('conditions/{id}', [QuotationController::class, 'deleteConditionById']);

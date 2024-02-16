@@ -43,6 +43,12 @@ Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
     });
 });
 
+Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
+    Route::group(['prefix' => 'quotation'], function() {
+
+    });
+});
+
 # Terkait API Menu
 Route::get('/menu', [AccessRulesController::class, 'getMenu'])->middleware('auth:sanctum');
 Route::get('/setting/tree', [AccessRulesController::class, 'getMenuForTreeSetting']);

@@ -1,0 +1,177 @@
+<template>
+  <div class="q-pa-md">
+    <div class="row q-pb-md">
+      <div class="col">
+        <span class="text-h4">Quotation </span>
+      </div>
+      <div class="col text-right">
+        <q-btn icon="add" color="blue" @click="onClickNew" :disable="loading">
+            <q-tooltip>Create New Quotation</q-tooltip>
+        </q-btn>
+      </div>
+    </div>
+
+    <q-separator />
+
+    <div class="row q-pt-md">
+      <div class="col">
+        <q-table
+          title="Created Quotation"
+          :rows="rows"
+          :columns="columns"
+          row-key="name"
+          :loading="loading"
+        >
+          <!-- For Search Header -->
+          <template v-slot:top-right>
+            <q-select
+              outlined
+              v-model="filterCol"
+              :options="columns"
+              label="Search Columns"
+              option-value="name"
+              option-label="label"
+              emit-value
+              dense
+              map-options
+            />
+            <q-input
+              borderless
+              dense
+              v-model="filter"
+              placeholder="Search"
+              outlined
+              @update:model-value="dataQuo()"
+              debounce="1000"
+            >
+              <template v-slot:append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </template>
+
+          <!-- For header -->
+          <template v-slot:header="props">
+            <q-tr :props="props">
+              <q-th v-for="col in props.cols" :key="col.name" :props="props">
+                {{ col.label }}
+              </q-th>
+              <q-th auto-width >Action</q-th>
+            </q-tr>
+          </template>
+
+          <!-- For Body -->
+          <template v-slot:body="props">
+            <q-tr :props="props">
+              <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                {{ col.value }}
+              </q-td>
+              <q-td auto-width>
+                <q-btn flat color="orange" icon="edit">
+                    <q-tooltip>Edit this quotation</q-tooltip>
+                </q-btn>
+              </q-td>
+            </q-tr>
+          </template>
+        </q-table>
+      </div>
+    </div>
+  </div>
+</template>
+<script setup>
+import { onMounted, ref } from "vue";
+import { useQuasar } from "quasar";
+import { api, api_web } from "boot/axios";
+
+import quotationCreate from "./quotationCreate.vue"
+
+const $q = useQuasar()
+
+const filterCol = ref("TQUO_QUOCD");
+const filter = ref("");
+const rows = ref([]);
+const columns = ref([
+  {
+    name: "TQUO_QUOCD",
+    label: "Quot. Code",
+    field: "TQUO_QUOCD",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TQUO_SBJCT",
+    label: "Quot. Subject",
+    field: "TQUO_SBJCT",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "MCUS_CUSNM",
+    label: "Customer Name",
+    field: "MCUS_CUSNM",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TQUO_ATTN",
+    label: "Customer Attn",
+    field: "TQUO_ATTN",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TQUO_CUSCD",
+    label: "Customer Code",
+    field: "TQUO_CUSCD",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TQUO_ISSUDT",
+    label: "Issue Date",
+    field: "TQUO_ISSUDT",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TQUO_PROJECT_LOCATION",
+    label: "Proj. Loc",
+    field: "TQUO_PROJECT_LOCATION",
+    sortable: true,
+    align: "left",
+  },
+]);
+const loading = ref(false);
+
+onMounted(() => {
+  dataQuo();
+});
+
+const dataQuo = async () => {
+  loading.value = true;
+  await api_web
+    .post("quotation/search", {
+      searchBy: filterCol.value,
+      searchValue: filter.value,
+    })
+    .then((response) => {
+      loading.value = false;
+      rows.value = response.data.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const onClickNew = () => {
+    $q.dialog({
+    component: quotationCreate,
+    // componentProps: {
+    //   datas: data.data,
+    // },
+    // persistent: true,
+  }).onOk(async (val) => {
+
+  })
+}
+</script>

@@ -302,19 +302,21 @@ class QuotationController extends Controller
             'MCUS_CUSNM',
         ];
 
-        $RS = $request->approval == '1' ? T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'MCUS_ADDR1', 'TQUO_PROJECT_LOCATION'])
-            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
-            ->leftJoin('T_SLOHEAD', 'TQUO_QUOCD', '=', 'TSLO_QUOCD')
-            ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
-            ->whereNotNull("TQUO_APPRVDT")
-            ->whereNull("TSLO_QUOCD")
-            ->where('TQUO_BRANCH', Auth::user()->branch)
-            ->get()
+        $RSTemp = $request->approval == '1' 
+            ? T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'MCUS_ADDR1', 'TQUO_PROJECT_LOCATION'])
+                ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
+                ->leftJoin('T_SLOHEAD', 'TQUO_QUOCD', '=', 'TSLO_QUOCD')
+                ->whereNotNull("TQUO_APPRVDT")
+                ->whereNull("TSLO_QUOCD")
             : T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION'])
-            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
-            ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
-            ->where('TQUO_BRANCH', Auth::user()->branch)
-            ->get();
+                ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        $RS = $RSTemp->where('TQUO_BRANCH', Auth::user()->branch)->get();
+
         return ['data' => $RS];
     }
 

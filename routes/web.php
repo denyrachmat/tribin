@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
         Route::get('', [UsageController::class, 'search']);
         Route::post('', [UsageController::class, 'simpan']);
         Route::put('{id}', [UsageController::class, 'update']);
+        Route::post('searchAPI', [UsageController::class, 'searchAPI']);
     });
 
     # Terkait Harga Jarak
@@ -159,6 +160,7 @@ Route::middleware('auth')->group(function () {
         Route::get('', [ItemController::class, 'search']);
         Route::post('', [ItemController::class, 'simpan']);
         Route::put('{id}', [ItemController::class, 'update']);
+        Route::post('searchAPI', [ItemController::class, 'searchAPI']);
     });
 
     # Terkait Customer Master
@@ -246,6 +248,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('items/{id}', [QuotationController::class, 'deleteItemById']);
         Route::put('items/{id}', [QuotationController::class, 'updateItem']);
         Route::post('items/{id}', [QuotationController::class, 'saveItem']);
+    });
+    Route::prefix('quotationNew')->group(function () {
+        Route::post('saveAPI', [QuotationController::class, 'saveAPI']);
     });
     Route::post('quotation-item', [QuotationController::class, 'saveItem']);
     Route::post('quotation-condition', [QuotationController::class, 'saveCondition']);

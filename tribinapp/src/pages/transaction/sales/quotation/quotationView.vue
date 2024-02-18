@@ -5,8 +5,8 @@
         <span class="text-h4">Quotation </span>
       </div>
       <div class="col text-right">
-        <q-btn icon="add" color="blue" @click="onClickNew" :disable="loading">
-            <q-tooltip>Create New Quotation</q-tooltip>
+        <q-btn icon="add" color="blue" @click="onClickNew">
+          <q-tooltip>Create New Quotation</q-tooltip>
         </q-btn>
       </div>
     </div>
@@ -21,6 +21,10 @@
           :columns="columns"
           row-key="name"
           :loading="loading"
+          dense
+          :pagination="{
+            rowsPerPage: 20
+          }"
         >
           <!-- For Search Header -->
           <template v-slot:top-right>
@@ -56,7 +60,7 @@
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
               </q-th>
-              <q-th auto-width >Action</q-th>
+              <q-th auto-width>Action</q-th>
             </q-tr>
           </template>
 
@@ -67,8 +71,23 @@
                 {{ col.value }}
               </q-td>
               <q-td auto-width>
-                <q-btn flat color="orange" icon="edit">
-                    <q-tooltip>Edit this quotation</q-tooltip>
+                <q-btn
+                  flat
+                  color="orange"
+                  icon="edit"
+                  @click="onClickEdit(props.row.TQUO_QUOCD)"
+                  dense
+                >
+                  <q-tooltip>Edit this quotation</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="indigo"
+                  icon="print"
+                  @click="onClickEdit(props.row.TQUO_QUOCD)"
+                  dense
+                >
+                  <q-tooltip>Print this quotation</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
@@ -83,9 +102,9 @@ import { onMounted, ref } from "vue";
 import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
-import quotationCreate from "./quotationCreate.vue"
+import quotationCreate from "./quotationCreate.vue";
 
-const $q = useQuasar()
+const $q = useQuasar();
 
 const filterCol = ref("TQUO_QUOCD");
 const filter = ref("");
@@ -164,14 +183,27 @@ const dataQuo = async () => {
 };
 
 const onClickNew = () => {
-    $q.dialog({
+  $q.dialog({
     component: quotationCreate,
     // componentProps: {
     //   datas: data.data,
     // },
     // persistent: true,
   }).onOk(async (val) => {
+    dataQuo();
+  });
+};
 
-  })
-}
+const onClickEdit = (val) => {
+  console.log(val);
+  $q.dialog({
+    component: quotationCreate,
+    componentProps: {
+      quoHeader: val,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataQuo();
+  });
+};
 </script>

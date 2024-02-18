@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccessRulesController;
 use App\Http\Controllers\ConditionController;
+use App\Http\Controllers\QuotationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
@@ -43,9 +44,9 @@ Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
     });
 });
 
-Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
+Route::group(['prefix' => 'transaction', 'middleware' => ['api']], function() {
     Route::group(['prefix' => 'quotation'], function() {
-
+        Route::get('view/{id}', [QuotationController::class, 'viewAPI']);
     });
 });
 

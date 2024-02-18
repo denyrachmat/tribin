@@ -72,7 +72,6 @@ const getData = async () => {
 };
 
 const onClickTable = (val) => {
-  console.log(val);
   onDialogOK(val);
 };
 

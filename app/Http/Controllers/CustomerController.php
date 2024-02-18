@@ -157,7 +157,7 @@ class CustomerController extends Controller
         if (!empty($request->searchValue)) {
             $RS = (clone $RSTemp)->where('MCUS_CUSNM', 'like', '%' . $request->searchValue . '%')->get();
         } else {
-            $RS = (clone $RSTemp)->take(5)->get();
+            $RS = (clone $RSTemp)->get();
         }
 
         return ['data' => $RS];

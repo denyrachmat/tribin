@@ -107,6 +107,28 @@ class ItemController extends Controller
         return ['data' => $RS];
     }
 
+    function searchAPI(Request $request)
+    {
+        $columnMap = [
+            'MITM_ITMCD',
+            'MITM_ITMNM',
+            'MITM_SPEC',
+        ];
+
+
+        $DataSet = DB::connection($this->dedicatedConnection);
+        $RSHead = $DataSet->table('M_ITM_GRP')->select('*')
+            ->where('MITM_BRANCH', Auth::user()->branch);
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->get();
+        } else {
+            $RS = (clone $RSHead)->take(20)->get();
+        }
+
+        return ['data' => $RS];
+    }
+
     function update(Request $request)
     {
         $affectedRow = M_ITM::on($this->dedicatedConnection)

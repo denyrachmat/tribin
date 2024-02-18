@@ -87,6 +87,24 @@ class UsageController extends Controller
         return ['data' => $RS];
     }
 
+    function searchAPI(Request $request)
+    {
+        $columnMap = [
+            'MUSAGE_CD',
+            'MUSAGE_ALIAS',
+        ];
+        $RSHead = M_USAGE::on($this->dedicatedConnection)->select('*', DB::raw('CONCAT(MUSAGE_ALIAS, " (" ,MUSAGE_DESCRIPTION, ")") AS MUSAGE_DESCALL'))
+            ->where('MUSAGE_BRANCH', Auth::user()->branch);
+            // ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSHead)->where(DB::raw('CONCAT(MUSAGE_ALIAS, " (" ,MUSAGE_DESCRIPTION, ")")'), 'like', '%' . $request->searchValue . '%')->get();
+        } else {
+            $RS = (clone $RSHead)->get();
+        }
+        return ['data' => $RS];
+    }
+
     function update(Request $request)
     {
         $affectedRow = M_USAGE::on($this->dedicatedConnection)

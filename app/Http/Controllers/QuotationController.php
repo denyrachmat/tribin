@@ -34,6 +34,7 @@ class QuotationController extends Controller
     }
     public function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'quotation']);
         $Usages = M_USAGE::on($this->dedicatedConnection)->get();
         return view('transaction.quotation', ['usages' => $Usages]);
     }
@@ -65,7 +66,6 @@ class QuotationController extends Controller
             ->where('TQUO_BRANCH', Auth::user()->branch)
             ->max('TQUO_LINE');
 
-
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
             'quotation_letter_id'
         )
@@ -82,6 +82,7 @@ class QuotationController extends Controller
             $LastLine++;
             $newQuotationCode = substr('00' . $LastLine, -3) . '/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
         }
+
         $quotationHeader = [
             'TQUO_QUOCD' => $newQuotationCode,
             'TQUO_CUSCD' => $request->TQUO_CUSCD,
@@ -107,6 +108,7 @@ class QuotationController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 406);
         }
+
         $countDetail = count($request->TQUODETA_ITMCD);
         $quotationDetail = [];
         for ($i = 0; $i < $countDetail; $i++) {
@@ -302,14 +304,14 @@ class QuotationController extends Controller
             'MCUS_CUSNM',
         ];
 
-        $RSTemp = $request->approval == '1' 
+        $RSTemp = $request->approval == '1'
             ? T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'MCUS_ADDR1', 'TQUO_PROJECT_LOCATION'])
-                ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
-                ->leftJoin('T_SLOHEAD', 'TQUO_QUOCD', '=', 'TSLO_QUOCD')
-                ->whereNotNull("TQUO_APPRVDT")
-                ->whereNull("TSLO_QUOCD")
+            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
+            ->leftJoin('T_SLOHEAD', 'TQUO_QUOCD', '=', 'TSLO_QUOCD')
+            ->whereNotNull("TQUO_APPRVDT")
+            ->whereNull("TSLO_QUOCD")
             : T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION'])
-                ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
+            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -565,7 +567,7 @@ class QuotationController extends Controller
         $this->fpdf->MultiCell(0, 5, 'Dengan hormat,', 0, 'J');
 
         // $convertToArr = (clone $RSDetail)->toArray();
-        $checkItemTruck = array_filter($RSDetail, function($f){
+        $checkItemTruck = array_filter($RSDetail, function ($f) {
             return str_contains($f['MITM_ITMCD'], 'MB-');
         });
 
@@ -923,7 +925,8 @@ class QuotationController extends Controller
     }
 
     // Add On from deny
-    function toPDF2(Request $request) {
+    function toPDF2(Request $request)
+    {
         $RSCG = COMPANY_BRANCH::on($this->dedicatedConnection)->select('name', 'address', 'phone', 'fax', 'letter_head')
             ->where('connection', $this->dedicatedConnection)
             ->where('BRANCH', Auth::user()->branch)
@@ -1052,7 +1055,7 @@ class QuotationController extends Controller
 
         // List Penawaran Start
 
-        $checkItemTruck = array_filter($RSDetail, function($f){
+        $checkItemTruck = array_filter($RSDetail, function ($f) {
             return str_contains($f['MITM_ITMCD'], 'MB-');
         });
 
@@ -1274,5 +1277,160 @@ class QuotationController extends Controller
 
         // $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
         // exit;
+    }
+
+    // New Function
+
+    public function idQuoCreator()
+    {
+        $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+        $LastLine = DB::connection($this->dedicatedConnection)->table('T_QUOHEAD')
+            ->whereMonth('created_at', '=', date('m'))
+            ->whereYear('created_at', '=', date('Y'))
+            ->where('TQUO_BRANCH', Auth::user()->branch)
+            ->max('TQUO_LINE');
+
+        $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
+            'quotation_letter_id'
+        )
+            ->where('connection', $this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->first();
+
+        $quotationHeader = [];
+        $newQuotationCode = '';
+        if (!$LastLine) {
+            $LastLine = 1;
+            $newQuotationCode = '001/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+        } else {
+            $LastLine++;
+            $newQuotationCode = substr('00' . $LastLine, -3) . '/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+        }
+
+        return ['quocode' => $newQuotationCode, 'maxline' => $LastLine];
+    }
+
+    public function saveAPI(Request $request)
+    {
+        # data quotation header
+        $validator = Validator::make($request->all(), [
+            'TQUO_CUSCD' => 'required',
+            'TQUO_ATTN' => 'required',
+            'TQUO_SBJCT' => 'required',
+            'TQUO_ISSUDT' => 'required|date',
+            'DET.*.item' => 'required',
+            'DET.*.price' => 'required',
+            'DET.*.qty' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        if (!empty($request->TQUO_QUOCD)) {
+            $dataHeader = T_QUOHEAD::on($this->dedicatedConnection)
+                ->where('TQUO_QUOCD', $request->TQUO_QUOCD)
+                ->first();
+
+            $newQuotationCode['quocode'] = $request->TQUO_QUOCD;
+            $newQuotationCode['lastline'] = $dataHeader->TQUO_LINE;
+
+            T_QUODETA::on($this->dedicatedConnection)->where(
+                'TQUO_QUOCD',
+                $request->TQUO_QUOCD
+            )->delete();
+            T_QUOCOND::on($this->dedicatedConnection)->where(
+                'TQUOCOND_QUOCD',
+                $request->TQUO_QUOCD
+            )->delete();
+        } else {
+            $newQuotationCode = $this->idQuoCreator();
+        }
+
+        $quotationHeader = [
+            'TQUO_QUOCD' => $newQuotationCode['quocode'],
+            'TQUO_CUSCD' => $request->TQUO_CUSCD,
+            'TQUO_LINE' => $newQuotationCode['maxline'],
+            'TQUO_ATTN' => $request->TQUO_ATTN,
+            'TQUO_SBJCT' => $request->TQUO_SBJCT,
+            'TQUO_ISSUDT' => $request->TQUO_ISSUDT,
+            'TQUO_PROJECT_LOCATION' => $request->TQUO_PROJECT_LOCATION,
+            'created_by' => Auth::user()->nick_name,
+            'TQUO_BRANCH' => Auth::user()->branch,
+            'TQUO_TYPE' => $request->TQUO_TYPE,
+            'TQUO_SERVTRANS_COST' => $request->TQUO_SERVTRANS_COST ? $request->TQUO_SERVTRANS_COST : 0,
+        ];
+
+        T_QUOHEAD::on($this->dedicatedConnection)->updateOrCreate([
+            'TQUO_QUOCD' => $newQuotationCode['quocode'],
+        ], $quotationHeader);
+
+        foreach ($request->DET as $key => $value) {
+            T_QUODETA::on($this->dedicatedConnection)->create([
+                'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
+                'TQUODETA_ITMCD' => $value['item'],
+                'TQUODETA_ITMQT' => $value['qty'],
+                'TQUODETA_USAGE' => 1,
+                'TQUODETA_USAGE_DESCRIPTION' => '',
+                'TQUODETA_PRC' => $value['price'],
+                'TQUODETA_OPRPRC' => 0,
+                'TQUODETA_MOBDEMOB' => 0,
+                'TQUODETA_ELECTRICITY' => $value['electric'],
+                'created_by' => Auth::user()->nick_name,
+                // 'created_at' => date('Y-m-d H:i:s'),
+                'TQUODETA_BRANCH' => Auth::user()->branch
+            ]);
+        }
+
+        foreach ($request->CONDLIST as $keyCond => $valueCond) {
+            T_QUOCOND::on($this->dedicatedConnection)->create([
+                'TQUOCOND_QUOCD' => $newQuotationCode['quocode'],
+                'TQUOCOND_CONDI' => $valueCond['MCONDITION_DESCRIPTION'],
+                'TQUOCOND_BRANCH' => Auth::user()->branch,
+                'TQUOCOND_GROUP' => $request->COND,
+                'created_by' => Auth::user()->nick_name,
+                // 'created_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return [
+            'msg' => 'OK'
+        ];
+    }
+
+    public function viewAPI($id)
+    {
+        $dataHeader = T_QUOHEAD::on($this->dedicatedConnection)
+            ->where('TQUO_QUOCD', base64_decode($id))
+            ->first()
+            ->toArray();
+
+        $dataDetail = T_QUODETA::on($this->dedicatedConnection)
+            ->leftjoin('M_ITM_GRP', 'TQUODETA_ITMCD', 'MITM_ITMNM')
+            ->where('TQUODETA_QUOCD', base64_decode($id))
+            ->get()
+            ->toArray();
+
+        $condDetail = T_QUOCOND::on($this->dedicatedConnection)
+            ->select(
+                'TQUOCOND_GROUP',
+                'TQUOCOND_CONDI AS MCONDITION_DESCRIPTION'
+            )
+            ->where('TQUOCOND_QUOCD', base64_decode($id))
+            ->get()
+            ->toArray();
+
+        return [
+            'msg' => 'Data Fetched',
+            'data' => array_merge(
+                $dataHeader,
+                [
+                    'det' => $dataDetail,
+                    'condlist' => $condDetail,
+                    'cond' => $condDetail[0]['TQUOCOND_GROUP']
+                ]
+            )
+        ];
     }
 }

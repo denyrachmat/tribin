@@ -1407,8 +1407,7 @@ class QuotationController extends Controller
     {
         $dataHeader = T_QUOHEAD::on($this->dedicatedConnection)
             ->where('TQUO_QUOCD', base64_decode($id))
-            ->first()
-            ->toArray();
+            ->first();
 
         $dataDetail = T_QUODETA::on($this->dedicatedConnection)
             ->leftjoin('M_ITM_GRP', 'TQUODETA_ITMCD', 'MITM_ITMNM')
@@ -1428,7 +1427,7 @@ class QuotationController extends Controller
         return [
             'msg' => 'Data Fetched',
             'data' => array_merge(
-                $dataHeader,
+                $dataHeader->toArray(),
                 [
                     'det' => $dataDetail,
                     'condlist' => $condDetail,

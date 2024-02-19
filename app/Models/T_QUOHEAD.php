@@ -9,6 +9,10 @@ class T_QUOHEAD extends Model
 {
     use HasFactory;
     protected $primaryKey = 'TQUO_QUOCD';
+    public $incrementing = false;
+
+    // In Laravel 6.0+ make sure to also set $keyType
+    protected $keyType = 'string';
     protected $table = 'T_QUOHEAD';
     protected $fillable = [
         'TQUO_QUOCD', 'TQUO_CUSCD', 'TQUO_LINE', 'TQUO_ATTN', 'TQUO_SBJCT', 'TQUO_ISSUDT',

@@ -1069,7 +1069,7 @@ class QuotationController extends Controller
 
             $this->fpdf->SetXY(6, 72);
             $this->fpdf->Cell(7, 5, 'No', 1, 0, 'L');
-            $this->fpdf->Cell(35, 5, 'Item', 1, 0, 'L');
+            $this->fpdf->Cell(40, 5, 'Item', 1, 0, 'L');
             $this->fpdf->Cell(45, 5, 'Pemakaian', 1, 0, 'L');
 
             if (count($checkItemTruck) === 0) {
@@ -1089,7 +1089,7 @@ class QuotationController extends Controller
                 $this->fpdf->SetXY(6, $y);
                 $this->fpdf->Cell(7, 10, $NomorUrut++, 1, 0, 'L');
 
-                $this->fpdf->Cell(30, 10, '', 1, 0, 'L');
+                $this->fpdf->Cell(40, 10, '', 1, 0, 'L');
                 $ttlwidth = $this->fpdf->GetStringWidth($r['MITM_ITMNM']);
                 if ($ttlwidth > 30) {
                     $ukuranfont = 8.5;

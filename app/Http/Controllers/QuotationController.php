@@ -488,8 +488,8 @@ class QuotationController extends Controller
             'MITM_STKUOM',
             'TQUODETA_ELECTRICITY'
         )
-            ->leftJoin("M_ITM", function ($join) {
-                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMCD")
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMNM")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
             })
             ->whereNull("deleted_at")
@@ -568,7 +568,7 @@ class QuotationController extends Controller
 
         // $convertToArr = (clone $RSDetail)->toArray();
         $checkItemTruck = array_filter($RSDetail, function ($f) {
-            return str_contains($f['MITM_ITMCD'], 'MB-');
+            return str_contains($f['MITM_ITMNM'], 'MB-');
         });
 
         if ($RSHeader->TQUO_TYPE === '1') {
@@ -959,11 +959,11 @@ class QuotationController extends Controller
 
         $RSDetail = T_QUODETA::on($this->dedicatedConnection)->select(
             'TQUODETA_ITMCD',
-            'MITM_BRAND',
-            'MITM_ITMCD',
+            // 'MITM_BRAND',
+            // 'MITM_ITMCD',
             'MITM_ITMNM',
-            'MITM_MODEL',
-            'TQUODETA_USAGE_DESCRIPTION',
+            // 'MITM_MODEL',
+            DB::raw('CONCAT(MUSAGE_ALIAS, " ", MUSAGE_DESCRIPTION) AS TQUODETA_USAGE_DESCRIPTION'),
             'TQUODETA_PRC',
             'TQUODETA_OPRPRC',
             'TQUODETA_MOBDEMOB',
@@ -971,14 +971,17 @@ class QuotationController extends Controller
             'MITM_STKUOM',
             'TQUODETA_ELECTRICITY'
         )
-            ->leftJoin("M_ITM", function ($join) {
-                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMCD")
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMNM")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->whereNull("deleted_at")
+            ->leftJoin("M_USAGE", 'TQUODETA_USAGE', 'MUSAGE_CD')
+            ->whereNull("T_QUODETA.deleted_at")
             ->where("TQUODETA_QUOCD", $doc)
             ->where('TQUODETA_BRANCH', Auth::user()->branch)
             ->get()->toArray();
+        
+        // return $RSDetail;
 
         $RSCondition = T_QUOCOND::on($this->dedicatedConnection)->select('TQUOCOND_CONDI')
             ->where('TQUOCOND_QUOCD', $doc)
@@ -986,6 +989,7 @@ class QuotationController extends Controller
             ->where('TQUOCOND_BRANCH', Auth::user()->branch)
             ->get()->toArray();
         $User = User::where('nick_name', $RSHeader->created_by)->select('name', 'phone')->first();
+        // return $RSCondition;
 
         $this->fpdf->SetFont('Arial', 'BU', 24);
 
@@ -1056,7 +1060,7 @@ class QuotationController extends Controller
         // List Penawaran Start
 
         $checkItemTruck = array_filter($RSDetail, function ($f) {
-            return str_contains($f['MITM_ITMCD'], 'MB-');
+            return str_contains($f['MITM_ITMNM'], 'MB-');
         });
 
         if ($RSHeader->TQUO_TYPE === '1') {
@@ -1065,7 +1069,7 @@ class QuotationController extends Controller
 
             $this->fpdf->SetXY(6, 72);
             $this->fpdf->Cell(7, 5, 'No', 1, 0, 'L');
-            $this->fpdf->Cell(30, 5, 'Item', 1, 0, 'L');
+            $this->fpdf->Cell(35, 5, 'Item', 1, 0, 'L');
             $this->fpdf->Cell(45, 5, 'Pemakaian', 1, 0, 'L');
 
             if (count($checkItemTruck) === 0) {
@@ -1334,10 +1338,10 @@ class QuotationController extends Controller
                 ->first();
 
             $newQuotationCode['quocode'] = $request->TQUO_QUOCD;
-            $newQuotationCode['lastline'] = $dataHeader->TQUO_LINE;
+            $newQuotationCode['maxline'] = $dataHeader->TQUO_LINE;
 
             T_QUODETA::on($this->dedicatedConnection)->where(
-                'TQUO_QUOCD',
+                'TQUODETA_QUOCD',
                 $request->TQUO_QUOCD
             )->delete();
             T_QUOCOND::on($this->dedicatedConnection)->where(

@@ -13,6 +13,6 @@ class T_QUOCOND extends Model
         'TQUOCOND_QUOCD',
         'deleted_at', 'deleted_by', 'TQUODETA_QUOCD',
         'TQUODETA_CONDI', 'created_by', 'updated_by', 'TQUOCOND_BRANCH',
-        'TQUOCOND_GROUP'
+        'TQUOCOND_GROUP', 'TQUOCOND_CONDI'
     ];
 }

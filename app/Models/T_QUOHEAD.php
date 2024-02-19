@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class T_QUOHEAD extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'TQUO_QUOCD';
     protected $table = 'T_QUOHEAD';
     protected $fillable = [
         'TQUO_QUOCD', 'TQUO_CUSCD', 'TQUO_LINE', 'TQUO_ATTN', 'TQUO_SBJCT', 'TQUO_ISSUDT',

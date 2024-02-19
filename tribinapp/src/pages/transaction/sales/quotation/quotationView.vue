@@ -84,7 +84,7 @@
                   flat
                   color="indigo"
                   icon="print"
-                  @click="onClickEdit(props.row.TQUO_QUOCD)"
+                  @click="onClickPrint(props.row.TQUO_QUOCD)"
                   dense
                 >
                   <q-tooltip>Print this quotation</q-tooltip>
@@ -206,4 +206,8 @@ const onClickEdit = (val) => {
     dataQuo();
   });
 };
+
+const onClickPrint = (val) => {
+  window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(val), '_blank').focus();
+}
 </script>

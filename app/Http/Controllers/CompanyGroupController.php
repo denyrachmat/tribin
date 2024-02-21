@@ -101,10 +101,12 @@ class CompanyGroupController extends Controller
             ->where('COMPANY_GROUP_ACCESSES.nick_name', base64_decode($request->id))
             ->whereNull('COMPANY_GROUP_ACCESSES.deleted_at')
             ->get();
+
         foreach ($RS as &$r) {
             $r->connection = Crypt::encryptString($r->connection);
         }
         unset($r);
+        
         return ['data' => $RS];
     }
 

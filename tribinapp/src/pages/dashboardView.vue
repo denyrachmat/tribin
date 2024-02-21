@@ -2,7 +2,7 @@
   <div class="q-pa-md bg-grey-5 window-height">
     <div class="row">
       <div
-        :class="`col-3 ${idx > 0 ? 'q-pl-sm' : null}`"
+        :class="`col-3 q-pa-sm`"
         v-for="(card, idx) in listDashboard"
         :key="idx"
       >
@@ -21,7 +21,7 @@
         </q-card>
       </div>
     </div>
-    <div class="row q-pt-md">
+    <div class="row q-px-sm">
       <div class="col">
         <q-table
           flat
@@ -64,6 +64,30 @@ const listDashboard = ref([
     icon: "group",
     color: "cyan",
   },
+  {
+    total: 15,
+    title: "Total Customer",
+    icon: "group",
+    color: "cyan",
+  },
+  {
+    total: 15,
+    title: "Total Customer",
+    icon: "group",
+    color: "cyan",
+  },
+  {
+    total: 15,
+    title: "Total Customer",
+    icon: "group",
+    color: "cyan",
+  },
+  {
+    total: 15,
+    title: "Total Customer",
+    icon: "group",
+    color: "cyan",
+  },
 ]);
 const columns = ref([
   { name: "name", label: "Business", field: "name", sortable: true, align: 'left'},
@@ -74,6 +98,6 @@ const columns = ref([
 const rows = ref([]);
 
 const getDataApproval = () => {
-    
+
 }
 </script>

@@ -25,6 +25,7 @@
           :pagination="{
             rowsPerPage: 20
           }"
+          class="my-sticky-header-column-table"
         >
           <!-- For Search Header -->
           <template v-slot:top-right>
@@ -211,3 +212,47 @@ const onClickPrint = (val) => {
   window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(val), '_blank').focus();
 }
 </script>
+<style lang="sass">
+.my-sticky-header-column-table
+  /* height or max-height is important */
+  height: 80vh
+
+  /* specifying max-width so the example can
+    highlight the sticky column on any browser window */
+
+  td:first-child
+    /* bg color is important for td; just specify one */
+    background-color: #fff
+
+  tr th
+    position: sticky
+    /* higher than z-index for td below */
+    z-index: 2
+    /* bg color is important; just specify one */
+    background: #fff
+
+  /* this will be the loading indicator */
+  thead tr:last-child th
+    /* height of all previous header rows */
+    top: 48px
+    /* highest z-index */
+    z-index: 3
+  thead tr:first-child th
+    top: 0
+    z-index: 1
+  tr:first-child th:first-child
+    /* highest z-index */
+    z-index: 3
+
+  td:first-child
+    z-index: 1
+
+  td:first-child, th:first-child
+    position: sticky
+    left: 0
+
+  /* prevent scrolling behind sticky top row on focus */
+  tbody
+    /* height of all previous header rows */
+    scroll-margin-top: 48px
+</style>

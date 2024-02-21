@@ -37,6 +37,8 @@
                 dense
                 label="Issue Date"
                 :loading="loading"
+                @click="quotationIssueDate.click"
+                readonly
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">

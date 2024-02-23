@@ -5,6 +5,7 @@
     transition-show="slide-up"
     transition-hide="slide-down"
     full-width
+    persistent
   >
     <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
@@ -37,8 +38,10 @@
                 dense
                 label="Issue Date"
                 :loading="loading"
-                @click="quotationIssueDate.click"
-                readonly
+                @click="quotationIssueDate.qDateProxy.show()"
+                mask="####-##-##"
+                fill-mask
+                hint="Mask: YYYY-MM-DD"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">

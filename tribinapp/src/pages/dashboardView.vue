@@ -21,7 +21,7 @@
         </q-card>
       </div>
     </div>
-    <div class="row q-px-sm">
+    <div class="row q-pa-sm">
       <div class="col">
         <q-table
           flat
@@ -37,7 +37,7 @@
 </template>
 <script setup>
 import { ref } from "vue";
-import {api, api_web} from "src/boot/axios"
+import {api, api_web} from "src/boot/axios";
 
 const listDashboard = ref([
   {

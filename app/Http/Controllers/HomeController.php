@@ -113,7 +113,7 @@ class HomeController extends Controller
                 ->whereNull("TQUO_REJCTDT")
                 ->groupBy('TQUO_QUOCD', 'TQUO_BRANCH')->get();
 
-            # Query untuk data Purchase Request dengan tipe "Auto PO" 
+            # Query untuk data Purchase Request dengan tipe "Auto PO"
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHREQDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD")
                 ->groupBy("TPCHREQDETA_PCHCD")
@@ -283,7 +283,7 @@ class HomeController extends Controller
                 $preparedData = ['name' => $r->name, 'connection' => $r->connection, 'data' => $dataTobeApproved];
                 $data[] = $preparedData;
 
-                # Query untuk data Purchase Request dengan tipe "Auto PO" 
+                # Query untuk data Purchase Request dengan tipe "Auto PO"
                 $RSDetail = DB::connection($r->connection)->table('T_PCHREQDETA')
                     ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD")
                     ->groupBy("TPCHREQDETA_PCHCD")
@@ -323,5 +323,23 @@ class HomeController extends Controller
         }
 
         return ['data' => $data, 'PurchaseRequest' => $PurchaseRequest, 'PurchaseOrder' => $PurchaseOrder, 'SPKData' => $SPKData];
+    }
+
+    function newDirNotif(){
+        $data = $PurchaseRequest = $PurchaseOrder = $SPKData = [];
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
+
+            $Business = CompanyGroup::select('name', 'connection')->get();
+
+            $hasil = [];
+            foreach ($Business as $key => $value) {
+                $getQuotation = T_QUOHEAD::on($value->connection);
+                $hasil[] = [
+                    'name' => $value->name
+                ];
+            }
+            return $Business;
+        }
     }
 }

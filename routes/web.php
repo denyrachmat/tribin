@@ -179,6 +179,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('approval')->group(function () {
         Route::get('notifications', [HomeController::class, 'notifications']);
         Route::get('notifications/top-user', [HomeController::class, 'TopUserNotifications']);
+        Route::get('notificationsAPI/top-user', [HomeController::class, 'newDirNotif']);
         Route::get('quotation', [QuotationController::class, 'notifications']);
         Route::get('purchase-request', [PurchaseController::class, 'notifications']);
         Route::get('purchase-order', [PurchaseController::class, 'notificationsPO']);

@@ -33,7 +33,7 @@ class HomeController extends Controller
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         $Branches = M_BRANCH::select('MBRANCH_NM')->where('MBRANCH_CD', Auth::user()->branch)->first();
-        return view('home', ['activeRoleDescription' => $activeRole['name'], 'BranchName' => $Branches ? $Branches->MBRANCH_NM  : '-']);
+        return view('home', ['activeRoleDescription' => $activeRole['name'], 'BranchName' => $Branches ? $Branches->MBRANCH_NM : '-']);
     }
 
     function supportDashboard()
@@ -248,8 +248,10 @@ class HomeController extends Controller
         }
 
         return [
-            'data' => $dataTobeApproved, 'dataApproved' => $dataApproved,
-            'dataPurchaseRequest' => $dataPurchaseRequestTobeUpproved, 'dataPurchaseRequestApproved' => $dataPurchaseRequestApproved,
+            'data' => $dataTobeApproved,
+            'dataApproved' => $dataApproved,
+            'dataPurchaseRequest' => $dataPurchaseRequestTobeUpproved,
+            'dataPurchaseRequestApproved' => $dataPurchaseRequestApproved,
             'dataSalesOrderDraft' => $dataSalesOrderDraftTobeProcessed,
             'dataPurchaseOrder' => $dataPurchaseOrderTobeUpproved,
             'dataDeliveryOrderNoDriver' => $dataDeliveryOrderNoDriver,
@@ -325,8 +327,8 @@ class HomeController extends Controller
         return ['data' => $data, 'PurchaseRequest' => $PurchaseRequest, 'PurchaseOrder' => $PurchaseOrder, 'SPKData' => $SPKData];
     }
 
-    function newDirNotif(){
-        $data = $PurchaseRequest = $PurchaseOrder = $SPKData = [];
+    function newDirNotif()
+    {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
 
@@ -334,12 +336,92 @@ class HomeController extends Controller
 
             $hasil = [];
             foreach ($Business as $key => $value) {
-                $getQuotation = T_QUOHEAD::on($value->connection);
+                // Quotation Data
+                $RSDetail = DB::connection($value->connection)->table('T_QUODETA')
+                    ->selectRaw("COUNT(*) TTLDETAIL, TQUODETA_QUOCD,TQUODETA_BRANCH")
+                    ->groupBy("TQUODETA_QUOCD", "TQUODETA_BRANCH")
+                    ->whereNull('deleted_at');
+                $dataTobeApproved = T_QUOHEAD::on($value->connection)
+                    ->select(DB::raw("
+                        TQUO_QUOCD as APP_CD,
+                        max(TTLDETAIL) TTLDETAIL,
+                        max(MCUS_CUSNM) APP_CUSNM, 
+                        max(T_QUOHEAD.created_at) CREATED_AT,
+                        max(TQUO_SBJCT) APP_SBJCT,
+                        max(TQUO_ATTN) APP_ATTN,
+                        TQUO_BRANCH, 
+                        TQUO_TYPE
+                    "))
+                    ->joinSub($RSDetail, 'dt', function ($join) {
+                        $join->on("TQUO_QUOCD", "=", "TQUODETA_QUOCD")
+                            ->on("TQUO_BRANCH", "=", "TQUODETA_BRANCH");
+                    })
+                    ->join('M_CUS', 'TQUO_CUSCD', '=', 'MCUS_CUSCD')
+                    ->whereNull("TQUO_APPRVDT")
+                    ->whereNull("TQUO_REJCTDT")
+                    ->orderBy(DB::raw('max(T_QUOHEAD.created_at)'), 'desc')
+                    ->groupBy('TQUO_QUOCD', 'TQUO_BRANCH', 'TQUO_TYPE')->get()->toArray();
+                
+                // PR Detail
+                $RSDetail = DB::connection($value->connection)->table('T_PCHREQDETA')
+                    ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD")
+                    ->groupBy("TPCHREQDETA_PCHCD")
+                    ->whereNull('deleted_at');
+                $dataPurchaseRequestTobeUpproved = T_PCHREQHEAD::on($value->connection)
+                    ->select(DB::raw('
+                        "Purchase Request" APP_CUSNM,
+                        TPCHREQ_PCHCD APP_CD,
+                        max(TTLDETAIL), 
+                        max(T_PCHREQHEAD.created_at) CREATED_AT,
+                        max(TPCHREQ_PURPOSE) APP_SBJCT
+                    '))
+                    ->joinSub($RSDetail, 'dt', function ($join) {
+                        $join->on("TPCHREQ_PCHCD", "=", "TPCHREQDETA_PCHCD");
+                    })
+                    ->whereNull("TPCHREQ_APPRVDT")
+                    ->whereNull("TPCHREQ_REJCTDT")
+                    ->where("TPCHREQ_TYPE", '2')
+                    ->groupBy('TPCHREQ_PCHCD')->get();
+
+                // PO Detail
+                $RSDetail = DB::connection($value->connection)->table('T_PCHORDDETA')
+                    ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD")
+                    ->groupBy("TPCHORDDETA_PCHCD")
+                    ->whereNull('deleted_at');
+                $dataPurchaseOrderTobeUpproved = T_PCHORDHEAD::on($value->connection)
+                    ->select(DB::raw("
+                        TPCHORD_PCHCD APP_CD,
+                        max(TTLDETAIL) APP_SBJCT, 
+                        MSUP_SUPNM APP_CUSNM,
+                        max(T_PCHORDHEAD.created_at) CREATED_AT
+                    "))
+                    ->joinSub($RSDetail, 'dt', function ($join) {
+                        $join->on("TPCHORD_PCHCD", "=", "TPCHORDDETA_PCHCD");
+                    })
+                    ->join('M_SUP', 'TPCHORD_SUPCD', 'MSUP_SUPCD')
+                    ->whereNull("TPCHORD_APPRVDT")
+                    ->whereNull("TPCHORD_REJCTBY")
+                    ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM')->get();
+
+                // SPK Detail
+                $SPK = C_SPK::on($value->connection)->select(DB::raw('CSPK_PIC_AS APP_SBJCT, CSPK_REFF_DOC APP_CD, CSPK_JOBDESK APP_SBJCT'))
+                    ->whereNotNull('submitted_at')
+                    ->whereNull('CSPK_GA_MGR_APPROVED_AT')->get();
+                
                 $hasil[] = [
-                    'name' => $value->name
+                    'name' => $value->name,
+                    'quot_count' => count($dataTobeApproved),
+                    'quot' => $dataTobeApproved,
+                    'pr_count' => count($dataPurchaseRequestTobeUpproved),
+                    'pr' => $dataPurchaseRequestTobeUpproved,
+                    'po_count' => count($dataPurchaseOrderTobeUpproved),
+                    'po' => $dataPurchaseOrderTobeUpproved,
+                    'spk_count' => count($SPK),
+                    'spk' => $SPK
                 ];
             }
-            return $Business;
+
+            return $hasil;
         }
     }
 }

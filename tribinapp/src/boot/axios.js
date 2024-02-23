@@ -11,8 +11,11 @@ import { Notify } from 'quasar'
 // "export default () => {}" function below (which runs individually
 // for each client)
 // const api = axios.create({ baseURL: process.env.API})
-const api = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/api/"})
-const api_web = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/"})
+
+// const api = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/api/"})
+// const api_web = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/"})
+const api = axios.create({ baseURL: "http://tribin.test/api/"})
+const api_web = axios.create({ baseURL: "http://tribin.test/"})
 
 api.interceptors.request.use((config) => {
   config.withCredentials = true

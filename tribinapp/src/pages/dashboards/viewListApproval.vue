@@ -110,7 +110,7 @@ const getDateUntilNow = (dates, unit = 'days') => {
 };
 
 const onClickPreview = (data) => {
-  const typeAPI = ''
+  let typeAPI = ''
   if (props.typeAPI == 'quot') {
     typeAPI = 'quotation'
   } else if (props.typeAPI == 'pr') {

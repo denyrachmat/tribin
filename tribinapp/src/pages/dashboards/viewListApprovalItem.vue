@@ -13,14 +13,14 @@
       </q-card-section>
 
       <q-card-section class="q-pa-sm" style="height: 70vh; overflow: auto">
-        <q-list dark bordered separator v-if="props.typeCD === 'quotation'">
-          <q-item clickable v-ripple v-for="(hasil, idx) in dataHasil.dataItem" :key="idx">
-            <q-item-section>
-              <q-item-label>{{ hasil.MITM_ITMNM }}</q-item-label>
-              <q-item-label caption>Item Name</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
+        <q-table
+          title="Item List"
+          :rows="dataHasil.dataItem"
+          :columns="columnsItem"
+          row-key="name"
+          dense
+          v-if="props.typeCD == 'quotation'"
+        />
       </q-card-section>
 
       <q-card-actions align="center">
@@ -50,6 +50,14 @@ const props = defineProps({
 });
 
 const loading = ref(false);
+const columnsItem = ref([
+    { name: 'MITM_ITMNM', label: 'Item Name', field: 'MITM_ITMNM', sortable: true },
+    { name: 'TQUODETA_USAGE_DESCRIPTION', label: 'Usage', field: 'TQUODETA_USAGE_DESCRIPTION', sortable: true },
+    { name: 'TQUODETA_PRC', label: 'Price', field: 'TQUODETA_PRC', sortable: true },
+    { name: 'TQUODETA_OPRPRC', label: 'Operator', field: 'TQUODETA_OPRPRC', sortable: true },
+    { name: 'TQUODETA_MOBDEMOB', label: 'MOB DEMOB', field: 'TQUODETA_MOBDEMOB', sortable: true },
+    { name: 'SUBTOT', label: 'MOB DEMOB', sortable: true, field: row => row.TQUODETA_PRC + row.TQUODETA_OPRPRC + row.TQUODETA_MOBDEMOB },
+]);
 const dataHasil = ref([]);
 
 onMounted(() => {

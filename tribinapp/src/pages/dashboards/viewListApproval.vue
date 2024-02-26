@@ -55,7 +55,7 @@
                 <q-card-section>
                   <div class="row">
                     <div class="col">
-                      <q-btn label="Preview" color="primary" outline />
+                      <q-btn label="Preview" color="primary" outline @click="onClickPreview(props.row.APP_CD)"/>
                     </div>
                     <div class="col text-right">
                       {{ getDateUntilNow(props.row.CREATED_AT) < 30 ? `${getDateUntilNow(props.row.CREATED_AT)} Days Ago` : `${getDateUntilNow(props.row.CREATED_AT, 'months')} Month ago` }}
@@ -81,11 +81,15 @@
 </template>
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { date, useDialogPluginComponent } from "quasar";
+import { date, useDialogPluginComponent, useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
+import viewListApprovalItemVue from './viewListApprovalItem.vue'
+
+const $q = useQuasar()
 const props = defineProps({
   listApprv: Array,
+  typeAPI: String
 });
 
 const columns = ref([
@@ -103,6 +107,30 @@ const getDateUntilNow = (dates, unit = 'days') => {
 
   const diff = date.getDateDiff(date1, date2, unit);
   return diff;
+};
+
+const onClickPreview = (data) => {
+  const typeAPI = ''
+  if (props.typeAPI == 'quot') {
+    typeAPI = 'quotation'
+  } else if (props.typeAPI == 'pr') {
+    typeAPI = 'purchase-request-approval'
+  } else if (props.typeAPI == 'po') {
+    typeAPI = 'purchase-order/approval-document'
+  }
+  
+
+  $q.dialog({
+    component: viewListApprovalItemVue,
+    componentProps: {
+      cd: data,
+      typeCD: typeAPI
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    quotationGroupConditions.value = val.MCONDITION_RPT_STAT;
+    quotationConditions.value = val.group;
+  });
 };
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =

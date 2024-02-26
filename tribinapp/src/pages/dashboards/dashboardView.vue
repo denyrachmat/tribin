@@ -62,7 +62,7 @@
                     color="blue"
                     v-if="col.value > 0"
                     @click="
-                      onClickApprovalNumber(props.row[col.name.split('_')[0]])
+                      onClickApprovalNumber(props.row[col.name.split('_')[0]], col.name)
                     "
                     ><b>{{ col.value }}</b></q-btn
                   >
@@ -166,21 +166,14 @@ const columns = ref([
     sortable: true,
     align: "center",
   },
-  {
-    name: "spk",
-    label: "SPK",
-    field: "spk_count",
-    sortable: true,
-    align: "center",
-  },
 ]);
 const rows = ref([]);
 const loading = ref(false)
 const intervalnya = ref(null)
 
-onMounted(() => {
-  getDataApproval()
-  setInterval(getDataApproval(), 2000);
+onMounted(async () => {
+  await getDataApproval()
+  // intervalnya.value = setInterval(getDataApproval(), 2000);
 });
 
 const getDataApproval = async () => {
@@ -195,11 +188,12 @@ const getDataApproval = async () => {
     });
 };
 
-const onClickApprovalNumber = (data) => {
+const onClickApprovalNumber = (data, typeAPI) => {
   $q.dialog({
     component: viewListApproval,
     componentProps: {
       listApprv: data,
+      typeAPI: typeAPI
     },
     // persistent: true,
   }).onOk(async (val) => {

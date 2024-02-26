@@ -55,7 +55,7 @@
                 <q-card-section>
                   <div class="row">
                     <div class="col">
-                      <q-btn label="Preview" color="primary" outline @click="onClickPreview(props.row.APP_CD)"/>
+                      <q-btn label="Preview" color="primary" outline @click="onClickPreview(props.row.APP_CD, props.row)"/>
                     </div>
                     <div class="col text-right">
                       {{ getDateUntilNow(props.row.CREATED_AT) < 30 ? `${getDateUntilNow(props.row.CREATED_AT)} Days Ago` : `${getDateUntilNow(props.row.CREATED_AT, 'months')} Month ago` }}
@@ -109,7 +109,7 @@ const getDateUntilNow = (dates, unit = 'days') => {
   return diff;
 };
 
-const onClickPreview = (data) => {
+const onClickPreview = (data, dataHeader) => {
   let typeAPI = ''
   if (props.typeAPI == 'quot') {
     typeAPI = 'quotation'
@@ -118,11 +118,12 @@ const onClickPreview = (data) => {
   } else if (props.typeAPI == 'po') {
     typeAPI = 'purchase-order/approval-document'
   }
-  
+
 
   $q.dialog({
     component: viewListApprovalItemVue,
     componentProps: {
+      dataHeader: dataHeader,
       cd: data,
       typeCD: typeAPI
     },

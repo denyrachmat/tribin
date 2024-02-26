@@ -252,7 +252,27 @@ const getData = async () => {
     });
 };
 
-const onApprove = () => {};
+const onApprove = () => {
+  q.dialog({
+    title: "Confirm",
+    message: "Are you sure want to Approve this quotation ?",
+    cancel: true,
+    persistent: true,
+  }).onOk(async (datas) => {
+    loading.value = true;
+      await api_web
+        .put(`approve/quotations/${btoa(props.cd)}`,{
+          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH
+        })
+        .then((response) => {
+          loading.value = false;
+          getData();
+        })
+        .catch((e) => {
+          loading.value = false;
+        });
+  })
+};
 
 const onReject = () => {
   $q.dialog({
@@ -275,11 +295,12 @@ const onReject = () => {
       loading.value = true;
       await api_web
         .put(`revise/quotations/${btoa(props.cd)}`,{
-          remark: datas
+          remark: datas,
+          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH
         })
         .then((response) => {
           loading.value = false;
-          dataHasil.value = response.data;
+          getData();
         })
         .catch((e) => {
           loading.value = false;
@@ -288,5 +309,7 @@ const onReject = () => {
   });
 };
 
-const printQuot = () => {};
+const printQuot = () => {
+  window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd), '_blank').focus();
+};
 </script>

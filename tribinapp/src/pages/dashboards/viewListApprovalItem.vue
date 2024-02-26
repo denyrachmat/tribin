@@ -33,16 +33,34 @@
           <q-tab-panel name="items">
             <div class="row q-py-md">
               <div class="col">
-                <q-input dense filled label="Customer Name" v-model="headerData.APP_CUSNM" readonly></q-input>
+                <q-input
+                  dense
+                  filled
+                  label="Customer Name"
+                  v-model="headerData.APP_CUSNM"
+                  readonly
+                ></q-input>
               </div>
               <div class="col q-pl-md">
-                <q-input dense filled label="Attn." v-model="headerData.APP_ATTN" readonly></q-input>
+                <q-input
+                  dense
+                  filled
+                  label="Attn."
+                  v-model="headerData.APP_ATTN"
+                  readonly
+                ></q-input>
               </div>
             </div>
 
             <div class="row q-pb-md">
               <div class="col">
-                <q-input dense filled label="Subject" v-model="headerData.APP_SBJCT" readonly></q-input>
+                <q-input
+                  dense
+                  filled
+                  label="Subject"
+                  v-model="headerData.APP_SBJCT"
+                  readonly
+                ></q-input>
               </div>
             </div>
 
@@ -156,8 +174,8 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  headerData.value = props.dataHeader
-})
+  headerData.value = props.dataHeader;
+});
 
 const loading = ref(false);
 const columnsItem = ref([
@@ -212,10 +230,10 @@ const columnsItem = ref([
 const dataHasil = ref([]);
 const tab = ref("items");
 const headerData = ref({
-  MCUS_CUSNM: '',
-  TQUO_ATTN: '',
-  TQUO_SBJCT: '',
-})
+  MCUS_CUSNM: "",
+  TQUO_ATTN: "",
+  TQUO_SBJCT: "",
+});
 
 onMounted(() => {
   getData();
@@ -236,7 +254,39 @@ const getData = async () => {
 
 const onApprove = () => {};
 
-const onReject = () => {};
+const onReject = () => {
+  $q.dialog({
+    title: "Confirm",
+    message: "Are you sure want to Reject this quotation ?",
+    cancel: true,
+    persistent: true,
+  }).onOk(async (datas) => {
+    $q.dialog({
+      title: "Prompt",
+      message: "Input reject reason.",
+      prompt: {
+        model: "",
+        isValid: (val) => val.length > 2, // << here is the magic
+        type: "text", // optional
+      },
+      cancel: true,
+      persistent: true,
+    }).onOk(async (datas) => {
+      loading.value = true;
+      await api_web
+        .put(`revise/quotations/${btoa(props.cd)}`,{
+          remark: datas
+        })
+        .then((response) => {
+          loading.value = false;
+          dataHasil.value = response.data;
+        })
+        .catch((e) => {
+          loading.value = false;
+        });
+    });
+  });
+};
 
-const printQuot = () => {}
+const printQuot = () => {};
 </script>

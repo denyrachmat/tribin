@@ -980,7 +980,7 @@ class QuotationController extends Controller
             ->where("TQUODETA_QUOCD", $doc)
             ->where('TQUODETA_BRANCH', Auth::user()->branch)
             ->get()->toArray();
-        
+
         // return $RSDetail;
 
         $RSCondition = T_QUOCOND::on($this->dedicatedConnection)->select('TQUOCOND_CONDI')
@@ -1417,6 +1417,7 @@ class QuotationController extends Controller
 
         $condDetail = T_QUOCOND::on($this->dedicatedConnection)
             ->select(
+                'id',
                 'TQUOCOND_GROUP',
                 'TQUOCOND_CONDI AS MCONDITION_DESCRIPTION'
             )
@@ -1424,16 +1425,27 @@ class QuotationController extends Controller
             ->get()
             ->toArray();
 
-        return [
-            'msg' => 'Data Fetched',
-            'data' => array_merge(
-                $dataHeader->toArray(),
+        if ($dataHeader) {
+            return [
+                'status' => true,
+                'msg' => 'Data Fetched',
+                'data' => array_merge(
+                    $dataHeader->toArray(),
+                    [
+                        'det' => $dataDetail,
+                        'condlist' => $condDetail,
+                        'cond' => $condDetail[0]['TQUOCOND_GROUP']
+                    ]
+                )
+            ];
+        } else {
+            return response()->json(
                 [
-                    'det' => $dataDetail,
-                    'condlist' => $condDetail,
-                    'cond' => $condDetail[0]['TQUOCOND_GROUP']
-                ]
-            )
-        ];
+                    'status' => false,
+                    'msg' => 'Data Not Found',
+                ],
+                406
+            );
+        }
     }
 }

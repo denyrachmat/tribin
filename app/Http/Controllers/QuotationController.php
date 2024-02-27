@@ -317,7 +317,7 @@ class QuotationController extends Controller
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
-        $RS = $RSTemp->where('TQUO_BRANCH', Auth::user()->branch)->orderBy('created_at', 'desc')->get();
+        $RS = $RSTemp->where('TQUO_BRANCH', Auth::user()->branch)->orderBy('T_QUOHEAD.created_at', 'desc')->get();
 
         return ['data' => $RS];
     }

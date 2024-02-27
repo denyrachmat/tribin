@@ -374,7 +374,8 @@ class HomeController extends Controller
                         TPCHREQ_PCHCD APP_CD,
                         max(TTLDETAIL), 
                         max(T_PCHREQHEAD.created_at) CREATED_AT,
-                        max(TPCHREQ_PURPOSE) APP_SBJCT
+                        max(TPCHREQ_PURPOSE) APP_SBJCT,
+                        TPCHREQ_BRANCH
                     '))
                     ->joinSub($RSDetail, 'dt', function ($join) {
                         $join->on("TPCHREQ_PCHCD", "=", "TPCHREQDETA_PCHCD");
@@ -382,7 +383,7 @@ class HomeController extends Controller
                     ->whereNull("TPCHREQ_APPRVDT")
                     ->whereNull("TPCHREQ_REJCTDT")
                     ->where("TPCHREQ_TYPE", '2')
-                    ->groupBy('TPCHREQ_PCHCD')->get();
+                    ->groupBy('TPCHREQ_PCHCD', 'TPCHREQ_BRANCH')->get();
 
                 // PO Detail
                 $RSDetail = DB::connection($value->connection)->table('T_PCHORDDETA')
@@ -394,7 +395,8 @@ class HomeController extends Controller
                         TPCHORD_PCHCD APP_CD,
                         max(TTLDETAIL) APP_SBJCT, 
                         MSUP_SUPNM APP_CUSNM,
-                        max(T_PCHORDHEAD.created_at) CREATED_AT
+                        max(T_PCHORDHEAD.created_at) CREATED_AT,
+                        TPCHORD_BRANCH
                     "))
                     ->joinSub($RSDetail, 'dt', function ($join) {
                         $join->on("TPCHORD_PCHCD", "=", "TPCHORDDETA_PCHCD");
@@ -402,7 +404,7 @@ class HomeController extends Controller
                     ->join('M_SUP', 'TPCHORD_SUPCD', 'MSUP_SUPCD')
                     ->whereNull("TPCHORD_APPRVDT")
                     ->whereNull("TPCHORD_REJCTBY")
-                    ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM')->get();
+                    ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM', 'TPCHORD_BRANCH')->get();
 
                 // SPK Detail
                 $SPK = C_SPK::on($value->connection)->select(DB::raw('CSPK_PIC_AS APP_SBJCT, CSPK_REFF_DOC APP_CD, CSPK_JOBDESK APP_SBJCT'))
@@ -410,6 +412,7 @@ class HomeController extends Controller
                     ->whereNull('CSPK_GA_MGR_APPROVED_AT')->get();
                 
                 $hasil[] = [
+                    'connection' => $value->connection,
                     'name' => $value->name,
                     'quot_count' => count($dataTobeApproved),
                     'quot' => $dataTobeApproved,

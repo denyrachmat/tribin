@@ -62,7 +62,7 @@
                     color="blue"
                     v-if="col.value > 0"
                     @click="
-                      onClickApprovalNumber(props.row[col.name.split('_')[0]], col.name)
+                      onClickApprovalNumber(props.row[col.name.split('_')[0]], col.name, props.row.connection)
                     "
                     ><b>{{ col.value }}</b></q-btn
                   >
@@ -188,12 +188,13 @@ const getDataApproval = async () => {
     });
 };
 
-const onClickApprovalNumber = (data, typeAPI) => {
+const onClickApprovalNumber = (data, typeAPI, conn) => {
   $q.dialog({
     component: viewListApproval,
     componentProps: {
       listApprv: data,
-      typeAPI: typeAPI
+      typeAPI: typeAPI,
+      conn: conn
     },
     // persistent: true,
   }).onOk(async (val) => {

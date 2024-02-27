@@ -5,11 +5,10 @@
       transition-show="slide-up"
       transition-hide="slide-down"
       full-width
-      persistent
     >
       <q-card class="q-dialog-plugin bg-white q-pa-sm">
         <q-card-section>
-          <div class="text-h6">Quotation Review</div>
+          <div class="text-h6">PR Review</div>
         </q-card-section>
   
         <q-card-section class="q-pa-sm" style="height: 70vh; overflow: auto">
@@ -23,41 +22,18 @@
             narrow-indicator
           >
             <q-tab name="items" label="Items" />
-            <q-tab name="conditions" label="Conditions" />
-            <q-tab name="histCond" label="Approval History" />
           </q-tabs>
   
           <q-separator />
   
           <q-tab-panels v-model="tab" animated>
-            <q-tab-panel name="items">
-              <div class="row q-py-md">
-                <div class="col">
-                  <q-input
-                    dense
-                    filled
-                    label="Customer Name"
-                    v-model="headerData.APP_CUSNM"
-                    readonly
-                  ></q-input>
-                </div>
-                <div class="col q-pl-md">
-                  <q-input
-                    dense
-                    filled
-                    label="Attn."
-                    v-model="headerData.APP_ATTN"
-                    readonly
-                  ></q-input>
-                </div>
-              </div>
-  
+            <q-tab-panel name="items">  
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
                     dense
                     filled
-                    label="Subject"
+                    label="Purpose"
                     v-model="headerData.APP_SBJCT"
                     readonly
                   ></q-input>
@@ -71,72 +47,13 @@
                 row-key="name"
                 dense
                 :loading="loading"
-                v-if="props.typeCD == 'quotation'"
               />
-            </q-tab-panel>
-  
-            <q-tab-panel name="conditions">
-              <q-list bordered dense>
-                <q-item
-                  clickable
-                  v-ripple
-                  v-for="(cond, idx) in dataHasil.dataCondition"
-                  :key="idx"
-                >
-                  <q-item-section avatar>
-                    <q-avatar color="primary" text-color="white" size="sm">
-                      {{ idx + 1 }}
-                    </q-avatar>
-                  </q-item-section>
-                  <q-item-section>{{ cond.TQUOCOND_CONDI }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-tab-panel>
-  
-            <q-tab-panel name="histCond">
-              <q-list bordered separator>
-                <q-item
-                  clickable
-                  v-ripple
-                  v-for="(hist, idx2) in dataHasil.approvalHistories"
-                  :key="idx2"
-                >
-                  <q-item-section>
-                    <q-item-label>{{
-                      date.formatDate(hist.created_at, "DD MMM YYYY HH:mm")
-                    }}</q-item-label>
-                    <q-item-label caption>Time</q-item-label>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>{{
-                      hist.type == 2 ? "Rejected" : "Approved"
-                    }}</q-item-label>
-                    <q-item-label caption>Status</q-item-label>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>{{ hist.remark }}</q-item-label>
-                    <q-item-label caption>Remarks</q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-icon
-                      :name="hist.type == 2 ? 'cancel' : 'check_circle'"
-                      :color="hist.type == 2 ? 'red' : 'green'"
-                    />
-                  </q-item-section>
-                </q-item>
-              </q-list>
             </q-tab-panel>
           </q-tab-panels>
         </q-card-section>
   
         <q-card-actions align="center">
           <q-btn-group>
-            <q-btn
-              color="primary"
-              icon="print"
-              :disable="dataHasil.length === 0"
-              @click="printQuot()"
-            />
             <q-btn
               color="primary"
               icon="check"
@@ -171,6 +88,7 @@
     dataHeader: Array,
     cd: String,
     typeCD: String,
+    conn: String,
   });
   
   onMounted(() => {
@@ -187,45 +105,20 @@
       align: "left",
     },
     {
-      name: "TQUODETA_USAGE_DESCRIPTION",
-      label: "Usage",
-      field: "TQUODETA_USAGE_DESCRIPTION",
+      name: "TPCHREQDETA_REMARK",
+      label: "Remark",
+      field: "TPCHREQDETA_REMARK",
       sortable: true,
       align: "left",
     },
     {
-      name: "TQUODETA_PRC",
-      label: "Price",
-      field: "TQUODETA_PRC",
+      name: "TPCHREQDETA_REQDT",
+      label: "Request Date",
+      field: "TPCHREQDETA_REQDT",
       sortable: true,
       align: "left",
-      format: (val) => val.toLocaleString(),
     },
-    {
-      name: "TQUODETA_OPRPRC",
-      label: "Operator",
-      field: "TQUODETA_OPRPRC",
-      sortable: true,
-      align: "left",
-      format: (val) => val.toLocaleString(),
-    },
-    {
-      name: "TQUODETA_MOBDEMOB",
-      label: "MOB DEMOB",
-      field: "TQUODETA_MOBDEMOB",
-      sortable: true,
-      align: "left",
-      format: (val) => val.toLocaleString(),
-    },
-    {
-      name: "SUBTOT",
-      label: "SUBTOTAL",
-      sortable: true,
-      field: (row) =>
-        row.TQUODETA_PRC + row.TQUODETA_OPRPRC + row.TQUODETA_MOBDEMOB,
-      align: "left",
-      format: (val) => val.toLocaleString(),
-    },
+    
   ]);
   const dataHasil = ref([]);
   const tab = ref("items");
@@ -242,7 +135,11 @@
   const getData = async () => {
     loading.value = true;
     await api_web
-      .get(`${props.typeCD}/${btoa(props.cd)}`)
+      .post(`${props.typeCD}`, {
+        id: btoa(props.cd),
+        TPCHREQDETA_BRANCH: props.dataHeader.TPCHREQ_BRANCH,
+        conn: props.conn
+      })
       .then((response) => {
         loading.value = false;
         dataHasil.value = response.data;
@@ -261,8 +158,8 @@
     }).onOk(async (datas) => {
       loading.value = true;
         await api_web
-          .put(`approve/quotations/${btoa(props.cd)}`,{
-            TQUO_BRANCH: props.dataHeader.TQUO_BRANCH
+          .put(`approve/purchase-request/${btoa(props.cd)}`,{
+            TPCHREQ_BRANCH: props.dataHeader.TPCHREQ_BRANCH
           })
           .then((response) => {
             loading.value = false;
@@ -294,9 +191,9 @@
       }).onOk(async (datas) => {
         loading.value = true;
         await api_web
-          .put(`revise/quotations/${btoa(props.cd)}`,{
+          .put(`revise/purchase-request/${btoa(props.cd)}`,{
             remark: datas,
-            TQUO_BRANCH: props.dataHeader.TQUO_BRANCH
+            TPCHREQ_BRANCH: props.dataHeader.TPCHREQ_BRANCH
           })
           .then((response) => {
             loading.value = false;

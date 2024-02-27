@@ -5,7 +5,6 @@
     transition-show="slide-up"
     transition-hide="slide-down"
     full-width
-    persistent
   >
     <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
@@ -136,6 +135,7 @@
             icon="print"
             :disable="dataHasil.length === 0"
             @click="printQuot()"
+            flat
           />
           <q-btn
             color="primary"

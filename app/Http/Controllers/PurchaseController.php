@@ -313,6 +313,29 @@ class PurchaseController extends Controller
     }
     function loadByIdApproval(Request $request)
     {
+        // return ($this->dedicatedConnection);
+        $RS = T_PCHREQDETA::on($request->conn)->select([
+                "id", 
+                "TPCHREQDETA_ITMCD", 
+                "MITM_ITMNM", 
+                "TPCHREQDETA_ITMQT", 
+                "TPCHREQDETA_REQDT", 
+                "TPCHREQDETA_REMARK"
+            ])
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on("TPCHREQDETA_ITMCD", "=", "MITM_ITMNM")
+                    ->on('TPCHREQDETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->where('TPCHREQDETA_PCHCD', base64_decode($request->id))
+            ->where('TPCHREQDETA_BRANCH', $request->TPCHREQDETA_BRANCH)
+            ->whereNull('deleted_at')
+            ->get();
+
+        return ['dataItem' => $RS];
+    }
+
+    function loadByIdApprovalOld(Request $request)
+    {
         $RS = T_PCHREQDETA::on($this->dedicatedConnection)->select(["id", "TPCHREQDETA_ITMCD", "MITM_ITMNM", "TPCHREQDETA_ITMQT", "TPCHREQDETA_REQDT", "TPCHREQDETA_REMARK"])
             ->leftJoin("M_ITM", function ($join) {
                 $join->on("TPCHREQDETA_ITMCD", "=", "MITM_ITMCD")
@@ -337,6 +360,25 @@ class PurchaseController extends Controller
         return ['dataItem' => $RS];
     }
     function loadPOByIdApproval(Request $request)
+    {
+        $RS = T_PCHORDDETA::on($request->conn)->select([
+            "id", 
+            "TPCHORDDETA_ITMCD", 
+            "MITM_ITMNMREAL AS MITM_ITMNM", 
+            "TPCHORDDETA_ITMQT", 
+            "TPCHORDDETA_ITMPRC_PER"
+        ])
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on("TPCHORDDETA_ITMCD", "=", "MITM_ITMNM")
+                    ->on('TPCHORDDETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->where('TPCHORDDETA_PCHCD', base64_decode($request->id))
+            ->where('TPCHORDDETA_BRANCH', $request->TPCHORD_BRANCH)
+            ->whereNull('deleted_at')->get();
+        return ['dataItem' => $RS];
+    }
+
+    function loadPOByIdApprovalOld(Request $request)
     {
         $RS = T_PCHORDDETA::on($this->dedicatedConnection)->select(["id", "TPCHORDDETA_ITMCD", "MITM_ITMNM", "TPCHORDDETA_ITMQT", "TPCHORDDETA_ITMPRC_PER"])
             ->leftJoin("M_ITM", function ($join) {

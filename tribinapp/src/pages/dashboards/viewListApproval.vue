@@ -5,7 +5,6 @@
     transition-show="slide-up"
     transition-hide="slide-down"
     full-width
-    persistent
   >
     <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
@@ -85,11 +84,14 @@ import { date, useDialogPluginComponent, useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import viewListApprovalItemVue from './viewListApprovalItem.vue'
+import viewListPRItem from "./viewListPRItem.vue";
+import viewListPOItem from "./viewListPOItem.vue";
 
 const $q = useQuasar()
 const props = defineProps({
   listApprv: Array,
-  typeAPI: String
+  typeAPI: String,
+  conn: String
 });
 
 const columns = ref([
@@ -113,25 +115,46 @@ const onClickPreview = (data, dataHeader) => {
   let typeAPI = ''
   if (props.typeAPI == 'quot') {
     typeAPI = 'quotation'
+
+    $q.dialog({
+      component: viewListApprovalItemVue,
+      componentProps: {
+        dataHeader: dataHeader,
+        cd: data,
+        typeCD: typeAPI
+      },
+      // persistent: true,
+    }).onOk(async (val) => {
+    });
   } else if (props.typeAPI == 'pr') {
     typeAPI = 'purchase-request-approval'
+
+    $q.dialog({
+      component: viewListPRItem,
+      componentProps: {
+        dataHeader: dataHeader,
+        cd: data,
+        typeCD: typeAPI,
+        conn: props.conn
+      },
+      // persistent: true,
+    }).onOk(async (val) => {
+    });
   } else if (props.typeAPI == 'po') {
     typeAPI = 'purchase-order/approval-document'
+    $q.dialog({
+      component: viewListPOItem,
+      componentProps: {
+        dataHeader: dataHeader,
+        cd: data,
+        typeCD: typeAPI,
+        conn: props.conn
+      },
+      // persistent: true,
+    }).onOk(async (val) => {
+    });
   }
 
-
-  $q.dialog({
-    component: viewListApprovalItemVue,
-    componentProps: {
-      dataHeader: dataHeader,
-      cd: data,
-      typeCD: typeAPI
-    },
-    // persistent: true,
-  }).onOk(async (val) => {
-    quotationGroupConditions.value = val.MCONDITION_RPT_STAT;
-    quotationConditions.value = val.group;
-  });
 };
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =

@@ -325,6 +325,7 @@ Route::middleware('auth')->group(function () {
         Route::get('', [PurchaseController::class, 'searchPO']);
         Route::get('document/{id}', [PurchaseController::class, 'loadPOById']);
         Route::get('approval-document/{id}', [PurchaseController::class, 'loadPOByIdApproval']);
+        Route::post('approval-document', [PurchaseController::class, 'loadPOByIdApproval']);
         Route::put('items/{id}', [PurchaseController::class, 'updatePODetail']);
         Route::delete('items/{id}', [PurchaseController::class, 'updatePODetail']);
     });
@@ -370,6 +371,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('purchase-request-approval/{id}', [PurchaseController::class, 'loadByIdApproval']);
+    Route::post('purchase-request-approval', [PurchaseController::class, 'loadByIdApproval']);
 
     #Terkait Dasbor
     Route::get('dashboard-resource', [HomeController::class, 'supportDashboard']);

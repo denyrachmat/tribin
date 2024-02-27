@@ -243,7 +243,11 @@ onMounted(() => {
 const getData = async () => {
   loading.value = true;
   await api_web
-    .get(`${props.typeCD}/${btoa(props.cd)}`)
+    .post(`${props.typeCD}`, {
+      id: btoa(props.cd),
+      TQUO_BRANCH: props.dataHeader.TQUO_BRANCH,
+      conn: props.conn,
+    })
     .then((response) => {
       loading.value = false;
       dataHasil.value = response.data;

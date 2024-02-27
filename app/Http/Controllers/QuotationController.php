@@ -322,11 +322,11 @@ class QuotationController extends Controller
         return ['data' => $RS];
     }
 
-    function loadById(Request $request, $id)
+    function loadById(Request $request)
     {
-        $documentNumber = base64_decode($id);
+        $documentNumber = base64_decode($request->id);
 
-        $RS = T_QUODETA::on($this->dedicatedConnection)->select(["id", "TQUODETA_ITMCD", "MITM_ITMNMREAL as MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
+        $RS = T_QUODETA::on($request->conn)->select(["id", "TQUODETA_ITMCD", "MITM_ITMNMREAL as MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
             ->leftJoin("M_ITM_GRP", function ($join) {
                 $join->on("TQUODETA_ITMCD", "=", "MITM_ITMNM")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
@@ -335,17 +335,17 @@ class QuotationController extends Controller
             ->where('TQUODETA_BRANCH', Auth::user()->branch)
             ->whereNull('deleted_at')->get();
 
-        $Conditions = T_QUOCOND::on($this->dedicatedConnection)->select(["id", "TQUOCOND_CONDI"])
+        $Conditions = T_QUOCOND::on($request->conn)->select(["id", "TQUOCOND_CONDI"])
             ->where('TQUOCOND_QUOCD', $documentNumber)
             ->where('TQUOCOND_BRANCH', Auth::user()->branch)
             ->whereNull('deleted_at')->get();
 
-        $RSHeader = T_QUOHEAD::on($this->dedicatedConnection)->select('TQUO_TYPE', 'TQUO_SERVTRANS_COST')
+        $RSHeader = T_QUOHEAD::on($request->conn)->select('TQUO_TYPE', 'TQUO_SERVTRANS_COST')
             ->where('TQUO_QUOCD', $documentNumber)
             ->where('TQUO_BRANCH', Auth::user()->branch)
             ->get();
 
-        $Histories = ApprovalHistory::on($this->dedicatedConnection)
+        $Histories = ApprovalHistory::on($request->conn)
             ->where('code', $documentNumber)
             ->get();
 

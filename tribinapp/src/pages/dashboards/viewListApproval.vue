@@ -114,7 +114,7 @@ const getDateUntilNow = (dates, unit = 'days') => {
 const onClickPreview = (data, dataHeader) => {
   let typeAPI = ''
   if (props.typeAPI == 'quot') {
-    typeAPI = 'quotation'
+    typeAPI = 'quotation/quotation-approval'
 
     $q.dialog({
       component: viewListApprovalItemVue,

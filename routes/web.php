@@ -245,6 +245,7 @@ Route::middleware('auth')->group(function () {
         Route::post('search', [QuotationController::class, 'search']);
         Route::put('{id}', [QuotationController::class, 'update']);
         Route::get('{id}', [QuotationController::class, 'loadById']);
+        Route::post('quotation-approval', [QuotationController::class, 'loadById']);
         Route::delete('conditions/{id}', [QuotationController::class, 'deleteConditionById']);
         Route::delete('items/{id}', [QuotationController::class, 'deleteItemById']);
         Route::put('items/{id}', [QuotationController::class, 'updateItem']);

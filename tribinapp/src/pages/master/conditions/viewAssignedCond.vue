@@ -10,7 +10,7 @@
       <q-card-section>
         <div class="row">
           <div class="col text-h6">View Condition</div>
-          <div class="col">
+          <div class="col text-right">
             <q-btn
               label="Save Template"
               color="blue"
@@ -47,6 +47,8 @@ import { useQuasar, useDialogPluginComponent } from "quasar";
 const props = defineProps({
   listCond: Array,
 });
+
+const $q = useQuasar()
 
 const loading = ref(false)
 

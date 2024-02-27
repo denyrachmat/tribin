@@ -67,7 +67,9 @@ const onSaveGroup = () => {
   }).onOk(async (datas) => {
     let listValue = []
     props.listCond.map(valMap => {
-      listValue.push(valMap.MCONDITION_DESCRIPTION)
+      listValue.push({
+        id: valMap.id,
+        MCONDITION_DESCRIPTION: valMap.MCONDITION_DESCRIPTION})
     })
 
     await api

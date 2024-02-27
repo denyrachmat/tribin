@@ -70,7 +70,6 @@
               row-key="name"
               dense
               :loading="loading"
-              v-if="props.typeCD == 'quotation'"
             />
           </q-tab-panel>
 

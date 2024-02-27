@@ -121,7 +121,8 @@ const onClickPreview = (data, dataHeader) => {
       componentProps: {
         dataHeader: dataHeader,
         cd: data,
-        typeCD: typeAPI
+        typeCD: typeAPI,
+        conn: props.conn
       },
       // persistent: true,
     }).onOk(async (val) => {

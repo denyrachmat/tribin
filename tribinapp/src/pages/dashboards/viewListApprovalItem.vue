@@ -171,6 +171,7 @@ const props = defineProps({
   dataHeader: Array,
   cd: String,
   typeCD: String,
+  conn: String,
 });
 
 onMounted(() => {
@@ -310,6 +311,6 @@ const onReject = () => {
 };
 
 const printQuot = () => {
-  window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd), '_blank').focus();
+  window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd) + '/' + btoa(props.conn), '_blank').focus();
 };
 </script>

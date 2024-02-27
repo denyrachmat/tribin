@@ -958,9 +958,9 @@ class QuotationController extends Controller
     }
 
     // Add On from deny
-    function toPDF2(Request $request)
+    function toPDF2(Request $request, $conn = '')
     {
-        $RSCG = COMPANY_BRANCH::on($this->dedicatedConnection)->select('name', 'address', 'phone', 'fax', 'letter_head')
+        $RSCG = COMPANY_BRANCH::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('name', 'address', 'phone', 'fax', 'letter_head')
             ->where('connection', $this->dedicatedConnection)
             ->where('BRANCH', Auth::user()->branch)
             ->first();

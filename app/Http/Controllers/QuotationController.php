@@ -1467,7 +1467,7 @@ class QuotationController extends Controller
                     [
                         'det' => $dataDetail,
                         'condlist' => $condDetail,
-                        'cond' => $condDetail[0]['TQUOCOND_GROUP']
+                        'cond' => count($condDetail) > 0 ? $condDetail[0]['TQUOCOND_GROUP'] : ''
                     ]
                 )
             ];

@@ -327,7 +327,7 @@ class QuotationController extends Controller
         $documentNumber = base64_decode($id);
 
         $RS = T_QUODETA::on($this->dedicatedConnection)->select(["id", "TQUODETA_ITMCD", "MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
-            ->leftJoin("M_ITM", function ($join) {
+            ->leftJoin("M_ITM_GRP", function ($join) {
                 $join->on("TQUODETA_ITMCD", "=", "MITM_ITMCD")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
             })

@@ -43,6 +43,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
+import {api} from 'boot/axios'
 
 const props = defineProps({
   listCond: Array,

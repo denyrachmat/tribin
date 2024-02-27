@@ -31,10 +31,9 @@ class HomeController extends Controller
     }
     function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'dashboard']);
-
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         $Branches = M_BRANCH::select('MBRANCH_NM')->where('MBRANCH_CD', Auth::user()->branch)->first();
+        return view('tribinapp_layouts', ['routeApp' => 'dashboard', 'activeRoleDescription' => $activeRole['name'], 'BranchName' => $Branches ? $Branches->MBRANCH_NM : '-']);
         return view('home', ['activeRoleDescription' => $activeRole['name'], 'BranchName' => $Branches ? $Branches->MBRANCH_NM : '-']);
     }
 

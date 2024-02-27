@@ -199,7 +199,7 @@ const columnsItem = ref([
     field: "TQUODETA_PRC",
     sortable: true,
     align: "left",
-    format: (val) => val.toLocaleString(),
+    format: (val) => parseInt(val).toLocaleString(),
   },
   {
     name: "TQUODETA_OPRPRC",
@@ -207,7 +207,7 @@ const columnsItem = ref([
     field: "TQUODETA_OPRPRC",
     sortable: true,
     align: "left",
-    format: (val) => val.toLocaleString(),
+    format: (val) => parseInt(val).toLocaleString(),
   },
   {
     name: "TQUODETA_MOBDEMOB",
@@ -215,14 +215,14 @@ const columnsItem = ref([
     field: "TQUODETA_MOBDEMOB",
     sortable: true,
     align: "left",
-    format: (val) => val.toLocaleString(),
+    format: (val) => parseInt(val).toLocaleString(),
   },
   {
     name: "SUBTOT",
     label: "SUBTOTAL",
     sortable: true,
     field: (row) =>
-      row.TQUODETA_PRC + row.TQUODETA_OPRPRC + row.TQUODETA_MOBDEMOB,
+      parseInt(row.TQUODETA_PRC) + parseInt(row.TQUODETA_OPRPRC) + parseInt(row.TQUODETA_MOBDEMOB),
     align: "left",
     format: (val) => val.toLocaleString(),
   },

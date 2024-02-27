@@ -322,7 +322,40 @@ class QuotationController extends Controller
         return ['data' => $RS];
     }
 
-    function loadById(Request $request)
+    function loadById(Request $request, $id)
+    {
+        $documentNumber = base64_decode($id);
+
+        $RS = T_QUODETA::on($this->dedicatedConnection)->select(["id", "TQUODETA_ITMCD", "MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
+            ->leftJoin("M_ITM", function ($join) {
+                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMCD")
+                    ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->where('TQUODETA_QUOCD', $documentNumber)
+            ->where('TQUODETA_BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')->get();
+
+        $Conditions = T_QUOCOND::on($this->dedicatedConnection)->select(["id", "TQUOCOND_CONDI"])
+            ->where('TQUOCOND_QUOCD', $documentNumber)
+            ->where('TQUOCOND_BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')->get();
+
+        $RSHeader = T_QUOHEAD::on($this->dedicatedConnection)->select('TQUO_TYPE', 'TQUO_SERVTRANS_COST')
+            ->where('TQUO_QUOCD', $documentNumber)
+            ->where('TQUO_BRANCH', Auth::user()->branch)
+            ->get();
+
+        $Histories = ApprovalHistory::on($this->dedicatedConnection)
+            ->where('code', $documentNumber)
+            ->get();
+
+        return [
+            'dataItem' => $RS, 'dataCondition' => $Conditions,
+            'dataHeader' => $RSHeader, 'approvalHistories' => $Histories
+        ];
+    }
+
+    function loadByIdOld(Request $request)
     {
         $documentNumber = base64_decode($request->id);
 

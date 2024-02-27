@@ -961,12 +961,12 @@ class QuotationController extends Controller
     function toPDF2($id, $conn = '')
     {
         $RSCG = COMPANY_BRANCH::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('name', 'address', 'phone', 'fax', 'letter_head')
-            ->where('connection', $this->dedicatedConnection)
+            ->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
             ->where('BRANCH', Auth::user()->branch)
             ->first();
 
         $doc = base64_decode($id);
-        $RSHeader = T_QUOHEAD::on($this->dedicatedConnection)->select(
+        $RSHeader = T_QUOHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select(
             'MCUS_CUSNM',
             'TQUO_ATTN',
             'MCUS_TELNO',
@@ -990,7 +990,7 @@ class QuotationController extends Controller
         $TQUO_ISSUDT = $_ISSUDT[2] . '/' . $_ISSUDT[1] . '/' . $_ISSUDT[0];
         $TQUO_APPRVDT = $RSHeader->TQUO_APPRVDT;
 
-        $RSDetail = T_QUODETA::on($this->dedicatedConnection)->select(
+        $RSDetail = T_QUODETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select(
             'TQUODETA_ITMCD',
             // 'MITM_BRAND',
             // 'MITM_ITMCD',
@@ -1016,7 +1016,7 @@ class QuotationController extends Controller
 
         // return $RSDetail;
 
-        $RSCondition = T_QUOCOND::on($this->dedicatedConnection)->select('TQUOCOND_CONDI')
+        $RSCondition = T_QUOCOND::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TQUOCOND_CONDI')
             ->where('TQUOCOND_QUOCD', $doc)
             ->whereNull("deleted_at")
             ->where('TQUOCOND_BRANCH', Auth::user()->branch)
@@ -1172,7 +1172,7 @@ class QuotationController extends Controller
             $this->fpdf->SetXY(7, $y);
             $this->fpdf->MultiCell(0, 5, 'Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu. Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami ucapkan banyak terima kasih.', 0, 'J');
 
-            $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
+            $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
                 ->where('BRANCH', Auth::user()->branch)
                 ->whereNull('deleted_at')
                 ->get();

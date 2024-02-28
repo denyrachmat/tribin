@@ -121,6 +121,7 @@ import { useQuasar, date } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import serviceCreateOrder from "./serviceCreateOrder.vue";
+import { setInterval } from "timers";
 
 const $q = useQuasar();
 
@@ -152,9 +153,14 @@ const columns = ref([
   },
 ]);
 const loading = ref(false);
+const interval = ref(null)
 
 onMounted(() => {
   dataSrv();
+
+  interval.value = setInterval(() => {
+    dataSrv()
+  }, 10000)
 });
 
 const dataSrv = async () => {

@@ -95,7 +95,7 @@ const dataApi = ref({
   SRVH_DOCNO: "",
   SRVH_ISSDT: date.formatDate(Date.now(), "YYYY-MM-DD"),
   SRVH_CUSCD: "",
-  
+
 });
 const submitedItems = ref([]);
 
@@ -113,7 +113,7 @@ const onClickAddItem = (val, mode = 'add') => {
     component: serviceOprItemAdd,
     componentProps: {
         mode: mode,
-        dataItem: val
+        dataItem: submitedItems.value[val]
     },
     // persistent: true,
   }).onOk(async (res) => {

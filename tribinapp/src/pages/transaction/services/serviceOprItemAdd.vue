@@ -76,7 +76,7 @@
               />
             </q-item-section>
 
-            <q-item-section side>
+            <q-item-section side v-if="mode !== 'view'">
               <q-btn
                 icon="delete"
                 flat
@@ -122,10 +122,10 @@ const props = defineProps({
 });
 
 onMounted(() => {
-    if (props.dataItem.listFixDet) {
-        listItemsSel.value = props.dataItem.listFixDet
-    }
-})
+  if (props.dataItem.listFixDet) {
+    listItemsSel.value = props.dataItem.listFixDet;
+  }
+});
 
 const listItems = ref([]);
 const listItemsSel = ref([]);
@@ -163,14 +163,18 @@ const getItem = async (val) => {
 };
 
 const onSubmitData = () => {
-  q.dialog({
-    title: "Confirmation",
-    message: `Are you sure want to save this items ?`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
+  if (props.mode === "view") {
     onDialogOK(listItemsSel.value);
-  });
+  } else {
+    $q.dialog({
+      title: "Confirmation",
+      message: `Are you sure want to save this items ?`,
+      cancel: true,
+      persistent: true,
+    }).onOk(async () => {
+      onDialogOK(listItemsSel.value);
+    });
+  }
 };
 
 const onClickDeleteLine = (idx) => {

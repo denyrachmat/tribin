@@ -292,7 +292,7 @@ Route::middleware('auth')->group(function () {
 
     #Terkait laporan berupa Pdf
     Route::prefix('PDF')->group(function () {
-        Route::get('quotation/{id}/{conn}', [QuotationController::class, 'toPDF2']);
+        Route::get('quotation/{id}/{conn?}', [QuotationController::class, 'toPDF2']);
         Route::get('purchase-request/{id}', [PurchaseController::class, 'toPDF']);
         Route::get('purchase-order/{id}', [PurchaseController::class, 'POtoPDF']);
         Route::get('delivery-order/{id}', [DeliveryController::class, 'toPDF']);
@@ -382,7 +382,10 @@ Route::middleware('auth')->group(function () {
 
     #Terkait Service
     Route::resource('servicesAdmin', ServiceAdminController::class);
-    Route::post('servicesAdmin/search' ,[ServiceAdminController::class, 'search']);
+    Route::prefix('servicesAdmin')->group(function () {
+        Route::post('search' ,[ServiceAdminController::class, 'search']);
+        Route::get('print/{id}' ,[ServiceAdminController::class, 'printPDF']);
+    });
 });
 
 Route::get('tribinapp/{path?}', function(){

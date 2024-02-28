@@ -121,7 +121,6 @@ import { useQuasar, date } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import serviceCreateOrder from "./serviceCreateOrder.vue";
-import { setInterval } from "timers";
 
 const $q = useQuasar();
 

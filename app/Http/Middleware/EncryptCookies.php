@@ -4,14 +4,16 @@ namespace App\Http\Middleware;
 
 use Illuminate\Cookie\Middleware\EncryptCookies as Middleware;
 
-class EncryptCookies extends Middleware
-{
-    /**
-     * The names of the cookies that should not be encrypted.
+class EncryptCookies extends Middleware {
+   /**
+     * Decrypt the given cookie and return the value.
      *
-     * @var array<int, string>
+     * @param  string  $name
+     * @param  string|array  $cookie
+     * @return string|array
      */
-    protected $except = [
-        //
-    ];
+    protected function decryptCookie($name, $cookie)
+    {
+        return parent::decryptCookie($name, is_array($cookie) ? $cookie : urldecode($cookie));
+    }
 }

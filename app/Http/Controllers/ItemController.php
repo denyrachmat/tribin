@@ -24,6 +24,7 @@ class ItemController extends Controller
     {
         $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
     }
+
     public function index()
     {
         return view('master.item', [
@@ -33,6 +34,26 @@ class ItemController extends Controller
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
             'uoms' => M_UOM::on($this->dedicatedConnection)->whereNull('deleted_at')->where('MUOM_BRANCH', Auth::user()->branch)->get(),
         ]);
+    }
+
+    public function getItemForIndex()  {
+        return [
+            'coas' => M_COA::on($this->dedicatedConnection)->select('*')->get(),
+            'branches' => M_BRANCH::on($this->dedicatedConnection)->get(),
+            'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
+            'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
+            'uoms' => M_UOM::on($this->dedicatedConnection)->whereNull('deleted_at')->where('MUOM_BRANCH', Auth::user()->branch)->get(),
+        ];
+    }
+
+    public function getListCoas(Request $request) {
+        $data = M_COA::on($this->dedicatedConnection)->select('*');
+
+        if (!empty($request->search)) {
+            $data->where('MCOA_COANM', 'like', '%'.$request->search.'%');
+        }
+
+        return $data->get();
     }
 
     public function formReport()
@@ -76,7 +97,7 @@ class ItemController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        M_ITM::on($this->dedicatedConnection)->create([
+        $hasil = M_ITM::on($this->dedicatedConnection)->create([
             'MITM_ITMCD' => $request->MITM_ITMCD,
             'MITM_ITMNM' => $request->MITM_ITMNM,
             'MITM_STKUOM' => $request->MITM_STKUOM,
@@ -88,7 +109,7 @@ class ItemController extends Controller
             'MITM_COACD' => $request->MITM_COACD,
             'MITM_BRANCH' => Auth::user()->branch
         ]);
-        return ['msg' => 'OK'];
+        return ['msg' => 'OK', 'data' => $hasil];
     }
 
     function search(Request $request)

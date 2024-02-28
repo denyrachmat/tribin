@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccessRulesController;
 use App\Http\Controllers\ConditionController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\ServiceAdminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;

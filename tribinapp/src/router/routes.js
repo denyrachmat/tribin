@@ -8,7 +8,7 @@ const routes = [
       { path: 'condition', component: () => import('pages/master/conditions/conditionsMaster.vue') },
       { path: 'quotation', component: () => import('pages/transaction/sales/quotation/quotationView.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
-      { path: 'services', component: () => import('pages/services/serviceView.vue') },
+      { path: 'services', component: () => import('pages/transaction/services/serviceView.vue') },
     ]
   },
 

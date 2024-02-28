@@ -66,7 +66,7 @@
               </q-input>
             </div>
           </div>
-          <div class="row q-pt-md">
+          <div class="row">
             <div class="col">
               <q-select
                 dense

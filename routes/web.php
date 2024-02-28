@@ -23,6 +23,7 @@ use App\Http\Controllers\ReceiveOrderController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UsageController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ServiceAdminController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
 
@@ -156,6 +157,8 @@ Route::middleware('auth')->group(function () {
     # Terkait Item Master
     Route::prefix('item')->group(function () {
         Route::get('form', [ItemController::class, 'index']);
+        Route::get('formAPI', [ItemController::class, 'getItemForIndex']);
+        Route::post('getListCoasAPI', [ItemController::class, 'getListCoas']);
         Route::post('import', [ItemController::class, 'importFromAnotherCompany']);
         Route::get('', [ItemController::class, 'search']);
         Route::post('', [ItemController::class, 'simpan']);
@@ -376,6 +379,10 @@ Route::middleware('auth')->group(function () {
 
     #Terkait Dasbor
     Route::get('dashboard-resource', [HomeController::class, 'supportDashboard']);
+
+    #Terkait Service
+    Route::resource('servicesAdmin', ServiceAdminController::class);
+    Route::post('servicesAdmin/search' ,[ServiceAdminController::class, 'search']);
 });
 
 Route::get('tribinapp/{path?}', function(){

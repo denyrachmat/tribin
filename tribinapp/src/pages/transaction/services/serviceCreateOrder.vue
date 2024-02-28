@@ -146,10 +146,15 @@
                   </q-item-label>
                 </q-item-section>
                 <q-item-section>
-                  <q-input label="Qty" filled dense v-model="items.TSRVD_QTY"/>
+                  <q-input label="Qty" filled dense v-model="items.TSRVD_QTY" />
                 </q-item-section>
                 <q-item-section>
-                  <q-input label="Problem" filled dense v-model="items.TSRVD_CUSTRMK"/>
+                  <q-input
+                    label="Problem"
+                    filled
+                    dense
+                    v-model="items.TSRVD_CUSTRMK"
+                  />
                 </q-item-section>
                 <q-item-section side>
                   <q-btn
@@ -188,16 +193,23 @@
           label="OK"
           color="primary"
           @click="onSubmitData()"
-          :disable="stateSubmit"
+          :disable="loading"
+          :loading="loading"
         />
-        <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
+        <q-btn
+          flat
+          label="Cancel"
+          color="red"
+          @click="onDialogCancel"
+          :loading="loading"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 <script setup>
 import { api, api_web } from "boot/axios";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
 import itemCreate from "src/pages/master/items/itemCreate.vue";
@@ -207,16 +219,29 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const $q = useQuasar();
 
+const props = defineProps({
+  header: Array,
+  detail: Array,
+});
+
+onMounted(async () => {
+  if (props.header) {
+    await getCustomer()
+    await getItem()
+    dataApi.value = props.header;
+    submitedItems.value = props.detail
+  }
+});
+
 const dataApi = ref({
   SRVH_DOCNO: "",
-  SRVH_ISSDT: date.formatDate(Date.now(), 'YYYY-MM-DD'),
+  SRVH_ISSDT: date.formatDate(Date.now(), "YYYY-MM-DD"),
   SRVH_CUSCD: "",
 });
 const listItems = ref([]);
 const listCustomers = ref([]);
 const submitedItems = ref([]);
 const loading = ref(false);
-
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "cust") {
@@ -264,7 +289,7 @@ const addItemLine = () => {
     TSRVD_ITMCD: "",
     TSRVD_LINE: submitedItems.value.length + 1,
     TSRVD_QTY: 1,
-    TSRVD_CUSTRMK: ""
+    TSRVD_CUSTRMK: "",
   });
 };
 
@@ -299,12 +324,16 @@ const onSubmitData = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    await api_web.post('servicesAdmin', {
-      header: dataApi.value,
-      detail: submitedItems.value
-    }).then((val) => {
-      onDialogOK()
-    })
-  })
-}
+    loading.value = true;
+    await api_web
+      .post("servicesAdmin", {
+        header: dataApi.value,
+        detail: submitedItems.value,
+      })
+      .then((val) => {
+        loading.value = false;
+        onDialogOK();
+      });
+  });
+};
 </script>

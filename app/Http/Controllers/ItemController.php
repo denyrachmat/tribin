@@ -149,6 +149,27 @@ class ItemController extends Controller
 
         return ['data' => $RS];
     }
+    function searchAPITBL(Request $request)
+    {
+        $columnMap = [
+            'MITM_ITMCD',
+            DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')') MITM_ITMNM"),
+            'MITM_SPEC',
+        ];
+
+
+        $DataSet = DB::connection($this->dedicatedConnection);
+        $RSHead = $DataSet->table('M_ITM')->select($columnMap)
+            ->where('MITM_BRANCH', Auth::user()->branch);
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSHead)->where(DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')')"), 'like', '%' . $request->searchValue . '%')->get();
+        } else {
+            $RS = (clone $RSHead)->take(20)->get();
+        }
+
+        return ['data' => $RS];
+    }
 
     function update(Request $request)
     {

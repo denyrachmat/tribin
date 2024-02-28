@@ -20,6 +20,7 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReceiveController;
 use App\Http\Controllers\ReceiveOrderController;
+use App\Http\Controllers\ServiceOprController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UsageController;
 use App\Http\Controllers\UserController;
@@ -164,6 +165,7 @@ Route::middleware('auth')->group(function () {
         Route::post('', [ItemController::class, 'simpan']);
         Route::put('{id}', [ItemController::class, 'update']);
         Route::post('searchAPI', [ItemController::class, 'searchAPI']);
+        Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
     });
 
     # Terkait Customer Master
@@ -385,6 +387,11 @@ Route::middleware('auth')->group(function () {
     Route::prefix('servicesAdmin')->group(function () {
         Route::post('search' ,[ServiceAdminController::class, 'search']);
         Route::get('print/{id}' ,[ServiceAdminController::class, 'printPDF']);
+    });
+
+    Route::resource('servicesOPR', ServiceOprController::class);
+    Route::prefix('servicesOPR')->group(function () {
+        Route::post('search' ,[ServiceOprController::class, 'search']);
     });
 });
 

@@ -76,19 +76,36 @@
                   flat
                   color="orange"
                   icon="edit"
-                  @click="onClickEdit(props.row.TQUO_QUOCD)"
+                  @click="onClickEdit(props.row)"
                   dense
+                  :disable="
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                      .length > 0
+                  "
                 >
-                  <q-tooltip>Edit this quotation</q-tooltip>
+                  <q-tooltip>Edit this Order</q-tooltip>
                 </q-btn>
-                <q-btn
+                <!-- <q-btn
                   flat
                   color="indigo"
                   icon="print"
-                  @click="onClickPrint(props.row.TQUO_QUOCD)"
+                  @click="onClickPrint(props.row.SRVH_DOCNO)"
                   dense
                 >
                   <q-tooltip>Print this order</q-tooltip>
+                </q-btn> -->
+                <q-btn
+                  flat
+                  color="red"
+                  icon="delete"
+                  @click="onClickDelete(props.row.SRVH_DOCNO)"
+                  dense
+                  :disable="
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                      .length > 0
+                  "
+                >
+                  <q-tooltip>Delete this Order</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
@@ -100,7 +117,7 @@
 </template>
 <script setup>
 import { onMounted, ref } from "vue";
-import { useQuasar } from "quasar";
+import { useQuasar, date } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import serviceCreateOrder from "./serviceCreateOrder.vue";
@@ -119,9 +136,9 @@ const columns = ref([
     align: "left",
   },
   {
-    name: "SRVH_CUSCD",
+    name: "MCUS_CUSNM",
     label: "Cust",
-    field: "SRVH_CUSCD",
+    field: "MCUS_CUSNM",
     sortable: true,
     align: "left",
   },
@@ -131,6 +148,7 @@ const columns = ref([
     field: "created_at",
     sortable: true,
     align: "left",
+    format: (val) => date.formatDate(new Date(val), "DD MMM YYYY"),
   },
 ]);
 const loading = ref(false);
@@ -142,7 +160,7 @@ onMounted(() => {
 const dataSrv = async () => {
   loading.value = true;
   await api_web
-    .post("service/search", {
+    .post("servicesAdmin/search", {
       searchBy: filterCol.value,
       searchValue: filter.value,
     })
@@ -171,6 +189,35 @@ const onClickPrint = (val) => {
   window
     .open(process.env.API_WEB + "PDF/quotation/" + btoa(val), "_blank")
     .focus();
+};
+
+const onClickEdit = (val) => {
+  const header = {
+    SRVH_DOCNO: val.SRVH_DOCNO,
+    SRVH_ISSDT: date.formatDate(val.SRVH_ISSDT, "YYYY-MM-DD"),
+    SRVH_CUSCD: val.MCUS_CUSCD,
+  };
+
+  let detail = [];
+  val.detail.map((valMap) => {
+    detail.push({
+      TSRVD_ITMCD: valMap.TSRVD_ITMCD,
+      TSRVD_LINE: valMap.TSRVD_LINE,
+      TSRVD_QTY: valMap.TSRVD_QTY,
+      TSRVD_CUSTRMK: valMap.TSRVD_CUSTRMK,
+    });
+  });
+
+  $q.dialog({
+    component: serviceCreateOrder,
+    componentProps: {
+      header: header,
+      detail: detail,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataSrv();
+  });
 };
 </script>
 <style lang="sass">

@@ -9,6 +9,7 @@ const routes = [
       { path: 'quotation', component: () => import('pages/transaction/sales/quotation/quotationView.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
       { path: 'services', component: () => import('pages/transaction/services/serviceView.vue') },
+      { path: 'servicesOrderList', component: () => import('pages/transaction/services/serviceOprView.vue') },
     ]
   },
 

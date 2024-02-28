@@ -16,6 +16,7 @@ class T_SRV_DET extends Model
         'TSRVD_LINE',
         'TSRVD_FLGSTS',
         'TSRVD_REMARK',
+        'TSRVD_CUSTRMK',
         'TSRVD_QTY',
         'created_by',
     ];

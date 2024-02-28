@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
@@ -51,8 +52,8 @@ class ServiceAdminController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $cekHariIni = T_SRV_HEAD::on($this->dedicatedConnection)->whereBetween('created_at', [date('yyyy-mm-dd 00:00:00'), date('yyyy-mm-dd 23:59:59')])->first();
-        $IDSPK = 'JAT/SRV/' . date('y/m/d') . '/' . (empty($cekHariIni) ? '0001' : sprintf('%04d', (int) substr($cekHariIni->ID_TRANS, -3) + 1));
+        $cekHariIni = T_SRV_HEAD::on($this->dedicatedConnection)->whereBetween('created_at', [date('y-m-d 00:00:00'), date('y-m-d 23:59:59')])->first();
+        $IDSPK = 'JAT/SRV/' . date('y/m/d') . '/' . (empty($cekHariIni) ? '0001' : sprintf('%04d', (int) substr($cekHariIni->SRVH_DOCNO, -3) + 1));
 
         $headerStore = T_SRV_HEAD::on($this->dedicatedConnection)->updateOrCreate([
             'SRVH_DOCNO' => $IDSPK
@@ -67,6 +68,8 @@ class ServiceAdminController extends Controller
         $det = [];
         foreach ($request->detail as $key => $value) {
             $det[] = T_SRV_DET::on($this->dedicatedConnection)->updateOrCreate([
+                'TSRVH_ID' => $headerStore->id,
+            ],[
                 'TSRVH_ID' => $headerStore->id,
                 'TSRVD_ITMCD' => $value['TSRVD_ITMCD'],
                 'TSRVD_LINE' => $value['TSRVD_LINE'],
@@ -112,7 +115,16 @@ class ServiceAdminController extends Controller
     }
 
     public function search(Request $request){
-        $RSTemp = T_SRV_HEAD::on($this->dedicatedConnection);
+        $RSTemp = T_SRV_HEAD::on($this->dedicatedConnection)
+        ->select(
+            'T_SRV_HEAD.id',
+            'T_SRV_HEAD.SRVH_DOCNO',
+            'T_SRV_HEAD.SRVH_ISSDT',
+            'MCUS_CUSNM',
+            'MCUS_CUSCD',
+            'T_SRV_HEAD.created_at',
+        )
+        ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD');
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
@@ -121,10 +133,27 @@ class ServiceAdminController extends Controller
 
         $hasil = [];
         foreach ($head as $key => $value) {
-            $getDet = T_SRV_DET::where('TSRVH_ID', $value['id'])->get()->toArray();
-            $hasil[] = array_merge($value, ['detail' => $getDet]);
+            $getDet = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->get()->toArray();
+            $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 0)->get()->toArray();
+            $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 1)->get()->toArray();
+            $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
         }
 
         return ['msg' => 'Data Fetched', 'data' => $hasil];
+    }
+
+    public function printPDF($id) {
+        $data = $this->search(new Request([
+            'searchBy' => 'SRVH_DOCNO',
+            'searchValue' => base64_decode($id)
+        ]));
+
+        $pdf = Pdf::loadView('pdf.spkservice', [
+            'data' => $data['data'],
+            'header' => 'JAYA ABADI TEKNIK',
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
+        ]);
+        return $pdf->stream('invoice.pdf');
     }
 }

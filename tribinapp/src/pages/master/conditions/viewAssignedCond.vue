@@ -66,6 +66,7 @@ const onSaveGroup = () => {
     persistent: true,
   }).onOk(async (datas) => {
     let listValue = []
+    console.log(props.listCond)
     props.listCond.map(valMap => {
       listValue.push({
         id: valMap.id,

@@ -57,7 +57,8 @@ class ConditionController extends Controller
         foreach ($group as $key => $value) {
             $data[] = [
                 'MCONDITION_RPT_STAT' => $value,
-                'group' => M_Condition::on($this->dedicatedConnection)->where('MCONDITION_RPT_STAT', $value)->get()
+                'group' => M_Condition::on($this->dedicatedConnection)->where('MCONDITION_RPT_STAT', $value)
+                ->orderBy('MCONDITION_ORDER_NUMBER')->get()
             ];
         }
 

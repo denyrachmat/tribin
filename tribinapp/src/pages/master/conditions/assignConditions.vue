@@ -42,6 +42,9 @@
               >
                 <q-tooltip>Save Conditions</q-tooltip>
               </q-btn>
+              <q-btn outline color="blue" icon="add" @click="onAddCondition()">
+                <q-tooltip>Add more conditions</q-tooltip>
+              </q-btn>
               <q-btn
                 outline
                 color="red"
@@ -94,10 +97,10 @@
 
                 <q-item-section side>
                   <q-btn
-                    name="delete"
+                    icon="delete"
                     color="red"
-                    flat
-                    @click="onDeleteCondition(idx)"
+                    outline
+                    @click="onDeleteCondition(cond.id)"
                   />
                 </q-item-section>
               </q-item>
@@ -111,9 +114,10 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useQuasar, useDialogPluginComponent, QSpinnerFacebook } from "quasar";
-import { api } from "boot/axios";
+import { api, api_web } from "boot/axios";
 
 import assignConditionsView from "./assignConditionsView.vue";
+import positionAssignCondition from "./positionAssignCondition.vue";
 
 const columns = ref([
   {
@@ -176,7 +180,7 @@ const deleteData = () => {
     await api
       .delete(`/master/conditions/deleteDataGroup/${btoa(groupName.value)}`)
       .then((response) => {
-        $q.loading.hide()
+        $q.loading.hide();
         newData();
       });
   });
@@ -199,9 +203,6 @@ const getData = async () => {
 const onOpenCondition = () => {
   $q.dialog({
     component: assignConditionsView,
-    // componentProps: {
-    //   datas: data.data,
-    // },
     // persistent: true,
   }).onOk(async (val) => {
     groupName.value = val.MCONDITION_RPT_STAT;
@@ -212,30 +213,82 @@ const onOpenCondition = () => {
 
 const onOKClick = () => {
   $q.dialog({
+    component: positionAssignCondition,
+    componentProps: {
+      groups: groupName.value,
+      listCond: rows.value.filter(fil => selected.value.includes(fil.id)),
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    newData();
+  });
+};
+
+const onAddCondition = () => {
+  $q.dialog({
+    title: "Add Conditions",
+    message: "Input conditions",
+    prompt: {
+      model: "",
+      isValid: (val) => val.length > 2, // << here is the magic
+      type: "text", // optional
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk(async (datas) => {
+    // console.log('>>>> OK, received', data)
+    await api_web
+      .post("condition", {
+        MCONDITION_DESCRIPTION: datas,
+        MCONDITION_ORDER_NUMBER: null,
+      })
+      .then(async (response) => {
+        newData();
+        await getData();
+      });
+  });
+};
+
+const onDeleteCondition = (id) => {
+  $q.dialog({
     title: "Confirmation",
-    message: `Do you want to save this group ?`,
+    message: `Are you sure want to delete this data ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    $q.loading.show({
-      spinner: QSpinnerFacebook,
-      spinnerColor: "yellow",
-      spinnerSize: 140,
-      backgroundColor: "purple",
-      message: "Save your information, Hang on...",
-      messageColor: "black",
+    await api_web.delete(`condition/${btoa(id)}`).then(async (response) => {
+      newData();
+      await getData();
     });
-    await api
-      .post(`/master/conditions/assignGroup`, {
-        data: selected.value,
-        MCONDITION_RPT_STAT: groupName.value,
-      })
-      .then((response) => {
-        $q.loading.hide()
-        newData();
-      }).catch((e) => {
-        $q.loading.hide()
-      });
+  });
+};
+
+const saveData = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to save this data ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    if (id.value) {
+      await api_web
+        .put(`condition/${btoa(id.value)}`, {
+          MCONDITION_DESCRIPTION: MCONDITION_DESCRIPTION.value,
+          MCONDITION_ORDER_NUMBER: null,
+        })
+        .then((response) => {
+          newData();
+        });
+    } else {
+      await api_web
+        .post("condition", {
+          MCONDITION_DESCRIPTION: MCONDITION_DESCRIPTION.value,
+          MCONDITION_ORDER_NUMBER: null,
+        })
+        .then((response) => {
+          newData();
+        });
+    }
   });
 };
 </script>

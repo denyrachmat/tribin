@@ -193,10 +193,10 @@ const onClickPreview = (val, mode) => {
 };
 
 const statusMaker = (val) => {
-  const statusZero = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 0);
-  const statusOne = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 1);
-  const statusTwo = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 2);
-  const statusThree = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 3);
+  const statusZero = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 0);
+  const statusOne = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 1);
+  const statusTwo = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 2);
+  const statusThree = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 3);
 
   if (statusZero.length == val.detail.length) {
     return {

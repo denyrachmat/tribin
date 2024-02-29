@@ -69,7 +69,16 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.value }}
+                <q-chip
+                  clickable
+                  :color="col.value.color"
+                  text-color="white"
+                  :icon="col.value.icon"
+                  v-if="col.name === 'STAT'"
+                >
+                  {{ col.value.label }}
+                </q-chip>
+                <span v-else> {{ col.value }}</span>
               </q-td>
               <q-td auto-width>
                 <q-btn
@@ -78,9 +87,9 @@
                   icon="edit"
                   @click="onClickEdit(props.row)"
                   dense
-                  :disable="
+                  v-if="
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
-                      .length > 0
+                      .length === 0
                   "
                 >
                   <q-tooltip>Edit this Order</q-tooltip>
@@ -91,9 +100,9 @@
                   icon="print"
                   @click="onClickPrint(props.row.SRVH_DOCNO)"
                   dense
-                  :disable="
+                  v-if="
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
-                      .length !== props.row.detail.length
+                      .length === props.row.detail.length
                   "
                 >
                   <q-tooltip>Print this order</q-tooltip>
@@ -104,9 +113,9 @@
                   icon="delete"
                   @click="onClickDelete(props.row.SRVH_DOCNO)"
                   dense
-                  :disable="
+                  v-if="
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
-                      .length > 0
+                      .length === 0
                   "
                 >
                   <q-tooltip>
@@ -124,9 +133,9 @@
                   icon="visibility"
                   @click="onClickView(props.row)"
                   dense
-                  :disable="
+                  v-if="
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
-                      .length === 0
+                      .length > 0
                   "
                 >
                   <q-tooltip>View this Order</q-tooltip>
@@ -137,18 +146,16 @@
                   icon="check"
                   @click="onClickProceed(props.row.SRVH_DOCNO)"
                   dense
-                  :disable="
+                  v-if="
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS === 1)
-                      .length === 0 ||
-                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS >= 2)
-                      .length > 0
+                      .length === props.row.detail.length
                   "
                 >
                   <q-tooltip>{{
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
                       .length !== props.row.detail.length
                       ? "Please wait until all item checked"
-                      : "Proceed to service"
+                      : "Proceed all item to service"
                   }}</q-tooltip>
                 </q-btn>
               </q-td>
@@ -188,14 +195,9 @@ const columns = ref([
     align: "left",
   },
   {
-    name: "MCUS_CUSNM",
+    name: "STAT",
     label: "Status",
-    field: row => row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length === 0
-      ? 'On Draft'
-      : (row.detail.filter(fil => fil.TSRVD_FLGSTS === 2).length > 0
-        ? 'On Working'
-        : 'On Check Price'
-      ),
+    field: (row) => statusMaker(row),
     sortable: true,
     align: "left",
   },
@@ -257,6 +259,7 @@ const onClickView = (val) => {
   let detail = [];
   val.detail.map((valMap) => {
     detail.push({
+      id: valMap.id,
       TSRVD_ITMCD: valMap.TSRVD_ITMCD,
       TSRVD_LINE: valMap.TSRVD_LINE,
       TSRVD_QTY: valMap.TSRVD_QTY,
@@ -272,13 +275,14 @@ const onClickView = (val) => {
     componentProps: {
       header: header,
       detail: detail,
-      mode: "view",
+      mode: val.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length === val.detail.length ? "approvecust" : "view",
     },
     // persistent: true,
   }).onOk(async (val) => {
     dataSrv();
   });
 };
+
 const onClickPrint = (val) => {
   window
     .open(
@@ -287,6 +291,7 @@ const onClickPrint = (val) => {
     )
     .focus();
 };
+
 const onClickEdit = (val) => {
   const header = {
     SRVH_DOCNO: val.SRVH_DOCNO,
@@ -315,6 +320,7 @@ const onClickEdit = (val) => {
     dataSrv();
   });
 };
+
 const onClickProceed = (val) => {
   $q.dialog({
     title: "Confirmation",
@@ -335,6 +341,7 @@ const onClickProceed = (val) => {
       });
   });
 };
+
 const onClickDelete = (val) => {
   $q.dialog({
     title: "Confirmation",
@@ -352,6 +359,45 @@ const onClickDelete = (val) => {
         loading.value = false;
       });
   });
+};
+
+const statusMaker = (val) => {
+  const statusZero = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 0);
+  const statusOne = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 1);
+  const statusTwo = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 2);
+  const statusThree = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 3);
+
+  if (statusZero.length == val.detail.length) {
+    return {
+      color: 'warning',
+      label: 'On Draft',
+      icon: 'edit'
+    };
+  } else if (statusOne.length > 0 && statusOne.length < val.detail.length) {
+    return {
+      color: 'green',
+      label: 'On Checking Price',
+      icon: 'payments'
+    };
+  } else if (statusOne.length > 0 && statusOne.length == val.detail.length) {
+    return {
+      color: 'primary',
+      label: 'Checking Price Done, Waiting Cust Confirmation',
+      icon: 'price_check'
+    };
+  } else if (statusTwo.length > 0 && statusTwo.length >= val.detail.length) {
+    return {
+      color: 'green',
+      label: 'On progress Fix by Technician',
+      icon: 'engineering'
+    };
+  } else if (statusThree.length > 0 && statusThree.length === val.detail.length) {
+    return {
+      color: 'primary',
+      label: 'Fix has been done',
+      icon: 'fact_check'
+    };
+  }
 };
 </script>
 <style lang="sass">

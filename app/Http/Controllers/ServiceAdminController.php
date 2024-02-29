@@ -113,6 +113,14 @@ class ServiceAdminController extends Controller
         return ['msg' => 'Data has been updated'];
     }
 
+    public function updateByDet(Request $request, string $id)
+    {
+        T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))
+        ->update($request->all());
+
+        return ['msg' => 'Data has been updated'];
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -165,7 +173,7 @@ class ServiceAdminController extends Controller
             $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
         }
 
-        return ['msg' => 'Data Fetched', 'data' => $hasil];
+        return ['data' => $hasil];
     }
 
     function numberToSentence($nilai)

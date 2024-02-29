@@ -19,7 +19,10 @@
             :class="`q-my-sm`"
           >
             <q-item-section avatar>
-              <q-avatar :color="items.TSRVD_FLGSTS === 0 ? 'red' : 'primary'" text-color="white">
+              <q-avatar
+                :color="items.TSRVD_FLGSTS === 0 ? 'red' : 'primary'"
+                text-color="white"
+              >
                 {{ items.TSRVD_LINE }}
               </q-avatar>
             </q-item-section>
@@ -151,7 +154,7 @@
               <q-item-label caption lines="1">Operator Remarks</q-item-label>
             </q-item-section>
 
-            <q-item-section side v-if="props.mode === 'edit'">
+            <q-item-section side v-if="props.mode === 'edit' && items.TSRVD_FLGSTS < 2">
               <q-btn
                 icon="construction"
                 color="green"
@@ -170,13 +173,32 @@
                 :disable="!items.listFixDet"
               >
                 <q-tooltip>View Added Item</q-tooltip>
-                <q-badge color="red" floating v-if="items.listFixDet.length > 0">{{
-                  items.listFixDet.length
-                }}</q-badge>
+                <q-badge
+                  color="red"
+                  floating
+                  v-if="items.listFixDet.length > 0"
+                  >{{ items.listFixDet.length }}</q-badge
+                >
               </q-btn>
             </q-item-section>
-            <q-item-section side v-if="props.mode === 'approve'">
-              <q-btn icon="task" color="indigo" flat @click="onClickDone(idx)">
+            <q-item-section side v-if="props.mode === 'approvecust'">
+              <q-btn
+                icon="how_to_reg"
+                color="green"
+                outline
+                @click="onClickApprove(idx)"
+              >
+                <q-tooltip>Approve this as customer</q-tooltip>
+              </q-btn>
+            </q-item-section>
+            <q-item-section side v-if="props.mode === 'approvecust'">
+              <q-btn icon="cancel" color="red" 
+                outline @click="onClickReject(idx)">
+                <q-tooltip>Reject this as customer</q-tooltip>
+              </q-btn>
+            </q-item-section>
+            <q-item-section side v-if="props.mode === 'edit' && items.TSRVD_FLGSTS === 2">
+              <q-btn icon="task" color="indigo" outline @click="onClickDone(idx)">
                 <q-tooltip>Mark this problem as done</q-tooltip>
               </q-btn>
             </q-item-section>
@@ -257,7 +279,7 @@ const onClickAddItem = (val, mode = "add") => {
 };
 
 const onSubmitData = () => {
-  if (props.mode === "view") {
+  if (props.mode !== "edit") {
     onDialogOK();
   } else {
     $q.dialog({
@@ -279,6 +301,52 @@ const onSubmitData = () => {
   }
 };
 
+const onClickApprove = (idx) => {
+    console.log(submitedItems.value[idx])
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to approve this price ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .put(`servicesAdmin/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
+        TSRVD_FLGSTS: 2,
+      })
+      .then((response) => {
+        loading.value = false;
+        onDialogOK();
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
+
+
+const onClickReject = (idx) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to reject this price ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .put(`servicesAdmin/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
+        TSRVD_FLGSTS: 0,
+      })
+      .then((response) => {
+        loading.value = false;
+        onDialogOK();
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
+
 const onClickDone = (idx) => {
   $q.dialog({
     title: "Confirmation",
@@ -288,11 +356,12 @@ const onClickDone = (idx) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .put(`servicesAdmin/${btoa(val.SRVH_DOCNO)}`, {
+      .put(`servicesAdmin/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
         TSRVD_FLGSTS: 3,
       })
       .then((response) => {
         loading.value = false;
+        onDialogOK();
       })
       .catch((e) => {
         loading.value = false;

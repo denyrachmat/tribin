@@ -386,6 +386,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('servicesAdmin', ServiceAdminController::class);
     Route::prefix('servicesAdmin')->group(function () {
         Route::post('search' ,[ServiceAdminController::class, 'search']);
+        Route::put('updateByDet/{id}' ,[ServiceAdminController::class, 'updateByDet']);
         Route::get('printInvoice/{id}' ,[ServiceAdminController::class, 'printInvoicePDF']);
     });
 

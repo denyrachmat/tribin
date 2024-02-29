@@ -35,15 +35,12 @@
             <div class="q-pa-xs col-xs-12 col-sm-6 col-md-4">
               <q-card flat bordered>
                 <q-card-section
-                  :class="`text-center ${
-                    props.row.resolve.length == props.row.detail.length
-                      ? 'bg-indigo '
-                      : 'bg-secondary '
-                  }text-white`"
+                  :class="`text-center bg-${statusMaker(props.row).color} text-white`"
                 >
                   <div class="text-h5 text-bold">
                     {{ props.row.SRVH_DOCNO }}
                   </div>
+                  <div>{{ statusMaker(props.row).label }}</div>
                 </q-card-section>
                 <q-separator />
                 <q-card-section>
@@ -63,7 +60,7 @@
                   <div class="row">
                     <div class="col">
                       <q-btn
-                        label="Resolve"
+                        :label="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length ? 'Waiting Cust Approval' : 'Resolve'"
                         color="primary"
                         outline
                         @click="
@@ -74,6 +71,7 @@
                               : 'edit'
                           )
                         "
+                        :disable="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length"
                       />
                     </div>
                     <div class="col text-right"></div>
@@ -192,5 +190,44 @@ const onClickPreview = (val, mode) => {
   }).onOk(async (val) => {
     dataSrv();
   });
+};
+
+const statusMaker = (val) => {
+  const statusZero = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 0);
+  const statusOne = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 1);
+  const statusTwo = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 2);
+  const statusThree = val.detail.filter((fil) => fil.TSRVD_FLGSTS === 3);
+
+  if (statusZero.length == val.detail.length) {
+    return {
+      color: 'red',
+      label: 'No Price Added yet !',
+      icon: 'edit'
+    };
+  } else if (statusOne.length > 0 && statusOne.length < val.detail.length) {
+    return {
+      color: 'warning',
+      label: 'Please Add item & price',
+      icon: 'payments'
+    };
+  } else if (statusOne.length > 0 && statusOne.length == val.detail.length) {
+    return {
+      color: 'green',
+      label: 'Added Price Done, Waiting Cust. Confirmation',
+      icon: 'price_check'
+    };
+  } else if (statusTwo.length > 0 && statusTwo.length >= val.detail.length) {
+    return {
+      color: 'cyan',
+      label: 'Cust. has been approved, continue to fix.',
+      icon: 'engineering'
+    };
+  } else if (statusThree.length > 0 && statusThree.length === val.detail.length) {
+    return {
+      color: 'primary',
+      label: 'Fix has been done',
+      icon: 'fact_check'
+    };
+  }
 };
 </script>

@@ -82,10 +82,12 @@ api.interceptors.response.use(function (response) {
 api_web.interceptors.response.use(function (response) {
   // Any status code that lie within the range of 2xx cause this function to trigger
   // Do something with response data
-  Notify.create({
-    color: "green",
-    message: response.data.message ? response.data.message : response.data.msg,
-  });
+  if (response.data.message || response.data.msg) {
+    Notify.create({
+      color: "green",
+      message: response.data.message ? response.data.message : response.data.msg,
+    });
+  }
 
   return response;
 }, function (e) {

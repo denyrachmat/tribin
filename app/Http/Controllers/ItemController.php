@@ -165,7 +165,7 @@ class ItemController extends Controller
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)->where(DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')')"), 'like', '%' . $request->searchValue . '%')->get();
         } else {
-            $RS = (clone $RSHead)->take(20)->get();
+            $RS = (clone $RSHead)->get();
         }
 
         return ['data' => $RS];

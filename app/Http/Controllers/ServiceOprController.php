@@ -111,10 +111,8 @@ class ServiceOprController extends Controller
         ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
         ->where(DB::raw('(
             SELECT COUNT(*) FROM T_SRV_DET WHERE TSRVH_ID = T_SRV_HEAD.id
-        )'), '>=', DB::raw('(
-            SELECT COUNT(*) FROM T_SRV_DET WHERE TSRVH_ID = T_SRV_HEAD.id
-            AND TSRVD_FLGSTS <> 0
-        )'));
+            and TSRVD_FLGSTS = 3
+        )'), '=', 0);
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
@@ -127,13 +125,21 @@ class ServiceOprController extends Controller
             ->with(['listFixDet' => function($j) {
                 $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
                 $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
-            }])->where('TSRVH_ID', $value['id'])->get()->toArray();
-            $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 0)->get()->toArray();
-            $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 1)->get()->toArray();
+            }])
+            ->where('TSRVH_ID', $value['id'])
+            ->get()
+            ->toArray();
+
+            $checkDataFlagApproved = array_filter($getDet, function($f){
+                return $f['TSRVD_FLGSTS'] === 2;
+            });
+
+            $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 2 : 0)->get()->toArray();
+            $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 3 : 1)->get()->toArray();
 
             $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
         }
 
-        return ['msg' => 'Data Fetched', 'data' => $hasil];
+        return ['data' => $hasil];
     }
 }

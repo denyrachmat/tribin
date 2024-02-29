@@ -43,6 +43,14 @@
 
             <q-item-section>
               <q-item-label>
+                <div v-if="props.mode === 'view'">                 
+                <q-item-label>
+                    {{ items.MITM_ITMNM ? items.MITM_ITMNM : listItems.filter(fil => fil.MITM_ITMCD == items.TSRVF_ITMCD)[0].MITM_ITMNM }}
+                </q-item-label>               
+                <q-item-label caption>
+                    Item
+                </q-item-label>
+              </div>
                 <q-select
                   dense
                   filled
@@ -61,29 +69,57 @@
                   map-options
                   :loading="loading"
                   :readonly="props.mode === 'view'"
+                  v-else
                 >
                 </q-select>
               </q-item-label>
             </q-item-section>
 
             <q-item-section>
+              <div v-if="props.mode === 'view'">                 
+                <q-item-label>
+                    {{ items.TSRVF_PRC.toLocaleString() }}
+                </q-item-label>               
+                <q-item-label caption>
+                    Price
+                </q-item-label>
+              </div>
               <q-input
                 label="Price"
                 v-model="items.TSRVF_PRC"
                 filled
                 dense
                 :readonly="props.mode === 'view'"
+                v-else
               />
             </q-item-section>
 
             <q-item-section>
+              <div v-if="props.mode === 'view'">                 
+                <q-item-label>
+                    {{ items.TSRVF_QTY.toLocaleString() }}
+                </q-item-label>               
+                <q-item-label caption>
+                    Qty
+                </q-item-label>
+              </div>
               <q-input
                 label="Qty"
                 v-model="items.TSRVF_QTY"
                 filled
                 dense
                 :readonly="props.mode === 'view'"
+                v-else
               />
+            </q-item-section>
+
+            <q-item-section v-if="props.mode === 'view'">
+                <q-item-label>
+                    Rp {{ (parseInt(items.TSRVF_PRC) * parseInt(items.TSRVF_QTY)).toLocaleString() }}
+                </q-item-label>
+                <q-item-label caption>
+                    Total Price
+                </q-item-label>
             </q-item-section>
 
             <q-item-section side v-if="mode !== 'view'">
@@ -93,6 +129,30 @@
                 color="red"
                 @click="onClickDeleteLine(idx)"
               />
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            class="q-my-sm"
+            clickable
+            v-ripple
+            v-if="mode === 'view'"
+          >
+            <q-item-section>
+            </q-item-section>
+            <q-item-section>
+            </q-item-section>
+            <q-item-section>
+            </q-item-section>
+            <q-item-section>
+                <q-item-label>
+                   <span class="text-h5 text-bold">
+                    Rp {{ getTotal(listItemsSel) }}
+                   </span>
+                </q-item-label>
+                <q-item-label caption>
+                    Total Price
+                </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -131,9 +191,10 @@ const props = defineProps({
   dataItem: Array,
 });
 
-onMounted(() => {
+onMounted(async () => {
   if (props.dataItem.listFixDet) {
     listItemsSel.value = props.dataItem.listFixDet;
+    await getItem();
   }
 });
 
@@ -175,7 +236,7 @@ const getItem = async (val) => {
 
 const onSubmitData = () => {
   if (props.mode === "view") {
-    onDialogOK(listItemsSel.value);
+    onDialogCancel();
   } else {
     $q.dialog({
       title: "Confirmation",
@@ -198,4 +259,13 @@ const onClickDeleteLine = (idx) => {
     listItemsSel.value.splice(idx, 1);
   });
 };
+
+const getTotal = (data) => {
+    let hasil = 0;
+    data.map(items => {
+        hasil += (parseInt(items.TSRVF_PRC) * parseInt(items.TSRVF_QTY))
+    })
+
+    return hasil.toLocaleString()
+}
 </script>

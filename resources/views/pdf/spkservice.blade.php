@@ -193,7 +193,7 @@
                         <td class="tg-0lax">{{$value['TSRVD_CUSTRMK']}}</td>
                         <td class="tg-0lax">{{$value['TSRVD_QTY']}}</td>
                         <td class="tg-0lax">{!!$value['TSRVD_REMARK']!!}</td>
-                        <td class="tg-0lax">Rp {{number_format(array_sum(array_column($value['list_fix_det'], 'SUBTOT_AMT')),0,".",","); }}</td>
+                        <td class="tg-0lax">Rp {{number_format(array_sum(array_column($value['list_fix_det'], 'SUBTOT_AMT')),0,".",",") }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -312,15 +312,21 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php $tot = 0; @endphp
                     @foreach($value2['list_fix_det'] as $key => $valueDet)
+                    @php $tot += $valueDet['SUBTOT_AMT']; @endphp
                     <tr>
                         <td class="tg-0lax">{{$valueDet['MITM_ITMCD']}}</td>
                         <td class="tg-0lax">{{$valueDet['MITM_ITMNM']}}</td>
-                        <td class="tg-0lax">{{number_format($valueDet['TSRVF_PRC'],0,".",",")}}</td>
-                        <td class="tg-0lax">{{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
-                        <td class="tg-0lax">{{number_format($valueDet['SUBTOT_AMT'],0,".",",")}}</td>
+                        <td class="tg-0lax">Rp {{number_format($valueDet['TSRVF_PRC'],0,".",",")}}</td>
+                        <td class="tg-0lax">Rp {{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
+                        <td class="tg-0lax">Rp {{number_format($valueDet['SUBTOT_AMT'],0,".",",")}}</td>
                     </tr>
                     @endforeach
+                    <tr>
+                        <td class="tg-0lax" colspan=4 style="text-align: right"><b>Total</b></td>
+                        <td class="tg-0lax"><b>Rp {{number_format($tot, 0, ".", ",")}}</b></td>
+                    </tr>
                 </tbody>
             </table>
         </div>

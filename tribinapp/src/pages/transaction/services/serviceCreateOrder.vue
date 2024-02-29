@@ -38,9 +38,14 @@
                 mask="####-##-##"
                 fill-mask
                 hint="Mask: YYYY-MM-DD"
+                :readonly="props.mode === 'view'"
               >
                 <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
+                  <q-icon
+                    name="event"
+                    class="cursor-pointer"
+                    :disable="props.mode === 'view'"
+                  >
                     <q-popup-proxy
                       cover
                       transition-show="scale"
@@ -82,6 +87,7 @@
                 emit-value
                 map-options
                 :loading="loading"
+                :readonly="props.mode === 'view'"
               >
               </q-select>
             </div>
@@ -100,7 +106,7 @@
             <b>Detail Items</b>
           </legend>
 
-          <div class="row q-pb-sm">
+          <div class="row q-pb-sm" v-if="props.mode !== 'view'">
             <div class="col text-right">
               <q-btn flat icon="add" color="blue" @click="addItemLine()">
                 <q-tooltip>Add lines</q-tooltip>
@@ -156,7 +162,7 @@
                     v-model="items.TSRVD_CUSTRMK"
                   />
                 </q-item-section>
-                <q-item-section side>
+                <q-item-section side v-if="props.mode !== 'view'">
                   <q-btn
                     icon="delete"
                     color="red"
@@ -166,7 +172,7 @@
                     <q-tooltip>Delete line</q-tooltip>
                   </q-btn>
                 </q-item-section>
-                <q-item-section side>
+                <q-item-section side v-if="props.mode !== 'view'">
                   <q-btn
                     icon="library_add"
                     color="indigo"
@@ -222,14 +228,15 @@ const $q = useQuasar();
 const props = defineProps({
   header: Array,
   detail: Array,
+  mode: String,
 });
 
 onMounted(async () => {
   if (props.header) {
-    await getCustomer()
-    await getItem()
+    await getCustomer();
+    await getItem();
     dataApi.value = props.header;
-    submitedItems.value = props.detail
+    submitedItems.value = props.detail;
   }
 });
 

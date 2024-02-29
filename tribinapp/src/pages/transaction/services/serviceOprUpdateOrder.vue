@@ -16,12 +16,10 @@
           <q-item
             v-for="(items, idx) in submitedItems"
             :key="idx"
-            class="q-my-sm"
-            clickable
-            v-ripple
+            :class="`q-my-sm`"
           >
             <q-item-section avatar>
-              <q-avatar color="primary" text-color="white">
+              <q-avatar :color="items.TSRVD_FLGSTS === 0 ? 'red' : 'primary'" text-color="white">
                 {{ items.TSRVD_LINE }}
               </q-avatar>
             </q-item-section>
@@ -40,16 +38,147 @@
               <q-item-label caption lines="1">Customer Remarks</q-item-label>
             </q-item-section>
 
-            <q-item-section side>
-                <q-btn icon="construction" color="green" flat @click="onClickAddItem(idx, 'add')">
-                    <q-tooltip>Update Fix Data</q-tooltip>
-                </q-btn>
+            <q-item-section>
+              <q-item-label>
+                <div class="cursor-pointer">
+                  <span v-if="!items.TSRVD_REMARK">
+                    No comment yet !, Click here to add comment.
+                  </span>
+                  <span v-else>
+                    <div v-html="items.TSRVD_REMARK"></div>
+                  </span>
+
+                  <q-popup-edit
+                    v-model="items.TSRVD_REMARK"
+                    auto-save
+                    v-slot="scope"
+                    v-if="props.mode !== 'view'"
+                  >
+                    <q-editor
+                      @keyup.enter="scope.set"
+                      v-model="scope.value"
+                      :dense="$q.screen.lt.md"
+                      :toolbar="[
+                        [
+                          {
+                            label: $q.lang.editor.align,
+                            icon: $q.iconSet.editor.align,
+                            fixedLabel: true,
+                            options: ['left', 'center', 'right', 'justify'],
+                          },
+                        ],
+
+                        [
+                          'bold',
+                          'italic',
+                          'strike',
+                          'underline',
+                          'subscript',
+                          'superscript',
+                        ],
+                        ['token', 'hr', 'link', 'custom_btn'],
+                        ['print', 'fullscreen'],
+                        [
+                          {
+                            label: $q.lang.editor.formatting,
+                            icon: $q.iconSet.editor.formatting,
+                            list: 'no-icons',
+                            options: [
+                              'p',
+                              'h1',
+                              'h2',
+                              'h3',
+                              'h4',
+                              'h5',
+                              'h6',
+                              'code',
+                            ],
+                          },
+                          {
+                            label: $q.lang.editor.fontSize,
+                            icon: $q.iconSet.editor.fontSize,
+                            fixedLabel: true,
+                            fixedIcon: true,
+                            list: 'no-icons',
+                            options: [
+                              'size-1',
+                              'size-2',
+                              'size-3',
+                              'size-4',
+                              'size-5',
+                              'size-6',
+                              'size-7',
+                            ],
+                          },
+                          {
+                            label: $q.lang.editor.defaultFont,
+                            icon: $q.iconSet.editor.font,
+                            fixedIcon: true,
+                            list: 'no-icons',
+                            options: [
+                              'default_font',
+                              'arial',
+                              'arial_black',
+                              'comic_sans',
+                              'courier_new',
+                              'impact',
+                              'lucida_grande',
+                              'times_new_roman',
+                              'verdana',
+                            ],
+                          },
+                          'removeFormat',
+                        ],
+                        ['quote', 'unordered', 'ordered', 'outdent', 'indent'],
+
+                        ['undo', 'redo'],
+                        ['viewsource'],
+                      ]"
+                      :fonts="{
+                        arial: 'Arial',
+                        arial_black: 'Arial Black',
+                        comic_sans: 'Comic Sans MS',
+                        courier_new: 'Courier New',
+                        impact: 'Impact',
+                        lucida_grande: 'Lucida Grande',
+                        times_new_roman: 'Times New Roman',
+                        verdana: 'Verdana',
+                      }"
+                    />
+                  </q-popup-edit>
+                </div>
+              </q-item-label>
+              <q-item-label caption lines="1">Operator Remarks</q-item-label>
+            </q-item-section>
+
+            <q-item-section side v-if="props.mode === 'edit'">
+              <q-btn
+                icon="construction"
+                color="green"
+                flat
+                @click="onClickAddItem(idx, 'add')"
+              >
+                <q-tooltip>Update Fix Data</q-tooltip>
+              </q-btn>
             </q-item-section>
             <q-item-section side>
-                <q-btn icon="visibility" color="cyan" flat @click="onClickAddItem(idx, 'view')" :disable="!items.listFixDet">
-                    <q-tooltip>View Added Item</q-tooltip>
-                    <q-badge color="red" floating>{{ items.listFixDet.length }}</q-badge>
-                </q-btn>
+              <q-btn
+                icon="visibility"
+                color="cyan"
+                flat
+                @click="onClickAddItem(idx, 'view')"
+                :disable="!items.listFixDet"
+              >
+                <q-tooltip>View Added Item</q-tooltip>
+                <q-badge color="red" floating v-if="items.listFixDet.length > 0">{{
+                  items.listFixDet.length
+                }}</q-badge>
+              </q-btn>
+            </q-item-section>
+            <q-item-section side v-if="props.mode === 'approve'">
+              <q-btn icon="task" color="indigo" flat @click="onClickDone(idx)">
+                <q-tooltip>Mark this problem as done</q-tooltip>
+              </q-btn>
             </q-item-section>
           </q-item>
         </q-list>
@@ -60,7 +189,11 @@
           label="OK"
           color="primary"
           @click="onSubmitData()"
-          :disable="loading"
+          :disable="
+            loading ||
+            submitedItems.filter((fil) => fil.listFixDet).length === 0 ||
+            submitedItems.filter((fil) => fil.TSRVD_REMARK).length === 0
+          "
           :loading="loading"
         />
         <q-btn
@@ -89,15 +222,16 @@ const $q = useQuasar();
 const props = defineProps({
   header: Array,
   detail: Array,
+  mode: String,
 });
 
 const dataApi = ref({
   SRVH_DOCNO: "",
   SRVH_ISSDT: date.formatDate(Date.now(), "YYYY-MM-DD"),
   SRVH_CUSCD: "",
-
 });
 const submitedItems = ref([]);
+const loading = ref(false);
 
 onMounted(async () => {
   if (props.header) {
@@ -108,16 +242,61 @@ onMounted(async () => {
   }
 });
 
-const onClickAddItem = (val, mode = 'add') => {
+const onClickAddItem = (val, mode = "add") => {
   $q.dialog({
     component: serviceOprItemAdd,
     componentProps: {
-        mode: mode,
-        dataItem: submitedItems.value[val]
+      mode: mode,
+      dataItem: submitedItems.value[val],
     },
     // persistent: true,
   }).onOk(async (res) => {
-    submitedItems.value[val].listFixDet = res
+    submitedItems.value[val].TSRVD_FLGSTS = 1;
+    submitedItems.value[val].listFixDet = res;
+  });
+};
+
+const onSubmitData = () => {
+  if (props.mode === "view") {
+    onDialogOK();
+  } else {
+    $q.dialog({
+      title: "Confirmation",
+      message: `Do you want to submit this data ?`,
+      cancel: true,
+      persistent: true,
+    }).onOk(async () => {
+      loading.value = true;
+      await api_web
+        .post("servicesOPR", {
+          data: submitedItems.value,
+        })
+        .then((val) => {
+          loading.value = false;
+          onDialogOK();
+        });
+    });
+  }
+};
+
+const onClickDone = (idx) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to mark this problem as done ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .put(`servicesAdmin/${btoa(val.SRVH_DOCNO)}`, {
+        TSRVD_FLGSTS: 3,
+      })
+      .then((response) => {
+        loading.value = false;
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
   });
 };
 </script>

@@ -13,6 +13,7 @@ class T_SRV_FIXDET extends Model
         'TSRVD_ID',
         'TSRVF_ITMCD',
         'TSRVF_PRC',
+        'TSRVF_QTY',
         'created_by',
     ];
 }

@@ -85,15 +85,19 @@
                 >
                   <q-tooltip>Edit this Order</q-tooltip>
                 </q-btn>
-                <!-- <q-btn
+                <q-btn
                   flat
                   color="indigo"
                   icon="print"
                   @click="onClickPrint(props.row.SRVH_DOCNO)"
                   dense
+                  :disable="
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                      .length !== props.row.detail.length
+                  "
                 >
                   <q-tooltip>Print this order</q-tooltip>
-                </q-btn> -->
+                </q-btn>
                 <q-btn
                   flat
                   color="red"
@@ -105,7 +109,47 @@
                       .length > 0
                   "
                 >
-                  <q-tooltip>Delete this Order</q-tooltip>
+                  <q-tooltip>
+                    {{
+                      props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                        .length > 0
+                        ? "Cannot delete processed order"
+                        : "Delete this Order"
+                    }}</q-tooltip
+                  >
+                </q-btn>
+                <q-btn
+                  flat
+                  color="cyan"
+                  icon="visibility"
+                  @click="onClickView(props.row)"
+                  dense
+                  :disable="
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                      .length === 0
+                  "
+                >
+                  <q-tooltip>View this Order</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="indigo"
+                  icon="check"
+                  @click="onClickProceed(props.row.SRVH_DOCNO)"
+                  dense
+                  :disable="
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS === 1)
+                      .length === 0 ||
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS >= 2)
+                      .length > 0
+                  "
+                >
+                  <q-tooltip>{{
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                      .length !== props.row.detail.length
+                      ? "Please wait until all item checked"
+                      : "Proceed to service"
+                  }}</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
@@ -121,6 +165,7 @@ import { useQuasar, date } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import serviceCreateOrder from "./serviceCreateOrder.vue";
+import serviceOprUpdateOrder from "./serviceOprUpdateOrder.vue";
 
 const $q = useQuasar();
 
@@ -143,6 +188,18 @@ const columns = ref([
     align: "left",
   },
   {
+    name: "MCUS_CUSNM",
+    label: "Status",
+    field: row => row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length === 0
+      ? 'On Draft'
+      : (row.detail.filter(fil => fil.TSRVD_FLGSTS === 2).length > 0
+        ? 'On Working'
+        : 'On Check Price'
+      ),
+    sortable: true,
+    align: "left",
+  },
+  {
     name: "created_at",
     label: "Created Date",
     field: "created_at",
@@ -152,14 +209,14 @@ const columns = ref([
   },
 ]);
 const loading = ref(false);
-const interval = ref(null)
+const interval = ref(null);
 
 onMounted(() => {
   dataSrv();
 
   interval.value = setInterval(() => {
-    dataSrv()
-  }, 10000)
+    dataSrv();
+  }, 10000);
 });
 
 const dataSrv = async () => {
@@ -190,12 +247,46 @@ const onClickNew = () => {
   });
 };
 
+const onClickView = (val) => {
+  const header = {
+    SRVH_DOCNO: val.SRVH_DOCNO,
+    SRVH_ISSDT: date.formatDate(val.SRVH_ISSDT, "YYYY-MM-DD"),
+    SRVH_CUSCD: val.MCUS_CUSCD,
+  };
+
+  let detail = [];
+  val.detail.map((valMap) => {
+    detail.push({
+      TSRVD_ITMCD: valMap.TSRVD_ITMCD,
+      TSRVD_LINE: valMap.TSRVD_LINE,
+      TSRVD_QTY: valMap.TSRVD_QTY,
+      TSRVD_CUSTRMK: valMap.TSRVD_CUSTRMK,
+      TSRVD_REMARK: valMap.TSRVD_REMARK,
+      TSRVD_FLGSTS: valMap.TSRVD_FLGSTS,
+      listFixDet: valMap.list_fix_det,
+    });
+  });
+
+  $q.dialog({
+    component: serviceOprUpdateOrder,
+    componentProps: {
+      header: header,
+      detail: detail,
+      mode: "view",
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataSrv();
+  });
+};
 const onClickPrint = (val) => {
   window
-    .open(process.env.API_WEB + "PDF/quotation/" + btoa(val), "_blank")
+    .open(
+      process.env.API_WEB + "servicesAdmin/printInvoice/" + btoa(val),
+      "_blank"
+    )
     .focus();
 };
-
 const onClickEdit = (val) => {
   const header = {
     SRVH_DOCNO: val.SRVH_DOCNO,
@@ -222,6 +313,44 @@ const onClickEdit = (val) => {
     // persistent: true,
   }).onOk(async (val) => {
     dataSrv();
+  });
+};
+const onClickProceed = (val) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to proceed to service ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .put(`servicesAdmin/${btoa(val.SRVH_DOCNO)}`, {
+        TSRVD_FLGSTS: 2,
+      })
+      .then((response) => {
+        loading.value = false;
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
+const onClickDelete = (val) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete this order ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .delete(`servicesAdmin/${btoa(val.SRVH_DOCNO)}`)
+      .then((response) => {
+        loading.value = false;
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
   });
 };
 </script>

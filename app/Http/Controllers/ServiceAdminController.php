@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
@@ -24,7 +25,7 @@ class ServiceAdminController extends Controller
      */
     public function index()
     {
-        //
+        return view('tribinapp_layouts', ['routeApp' => 'services']);
     }
 
     /**
@@ -46,6 +47,9 @@ class ServiceAdminController extends Controller
             'detail.*' => 'required',
             'detail.*.TSRVD_ITMCD' => 'required',
             'detail.*.TSRVD_QTY' => 'required'
+        ],[
+            'header.SRVH_ISSDT.required' => 'Issue Date cannot be null !',
+            'header.SRVH_CUSCD.required' => 'Customer cannot be null !',
         ]);
 
         if ($validator->fails()) {
@@ -103,7 +107,10 @@ class ServiceAdminController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))
+        ->update($request->all());
+
+        return ['msg' => 'Data has been updated'];
     }
 
     /**
@@ -111,7 +118,16 @@ class ServiceAdminController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $getData = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->first();
+
+        if (!empty($getData)) {
+            T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $getData->id)->delete();
+            T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->delete();
+
+            return ['msg' => 'Data has been deleted'];
+        }
+
+        return ['msg' => 'Data cannot be found!, delete failed'];
     }
 
     public function search(Request $request){
@@ -122,6 +138,9 @@ class ServiceAdminController extends Controller
             'T_SRV_HEAD.SRVH_ISSDT',
             'MCUS_CUSNM',
             'MCUS_CUSCD',
+            'MCUS_ADDR1',
+            'MCUS_TELNO',
+            'MCUS_PIC_TELNO',
             'T_SRV_HEAD.created_at',
         )
         ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD');
@@ -133,7 +152,14 @@ class ServiceAdminController extends Controller
 
         $hasil = [];
         foreach ($head as $key => $value) {
-            $getDet = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->get()->toArray();
+            $getDet = T_SRV_DET::on($this->dedicatedConnection)
+                ->with(['listFixDet' => function($j) {
+                    $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
+                    $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
+                }])
+                ->where('TSRVH_ID', $value['id'])
+                ->get()
+                ->toArray();
             $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 0)->get()->toArray();
             $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 1)->get()->toArray();
             $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
@@ -142,14 +168,55 @@ class ServiceAdminController extends Controller
         return ['msg' => 'Data Fetched', 'data' => $hasil];
     }
 
-    public function printPDF($id) {
+    function numberToSentence($nilai)
+    {
+        $nilai = abs($nilai);
+        $huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+        $temp = "";
+        if ($nilai < 12) {
+            $temp = " " . $huruf[$nilai];
+        } else if ($nilai < 20) {
+            $temp = $this->numberToSentence($nilai - 10) . " Belas";
+        } else if ($nilai < 100) {
+            $temp = $this->numberToSentence($nilai / 10) . " Puluh" . $this->numberToSentence($nilai % 10);
+        } else if ($nilai < 200) {
+            $temp = " seratus" . $this->numberToSentence($nilai - 100);
+        } else if ($nilai < 1000) {
+            $temp = $this->numberToSentence($nilai / 100) . " Ratus" . $this->numberToSentence($nilai % 100);
+        } else if ($nilai < 2000) {
+            $temp = " seribu" . $this->numberToSentence($nilai - 1000);
+        } else if ($nilai < 1000000) {
+            $temp = $this->numberToSentence($nilai / 1000) . " Ribu" . $this->numberToSentence($nilai % 1000);
+        } else if ($nilai < 1000000000) {
+            $temp = $this->numberToSentence($nilai / 1000000) . " Juta" . $this->numberToSentence($nilai % 1000000);
+        } else if ($nilai < 1000000000000) {
+            $temp = $this->numberToSentence($nilai / 1000000000) . " Milyar" . $this->numberToSentence(fmod($nilai, 1000000000));
+        } else if ($nilai < 1000000000000000) {
+            $temp = $this->numberToSentence($nilai / 1000000000000) . " Trilyun" . $this->numberToSentence(fmod($nilai, 1000000000000));
+        }
+        return $temp;
+    }
+
+    public function printInvoicePDF($id) {
         $data = $this->search(new Request([
             'searchBy' => 'SRVH_DOCNO',
             'searchValue' => base64_decode($id)
         ]));
 
+        $total = 0;
+        foreach ($data['data'] as $key => $value) {
+            foreach ($value['detail'] as $key => $valueDet) {
+                if (isset($valueDet['list_fix_det']) && count($valueDet['list_fix_det']) > 0) {
+                    $total += array_sum(array_column($valueDet['list_fix_det'], 'SUBTOT_AMT'));
+                }
+            }
+        }
+
         $pdf = Pdf::loadView('pdf.spkservice', [
             'data' => $data['data'],
+            'total' => $total,
+            'ppn' => ($total * 0.11),
+            'terbilang' => $this->numberToSentence($total + ($total * 0.11)),
             'header' => 'JAYA ABADI TEKNIK',
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'

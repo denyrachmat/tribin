@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\T_SRV_FIXDET;
 class T_SRV_DET extends Model
 {
     use HasFactory;
@@ -20,4 +20,8 @@ class T_SRV_DET extends Model
         'TSRVD_QTY',
         'created_by',
     ];
+
+    public function listFixDet() {
+        return $this->hasMany(T_SRV_FIXDET::class, 'TSRVD_ID', 'id');
+    }
 }

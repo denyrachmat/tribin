@@ -76,6 +76,16 @@
               />
             </q-item-section>
 
+            <q-item-section>
+              <q-input
+                label="Qty"
+                v-model="items.TSRVF_QTY"
+                filled
+                dense
+                :readonly="props.mode === 'view'"
+              />
+            </q-item-section>
+
             <q-item-section side v-if="mode !== 'view'">
               <q-btn
                 icon="delete"
@@ -136,6 +146,7 @@ const onClickAddItem = () => {
     TSRVD_ID: props.dataItem.id,
     TSRVF_ITMCD: "",
     TSRVF_PRC: 0,
+    TSRVF_QTY: 1,
   });
 };
 

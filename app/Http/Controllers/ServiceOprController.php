@@ -7,10 +7,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Barryvdh\DomPDF\Facade\Pdf;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
+use App\Models\T_SRV_FIXDET;
 
 class ServiceOprController extends Controller
 {
@@ -25,7 +26,7 @@ class ServiceOprController extends Controller
      */
     public function index()
     {
-        //
+        return view('tribinapp_layouts', ['routeApp' => 'servicesOrderList']);
     }
 
     /**
@@ -41,7 +42,28 @@ class ServiceOprController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $checkOnlyWithFix = array_filter($request->data, function($f) {
+            return isset($f['listFixDet']);
+        });
+
+        $hasil = [];
+        foreach ($checkOnlyWithFix as $key => $value) {
+            T_SRV_DET::on($this->dedicatedConnection)->where('id', $value['id'])->update([
+                'TSRVD_FLGSTS' => $value['TSRVD_FLGSTS'],
+                'TSRVD_REMARK' => $value['TSRVD_REMARK']
+            ]);
+            foreach ($value['listFixDet'] as $key => $valueDet) {
+                $hasil[] = T_SRV_FIXDET::on($this->dedicatedConnection)->updateOrCreate([
+                    'TSRVD_ID' => $value['id'],
+                    'TSRVF_ITMCD' => $valueDet['TSRVF_ITMCD'],
+                ],[
+                    'TSRVD_ID' => $value['id'],
+                    'TSRVF_ITMCD' => $valueDet['TSRVF_ITMCD'],
+                    'TSRVF_PRC' => $valueDet['TSRVF_PRC'],
+                    'TSRVF_QTY' => $valueDet['TSRVF_QTY'],
+                ]);
+            }
+        }
     }
 
     /**
@@ -89,7 +111,7 @@ class ServiceOprController extends Controller
         ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
         ->where(DB::raw('(
             SELECT COUNT(*) FROM T_SRV_DET WHERE TSRVH_ID = T_SRV_HEAD.id
-        )'), '>', DB::raw('(
+        )'), '>=', DB::raw('(
             SELECT COUNT(*) FROM T_SRV_DET WHERE TSRVH_ID = T_SRV_HEAD.id
             AND TSRVD_FLGSTS <> 0
         )'));
@@ -101,9 +123,14 @@ class ServiceOprController extends Controller
 
         $hasil = [];
         foreach ($head as $key => $value) {
-            $getDet = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->get()->toArray();
+            $getDet = T_SRV_DET::on($this->dedicatedConnection)
+            ->with(['listFixDet' => function($j) {
+                $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
+                $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
+            }])->where('TSRVH_ID', $value['id'])->get()->toArray();
             $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 0)->get()->toArray();
             $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 1)->get()->toArray();
+
             $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
         }
 

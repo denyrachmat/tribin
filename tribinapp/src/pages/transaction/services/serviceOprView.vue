@@ -34,7 +34,13 @@
           <template v-slot:item="props">
             <div class="q-pa-xs col-xs-12 col-sm-6 col-md-4">
               <q-card flat bordered>
-                <q-card-section class="text-center bg-secondary text-white">
+                <q-card-section
+                  :class="`text-center ${
+                    props.row.resolve.length == props.row.detail.length
+                      ? 'bg-indigo '
+                      : 'bg-secondary '
+                  }text-white`"
+                >
                   <div class="text-h5 text-bold">
                     {{ props.row.SRVH_DOCNO }}
                   </div>
@@ -49,7 +55,7 @@
                 <q-card-section>
                   <div class="text-h6 text-bold">
                     {{ props.row.resolve.length }} of
-                    {{ props.row.unresolve.length }}
+                    {{ props.row.detail.length }}
                   </div>
                   <div class="text-subtitle2">Resolved Items</div>
                 </q-card-section>
@@ -60,7 +66,14 @@
                         label="Resolve"
                         color="primary"
                         outline
-                        @click="onClickPreview(props.row)"
+                        @click="
+                          onClickPreview(
+                            props.row,
+                            props.row.resolve.length == props.row.detail.length
+                              ? 'approve'
+                              : 'edit'
+                          )
+                        "
                       />
                     </div>
                     <div class="col text-right"></div>
@@ -122,9 +135,14 @@ const column = ref([
 const rows = ref([]);
 const filter = ref("");
 const loading = ref(false);
+const interval = ref(null);
 
 onMounted(() => {
   dataSrv();
+
+  interval.value = setInterval(() => {
+    dataSrv();
+  }, 10000);
 });
 
 const dataSrv = async () => {
@@ -143,7 +161,7 @@ const dataSrv = async () => {
     });
 };
 
-const onClickPreview = (val) => {
+const onClickPreview = (val, mode) => {
   const header = {
     SRVH_DOCNO: val.SRVH_DOCNO,
     SRVH_ISSDT: date.formatDate(val.SRVH_ISSDT, "YYYY-MM-DD"),
@@ -153,10 +171,14 @@ const onClickPreview = (val) => {
   let detail = [];
   val.detail.map((valMap) => {
     detail.push({
+      id: valMap.id,
       TSRVD_ITMCD: valMap.TSRVD_ITMCD,
+      TSRVD_FLGSTS: valMap.TSRVD_FLGSTS,
       TSRVD_LINE: valMap.TSRVD_LINE,
       TSRVD_QTY: valMap.TSRVD_QTY,
       TSRVD_CUSTRMK: valMap.TSRVD_CUSTRMK,
+      TSRVD_REMARK: valMap.TSRVD_REMARK,
+      listFixDet: valMap.list_fix_det,
     });
   });
   $q.dialog({
@@ -164,6 +186,7 @@ const onClickPreview = (val) => {
     componentProps: {
       header: header,
       detail: detail,
+      mode: mode,
     },
     // persistent: true,
   }).onOk(async (val) => {

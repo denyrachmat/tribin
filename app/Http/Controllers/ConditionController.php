@@ -48,6 +48,7 @@ class ConditionController extends Controller
         $group = M_Condition::on($this->dedicatedConnection)
             ->select('MCONDITION_RPT_STAT')
             ->whereNotNull('MCONDITION_RPT_STAT')
+            ->where('MCONDITION_RPT_STAT', '<>', '')
             ->groupBy('MCONDITION_RPT_STAT')
             ->get()
             ->pluck('MCONDITION_RPT_STAT');
@@ -163,7 +164,7 @@ class ConditionController extends Controller
 
         foreach ($request->data as $key => $value) {
             M_Condition::on($this->dedicatedConnection)
-                ->where('id', $value['id'])
+                ->where('id', $value)
                 ->update([
                     'MCONDITION_RPT_STAT' => $request->MCONDITION_RPT_STAT,
                     'MCONDITION_ORDER_NUMBER' => $key + 1

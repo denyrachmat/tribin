@@ -1,17 +1,13 @@
 <template>
-  <q-dialog
-    ref="dialogRef"
-    @hide="onDialogHide"
-    transition-show="slide-up"
-    transition-hide="slide-down"
-    full-width
-  >
-    <q-card class="q-dialog-plugin bg-white q-pa-sm">
-      <q-card-section>
+  <div class="q-pa-md">
+    <div class="row">
+      <div class="col">
         <div class="text-h6">Assign Condition Group</div>
-      </q-card-section>
+      </div>
+    </div>
 
-      <q-card-section class="q-pa-sm">
+    <div class="row q-pt-md">
+      <div class="col">
         <div class="row">
           <div class="col">
             <q-input
@@ -37,46 +33,84 @@
               <q-btn outline color="blue" icon="description" @click="newData">
                 <q-tooltip>New</q-tooltip>
               </q-btn>
-              <q-btn outline color="red" icon="delete" @click="deleteData">
+              <q-btn
+                outline
+                color="blue"
+                icon="save"
+                @click="onOKClick"
+                :disable="!groupName || selected.length === 0"
+              >
+                <q-tooltip>Save Conditions</q-tooltip>
+              </q-btn>
+              <q-btn
+                outline
+                color="red"
+                icon="delete"
+                @click="deleteData"
+                :disable="!groupName"
+              >
                 <q-tooltip>Delete</q-tooltip>
               </q-btn>
             </q-btn-group>
           </div>
         </div>
         <div class="row q-pt-md">
-          <div class="col">
-            <q-table
-              class="my-sticky-header-table"
-              flat
-              bordered
-              title="Conditions"
-              :rows="rows"
-              :columns="columns"
-              row-key="id"
-              dense
-              :pagination="initialPagination"
-              selection="multiple"
-              v-model:selected="selected"
-            />
+          <div class="col" style="max-height: 80vh; overflow: auto">
+            <q-list bordered>
+              <q-item
+                class="q-my-sm"
+                clickable
+                v-ripple
+                tag="label"
+                v-if="rows.length === 0"
+              >
+                <q-item-section v-if="loading">
+                  Data is loading, please wait.
+                </q-item-section>
+                <q-item-section v-else> No Data Available ! </q-item-section>
+              </q-item>
+              <q-item
+                v-for="(cond, idx) in rows"
+                :key="idx"
+                class="q-my-sm"
+                clickable
+                v-ripple
+                tag="label"
+                v-else
+              >
+                <!-- <q-item-section avatar>
+                  <q-avatar color="primary" text-color="white">
+                    {{ contact.letter }}
+                  </q-avatar>
+                </q-item-section> -->
+                <q-item-section side top>
+                  <q-checkbox v-model="selected" :val="cond.id" />
+                </q-item-section>
+
+                <q-item-section>
+                  <q-item-label>{{ cond.MCONDITION_DESCRIPTION }}</q-item-label>
+                  <q-item-label caption lines="1">Description</q-item-label>
+                </q-item-section>
+
+                <q-item-section side>
+                  <q-btn
+                    name="delete"
+                    color="red"
+                    flat
+                    @click="onDeleteCondition(idx)"
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
           </div>
         </div>
-      </q-card-section>
-
-      <q-card-actions align="right">
-        <q-btn
-          label="OK"
-          color="primary"
-          @click="onOKClick()"
-          :disable="selected.length === 0 || !groupName"
-        />
-        <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </div>
+    </div>
+  </div>
 </template>
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useQuasar, useDialogPluginComponent } from "quasar";
+import { useQuasar, useDialogPluginComponent, QSpinnerFacebook } from "quasar";
 import { api } from "boot/axios";
 
 import assignConditionsView from "./assignConditionsView.vue";
@@ -107,6 +141,7 @@ const initialPagination = ref({
 const selected = ref([]);
 const groupName = ref("");
 const mode = ref("new");
+const loading = ref(false);
 
 const $q = useQuasar();
 
@@ -118,10 +153,10 @@ onMounted(() => {
 });
 
 const newData = () => {
-  selected.value = []
-  groupName.value = ''
-  mode.value = 'new'
-}
+  selected.value = [];
+  groupName.value = "";
+  mode.value = "new";
+};
 
 const deleteData = () => {
   $q.dialog({
@@ -130,17 +165,35 @@ const deleteData = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    await api.delete(`/master/conditions/deleteDataGroup/${btoa(groupName.value)}`).then((response) => {
-      newData()
+    $q.loading.show({
+      spinner: QSpinnerFacebook,
+      spinnerColor: "yellow",
+      spinnerSize: 140,
+      backgroundColor: "purple",
+      message: "Save your information, Hang on...",
+      messageColor: "black",
     });
-  })
-}
+    await api
+      .delete(`/master/conditions/deleteDataGroup/${btoa(groupName.value)}`)
+      .then((response) => {
+        $q.loading.hide()
+        newData();
+      });
+  });
+};
 
 const getData = async () => {
-  await api.get("/master/conditions/getdata").then((response) => {
-    console.log(response);
-    rows.value = response.data;
-  });
+  loading.value = true;
+  await api
+    .get("/master/conditions/getdata")
+    .then((response) => {
+      console.log(response);
+      loading.value = false;
+      rows.value = response.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 
 const onOpenCondition = () => {
@@ -151,8 +204,8 @@ const onOpenCondition = () => {
     // },
     // persistent: true,
   }).onOk(async (val) => {
-    groupName.value = val.MCONDITION_RPT_STAT
-    selected.value = val.group;
+    groupName.value = val.MCONDITION_RPT_STAT;
+    selected.value = val.group.map((valmap) => valmap.id);
     mode.value = "edit";
   });
 };
@@ -164,13 +217,24 @@ const onOKClick = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
+    $q.loading.show({
+      spinner: QSpinnerFacebook,
+      spinnerColor: "yellow",
+      spinnerSize: 140,
+      backgroundColor: "purple",
+      message: "Save your information, Hang on...",
+      messageColor: "black",
+    });
     await api
       .post(`/master/conditions/assignGroup`, {
         data: selected.value,
         MCONDITION_RPT_STAT: groupName.value,
       })
       .then((response) => {
-        newData()
+        $q.loading.hide()
+        newData();
+      }).catch((e) => {
+        $q.loading.hide()
       });
   });
 };

@@ -1448,7 +1448,7 @@ class QuotationController extends Controller
                 DB::raw('CONVERT(TQUODETA_USAGE, INT) AS TQUODETA_USAGE')
             )
             ->leftjoin('M_ITM_GRP', 'TQUODETA_ITMCD', 'MITM_ITMNM')
-            ->leftJoin('M_USAGE', 'TQUODETA_USAGE', 'M_USAGE.id')
+            // ->leftJoin('M_USAGE', 'TQUODETA_USAGE', 'M_USAGE.id')
             ->where('TQUODETA_QUOCD', base64_decode($id))
             ->get()
             ->toArray();

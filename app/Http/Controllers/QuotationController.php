@@ -1447,7 +1447,7 @@ class QuotationController extends Controller
         $dataDetail = T_QUODETA::on($this->dedicatedConnection)
             ->select(
                 'T_QUODETA.*',
-                DB::raw('CAST(T_QUODETA.TQUODETA_USAGE as UNSIGNED) AS TQUODETA_USAGE')
+                DB::raw('(TQUODETA_USAGE * 1) AS TQUODETA_USAGE')
             )
             ->leftjoin('M_ITM_GRP', 'TQUODETA_ITMCD', 'MITM_ITMNM')
             // ->leftJoin('M_USAGE', 'TQUODETA_USAGE', 'M_USAGE.id')

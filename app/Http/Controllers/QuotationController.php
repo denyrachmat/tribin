@@ -1408,7 +1408,7 @@ class QuotationController extends Controller
                 'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
                 'TQUODETA_ITMCD' => $value['item'],
                 'TQUODETA_ITMQT' => $value['qty'],
-                'TQUODETA_USAGE' => 1,
+                'TQUODETA_USAGE' => $value['usage'],
                 'TQUODETA_USAGE_DESCRIPTION' => '',
                 'TQUODETA_PRC' => $value['price'],
                 'TQUODETA_OPRPRC' => 0,

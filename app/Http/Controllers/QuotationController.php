@@ -1403,11 +1403,9 @@ class QuotationController extends Controller
             'TQUO_QUOCD' => $newQuotationCode['quocode'],
         ], $quotationHeader);
 
+        T_QUODETA::where('TQUODETA_QUOCD', $newQuotationCode['quocode'])->delete();
         foreach ($request->DET as $key => $value) {
-            T_QUODETA::on($this->dedicatedConnection)->updateOrCreate([
-                'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
-                'TQUODETA_ITMCD' => $value['item'],
-            ],[
+            T_QUODETA::on($this->dedicatedConnection)->create([
                 'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
                 'TQUODETA_ITMCD' => $value['item'],
                 'TQUODETA_ITMQT' => $value['qty'],
@@ -1423,11 +1421,9 @@ class QuotationController extends Controller
             ]);
         }
 
+        T_QUOCOND::where('TQUOCOND_QUOCD', $newQuotationCode['quocode'])->delete();
         foreach ($request->CONDLIST as $keyCond => $valueCond) {
-            T_QUOCOND::on($this->dedicatedConnection)->updateOrCreate([                
-                'TQUOCOND_QUOCD' => $newQuotationCode['quocode'],
-                'TQUOCOND_CONDI' => $valueCond['MCONDITION_DESCRIPTION'],
-            ],[
+            T_QUOCOND::on($this->dedicatedConnection)->create([
                 'TQUOCOND_QUOCD' => $newQuotationCode['quocode'],
                 'TQUOCOND_CONDI' => $valueCond['MCONDITION_DESCRIPTION'],
                 'TQUOCOND_BRANCH' => Auth::user()->branch,

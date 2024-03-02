@@ -485,7 +485,7 @@ const getSavedData = async (val) => {
 
       hasil.det.map((valDet) => {
         listSavedItems.value.push({
-          item: valDet.MITM_ITMNM,
+          item: valDet.TQUODETA_ITMCD,
           usage: valDet.TQUODETA_USAGE,
           price: valDet.TQUODETA_PRC,
           electric: valDet.TQUODETA_ELECTRICITY,

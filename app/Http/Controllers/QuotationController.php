@@ -1404,7 +1404,10 @@ class QuotationController extends Controller
         ], $quotationHeader);
 
         foreach ($request->DET as $key => $value) {
-            T_QUODETA::on($this->dedicatedConnection)->create([
+            T_QUODETA::on($this->dedicatedConnection)->updateOrCreate([
+                'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
+                'TQUODETA_ITMCD' => $value['item'],
+            ],[
                 'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
                 'TQUODETA_ITMCD' => $value['item'],
                 'TQUODETA_ITMQT' => $value['qty'],
@@ -1421,7 +1424,10 @@ class QuotationController extends Controller
         }
 
         foreach ($request->CONDLIST as $keyCond => $valueCond) {
-            T_QUOCOND::on($this->dedicatedConnection)->create([
+            T_QUOCOND::on($this->dedicatedConnection)->updateOrCreate([                
+                'TQUOCOND_QUOCD' => $newQuotationCode['quocode'],
+                'TQUOCOND_CONDI' => $valueCond['MCONDITION_DESCRIPTION'],
+            ],[
                 'TQUOCOND_QUOCD' => $newQuotationCode['quocode'],
                 'TQUOCOND_CONDI' => $valueCond['MCONDITION_DESCRIPTION'],
                 'TQUOCOND_BRANCH' => Auth::user()->branch,

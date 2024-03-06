@@ -36,9 +36,9 @@ api.interceptors.response.use(function (response) {
 }, function (e) {
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
+    console.log(e);
   if (e.response) {
     if (e.response.status == 422) {
-      // console.log(e.response.data);
       let errors = e.response.data.message;
       if (errors) {
         Object.keys(errors).map((val) => {
@@ -67,6 +67,19 @@ api.interceptors.response.use(function (response) {
           });
         }
       }
+    }
+
+    if (e.response.status == 406) {
+      let errors = e.response.data
+
+      errors.map((valErr, idx) => {
+        valErr.map((valErrDet) => {
+          Notify.create({
+            color: "negative",
+            message: `${idx} : ${valErrDet}`,
+          });
+        })
+      })
     }
 
     if (e.response.status == 401) {

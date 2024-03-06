@@ -58,11 +58,14 @@ class CustomerController extends Controller
             'MCUS_TAXREG' => 'required',
             'MCUS_ADDR1' => 'required',
             'MCUS_TELNO' => 'required',
+            'MCUS_TELNO' => [
+                Rule::unique($this->dedicatedConnection . '.M_CUS', 'MCUS_TELNO')->where('MCUS_BRANCH', Auth::user()->branch)
+            ],
             'MCUS_PIC_NAME' => 'required',
             'MCUS_PIC_TELNO' => 'required',
             'MCUS_TYPE' => 'required',
-            'MCUS_KTP_FILE' => 'required|mimes:png,jpg,jpeg,pdf|max:2048',
-            'MCUS_NPWP_FILE' => 'required|mimes:png,jpg,jpeg,pdf|max:2048',
+            'MCUS_KTP_FILE' => 'mimes:png,jpg,jpeg,pdf|max:2048',
+            'MCUS_NPWP_FILE' => 'mimes:png,jpg,jpeg,pdf|max:2048',
         ]);
 
         if ($validator->fails()) {

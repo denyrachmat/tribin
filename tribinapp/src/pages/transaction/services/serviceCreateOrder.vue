@@ -89,6 +89,11 @@
                 :loading="loading"
                 :readonly="props.mode === 'view'"
               >
+                <template v-slot:after>
+                  <q-btn round dense flat icon="person_add" @click="onAddCustClick()" color="cyan">
+                    <q-tooltip>Add new customer</q-tooltip>
+                  </q-btn>
+                </template>
               </q-select>
             </div>
           </div>
@@ -219,6 +224,7 @@ import { onMounted, ref } from "vue";
 import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
 import itemCreate from "src/pages/master/items/itemCreate.vue";
+import customerView from "src/pages/master/customers/customerView.vue";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -343,4 +349,16 @@ const onSubmitData = () => {
       });
   });
 };
+
+const onAddCustClick = () => {
+  
+  $q.dialog({
+    component: customerView,
+    // persistent: true,
+  }).onOk(async (val) => {
+    console.log(val)
+    await getCustomer("");
+    submitedItems.value[idx].SRVH_CUSCD = val.MCUS_CUSCD;
+  });
+}
 </script>

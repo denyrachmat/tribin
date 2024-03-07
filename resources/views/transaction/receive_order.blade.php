@@ -69,6 +69,12 @@
                                         <div class="tab-pane fade show active" id="nav-rental" role="tabpanel" tabindex="0">
                                             <div class="container-fluid mt-2 border-start border-bottom rounded-start">
                                                 <div class="row">
+                                                    <div class="col-md-12 mb-1 mt-1">
+                                                        <input type="checkbox" id="isContract" name="vehicle3" value="1">
+                                                        <label for="vehicle3"> Is Contract ?</label>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
                                                     <div class="col-md-12 mb-1">
                                                         <div class="table-responsive" id="orderTableContainer">
                                                             <table id="orderTable" class="table table-sm table-hover table-bordered caption-top">
@@ -901,6 +907,7 @@
                 TSLODETA_MOBDEMOB: itemMobDemob,
                 TSLODETA_PERIOD_FR: itemPeriodFrom,
                 TSLODETA_PERIOD_TO: itemPeriodTo,
+                TSLO_ISCON: document.getElementById("isContract").checked,
                 _token: '{{ csrf_token() }}',
             }
             if (confirm(`Are you sure want to save ?`)) {
@@ -1022,6 +1029,8 @@
                         newcell.style.cssText = 'cursor:pointer'
                         newcell.onclick = () => {
                             $('#orderModal').modal('hide')
+
+                            // console.log(arrayItem)
                             orderCode.value = arrayItem['TSLO_SLOCD']
                             orderIssueDate.value = arrayItem['TSLO_ISSUDT']
                             orderQuotation.value = arrayItem['TSLO_QUOCD']
@@ -1034,6 +1043,7 @@
                             orderAddress.value = arrayItem['TSLO_ADDRESS_DESCRIPTION']
                             orderEmbedCodeContainer.value = arrayItem['TSLO_MAP_URL']
                             quotationServiceCost.value = arrayItem['TSLO_SERVTRANS_COST']
+                            document.getElementById('isContract').checked = arrayItem['TSLO_ISCON'] == 1
                             loadReceiveDetail({
                                 doc: arrayItem['TSLO_SLOCD']
                             })

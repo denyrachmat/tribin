@@ -229,6 +229,7 @@ class ServiceAdminController extends Controller
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
         ]);
+        
         return $pdf->stream('invoice.pdf');
     }
 }

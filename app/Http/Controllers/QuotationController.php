@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Crypt;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class QuotationController extends Controller
 {
     protected $fpdf;
@@ -1314,6 +1316,97 @@ class QuotationController extends Controller
 
         // $this->fpdf->Output('quotation ' . $doc . '.pdf', 'I');
         // exit;
+    }
+
+    function toNewPDF($id, $conn = '') {
+        $RSCG = COMPANY_BRANCH::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('name', 'address', 'phone', 'fax', 'letter_head')
+            ->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+            ->where('BRANCH', Auth::user()->branch)
+            ->first();
+
+        $doc = base64_decode($id);
+        $RSHeader = T_QUOHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select(
+            'MCUS_CUSNM',
+            'TQUO_ATTN',
+            'MCUS_TELNO',
+            'TQUO_SBJCT',
+            'TQUO_ISSUDT',
+            'TQUO_APPRVDT',
+            'TQUO_TYPE',
+            'TQUO_SERVTRANS_COST',
+            'T_QUOHEAD.created_by',
+            'TQUO_PROJECT_LOCATION'
+        )
+            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
+            ->where("TQUO_QUOCD", $doc)
+            ->where('TQUO_BRANCH', Auth::user()->branch)
+            ->first();
+        $MCUS_CUSNM = $RSHeader->MCUS_CUSNM;
+        $TQUO_ATTN = $RSHeader->TQUO_ATTN;
+        $MCUS_TELNO = $RSHeader->MCUS_TELNO;
+        $TQUO_SBJCT = $RSHeader->TQUO_SBJCT;
+
+        $_ISSUDT = explode('-', $RSHeader->TQUO_ISSUDT);
+        $TQUO_ISSUDT = $_ISSUDT[2] . '/' . $_ISSUDT[1] . '/' . $_ISSUDT[0];
+        $TQUO_APPRVDT = $RSHeader->TQUO_APPRVDT;
+
+        $RSDetail = T_QUODETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select(
+            'TQUODETA_ITMCD',
+            // 'MITM_BRAND',
+            // 'MITM_ITMCD',
+            'MITM_ITMNM',
+            // 'MITM_MODEL',
+            DB::raw('CONCAT(MUSAGE_ALIAS, " ", MUSAGE_DESCRIPTION) AS TQUODETA_USAGE_DESCRIPTION'),
+            'TQUODETA_PRC',
+            'TQUODETA_OPRPRC',
+            'TQUODETA_MOBDEMOB',
+            'TQUODETA_ITMQT',
+            'MITM_STKUOM',
+            'TQUODETA_ELECTRICITY'
+        )
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on("TQUODETA_ITMCD", "=", "MITM_ITMNM")
+                    ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->leftJoin("M_USAGE", 'TQUODETA_USAGE', 'MUSAGE_CD')
+            ->whereNull("T_QUODETA.deleted_at")
+            ->where("TQUODETA_QUOCD", $doc)
+            ->where('TQUODETA_BRANCH', Auth::user()->branch)
+            ->get()->toArray();
+
+        // return $RSDetail;
+
+        $RSCondition = T_QUOCOND::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TQUOCOND_CONDI')
+            ->where('TQUOCOND_QUOCD', $doc)
+            ->whereNull("deleted_at")
+            ->where('TQUOCOND_BRANCH', Auth::user()->branch)
+            ->get()->toArray();
+        $User = User::where('nick_name', $RSHeader->created_by)->select('name', 'phone')->first();
+
+        $checkItemTruck = array_filter($RSDetail, function ($f) {
+            return str_contains($f['MITM_ITMNM'], 'MB-');
+        });
+
+        $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+                ->where('BRANCH', Auth::user()->branch)
+                ->whereNull('deleted_at')
+                ->get();
+
+        $pdf = Pdf::loadView('pdf.quotation', [
+            'header' => 'JAYA ABADI TEKNIK',
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia',
+            'headerQuo' => $RSHeader,
+            'quoIssDate' => $TQUO_ISSUDT,
+            'ref' => $doc,
+            'users' => $User,
+            'listCondition' => $RSCondition,
+            'listQuoDet' => $RSDetail,
+            'checkIsTruckCount'=> $checkItemTruck,
+            'paymentList' => $branchPaymentAccount
+        ]);
+        
+        return $pdf->stream('invoice.pdf');
     }
 
     // New Function

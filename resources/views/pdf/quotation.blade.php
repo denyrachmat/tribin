@@ -235,17 +235,31 @@
     <div class="row" style="padding-top:1em;font-size: 10">
         <div class="col-12">
             <table>
+                @if($headerQuo->TQUO_TYPE === 1)
                 <tr>
                     <td>
                         <span>Bersama ini kami sampaikan {{$headerQuo->TQUO_SBJCT}} dengan data sebagai berikut :</span>
                     </td>
                 </tr>
+                @else
+                <tr>
+                    <td>
+                        <span>Sebelumnya kami ucapkan terima kasih atas kepercayaan yang diberikan kepada kami,</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span>dengan ini kami sampaikan surat penawaran dengan rincian sebagai berikut :</span>
+                    </td>
+                </tr>
+                @endif
             </table>
         </div>
     </div>
 
     <div class="row" style="padding-top:1em;font-size: 10">
         <div class="col-12">
+        @if($headerQuo->TQUO_TYPE === 1)
             <table class="tg">
                 <thead>
                     <tr>
@@ -287,6 +301,51 @@
                     </tr>
                 </tbody>
             </table>
+        @else
+        <table class="tg">
+                <thead>
+                    <tr>
+                        <th class="tg-0lax">No</td>
+                        <th class="tg-0lax">Keterangan</td>
+                        <th class="tg-0lax">Jumlah</td>
+                        <th class="tg-0lax">Satuan</td>
+                        <th class="tg-0lax">Harga</td>
+                        <th class="tg-0lax">Total</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                    $totalAll = 0;
+                    @endphp
+                    @foreach($listQuoDet as $keyQuoDet => $valueQuoDet)
+                    <tr>
+                        <td class="tg-0lax">{{$keyQuoDet + 1}}</td>
+                        <td class="tg-0lax">{{$valueQuoDet['MITM_ITMNM']}}</td>
+                        <td class="tg-0lax">{{$valueQuoDet['TQUODETA_ITMQT']}}</td>
+                        <td class="tg-0lax">{{$valueQuoDet['MITM_STKUOM']}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($valueQuoDet['TQUODETA_PRC'])}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT'])}}</td>
+                    </tr>
+
+                    @php
+                    $totalAll += ($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT']);
+                    @endphp
+                    @endforeach
+                    <tr>
+                        <td class="tg-0lax" colspan="6">Total</td>
+                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll)}}</td>
+                    </tr>
+                    <tr>
+                        <td class="tg-0lax" colspan="6">Jasa Service & Transportasi</td>
+                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($headerQuo->TQUO_SERVTRANS_COST)}}</td>
+                    </tr>
+                    <tr>
+                        <td class="tg-0lax" colspan="6">Grand Total</td>
+                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        @endif
         </div>
     </div>
 

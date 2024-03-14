@@ -332,15 +332,15 @@
                     @endphp
                     @endforeach
                     <tr>
-                        <td class="tg-0lax" colspan="6">Total</td>
+                        <td class="tg-0lax" colspan="5">Total</td>
                         <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll)}}</td>
                     </tr>
                     <tr>
-                        <td class="tg-0lax" colspan="6">Jasa Service & Transportasi</td>
+                        <td class="tg-0lax" colspan="5">Jasa Service & Transportasi</td>
                         <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($headerQuo->TQUO_SERVTRANS_COST)}}</td>
                     </tr>
                     <tr>
-                        <td class="tg-0lax" colspan="6">Grand Total</td>
+                        <td class="tg-0lax" colspan="5">Grand Total</td>
                         <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
                     </tr>
                 </tbody>

@@ -81,7 +81,7 @@ class InventoryController extends Controller
     function stockStatus(Request $request)
     {
         return ['data' => $this->queryStockStatus([
-            'date' => $request->date,
+            'date' => $request->has('date') ? $request->date : date('Y-m-d'),
             'location' => $request->location,
             'searchBy' => $request->searchBy,
             'searchValue' => $request->searchValue,

@@ -307,12 +307,12 @@ class QuotationController extends Controller
         ];
 
         $RSTemp = $request->approval == '1'
-            ? T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'MCUS_ADDR1', 'TQUO_PROJECT_LOCATION'])
+            ? T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'MCUS_ADDR1', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT"])
             ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
             ->leftJoin('T_SLOHEAD', 'TQUO_QUOCD', '=', 'TSLO_QUOCD')
             ->whereNotNull("TQUO_APPRVDT")
             ->whereNull("TSLO_QUOCD")
-            : T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION'])
+            : T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT"])
             ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
@@ -1405,7 +1405,7 @@ class QuotationController extends Controller
             'checkIsTruckCount'=> $checkItemTruck,
             'paymentList' => $branchPaymentAccount
         ]);
-        
+
         return $pdf->stream('invoice.pdf');
     }
 

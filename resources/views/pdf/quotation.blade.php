@@ -63,10 +63,10 @@
         }
 
         footer {
-                position: fixed;
-                text-align: center;
-                bottom: 15px;
-                width: 95%;
+            position: fixed;
+            text-align: center;
+            bottom: 15px;
+            width: 95%;
         }
 
         .header,
@@ -306,67 +306,68 @@
         </div>
     </div>
 
-    <div class="row avoid" style="padding-top:1em">
-        <div class="col-12">
-            <table class="tg">
-                <thead>
-                    <tr>
-                        <th class="tg-0lax">Bank</th>
-                        <th class="tg-0lax">Atas Nama</th>
-                        <th class="tg-0lax">Nomor Rekening</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($paymentList as $key => $valuePayment)
-                    <tr>
-                        <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
-                        <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
-                        <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <div class="avoid">
+        <div class="row" style="padding-top:1em">
+            <div class="col-12">
+                <table class="tg">
+                    <thead>
+                        <tr>
+                            <th class="tg-0lax">Bank</th>
+                            <th class="tg-0lax">Atas Nama</th>
+                            <th class="tg-0lax">Nomor Rekening</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($paymentList as $key => $valuePayment)
+                        <tr>
+                            <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
+                            <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
+                            <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-
-    <div class="row avoid" style="padding-top:1em">
-        <div class="col-12" style="font-size: 10">
-            Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu.
-            Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami
-            ucapkan banyak terima kasih.
+        <div class="row" style="padding-top:1em">
+            <div class="col-12" style="font-size: 10">
+                Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu.
+                Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami
+                ucapkan banyak terima kasih.
+            </div>
         </div>
-    </div>
 
-    <div class="row avoid" style="padding-top:1em">
-        <div class="col-12" style="font-size: 10;">
-            <table style="width: 100%;text-align:center">
-                <tr>
-                    <td>Hormat Kami,</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Dibuat Oleh,</td>
-                    <td>Diketahui Oleh,</td>
-                    <td>Disetujui Oleh,</td>
-                </tr>
-                <tr>
-                    <td style="height: 5em;">
-                        <img src="{{storage_path('app/public/mkt_sign.jpg')}}" />
-                    </td>
-                    <td style="height: 5em;">
-                        @if(!empty($headerQuo->TQUO_APPRVDT))
-                        <img src="{{storage_path('app/public/dir_sign.jpg')}}" />
-                        @endif
-                    </td>
-                    <td style="height: 5em;"></td>
-                </tr>
-                <tr>
-                    <td>Marketing Dept</td>
-                    <td>Pimpinan</td>
-                    <td>Penyewa / Pembeli</td>
-                </tr>
-            </table>
+        <div class="row" style="padding-top:1em">
+            <div class="col-12" style="font-size: 10;">
+                <table style="width: 100%;text-align:center">
+                    <tr>
+                        <td>Hormat Kami,</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Dibuat Oleh,</td>
+                        <td>Diketahui Oleh,</td>
+                        <td>Disetujui Oleh,</td>
+                    </tr>
+                    <tr>
+                        <td style="height: 5em;">
+                            <img src="{{storage_path('app/public/mkt_sign.jpg')}}" />
+                        </td>
+                        <td style="height: 5em;">
+                            @if(!empty($headerQuo->TQUO_APPRVDT))
+                            <img src="{{storage_path('app/public/dir_sign.jpg')}}" />
+                            @endif
+                        </td>
+                        <td style="height: 5em;"></td>
+                    </tr>
+                    <tr>
+                        <td>Marketing Dept</td>
+                        <td>Pimpinan</td>
+                        <td>Penyewa / Pembeli</td>
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
 

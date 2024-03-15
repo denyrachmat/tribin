@@ -276,7 +276,7 @@
                 </thead>
                 <tbody>
                     @php
-                    $totalAll = 0;
+    $totalAll = 0;
                     @endphp
                     @foreach($listQuoDet as $keyQuoDet => $valueQuoDet)
                     <tr>
@@ -292,7 +292,7 @@
                     </tr>
 
                     @php
-                    $totalAll += ($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT']);
+        $totalAll += ($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT']);
                     @endphp
                     @endforeach
                     <tr>
@@ -315,7 +315,7 @@
                 </thead>
                 <tbody>
                     @php
-                    $totalAll = 0;
+    $totalAll = 0;
                     @endphp
                     @foreach($listQuoDet as $keyQuoDet => $valueQuoDet)
                     <tr>
@@ -328,7 +328,7 @@
                     </tr>
 
                     @php
-                    $totalAll += ($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT']);
+        $totalAll += ($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT']);
                     @endphp
                     @endforeach
                     <tr>
@@ -365,7 +365,6 @@
         </div>
     </div>
 
-    <div class="avoid">
         <div class="row" style="padding-top:1em">
             <div class="col-12">
                 <table class="tg">
@@ -388,6 +387,8 @@
                 </table>
             </div>
         </div>
+        
+    <div class="avoid">
         <div class="row" style="padding-top:1em">
             <div class="col-12" style="font-size: 10">
                 Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu.

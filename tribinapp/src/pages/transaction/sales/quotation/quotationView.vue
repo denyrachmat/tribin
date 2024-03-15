@@ -78,8 +78,9 @@
                   icon="edit"
                   @click="onClickEdit(props.row.TQUO_QUOCD)"
                   dense
+                  :disable="props.row.TQUO_APPRVDT !== null"
                 >
-                  <q-tooltip>Edit this quotation</q-tooltip>
+                  <q-tooltip>Edit this quotation {{ props.row.TQUO_APPRVDT }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat

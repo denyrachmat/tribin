@@ -263,15 +263,15 @@
             <table class="tg">
                 <thead>
                     <tr>
-                        <th class="tg-0lax">No</td>
-                        <th class="tg-0lax">Item</td>
-                        <th class="tg-0lax">Pemakaian</td>
+                        <th class="tg-0lax" style="text-align:center">No</td>
+                        <th class="tg-0lax" style="text-align:center">Item</td>
+                        <th class="tg-0lax" style="text-align:center">Pemakaian</td>
                             @if(count($checkIsTruckCount) === 0)
-                        <th class="tg-0lax">Freq / Volt</td>
+                        <th class="tg-0lax" style="text-align:center">Freq / Volt</td>
                             @endif
-                        <th class="tg-0lax">Qty</td>
-                        <th class="tg-0lax">Harga Sewa</td>
-                        <th class="tg-0lax">Total</td>
+                        <th class="tg-0lax" style="text-align:center">Qty</td>
+                        <th class="tg-0lax" style="text-align:center">Harga Sewa</td>
+                        <th class="tg-0lax" style="text-align:center">Total</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -287,8 +287,8 @@
                         <td class="tg-0lax">{{$valueQuoDet['TQUODETA_ELECTRICITY']}}</td>
                         @endif
                         <td class="tg-0lax">{{$valueQuoDet['TQUODETA_ITMQT']}}</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($valueQuoDet['TQUODETA_PRC'])}}</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT'])}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($valueQuoDet['TQUODETA_PRC'])}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT'])}}</td>
                     </tr>
 
                     @php
@@ -297,7 +297,7 @@
                     @endforeach
                     <tr>
                         <td class="tg-0lax" colspan="{{count($checkIsTruckCount) === 0 ? 6 : 5}}">Total</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll)}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll)}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -305,12 +305,12 @@
         <table class="tg">
                 <thead>
                     <tr>
-                        <th class="tg-0lax">No</td>
-                        <th class="tg-0lax">Keterangan</td>
-                        <th class="tg-0lax">Jumlah</td>
-                        <th class="tg-0lax">Satuan</td>
-                        <th class="tg-0lax">Harga</td>
-                        <th class="tg-0lax">Total</td>
+                        <th class="tg-0lax" style="text-align:center">No</td>
+                        <th class="tg-0lax" style="text-align:center">Keterangan</td>
+                        <th class="tg-0lax" style="text-align:center">Jumlah</td>
+                        <th class="tg-0lax" style="text-align:center">Satuan</td>
+                        <th class="tg-0lax" style="text-align:center">Harga</td>
+                        <th class="tg-0lax" style="text-align:center">Total</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -323,8 +323,8 @@
                         <td class="tg-0lax">{{$valueQuoDet['MITM_ITMNM']}}</td>
                         <td class="tg-0lax">{{$valueQuoDet['TQUODETA_ITMQT']}}</td>
                         <td class="tg-0lax">{{$valueQuoDet['MITM_STKUOM']}}</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($valueQuoDet['TQUODETA_PRC'])}}</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT'])}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($valueQuoDet['TQUODETA_PRC'])}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT'])}}</td>
                     </tr>
 
                     @php
@@ -333,15 +333,15 @@
                     @endforeach
                     <tr>
                         <td class="tg-0lax" colspan="5">Total</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll)}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll)}}</td>
                     </tr>
                     <tr>
                         <td class="tg-0lax" colspan="5">Jasa Service & Transportasi</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($headerQuo->TQUO_SERVTRANS_COST)}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($headerQuo->TQUO_SERVTRANS_COST)}}</td>
                     </tr>
                     <tr>
                         <td class="tg-0lax" colspan="5">Grand Total</td>
-                        <td class="tg-0lax" style="white-space: nowrap">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -357,7 +357,7 @@
                 </tr>
                 @foreach($listCondition as $key => $valueCond)
                 <tr>
-                    <td>{{ $key + 1}}.</td>
+                    <td style="width: 3">{{ $key + 1}}.</td>
                     <td>{{ $valueCond['TQUOCOND_CONDI']}}</td>
                 </tr>
                 @endforeach

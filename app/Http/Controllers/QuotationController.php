@@ -1393,9 +1393,9 @@ class QuotationController extends Controller
                 ->get();
 
         $pdf = Pdf::loadView('pdf.quotation', [
-            'header' => 'JAYA ABADI TEKNIK',
+            'header' => $RSCG->letter_head,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia',
+            'addr' => $RSCG->address,
             'headerQuo' => $RSHeader,
             'quoIssDate' => $TQUO_ISSUDT,
             'ref' => $doc,

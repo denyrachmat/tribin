@@ -147,7 +147,7 @@
                   @click="onClickProceed(props.row.SRVH_DOCNO)"
                   dense
                   v-if="
-                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS === 1)
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS == 1)
                       .length === props.row.detail.length
                   "
                 >

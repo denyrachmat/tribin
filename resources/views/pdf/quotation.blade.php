@@ -11,7 +11,7 @@
             .pagebreak {
                 page-break-before: always;
             }
-            table { page-break-inside:auto }
+            table { page-break-after:always }
             div   { page-break-inside:avoid; } /* This is the key */
             thead { display:table-header-group }
             tfoot { display:table-footer-group }

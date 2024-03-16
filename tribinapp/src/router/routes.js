@@ -10,6 +10,7 @@ const routes = [
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
       { path: 'services', component: () => import('pages/transaction/services/serviceView.vue') },
       { path: 'servicesOrderList', component: () => import('pages/transaction/services/serviceOprView.vue') },
+      { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },
     ]
   },
 

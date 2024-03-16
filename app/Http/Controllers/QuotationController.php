@@ -1396,6 +1396,7 @@ class QuotationController extends Controller
             'header' => $RSCG->letter_head,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => $RSCG->address,
+            'telp' => $RSCG->phone,
             'headerQuo' => $RSHeader,
             'quoIssDate' => $TQUO_ISSUDT,
             'ref' => $doc,

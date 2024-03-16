@@ -4,7 +4,4 @@
 
       </q-table>
     </div>
-    <div class="q-pa-md">
-
-    </div>
 </template>

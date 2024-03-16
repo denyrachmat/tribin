@@ -132,7 +132,7 @@
             font-family: Arial, sans-serif;
             font-size: 12px;
             overflow: hidden;
-            padding: 10px 5px;
+            padding: 5px 5px;
             word-break: normal;
         }
 
@@ -144,7 +144,7 @@
             font-size: 12px;
             font-weight: normal;
             overflow: hidden;
-            padding: 10px 5px;
+            padding: 5px 5px;
             word-break: normal;
         }
 
@@ -160,6 +160,7 @@
         <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
         <div style="text-align: center; font-size: 16px;padding-bottom: 4px"><strong>{{$subHeader}}</strong></div>
         <div style="text-align: center;font-size: 13px;padding-bottom: 10px"><strong>{{$addr}}</strong></div>
+        <div style="text-align: center;font-size: 13px;padding-bottom: 10px"><strong>{{$telp}}</strong></div>
     </div>
 
     <div>
@@ -168,7 +169,7 @@
 
     <div class="row">
         <div class="col">
-            <table style="font-size: 10">
+            <table style="font-size: 9">
                 <tr>
                     <td>To</td>
                     <td>:</td>
@@ -202,7 +203,7 @@
             </table>
         </div>
         <div class="col">
-            <table style="font-size: 10">
+            <table style="font-size: 9">
                 <tr>
                     <td>Date</td>
                     <td>:</td>
@@ -224,15 +225,15 @@
                     <td>{{$users->phone}}</td>
                 </tr>
                 <tr>
-                    <td>Fax</td>
+                    <td>Email</td>
                     <td>:</td>
-                    <td>{{$users->fax}}</td>
+                    <td>{{$users->email}}</td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <div class="row" style="padding-top:1em;font-size: 10">
+    <div class="row" style="padding-top:5px;font-size: 9">
         <div class="col-12">
             <table>
                 @if($headerQuo->TQUO_TYPE === 1)
@@ -257,7 +258,7 @@
         </div>
     </div>
 
-    <div class="row" style="padding-top:1em;font-size: 10">
+    <div class="row" style="padding-top:5px;font-size: 9">
         <div class="col-12">
         @if($headerQuo->TQUO_TYPE === 1)
             <table class="tg">
@@ -335,23 +336,23 @@
                         <td class="tg-0lax" colspan="5">Total</td>
                         <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll)}}</td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td class="tg-0lax" colspan="5">Jasa Service & Transportasi</td>
                         <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($headerQuo->TQUO_SERVTRANS_COST)}}</td>
-                    </tr>
-                    <tr>
+                    </tr> -->
+                    <!-- <tr>
                         <td class="tg-0lax" colspan="5">Grand Total</td>
                         <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
-                    </tr>
+                    </tr> -->
                 </tbody>
             </table>
         @endif
         </div>
     </div>
 
-    <div class="row" style="padding-top:1em">
+    <div class="row" style="padding-top:5px">
         <div class="col-12">
-            <table style="font-size: 10">
+            <table style="font-size: 9">
                 <tr>
                     <td colspan=2>RENTAL CONDITION :</td>
                 </tr>
@@ -365,7 +366,7 @@
         </div>
     </div>
 
-        <div class="row" style="padding-top:1em">
+        <div class="row" style="padding-top:5px">
             <div class="col-12">
                 <table class="tg">
                     <thead>
@@ -387,18 +388,18 @@
                 </table>
             </div>
         </div>
-        
+
     <div class="avoid">
-        <div class="row" style="padding-top:1em">
-            <div class="col-12" style="font-size: 10">
+        <div class="row" style="padding-top:5px">
+            <div class="col-12" style="font-size: 9">
                 Besar harapan kami penawaran ini dapat menjadi pertimbangan prioritas untuk pengadaan kebutuhan di Perusahaan Bapak / Ibu.
                 Demikian kami sampaikan penawaran ini, dan sambil menunggu kabar lebih lanjut, atas perhatian dan kerjasama yang baik kami
                 ucapkan banyak terima kasih.
             </div>
         </div>
 
-        <div class="row" style="padding-top:1em">
-            <div class="col-12" style="font-size: 10;">
+        <div class="row" style="padding-top:5px">
+            <div class="col-12" style="font-size: 9;">
                 <table style="width: 100%;text-align:center">
                     <tr>
                         <td>Hormat Kami,</td>
@@ -412,11 +413,11 @@
                     </tr>
                     <tr>
                         <td style="height: 5em;">
-                            <img src="{{storage_path('app/public/mkt_sign.jpg')}}" />
+                            <img style="height: 5em;" src="{{storage_path('app/public/mkt_sign.jpg')}}" />
                         </td>
                         <td style="height: 5em;">
                             @if(!empty($headerQuo->TQUO_APPRVDT))
-                            <img src="{{storage_path('app/public/dir_sign.jpg')}}" />
+                            <img style="height: 5em;" src="{{storage_path('app/public/dir_sign.jpg')}}" />
                             @endif
                         </td>
                         <td style="height: 5em;"></td>
@@ -432,7 +433,7 @@
     </div>
 
     <footer>
-        <table class="tg" style="font-size: 10;">
+        <table class="tg" style="font-size: 9;">
             <tr>
                 <td class="tg-0lax" style="text-align: center;">
                     Cetakan dari system komputer tidak memerlukan tanda tangan basah

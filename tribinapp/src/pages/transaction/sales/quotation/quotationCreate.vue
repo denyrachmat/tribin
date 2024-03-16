@@ -397,8 +397,8 @@ const stateSubmit = computed(() =>
       listSavedItems.value.filter((fil) => !fil.item || !fil.price).length > 0
     : listSavedItems.value.length === 0 ||
       listSavedItems.value.filter((fil) => !fil.item || !fil.price || !fil.qty)
-        .length > 0 ||
-      !quotationServPrice.value
+        .length > 0
+      // || !quotationServPrice.value
 );
 
 // Select Customer

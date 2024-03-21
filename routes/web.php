@@ -258,7 +258,9 @@ Route::middleware('auth')->group(function () {
     });
     Route::prefix('quotationNew')->group(function () {
         Route::post('saveAPI', [QuotationController::class, 'saveAPI']);
+        Route::delete('{id}', [QuotationController::class, 'deleteQuotation']);
     });
+
     Route::post('quotation-item', [QuotationController::class, 'saveItem']);
     Route::post('quotation-condition', [QuotationController::class, 'saveCondition']);
 

@@ -55,6 +55,7 @@ const initialPagination = ref({
   rowsPerPage: 0,
   // rowsNumber: xx if getting data from a server
 });
+const loading = ref(false)
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -64,9 +65,13 @@ onMounted(() => {
 });
 
 const getData = async () => {
+  loading.value = true
   const data = await api.get("/master/conditions/getdataGroup").then((response) => {
+    loading.value = false
     console.log(response);
     rows.value = response.data.data;
+  }).catch((e) => {
+    loading.value = false
   });
 };
 

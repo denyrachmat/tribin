@@ -23,7 +23,7 @@
           :loading="loading"
           dense
           :pagination="{
-            rowsPerPage: 20
+            rowsPerPage: 20,
           }"
           class="my-sticky-header-column-table"
         >
@@ -80,7 +80,25 @@
                   dense
                   :disable="props.row.TQUO_APPRVDT !== null"
                 >
-                  <q-tooltip>Edit this quotation {{ props.row.TQUO_APPRVDT }}</q-tooltip>
+                  <q-tooltip>{{
+                    !props.row.TQUO_APPRVDT
+                      ? "Edit this quotation"
+                      : "Quotation already approved, cannot edit !"
+                  }}</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="red"
+                  icon="delete"
+                  @click="onClickDelete(props.row.TQUO_QUOCD)"
+                  dense
+                  :disable="props.row.TQUO_APPRVDT !== null"
+                >
+                  <q-tooltip>{{
+                    !props.row.TQUO_APPRVDT
+                      ? "Delete this quotation"
+                      : "Quotation already approved, cannot delete !"
+                  }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -209,9 +227,26 @@ const onClickEdit = (val) => {
   });
 };
 
+const onClickDelete = (val) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete this data ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web.delete(`quotationNew/${btoa(val)}`).then((res) => {
+      loading.value = false;
+      dataQuo();
+    });
+  });
+};
+
 const onClickPrint = (val) => {
-  window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(val), '_blank').focus();
-}
+  window
+    .open(process.env.API_WEB + "PDF/quotation/" + btoa(val), "_blank")
+    .focus();
+};
 </script>
 <style lang="sass">
 .my-sticky-header-column-table

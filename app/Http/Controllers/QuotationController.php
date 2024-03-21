@@ -1532,6 +1532,21 @@ class QuotationController extends Controller
         ];
     }
 
+    public function deleteQuotation($quoID) {
+        $deleteHeader = T_QUOHEAD::on($this->dedicatedConnection)->where('TQUO_QUOCD', base64_decode($quoID))->delete();
+        $deleteDetail = T_QUODETA::where('TQUODETA_QUOCD', base64_decode($quoID))->delete();
+        $deleteCondition = T_QUOCOND::where('TQUOCOND_QUOCD', base64_decode($quoID))->delete();
+
+        return [
+            'msg' => 'Quotation deleted !!',
+            'data' => [
+                $deleteHeader,
+                $deleteDetail,
+                $deleteCondition,
+            ]
+        ];
+    }
+
     public function viewAPI($id)
     {
         $dataHeader = T_QUOHEAD::on($this->dedicatedConnection)

@@ -12,6 +12,7 @@ use App\Models\T_QUOCOND;
 use App\Models\T_QUODETA;
 use App\Models\T_QUOHEAD;
 use App\Models\User;
+use App\Models\T_QUOPAYDETA;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -143,6 +144,15 @@ class QuotationController extends Controller
         T_QUOHEAD::on($this->dedicatedConnection)->create($quotationHeader);
         if (!empty($quotationDetail)) {
             T_QUODETA::on($this->dedicatedConnection)->insert($quotationDetail);
+        }
+
+        if ($request->has('payment') && !empty($request->payment)) {
+            foreach ($request->payment as $key => $valuePayment) {
+                T_QUOPAYDETA::on($this->dedicatedConnection)->create([
+                    'TQUOPAYDETA_QUOCD' => $newQuotationCode,
+                    'TQUOPAYDETA_IDPAY' => $valuePayment['TQUOPAYDETA_IDPAY'],
+                ]);
+            }
         }
 
         $countDetailCondition = count($request->TQUOCOND_CONDI);
@@ -1341,14 +1351,9 @@ class QuotationController extends Controller
             ->where("TQUO_QUOCD", $doc)
             ->where('TQUO_BRANCH', Auth::user()->branch)
             ->first();
-        $MCUS_CUSNM = $RSHeader->MCUS_CUSNM;
-        $TQUO_ATTN = $RSHeader->TQUO_ATTN;
-        $MCUS_TELNO = $RSHeader->MCUS_TELNO;
-        $TQUO_SBJCT = $RSHeader->TQUO_SBJCT;
 
         $_ISSUDT = explode('-', $RSHeader->TQUO_ISSUDT);
         $TQUO_ISSUDT = $_ISSUDT[2] . '/' . $_ISSUDT[1] . '/' . $_ISSUDT[0];
-        $TQUO_APPRVDT = $RSHeader->TQUO_APPRVDT;
 
         $RSDetail = T_QUODETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select(
             'TQUODETA_ITMCD',
@@ -1387,10 +1392,25 @@ class QuotationController extends Controller
             return str_contains($f['MITM_ITMNM'], 'MB-');
         });
 
-        $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
-                ->where('BRANCH', Auth::user()->branch)
-                ->whereNull('deleted_at')
-                ->get();
+        $checkSetupPayment = T_QUOPAYDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+            ->select(
+                'bank_name',
+                'bank_account_name',
+                'bank_account_number'
+            )
+            ->join('branch_payment_accounts as bpa', 'bpa.id', 'TQUOPAYDETA_IDPAY')
+            ->where('TQUOPAYDETA_QUOCD', $doc)
+            ->where('BRANCH', Auth::user()->branch)
+            ->get();
+
+        if(count($checkSetupPayment) === 0) {
+            $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+            ->where('BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')
+            ->get();
+        } else {
+            $branchPaymentAccount = $checkSetupPayment;
+        }
 
         $pdf = Pdf::loadView('pdf.quotation', [
             'header' => $RSCG->letter_head,
@@ -1477,6 +1497,16 @@ class QuotationController extends Controller
             )->delete();
         } else {
             $newQuotationCode = $this->idQuoCreator();
+        }
+
+        if ($request->has('PAYMENT') && !empty($request->PAYMENT)) {
+            T_QUOPAYDETA::on($this->dedicatedConnection)->where('TQUOPAYDETA_QUOCD', $newQuotationCode)->delete();
+            foreach ($request->PAYMENT as $key => $valuePayment) {
+                T_QUOPAYDETA::on($this->dedicatedConnection)->create([
+                    'TQUOPAYDETA_QUOCD' => $newQuotationCode['quocode'],
+                    'TQUOPAYDETA_IDPAY' => $valuePayment['id'],
+                ]);
+            }
         }
 
         $quotationHeader = [
@@ -1574,6 +1604,10 @@ class QuotationController extends Controller
             ->get()
             ->toArray();
 
+        $paymentDetail = T_QUOPAYDETA::on($this->dedicatedConnection)
+            ->where('TQUOPAYDETA_QUOCD', base64_decode($id))
+            ->get();
+
         if ($dataHeader) {
             return [
                 'status' => true,
@@ -1583,7 +1617,8 @@ class QuotationController extends Controller
                     [
                         'det' => $dataDetail,
                         'condlist' => $condDetail,
-                        'cond' => count($condDetail) > 0 ? $condDetail[0]['TQUOCOND_GROUP'] : ''
+                        'cond' => count($condDetail) > 0 ? $condDetail[0]['TQUOCOND_GROUP'] : '',
+                        'payment' => $paymentDetail
                     ]
                 )
             ];

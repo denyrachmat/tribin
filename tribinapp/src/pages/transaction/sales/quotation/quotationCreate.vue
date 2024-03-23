@@ -193,6 +193,16 @@
               >
               </q-btn>
               <q-btn
+                color="indigo"
+                label="Assign Bank Account"
+                @click="onClickChooseBankAcc"
+                :loading="loading"
+              >
+                <q-badge color="red" floating>{{
+                  payment.length
+                }}</q-badge>
+              </q-btn>
+              <q-btn
                 icon="visibility"
                 color="indigo"
                 flat
@@ -337,6 +347,7 @@ import { masterDataStore } from "stores/masterDataStore";
 
 import assignConditionsView from "pages/master/conditions/assignConditionsView.vue";
 import viewAssignedCond from "pages/master/conditions/viewAssignedCond.vue";
+import quotationBankChoose from "./quotationBankChoose.vue";
 
 const $q = useQuasar();
 
@@ -384,21 +395,23 @@ const quotationGroupConditions = ref("");
 const quotationConditions = ref([]);
 const quotationType = ref(1);
 const quotationServPrice = ref(0);
-
+const payment = ref([]);
 const listSavedItems = ref([]);
 
 const listItems = ref([]);
 const listCustomers = ref([]);
 const listUsage = ref([]);
 
-const stateSubmit = computed(() =>
-  quotationType.value === 1
-    ? listSavedItems.value.length === 0 ||
-      listSavedItems.value.filter((fil) => !fil.item || !fil.price).length > 0
-    : listSavedItems.value.length === 0 ||
-      listSavedItems.value.filter((fil) => !fil.item || !fil.price || !fil.qty)
-        .length > 0
-      // || !quotationServPrice.value
+const stateSubmit = computed(
+  () =>
+    quotationType.value === 1
+      ? listSavedItems.value.length === 0 ||
+        listSavedItems.value.filter((fil) => !fil.item || !fil.price).length > 0
+      : listSavedItems.value.length === 0 ||
+        listSavedItems.value.filter(
+          (fil) => !fil.item || !fil.price || !fil.qty
+        ).length > 0
+  // || !quotationServPrice.value
 );
 
 // Select Customer
@@ -482,6 +495,7 @@ const getSavedData = async (val) => {
       quotationConditions.value = hasil.condlist;
       quotationType.value = parseInt(hasil.TQUO_TYPE);
       quotationServPrice.value = hasil.TQUO_SERVTRANS_COST;
+      payment.value = hasil.payment
 
       hasil.det.map((valDet) => {
         listSavedItems.value.push({
@@ -554,6 +568,18 @@ const onClickViewListConditions = () => {
   }).onOk(async (val) => {});
 };
 
+const onClickChooseBankAcc = () => {
+  $q.dialog({
+    component: quotationBankChoose,
+    componentProps: {
+      payment: payment.value,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    payment.value = val
+  });
+};
+
 const onSubmitData = async () => {
   $q.dialog({
     title: "Confirmation",
@@ -568,10 +594,10 @@ const onSubmitData = async () => {
         cancel: true,
         persistent: true,
       }).onOk(async () => {
-        submitingData()
+        submitingData();
       });
     } else {
-      submitingData()
+      submitingData();
     }
   });
 };
@@ -591,6 +617,7 @@ const submitingData = async () => {
       DET: listSavedItems.value,
       COND: quotationGroupConditions.value,
       CONDLIST: quotationConditions.value,
+      PAYMENT: payment.value,
     })
     .then((response) => {
       loading.value = false;
@@ -603,17 +630,22 @@ const submitingData = async () => {
 };
 
 const onChangeType = (value) => {
-  $q.dialog({
-    title: "Confirmation",
-    message: `Are you sure want to change type ? This action will clear you lines !!`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    quotationGroupConditions.value = "";
-    quotationConditions.value = [];
-    quotationServPrice.value = 0;
-    listSavedItems.value = [];
-  });
+  // $q.dialog({
+  //   title: "Confirmation",
+  //   message: `Are you sure want to change type ? This action will clear you lines !!`,
+  //   cancel: true,
+  //   persistent: true,
+  // }).onOk(async () => {
+  //   quotationGroupConditions.value = "";
+  //   quotationConditions.value = [];
+  //   quotationServPrice.value = 0;
+  //   listSavedItems.value = [];
+  // });
+
+  quotationGroupConditions.value = "";
+  quotationConditions.value = [];
+  quotationServPrice.value = 0;
+  listSavedItems.value = [];
 };
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =

@@ -1404,10 +1404,22 @@ class QuotationController extends Controller
             ->get();
 
         if(count($checkSetupPayment) === 0) {
-            $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
-            ->where('BRANCH', Auth::user()->branch)
-            ->whereNull('deleted_at')
-            ->get();
+            $cekDefaultPrep = BranchPaymentAccount::on('mysql')->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn));
+            $cekDef = (clone $cekDefaultPrep)->where('branch_menu', '<>', '')->first();
+
+            if(empty($cekDef)) {
+                $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+                    ->where('BRANCH', Auth::user()->branch)
+                    ->whereNull('deleted_at')
+                    ->get();
+            } else {
+                $defData = (clone $cekDefaultPrep)->where('branch_menu', $RSHeader->T_QUOTYPE == 1 ? 'sewa' : 'jual')->first();
+                $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+                ->where('BRANCH', Auth::user()->branch)
+                ->whereNull('deleted_at')
+                ->where('bank_account_name', $defData->bank_account_name)
+                ->get();
+            }
         } else {
             $branchPaymentAccount = $checkSetupPayment;
         }

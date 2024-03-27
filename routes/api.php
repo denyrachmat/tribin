@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AccessRulesController;
+use App\Http\Controllers\API\OutgoingController;
 use App\Http\Controllers\ConditionController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ServiceAdminController;
 use Illuminate\Http\Request;
@@ -46,6 +48,7 @@ Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
 });
 
 Route::group(['prefix' => 'transaction', 'middleware' => ['api']], function() {
+    Route::resource('delivery', OutgoingController::class);
     Route::group(['prefix' => 'quotation'], function() {
         Route::get('view/{id}', [QuotationController::class, 'viewAPI']);
     });

@@ -208,6 +208,7 @@ Route::middleware('auth')->group(function () {
         Route::put('items/{id}', [DeliveryController::class, 'updateDODetail']);
         Route::put('items-actual/{id}', [DeliveryController::class, 'updateDODetailActual']);
         Route::post('', [DeliveryController::class, 'save']);
+        Route::post('searchAPI', [DeliveryController::class, 'searchAPI']);
         Route::get('', [DeliveryController::class, 'search']);
         Route::put('{id}', [DeliveryController::class, 'update']);
         Route::get('document/{id}', [DeliveryController::class, 'loadByDocument']);

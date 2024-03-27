@@ -43,6 +43,7 @@ class DeliveryController extends Controller
 
     function index()
     {
+        // return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
         return view('transaction.delivery');
     }
 
@@ -394,6 +395,34 @@ class DeliveryController extends Controller
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->get();
+        return ['data' => $RS];
+    }
+
+    function searchAPI(Request $request) {
+        $RSSub = T_DLVORDDETA::on($this->dedicatedConnection)->select('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH', DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD'))
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->groupBy('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
+
+        $RSTemp = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
+            "TDLVORD_DLVCD", "TDLVORD_CUSCD", "TDLVORD_ISSUDT",
+            "MCUS_CUSNM", 'TDLVORDDETA_SLOCD', 'TDLVORD_REMARK', 'TDLVORD_INVCD'
+        ])
+            ->leftJoin("M_CUS", function ($join) {
+                $join->on("TDLVORD_CUSCD", "=", "MCUS_CUSCD")
+                    ->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftJoinSub($RSSub, 'V1', function ($join) {
+                $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')
+                    ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
+            })
+            ->where('TDLVORD_BRANCH', Auth::user()->branch);
+
+            if (!empty($request->searchBy) && !empty($request->searchValue)) {
+                $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+            }
+
+            $RS = $RSTemp->get();
+
         return ['data' => $RS];
     }
 

@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 class DeliveryController extends Controller
 {
     protected $dedicatedConnection;
@@ -839,6 +840,58 @@ class DeliveryController extends Controller
 
         $this->fpdf->Output('delivery documents ' . $doc . '.pdf', 'I');
         exit;
+    }
+
+    function toNewPDF(Request $request)
+    {
+        $doc = base64_decode($request->id);
+        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)->select('TDLVORD_ISSUDT', 'MCUS_CUSNM', 'MCUS_ADDR1', 'TDLVORD_REMARK', 'MCUS_TELNO', 'TDLVORD_INVCD', 'TDLVORD_LINE')
+            ->leftJoin('M_CUS', function ($join) {
+                $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->where("TDLVORD_DLVCD", $doc)
+            ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->first();
+        $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
+        $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')
+            ->get();
+        $Branch = M_BRANCH::select('MBRANCH_NM')->where('MBRANCH_CD', Auth::user()->branch)->first();
+        $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
+            'name',
+            'COMPANY_BRANCHES.address',
+            'COMPANY_BRANCHES.phone',
+            'invoice_letter_id'
+        )
+            ->where('connection', $this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->first();
+        $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+            'TDLVORDDETA_ITMCD',
+            'TDLVORDDETA_ITMQT',
+            'MITM_ITMNM',
+            'MITM_STKUOM',
+            'created_by',
+            'TDLVORDDETA_SLOCD',
+            'MITM_ITMNM',
+            'MITM_MODEL',
+            'MITM_BRAND',
+        )
+            ->leftJoin('M_ITM', function ($join) {
+                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->where('TDLVORDDETA_DLVCD', $doc)
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)->get();
+
+        return view('pdf.invoice', [
+            'header' => $RSHeader,
+            'iss_date' => $DOIssuDate,
+            'payment_acc' => $branchPaymentAccount,
+            'branch' => $Branch,
+            'company' => $Company,
+            'det' => $RSDetail
+        ]);
     }
 
     function numberToSentence($nilai)

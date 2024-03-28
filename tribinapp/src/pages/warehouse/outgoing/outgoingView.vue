@@ -93,6 +93,8 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
+import outgoingCreate from "./outgoingCreate.vue";
+
 const $q = useQuasar()
 
 const rows = ref([]);
@@ -151,6 +153,14 @@ const getOutgoingData = async () => {
 }
 
 const onClickNew = () => {
-    
+  $q.dialog({
+    component: outgoingCreate,
+    // componentProps: {
+    //   datas: data.data,
+    // },
+    // persistent: true,
+  }).onOk(async (val) => {
+    getOutgoingData();
+  });
 }
 </script>

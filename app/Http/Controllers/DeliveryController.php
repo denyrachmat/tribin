@@ -43,7 +43,7 @@ class DeliveryController extends Controller
 
     function index()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
+        return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
         return view('transaction.delivery');
     }
 
@@ -83,6 +83,50 @@ class DeliveryController extends Controller
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
             ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
+        return ['data' => $RS->get()];
+    }
+
+    function outstandingWarehouseAPI(Request $request)
+    {
+        $columnMap = [
+            'TSLO_SLOCD',
+            'MCUS_CUSNM',
+            'TSLO_POCD',
+        ];
+
+        $RSDelivery = T_DLVORDDETA::on($this->dedicatedConnection)->selectRaw('TDLVORDDETA_SLOCD,TDLVORDDETA_BRANCH,TDLVORDDETA_ITMCD, sum(TDLVORDDETA_ITMQT) TTLDLVQT')
+            ->whereNull('deleted_at')
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->groupBy('TDLVORDDETA_SLOCD', 'TDLVORDDETA_BRANCH', 'TDLVORDDETA_ITMCD');
+        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT')
+            ->whereNull('deleted_at')
+            ->where('TSLODETA_BRANCH', Auth::user()->branch)
+            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD');
+
+        $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
+            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT",
+            DB::raw("SUM(SALESQT) SALESQT"), DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT")
+        ])
+            ->leftJoin("M_CUS", function ($join) {
+                $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
+                    ->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->joinSub($SalesDetail, 'V1', function ($join) {
+                $join->on('TSLO_SLOCD', '=', 'TSLODETA_SLOCD')->on('TSLO_BRANCH', '=', 'TSLODETA_BRANCH');
+            })
+            ->leftJoinSub($RSDelivery, 'V2', function ($join) {
+                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                    ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
+            });
+
+            if(!empty($request->searchBy)) {
+                $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+            }
+
+            $RS->where('TSLO_BRANCH', Auth::user()->branch)
+                ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
+                ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
+
         return ['data' => $RS->get()];
     }
 

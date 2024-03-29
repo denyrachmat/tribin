@@ -204,6 +204,7 @@ Route::middleware('auth')->group(function () {
         Route::get('unconfirmed', [DeliveryController::class, 'unconfirmed']);
         Route::post('confirm', [DeliveryController::class, 'confirmOutgoing']);
         Route::get('outstanding-warehouse', [DeliveryController::class, 'outstandingWarehouse']);
+        Route::post('outstanding-warehouse-api', [DeliveryController::class, 'outstandingWarehouseAPI']);
         Route::get('outstanding-warehouse/{id}', [DeliveryController::class, 'outstandingWarehousePerDocument']);
         Route::put('items/{id}', [DeliveryController::class, 'updateDODetail']);
         Route::put('items-actual/{id}', [DeliveryController::class, 'updateDODetailActual']);

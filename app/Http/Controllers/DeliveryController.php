@@ -43,7 +43,7 @@ class DeliveryController extends Controller
 
     function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
+        // return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
         return view('transaction.delivery');
     }
 

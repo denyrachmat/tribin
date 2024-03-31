@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+
 class DeliveryController extends Controller
 {
     protected $dedicatedConnection;
@@ -43,7 +44,7 @@ class DeliveryController extends Controller
 
     function index()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
+        return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
         return view('transaction.delivery');
     }
 
@@ -59,14 +60,14 @@ class DeliveryController extends Controller
             ->whereNull('deleted_at')
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_SLOCD', 'TDLVORDDETA_BRANCH', 'TDLVORDDETA_ITMCD');
-        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT')
+        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT, TSLODETA_PRC')
             ->whereNull('deleted_at')
             ->where('TSLODETA_BRANCH', Auth::user()->branch)
-            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD');
+            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD', 'TSLODETA_PRC');
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
             "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT",
-            DB::raw("SUM(SALESQT) SALESQT"), DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT")
+            DB::raw("SUM(SALESQT) SALESQT"), DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT", 'TSLODETA_PRC')
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -82,7 +83,8 @@ class DeliveryController extends Controller
             ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
-            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
+            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", 'TSLODETA_PRC');
+
         return ['data' => $RS->get()];
     }
 
@@ -98,10 +100,10 @@ class DeliveryController extends Controller
             ->whereNull('deleted_at')
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_SLOCD', 'TDLVORDDETA_BRANCH', 'TDLVORDDETA_ITMCD');
-        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT')
+        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT, TSLODETA_PRC')
             ->whereNull('deleted_at')
             ->where('TSLODETA_BRANCH', Auth::user()->branch)
-            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD');
+            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD', 'TSLODETA_PRC');
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
             "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT",
@@ -119,31 +121,31 @@ class DeliveryController extends Controller
                     ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             });
 
-            if(!empty($request->searchBy)) {
-                $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
-            }
+        if (!empty($request->searchBy)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
 
-            $RS->where('TSLO_BRANCH', Auth::user()->branch)
-                ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
-                ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
+        $RS->where('TSLO_BRANCH', Auth::user()->branch)
+            ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
+            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
 
         return ['data' => $RS->get()];
     }
 
-    function outstandingWarehousePerDocument(Request $request)
+    function outstandingWarehousePerDocument($id)
     {
         $RSDelivery = T_DLVORDDETA::on($this->dedicatedConnection)->selectRaw('TDLVORDDETA_SLOCD,TDLVORDDETA_BRANCH,TDLVORDDETA_ITMCD, sum(TDLVORDDETA_ITMQT) TTLDLVQT')
             ->whereNull('deleted_at')
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_SLOCD', 'TDLVORDDETA_BRANCH', 'TDLVORDDETA_ITMCD');
-        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT')
+        $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT, TSLODETA_PRC')
             ->whereNull('deleted_at')
             ->where('TSLODETA_BRANCH', Auth::user()->branch)
-            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD');
+            ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD', 'TSLODETA_PRC');
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
             "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM",
-            DB::raw("SUM(SALESQT)-IFNULL(SUM(TTLDLVQT),0) BALQT")
+            DB::raw("SUM(SALESQT)-IFNULL(SUM(TTLDLVQT),0) BALQT"), 'TSLODETA_PRC'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -159,10 +161,10 @@ class DeliveryController extends Controller
             ->leftJoin("M_ITM", function ($join) {
                 $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMCD')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->where('TSLO_SLOCD', base64_decode($request->id))
+            ->where('TSLO_SLOCD', base64_decode($id))
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
-            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM");
+            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM", 'TSLODETA_PRC');
         return ['data' => $RS->get()];
     }
 
@@ -267,23 +269,32 @@ class DeliveryController extends Controller
             ->where('BRANCH', Auth::user()->branch)
             ->first();
 
+
         $LastLine = DB::connection($this->dedicatedConnection)->table('T_DLVORDHEAD')
             ->whereYear('created_at', '=', date('Y'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->max('TDLVORD_LINE');
+        if (empty($request->TDLVORD_DLVCD)) {
 
-        $quotationHeader = [];
-        $newQuotationCode = '';
-        $newInvoiceCode = '';
-        if (!$LastLine) {
-            $LastLine = 1;
-            $newQuotationCode = 'SP-' . date('y') . '-0001';
-            $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            $quotationHeader = [];
+            $newQuotationCode = '';
+            $newInvoiceCode = '';
+            if (!$LastLine) {
+                $LastLine = 1;
+                $newQuotationCode = 'SP-' . date('y') . '-0001';
+                $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            } else {
+                $LastLine++;
+                $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
+                $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            }
         } else {
-            $LastLine++;
-            $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
-            $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            $newQuotationCode = $request->TDLVORD_DLVCD;
+            $newInvoiceCode = $request->TDLVORD_INVCD;
+
+            $this->delete(base64_encode($newQuotationCode));
         }
+
         $quotationHeader = [
             'TDLVORD_DLVCD' => $newQuotationCode,
             'TDLVORD_CUSCD' => $request->TDLVORD_CUSCD,
@@ -296,40 +307,67 @@ class DeliveryController extends Controller
 
         # data quotation detail item
         $validator = Validator::make($request->all(), [
-            'TDLVORDDETA_ITMCD' => 'required|array',
-            'TDLVORDDETA_ITMQT' => 'required|array',
-            'TDLVORDDETA_ITMQT.*' => 'required|numeric',
-            'TDLVORDDETA_PRC' => 'required|array',
-            'TDLVORDDETA_PRC.*' => 'required|numeric',
+            'SO_DET.*' => 'required|array',
+            // 'TDLVORDDETA_ITMQT' => 'required|array',
+            // 'TDLVORDDETA_ITMQT.*' => 'required|numeric',
+            // 'TDLVORDDETA_PRC' => 'required|array',
+            // 'TDLVORDDETA_PRC.*' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 406);
         }
-        $countDetail = count($request->TDLVORDDETA_ITMCD);
-
 
         T_DLVORDHEAD::on($this->dedicatedConnection)->create($quotationHeader);
-        $quotationDetail = [];
-        for ($i = 0; $i < $countDetail; $i++) {
-            $quotationDetail[] = [
+        foreach ($request->SO_DET as $keySODet => $valueSODet) {
+            T_DLVORDDETA::on($this->dedicatedConnection)->insert([
                 'TDLVORDDETA_DLVCD' => $newQuotationCode,
-                'TDLVORDDETA_ITMCD' => $request->TDLVORDDETA_ITMCD[$i],
-                'TDLVORDDETA_ITMQT' => $request->TDLVORDDETA_ITMQT[$i],
-                'TDLVORDDETA_PRC' => $request->TDLVORDDETA_PRC[$i],
+                'TDLVORDDETA_ITMCD' => $valueSODet['TSLODETA_ITMCD'],
+                'TDLVORDDETA_ITMQT' => $valueSODet['BALQT'],
+                'TDLVORDDETA_PRC' => $valueSODet['TSLODETA_PRC'],
                 'created_by' => Auth::user()->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'TDLVORDDETA_BRANCH' => Auth::user()->branch,
-                'TDLVORDDETA_SLOCD' => $request->TDLVORDDETA_SLOCD[$i]
-            ];
+                'TDLVORDDETA_SLOCD' => $request->TDLVORDDETA_SLOCD
+            ]);
         }
-        if (!empty($quotationDetail)) {
-            T_DLVORDDETA::on($this->dedicatedConnection)->insert($quotationDetail);
-        }
+
+        // $countDetail = count($request->TDLVORDDETA_ITMCD);
+        // $quotationDetail = [];
+        // for ($i = 0; $i < $countDetail; $i++) {
+        //     $quotationDetail[] = [
+        //         'TDLVORDDETA_DLVCD' => $newQuotationCode,
+        //         'TDLVORDDETA_ITMCD' => $request->TDLVORDDETA_ITMCD[$i],
+        //         'TDLVORDDETA_ITMQT' => $request->TDLVORDDETA_ITMQT[$i],
+        //         'TDLVORDDETA_PRC' => $request->TDLVORDDETA_PRC[$i],
+        //         'created_by' => Auth::user()->nick_name,
+        //         'created_at' => date('Y-m-d H:i:s'),
+        //         'TDLVORDDETA_BRANCH' => Auth::user()->branch,
+        //         'TDLVORDDETA_SLOCD' => $request->TDLVORDDETA_SLOCD[$i]
+        //     ];
+        // }
+        // if (!empty($quotationDetail)) {
+        //     T_DLVORDDETA::on($this->dedicatedConnection)->insert($quotationDetail);
+        // }
+
         return [
             'msg' => 'OK',
             'doc' => $newQuotationCode,
             'docInvoice' => $newInvoiceCode,
+        ];
+    }
+
+    public function delete($id)
+    {
+        $det = T_DLVORDDETA::on($this->dedicatedConnection)->where('TDLVORDDETA_DLVCD', base64_decode($id))->delete();
+        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', base64_decode($id))->delete();
+
+        return [
+            'msg' => 'OK',
+            'data' => [
+                'head' => $header,
+                'det' => $det
+            ],
         ];
     }
 
@@ -442,7 +480,8 @@ class DeliveryController extends Controller
         return ['data' => $RS];
     }
 
-    function searchAPI(Request $request) {
+    function searchAPI(Request $request)
+    {
         $RSSub = T_DLVORDDETA::on($this->dedicatedConnection)->select('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH', DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD'))
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
@@ -461,13 +500,52 @@ class DeliveryController extends Controller
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch);
 
-            if (!empty($request->searchBy) && !empty($request->searchValue)) {
-                $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
-            }
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
 
-            $RS = $RSTemp->get();
+        $hasil = [];
 
-        return ['data' => $RS];
+        foreach ($RSTemp->get()->toArray() as $keySODet => $valueSODet) {
+            $hasil[] = array_merge(
+                $valueSODet,
+                [
+                    'listItems' => T_DLVORDDETA::on($this->dedicatedConnection)
+                        ->select(
+                            'TDLVORDDETA_DLVCD',
+                            'TDLVORDDETA_BRANCH',
+                            'TDLVORDDETA_SLOCD',
+                            DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
+                            'MITM_ITMNM',
+                            DB::raw('TDLVORDDETA_ITMQT as BALQT'),
+                            'TSLODETA_PRC'
+                        )
+                        ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+                        ->where('TDLVORDDETA_DLVCD', $valueSODet['TDLVORD_DLVCD'])
+                        ->leftJoin("M_ITM", function ($join) {
+                            $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')
+                                ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+                        })
+                        ->leftJoin('T_SLODETA', function ($join) {
+                            $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+                                ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                                ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
+                        })
+                        ->groupBy(
+                            'TDLVORDDETA_DLVCD',
+                            'TDLVORDDETA_BRANCH',
+                            'TDLVORDDETA_SLOCD',
+                            'TDLVORDDETA_ITMCD',
+                            'MITM_ITMNM',
+                            'TDLVORDDETA_ITMQT',
+                            'TSLODETA_PRC'
+                        )
+                        ->get()->toArray()
+                ]
+            );
+        }
+
+        return ['data' => $hasil];
     }
 
     function toPDF(Request $request)
@@ -1689,12 +1767,13 @@ class DeliveryController extends Controller
 
     function formUnconfirmed()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'outgoingConfirm']);
         return view(
             'transaction.outgoing_confirmation'
         );
     }
 
-    function unconfirmed()
+    function unconfirmed(Request $request)
     {
         $Delivery = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->leftJoin('T_DLVORDDETA', function ($join) {
@@ -1722,6 +1801,11 @@ class DeliveryController extends Controller
                 $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
             })
             ->whereNull('CITRN_DOCNO');
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $Data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
         return ['data' => $Data->get(), 'sql' => $Data->toSql()];
     }
 

@@ -5,7 +5,7 @@
         <span class="text-h4">Outgoing</span>
       </div>
       <div class="col text-right">
-        <q-btn icon="add" color="blue" @click="onClickNew">
+        <q-btn icon="add" color="blue" @click="onClickNew([])">
           <q-tooltip>Create New Delivery</q-tooltip>
         </q-btn>
       </div>
@@ -75,7 +75,16 @@
                   flat
                   color="orange"
                   icon="edit"
-                  @click="onEdit()"
+                  @click="onClickNew(props.row)"
+                  dense
+                >
+                  <q-tooltip>Edit Data</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="red"
+                  icon="delete"
+                  @click="onDelete(props.row.TDLVORD_DLVCD)"
                   dense
                 >
                   <q-tooltip>Edit Data</q-tooltip>
@@ -152,15 +161,30 @@ const getOutgoingData = async () => {
     });
 }
 
-const onClickNew = () => {
+const onClickNew = (data = []) => {
   $q.dialog({
     component: outgoingCreate,
-    // componentProps: {
-    //   datas: data.data,
-    // },
+    componentProps: {
+      dataHeader: data,
+    },
     // persistent: true,
   }).onOk(async (val) => {
     getOutgoingData();
+  });
+}
+
+const onDelete = (id) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete this data ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web.delete(`delivery/${btoa(id)}`).then((res) => {
+      loading.value = false;
+      getOutgoingData();
+    });
   });
 }
 </script>

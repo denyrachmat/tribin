@@ -201,7 +201,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('delivery')->group(function () {
         Route::get('form', [DeliveryController::class, 'index']);
         Route::get('unconfirmed-form', [DeliveryController::class, 'formUnconfirmed']);
-        Route::get('unconfirmed', [DeliveryController::class, 'unconfirmed']);
+        Route::post('unconfirmed', [DeliveryController::class, 'unconfirmed']);
         Route::post('confirm', [DeliveryController::class, 'confirmOutgoing']);
         Route::get('outstanding-warehouse', [DeliveryController::class, 'outstandingWarehouse']);
         Route::post('outstanding-warehouse-api', [DeliveryController::class, 'outstandingWarehouseAPI']);
@@ -218,6 +218,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('accessory-items/{id}', [DeliveryController::class, 'deleteAccessoryById']);
         Route::put('accessory-items/{id}', [DeliveryController::class, 'updateAccessoryById']);
         Route::get('unreturned', [DeliveryController::class, 'unreturnedItem']);
+
+        Route::delete('{id}', [DeliveryController::class, 'delete']);
     });
 
     #Terkait Receive Order

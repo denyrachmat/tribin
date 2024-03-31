@@ -26,7 +26,6 @@
                 rowsPerPage: 20,
               }"
               class="my-sticky-header-column-table"
-              @row-click="onChooseSO"
             >
               <template v-slot:top-right>
                 <q-select
@@ -71,7 +70,7 @@
 
               <!-- For Body -->
               <template v-slot:body="props">
-                <q-tr :props="props">
+                <q-tr :props="props" @click="onChooseSO(props.row)">
                   <q-td
                     v-for="col in props.cols"
                     :key="col.name"
@@ -128,9 +127,9 @@ const columns = ref([
     align: "left",
   },
   {
-    name: "TSLO_POCD",
-    label: "PO Number",
-    field: "TSLO_POCD",
+    name: "TSLO_PLAN_DLVDT",
+    label: "DLV Plan Date",
+    field: "TSLO_PLAN_DLVDT",
     sortable: true,
     align: "left",
   }
@@ -144,7 +143,7 @@ onMounted(() => {
 })
 
 const getSOData = async () => {
-    loading.value = true;
+  loading.value = true;
   await api_web
     .post(`delivery/outstanding-warehouse-api`, {
       searchBy: filterCol.value,
@@ -158,7 +157,7 @@ const getSOData = async () => {
       loading.value = false;
     });
 }
-const onChooseSO = (evt, row, index) => {
+const onChooseSO = (row) => {
     onDialogOK(row)
 }
 

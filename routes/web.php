@@ -201,7 +201,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('delivery')->group(function () {
         Route::get('form', [DeliveryController::class, 'index']);
         Route::get('unconfirmed-form', [DeliveryController::class, 'formUnconfirmed']);
-        Route::post('unconfirmed', [DeliveryController::class, 'unconfirmed']);
+        Route::get('unconfirmed', [DeliveryController::class, 'unconfirmed']);
         Route::post('confirm', [DeliveryController::class, 'confirmOutgoing']);
         Route::get('outstanding-warehouse', [DeliveryController::class, 'outstandingWarehouse']);
         Route::post('outstanding-warehouse-api', [DeliveryController::class, 'outstandingWarehouseAPI']);

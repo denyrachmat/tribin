@@ -48,7 +48,7 @@
               </template>
             </q-input>
           </template>
-          
+
           <!-- For header -->
           <template v-slot:header="props">
             <q-tr :props="props">
@@ -58,7 +58,7 @@
               <q-th auto-width>Action</q-th>
             </q-tr>
           </template>
-          
+
           <!-- For Body -->
           <template v-slot:body="props">
             <q-tr :props="props">
@@ -70,7 +70,7 @@
                   flat
                   color="green"
                   icon="check"
-                  @click="onConfirm()"
+                  @click="onConfirm(props.row)"
                   dense
                 >
                   <q-tooltip>Confirm Delivery</q-tooltip>
@@ -87,6 +87,7 @@
 import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
+import onCheckItem from "./onCheckItem.vue";
 
 const $q = useQuasar()
 
@@ -131,7 +132,16 @@ const getUnconfirmData = async () => {
     });
 }
 
-const onConfirm = () => {
+const onConfirm = (val) => {
+  console.log(val)
+  $q.dialog({
+    component: onCheckItem,
+    componentProps: {
+      dataHeader: val,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
 
+  });
 }
 </script>

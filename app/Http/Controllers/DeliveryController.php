@@ -1767,7 +1767,7 @@ class DeliveryController extends Controller
 
     function formUnconfirmed()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'outgoingConfirm']);
+        return view('tribinapp_layouts', ['routeApp' => 'outgoingConfirm']);
         return view(
             'transaction.outgoing_confirmation'
         );

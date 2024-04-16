@@ -273,7 +273,7 @@ const onClickAddItem = (val, mode = "add") => {
     },
     // persistent: true,
   }).onOk(async (res) => {
-    submitedItems.value[val].TSRVD_FLGSTS = 1;
+    submitedItems.value[val].TSRVD_FLGSTS = 5;
     submitedItems.value[val].listFixDet = res;
   });
 };

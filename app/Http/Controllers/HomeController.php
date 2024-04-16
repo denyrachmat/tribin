@@ -258,6 +258,7 @@ class HomeController extends Controller
             'dataDeliveryOrderNoDriver' => $dataDeliveryOrderNoDriver,
             'dataDeliveryOrderUndelivered' => $dataDeliveryOrderUndelivered,
             'dataUnApprovedSPK' => $UnApprovedSPK,
+            'dataUnApprovedService' => []
         ];
     }
 

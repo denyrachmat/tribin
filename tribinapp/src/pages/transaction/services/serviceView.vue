@@ -366,29 +366,36 @@ const statusMaker = (val) => {
   const statusOne = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 1);
   const statusTwo = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 2);
   const statusThree = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 3);
+  const statusFive = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 5);
 
   if (statusZero.length == val.detail.length) {
     return {
-      color: 'warning',
-      label: 'On Draft',
+      color: 'red',
+      label: 'No Price Added yet !',
       icon: 'edit'
     };
   } else if (statusOne.length > 0 && statusOne.length < val.detail.length) {
     return {
-      color: 'green',
-      label: 'On Checking Price',
+      color: 'warning',
+      label: 'Please Add item & price',
       icon: 'payments'
+    };
+  } else if (statusFive.length > 0 && statusFive.length == val.detail.length) {
+    return {
+      color: 'indigo',
+      label: 'Added Price Done, Waiting Manager Confirmation',
+      icon: 'price_check'
     };
   } else if (statusOne.length > 0 && statusOne.length == val.detail.length) {
     return {
-      color: 'primary',
-      label: 'Checking Price Done, Waiting Cust Confirmation',
+      color: 'green',
+      label: 'Manager has been approve, Waiting Cust. Confirmation',
       icon: 'price_check'
     };
   } else if (statusTwo.length > 0 && statusTwo.length >= val.detail.length) {
     return {
-      color: 'green',
-      label: 'On progress Fix by Technician',
+      color: 'cyan',
+      label: 'Cust. has been approved, continue to fix.',
       icon: 'engineering'
     };
   } else if (statusThree.length > 0 && statusThree.length === val.detail.length) {

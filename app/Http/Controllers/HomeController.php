@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use App\Models\T_SRV_HEAD;
 class HomeController extends Controller
 {
     protected $dedicatedConnection;
@@ -96,7 +96,7 @@ class HomeController extends Controller
         $dataDeliveryOrderUndelivered = [];
         $UnApprovedSPK = [];
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             # Query untuk data Quotation
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_QUODETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TQUODETA_QUOCD, TQUODETA_BRANCH")
@@ -142,7 +142,7 @@ class HomeController extends Controller
                 ->groupBy('TPCHORD_PCHCD')->get();
         }
 
-        if (in_array($activeRole['code'], ['marketing', 'marketing_adm'])) {
+        if (in_array($activeRole['code'], ['root', 'marketing', 'marketing_adm'])) {
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_QUODETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TQUODETA_QUOCD")
                 ->where('TQUODETA_BRANCH', Auth::user()->branch)
@@ -198,7 +198,7 @@ class HomeController extends Controller
                 ->groupBy('TSLODRAFT_SLOCD')->get();
         }
 
-        if (in_array($activeRole['code'], ['purchasing'])) {
+        if (in_array($activeRole['code'], ['root', 'purchasing'])) {
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHREQDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD, TPCHREQDETA_BRANCH")
                 ->groupBy("TPCHREQDETA_PCHCD", "TPCHREQDETA_BRANCH")
@@ -214,7 +214,7 @@ class HomeController extends Controller
                 ->groupBy('TPCHREQ_PCHCD')->get();
         }
 
-        if (in_array($activeRole['code'], ['ga'])) {
+        if (in_array($activeRole['code'], ['root', 'ga'])) {
             $dataDeliveryOrderNoDriver = T_DLVORDHEAD::on($this->dedicatedConnection)->select('MCUS_CUSNM')
                 ->leftJoin('M_CUS', function ($join) {
                     $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -224,7 +224,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['driver'])) {
+        if (in_array($activeRole['code'], ['root', 'driver'])) {
             $dataDeliveryOrderUndelivered = T_DLVORDHEAD::on($this->dedicatedConnection)->select('MCUS_CUSNM')
                 ->leftJoin('M_CUS', function ($join) {
                     $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -235,7 +235,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['ga_manager', 'ga_spv'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv'])) {
             $SPK = C_SPK::on($this->dedicatedConnection)->select('CSPK_PIC_AS', 'CSPK_REFF_DOC', 'CSPK_JOBDESK')
                 ->whereNotNull('submitted_at');
             if ($activeRole['code'] === 'ga_manager') {
@@ -246,6 +246,10 @@ class HomeController extends Controller
             }
             $UnApprovedSPK = $SPK->get();
             $UnApprovedSPK = json_decode(json_encode($UnApprovedSPK), true);
+        }
+
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'svc_mgr'])) {
+
         }
 
         return [

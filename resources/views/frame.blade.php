@@ -342,9 +342,9 @@
                     createLiItem('linotif8', 'labelNotifDeliveryOnGoing', 'On going', totalNotifQTDeliveryUndelivered, liHeadDelivery, liDeliveryOnGoingOnclick)
                     // SPK Group
                     createLiItem('linotif9', 'labelNotifUnApprovedSPK', 'SPK Approval', totalNotifQTUnApprovedSPK, liHeadSPK, liUnApprovedSPKOnclick)
-                    
+
                     // Service Group
-                    createLiItem('linotif10', 'labelNotifUnApprovedSPK', 'Service Approval', totalNotifService, liHeadService, liUnApprovedServiceOnclick)
+                    createLiItem('linotif10', 'labelNotifUnApprovedService', 'Service Approval', totalNotifService, liHeadService, liUnApprovedServiceOnclick)
                 }
             });
         }
@@ -505,11 +505,11 @@
 
         function liUnApprovedServiceOnclick(e) {
             e.preventDefault()
-            if (labelNotifUnApprovedSPK.innerText.length > 0) {
+            if (labelNotifUnApprovedService.innerText.length > 0) {
                 ContentContainer.innerHTML = 'Please wait'
                 $.ajax({
                     type: "GET",
-                    url: "/approval/form/spk",
+                    url: "/servicesAdmins/viewUnapproveMgr",
                     success: function(response) {
                         setInnerHTML(ContentContainer, response)
                     }

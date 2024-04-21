@@ -192,7 +192,7 @@
               </q-btn>
             </q-item-section>
             <q-item-section side v-if="props.mode === 'approvecust'">
-              <q-btn icon="cancel" color="red" 
+              <q-btn icon="cancel" color="red"
                 outline @click="onClickReject(idx)">
                 <q-tooltip>Reject this as customer</q-tooltip>
               </q-btn>
@@ -311,7 +311,7 @@ const onClickApprove = (idx) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .put(`servicesAdmin/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
+      .put(`servicesAdmins/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
         TSRVD_FLGSTS: 2,
       })
       .then((response) => {
@@ -334,7 +334,7 @@ const onClickReject = (idx) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .put(`servicesAdmin/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
+      .put(`servicesAdmins/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
         TSRVD_FLGSTS: 0,
       })
       .then((response) => {
@@ -356,7 +356,7 @@ const onClickDone = (idx) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .put(`servicesAdmin/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
+      .put(`servicesAdmins/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
         TSRVD_FLGSTS: 3,
       })
       .then((response) => {

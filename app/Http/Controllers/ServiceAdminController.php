@@ -47,7 +47,7 @@ class ServiceAdminController extends Controller
             'detail.*' => 'required',
             'detail.*.TSRVD_ITMCD' => 'required',
             'detail.*.TSRVD_QTY' => 'required'
-        ],[
+        ], [
             'header.SRVH_ISSDT.required' => 'Issue Date cannot be null !',
             'header.SRVH_CUSCD.required' => 'Customer cannot be null !',
         ]);
@@ -73,7 +73,7 @@ class ServiceAdminController extends Controller
         foreach ($request->detail as $key => $value) {
             $det[] = T_SRV_DET::on($this->dedicatedConnection)->updateOrCreate([
                 'TSRVH_ID' => $headerStore->id,
-            ],[
+            ], [
                 'TSRVH_ID' => $headerStore->id,
                 'TSRVD_ITMCD' => $value['TSRVD_ITMCD'],
                 'TSRVD_LINE' => $value['TSRVD_LINE'],
@@ -91,7 +91,6 @@ class ServiceAdminController extends Controller
      */
     public function show(string $id)
     {
-
     }
 
     /**
@@ -108,7 +107,7 @@ class ServiceAdminController extends Controller
     public function update(Request $request, string $id)
     {
         T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))
-        ->update($request->all());
+            ->update($request->all());
 
         return ['msg' => 'Data has been updated'];
     }
@@ -116,7 +115,7 @@ class ServiceAdminController extends Controller
     public function updateByDet(Request $request, string $id)
     {
         T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))
-        ->update($request->all());
+            ->update($request->all());
 
         return ['msg' => 'Data has been updated'];
     }
@@ -138,20 +137,21 @@ class ServiceAdminController extends Controller
         return ['msg' => 'Data cannot be found!, delete failed'];
     }
 
-    public function search(Request $request){
+    public function search(Request $request)
+    {
         $RSTemp = T_SRV_HEAD::on($this->dedicatedConnection)
-        ->select(
-            'T_SRV_HEAD.id',
-            'T_SRV_HEAD.SRVH_DOCNO',
-            'T_SRV_HEAD.SRVH_ISSDT',
-            'MCUS_CUSNM',
-            'MCUS_CUSCD',
-            'MCUS_ADDR1',
-            'MCUS_TELNO',
-            'MCUS_PIC_TELNO',
-            'T_SRV_HEAD.created_at',
-        )
-        ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD');
+            ->select(
+                'T_SRV_HEAD.id',
+                'T_SRV_HEAD.SRVH_DOCNO',
+                'T_SRV_HEAD.SRVH_ISSDT',
+                'MCUS_CUSNM',
+                'MCUS_CUSCD',
+                'MCUS_ADDR1',
+                'MCUS_TELNO',
+                'MCUS_PIC_TELNO',
+                'T_SRV_HEAD.created_at',
+            )
+            ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD');
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
@@ -161,7 +161,7 @@ class ServiceAdminController extends Controller
         $hasil = [];
         foreach ($head as $key => $value) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
-                ->with(['listFixDet' => function($j) {
+                ->with(['listFixDet' => function ($j) {
                     $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
                     $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
                 }])
@@ -205,7 +205,8 @@ class ServiceAdminController extends Controller
         return $temp;
     }
 
-    public function printInvoicePDF($id) {
+    public function printInvoicePDF($id)
+    {
         $data = $this->search(new Request([
             'searchBy' => 'SRVH_DOCNO',
             'searchValue' => base64_decode($id)
@@ -229,7 +230,23 @@ class ServiceAdminController extends Controller
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
         ]);
-        
+
         return $pdf->stream('invoice.pdf');
+    }
+
+    public function showListUnapproveMgr()
+    {
+        $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)
+            ->select('T_SRV_HEAD.*')
+            ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
+            ->where('TSRVD_FLGSTS', 5)
+            ->get();
+
+        return $unapproveService;
+    }
+
+    public function viewUnapproveMgr() {
+        // return 'testerrrrr';
+        return view('tribinapp_layouts', ['routeApp' => 'servicesApproval']);
     }
 }

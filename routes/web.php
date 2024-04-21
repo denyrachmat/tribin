@@ -390,10 +390,12 @@ Route::middleware('auth')->group(function () {
 
     #Terkait Service
     Route::resource('servicesAdmin', ServiceAdminController::class);
-    Route::prefix('servicesAdmin')->group(function () {
+    Route::prefix('servicesAdmins')->group(function () {
         Route::post('search' ,[ServiceAdminController::class, 'search']);
         Route::put('updateByDet/{id}' ,[ServiceAdminController::class, 'updateByDet']);
         Route::get('printInvoice/{id}' ,[ServiceAdminController::class, 'printInvoicePDF']);
+        Route::get('viewUnapproveMgr' ,[ServiceAdminController::class, 'viewUnapproveMgr']);
+        Route::get('listUnapproveMgr' ,[ServiceAdminController::class, 'showListUnapproveMgr']);
     });
 
     Route::resource('servicesOPR', ServiceOprController::class);

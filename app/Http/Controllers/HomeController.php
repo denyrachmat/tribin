@@ -95,6 +95,7 @@ class HomeController extends Controller
         $dataDeliveryOrderNoDriver = [];
         $dataDeliveryOrderUndelivered = [];
         $UnApprovedSPK = [];
+        $unapproveService = [];
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             # Query untuk data Quotation
@@ -249,7 +250,11 @@ class HomeController extends Controller
         }
 
         if (in_array($activeRole['code'], ['root', 'ga_manager', 'svc_mgr'])) {
-
+            $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)
+                ->select('T_SRV_HEAD.*')
+                ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
+                ->where('TSRVD_FLGSTS', 5)
+                ->get();
         }
 
         return [
@@ -262,7 +267,7 @@ class HomeController extends Controller
             'dataDeliveryOrderNoDriver' => $dataDeliveryOrderNoDriver,
             'dataDeliveryOrderUndelivered' => $dataDeliveryOrderUndelivered,
             'dataUnApprovedSPK' => $UnApprovedSPK,
-            'dataUnApprovedService' => []
+            'dataUnApprovedService' => $unapproveService
         ];
     }
 
@@ -351,11 +356,11 @@ class HomeController extends Controller
                     ->select(DB::raw("
                         TQUO_QUOCD as APP_CD,
                         max(TTLDETAIL) TTLDETAIL,
-                        max(MCUS_CUSNM) APP_CUSNM, 
+                        max(MCUS_CUSNM) APP_CUSNM,
                         max(T_QUOHEAD.created_at) CREATED_AT,
                         max(TQUO_SBJCT) APP_SBJCT,
                         max(TQUO_ATTN) APP_ATTN,
-                        TQUO_BRANCH, 
+                        TQUO_BRANCH,
                         TQUO_TYPE
                     "))
                     ->joinSub($RSDetail, 'dt', function ($join) {
@@ -367,7 +372,7 @@ class HomeController extends Controller
                     ->whereNull("TQUO_REJCTDT")
                     ->orderBy(DB::raw('max(T_QUOHEAD.created_at)'), 'desc')
                     ->groupBy('TQUO_QUOCD', 'TQUO_BRANCH', 'TQUO_TYPE')->get()->toArray();
-                
+
                 // PR Detail
                 $RSDetail = DB::connection($value->connection)->table('T_PCHREQDETA')
                     ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD")
@@ -377,7 +382,7 @@ class HomeController extends Controller
                     ->select(DB::raw('
                         "Purchase Request" APP_CUSNM,
                         TPCHREQ_PCHCD APP_CD,
-                        max(TTLDETAIL), 
+                        max(TTLDETAIL),
                         max(T_PCHREQHEAD.created_at) CREATED_AT,
                         max(TPCHREQ_PURPOSE) APP_SBJCT,
                         TPCHREQ_BRANCH
@@ -398,7 +403,7 @@ class HomeController extends Controller
                 $dataPurchaseOrderTobeUpproved = T_PCHORDHEAD::on($value->connection)
                     ->select(DB::raw("
                         TPCHORD_PCHCD APP_CD,
-                        max(TTLDETAIL) APP_SBJCT, 
+                        max(TTLDETAIL) APP_SBJCT,
                         MSUP_SUPNM APP_CUSNM,
                         max(T_PCHORDHEAD.created_at) CREATED_AT,
                         TPCHORD_BRANCH
@@ -415,7 +420,7 @@ class HomeController extends Controller
                 $SPK = C_SPK::on($value->connection)->select(DB::raw('CSPK_PIC_AS APP_SBJCT, CSPK_REFF_DOC APP_CD, CSPK_JOBDESK APP_SBJCT'))
                     ->whereNotNull('submitted_at')
                     ->whereNull('CSPK_GA_MGR_APPROVED_AT')->get();
-                
+
                 $hasil[] = [
                     'connection' => $value->connection,
                     'name' => $value->name,

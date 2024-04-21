@@ -224,7 +224,7 @@ onMounted(() => {
 const dataSrv = async () => {
   loading.value = true;
   await api_web
-    .post("servicesAdmin/search", {
+    .post("servicesAdmins/search", {
       searchBy: filterCol.value,
       searchValue: filter.value,
     })
@@ -286,7 +286,7 @@ const onClickView = (val) => {
 const onClickPrint = (val) => {
   window
     .open(
-      process.env.API_WEB + "servicesAdmin/printInvoice/" + btoa(val),
+      process.env.API_WEB + "servicesAdmins/printInvoice/" + btoa(val),
       "_blank"
     )
     .focus();

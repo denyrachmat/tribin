@@ -393,8 +393,10 @@ Route::middleware('auth')->group(function () {
     Route::prefix('servicesAdmins')->group(function () {
         Route::post('search' ,[ServiceAdminController::class, 'search']);
         Route::put('updateByDet/{id}' ,[ServiceAdminController::class, 'updateByDet']);
+        Route::put('updateDetByIDHead/{id}' ,[ServiceAdminController::class, 'updateDetByIDHead']);
         Route::get('printInvoice/{id}' ,[ServiceAdminController::class, 'printInvoicePDF']);
         Route::get('viewUnapproveMgr' ,[ServiceAdminController::class, 'viewUnapproveMgr']);
+        Route::get('viewUnapproveMgrDet/{id}' ,[ServiceAdminController::class, 'viewUnapproveDetail']);
         Route::get('listUnapproveMgr' ,[ServiceAdminController::class, 'showListUnapproveMgr']);
     });
 

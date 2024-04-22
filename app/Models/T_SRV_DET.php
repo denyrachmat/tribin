@@ -18,6 +18,7 @@ class T_SRV_DET extends Model
         'TSRVD_REMARK',
         'TSRVD_CUSTRMK',
         'TSRVD_QTY',
+        'TSRVD_MGRRMK',
         'created_by',
     ];
 

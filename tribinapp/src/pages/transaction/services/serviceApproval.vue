@@ -59,26 +59,11 @@
                   <div class="row">
                     <div class="col">
                       <q-btn
-                        :label="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length
-                        ? 'Waiting Cust. Approval'
-                        : (props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 5).length == props.row.detail.length
-                          ? 'Waiting Mgr. Approval'
-                          : 'Resolve')"
                         color="primary"
-                        outline
-                        @click="
-                          onClickPreview(
-                            props.row,
-                            props.row.resolve.length == props.row.detail.length
-                              ? 'approve'
-                              : 'edit'
-                          )
-                        "
-                        :disable="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length ||
-                        props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 5).length == props.row.detail.length"
+                        label="View Data"
+                        @click="onClickView(props.row)"
                       />
                     </div>
-                    <div class="col text-right"></div>
                   </div>
                 </q-card-section>
               </q-card>
@@ -93,6 +78,8 @@
 import { ref, onMounted, computed } from "vue";
 import { date, useDialogPluginComponent, useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
+
+import serviceApprovalDetView from "./serviceApprovalDetView.vue"
 
 const $q = useQuasar();
 
@@ -141,9 +128,9 @@ const interval = ref(null);
 onMounted(() => {
   dataSrv();
 
-  // interval.value = setInterval(() => {
-  //   dataSrv();
-  // }, 10000);
+  interval.value = setInterval(() => {
+    dataSrv();
+  }, 10000);
 });
 
 const dataSrv = async () => {
@@ -157,5 +144,17 @@ const dataSrv = async () => {
     .catch((e) => {
       loading.value = false;
     });
+};
+
+const onClickView = (val) => {
+  $q.dialog({
+    component: serviceApprovalDetView,
+    componentProps: {
+      idHeader: val
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataSrv();
+  });
 };
 </script>

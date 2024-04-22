@@ -120,6 +120,17 @@ class ServiceAdminController extends Controller
         return ['msg' => 'Data has been updated'];
     }
 
+    public function updateDetByIDHead(Request $request, string $id){
+        $dataHead = T_SRV_DET::on($this->dedicatedConnection)
+            ->where('TSRVH_ID', base64_decode($id))
+            ->get();
+
+        foreach ($dataHead as $key => $value) {
+            $this->updateByDet(new Request($request->all()), base64_encode($value->id));
+        }
+
+        return ['msg' => 'Data has been updated'];
+    }
     /**
      * Remove the specified resource from storage.
      */
@@ -237,16 +248,27 @@ class ServiceAdminController extends Controller
     public function showListUnapproveMgr()
     {
         $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)
-            ->select('T_SRV_HEAD.*')
+            ->select('T_SRV_HEAD.*', 'M_CUS.MCUS_CUSNM')
             ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
+            ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
             ->where('TSRVD_FLGSTS', 5)
             ->get();
 
         return $unapproveService;
     }
 
+    public function viewUnapproveDetail($id) {
+        $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->first();
+        $unapproveService = T_SRV_DET::on($this->dedicatedConnection)
+            ->where('TSRVH_ID', $head->id)
+            ->with('listFixDet')
+            ->get()
+            ->toArray();
+
+        return $unapproveService;
+    }
+
     public function viewUnapproveMgr() {
-        // return 'testerrrrr';
         return view('tribinapp_layouts', ['routeApp' => 'servicesApproval']);
     }
 }

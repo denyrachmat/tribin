@@ -43,14 +43,21 @@
 
             <q-item-section>
               <q-item-label>
-                <div v-if="props.mode === 'view'">                 
-                <q-item-label>
-                    {{ items.MITM_ITMNM ? items.MITM_ITMNM : listItems.filter(fil => fil.MITM_ITMCD == items.TSRVF_ITMCD)[0].MITM_ITMNM }}
-                </q-item-label>               
-                <q-item-label caption>
-                    Item
-                </q-item-label>
-              </div>
+                <div v-if="props.mode === 'view'">
+                  <q-item-label v-if="!loading">
+                    {{
+                      items.MITM_ITMNM
+                        ? items.MITM_ITMNM
+                        : listItems.filter(
+                            (fil) => fil.MITM_ITMCD == items.TSRVF_ITMCD
+                          )[0].MITM_ITMNM
+                    }}
+                  </q-item-label>
+                  <q-item-label v-else>
+                    Please wait, loading item description
+                  </q-item-label>
+                  <q-item-label caption> Item </q-item-label>
+                </div>
                 <q-select
                   dense
                   filled
@@ -76,13 +83,11 @@
             </q-item-section>
 
             <q-item-section>
-              <div v-if="props.mode === 'view'">                 
+              <div v-if="props.mode === 'view'">
                 <q-item-label>
-                    {{ items.TSRVF_PRC.toLocaleString() }}
-                </q-item-label>               
-                <q-item-label caption>
-                    Price
+                  {{ items.TSRVF_PRC.toLocaleString() }}
                 </q-item-label>
+                <q-item-label caption> Price </q-item-label>
               </div>
               <q-input
                 label="Price"
@@ -95,13 +100,11 @@
             </q-item-section>
 
             <q-item-section>
-              <div v-if="props.mode === 'view'">                 
+              <div v-if="props.mode === 'view'">
                 <q-item-label>
-                    {{ items.TSRVF_QTY.toLocaleString() }}
-                </q-item-label>               
-                <q-item-label caption>
-                    Qty
+                  {{ items.TSRVF_QTY.toLocaleString() }}
                 </q-item-label>
+                <q-item-label caption> Qty </q-item-label>
               </div>
               <q-input
                 label="Qty"
@@ -114,12 +117,15 @@
             </q-item-section>
 
             <q-item-section v-if="props.mode === 'view'">
-                <q-item-label>
-                    Rp {{ (parseInt(items.TSRVF_PRC) * parseInt(items.TSRVF_QTY)).toLocaleString() }}
-                </q-item-label>
-                <q-item-label caption>
-                    Total Price
-                </q-item-label>
+              <q-item-label>
+                Rp
+                {{
+                  (
+                    parseInt(items.TSRVF_PRC) * parseInt(items.TSRVF_QTY)
+                  ).toLocaleString()
+                }}
+              </q-item-label>
+              <q-item-label caption> Total Price </q-item-label>
             </q-item-section>
 
             <q-item-section side v-if="mode !== 'view'">
@@ -132,27 +138,17 @@
             </q-item-section>
           </q-item>
 
-          <q-item
-            class="q-my-sm"
-            clickable
-            v-ripple
-            v-if="mode === 'view'"
-          >
+          <q-item class="q-my-sm" clickable v-ripple v-if="mode === 'view'">
+            <q-item-section> </q-item-section>
+            <q-item-section> </q-item-section>
+            <q-item-section> </q-item-section>
             <q-item-section>
-            </q-item-section>
-            <q-item-section>
-            </q-item-section>
-            <q-item-section>
-            </q-item-section>
-            <q-item-section>
-                <q-item-label>
-                   <span class="text-h5 text-bold">
-                    Rp {{ getTotal(listItemsSel) }}
-                   </span>
-                </q-item-label>
-                <q-item-label caption>
-                    Total Price
-                </q-item-label>
+              <q-item-label>
+                <span class="text-h5 text-bold">
+                  Rp {{ getTotal(listItemsSel) }}
+                </span>
+              </q-item-label>
+              <q-item-label caption> Total Price </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -194,6 +190,7 @@ const props = defineProps({
 onMounted(async () => {
   if (props.dataItem.listFixDet) {
     listItemsSel.value = props.dataItem.listFixDet;
+
     await getItem();
   }
 });
@@ -261,11 +258,11 @@ const onClickDeleteLine = (idx) => {
 };
 
 const getTotal = (data) => {
-    let hasil = 0;
-    data.map(items => {
-        hasil += (parseInt(items.TSRVF_PRC) * parseInt(items.TSRVF_QTY))
-    })
+  let hasil = 0;
+  data.map((items) => {
+    hasil += parseInt(items.TSRVF_PRC) * parseInt(items.TSRVF_QTY);
+  });
 
-    return hasil.toLocaleString()
-}
+  return hasil.toLocaleString();
+};
 </script>

@@ -49,13 +49,6 @@
                   <div class="text-subtitle2">{{ props.row.SRVH_ISSDT }}</div>
                 </q-card-section>
                 <q-card-section>
-                  <div class="text-h6 text-bold">
-                    {{ props.row.resolve.length }} of
-                    {{ props.row.detail.length }}
-                  </div>
-                  <div class="text-subtitle2">Resolved Items</div>
-                </q-card-section>
-                <q-card-section>
                   <div class="row">
                     <div class="col">
                       <q-btn

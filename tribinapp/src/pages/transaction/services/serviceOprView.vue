@@ -40,7 +40,7 @@
                   <div class="text-h5 text-bold">
                     {{ props.row.SRVH_DOCNO }}
                   </div>
-                  <div>{{ statusMaker(props.row).label }}</div>
+                  <div v-html="statusMaker(props.row).label"></div>
                 </q-card-section>
                 <q-separator />
                 <q-card-section>
@@ -60,10 +60,10 @@
                   <div class="row">
                     <div class="col">
                       <q-btn
-                        :label="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length 
-                        ? 'Waiting Cust. Approval' 
+                        :label="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length
+                        ? 'Waiting Cust. Approval'
                         : (props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 5).length == props.row.detail.length
-                          ? 'Waiting Mgr. Approval' 
+                          ? 'Waiting Mgr. Approval'
                           : 'Resolve')"
                         color="primary"
                         outline
@@ -75,7 +75,7 @@
                               : 'edit'
                           )
                         "
-                        :disable="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length || 
+                        :disable="props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length == props.row.detail.length ||
                         props.row.detail.filter(fil => fil.TSRVD_FLGSTS === 5).length == props.row.detail.length"
                       />
                     </div>
@@ -205,9 +205,12 @@ const statusMaker = (val) => {
   const statusFive = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 5);
 
   if (statusZero.length == val.detail.length) {
+    const checkRemarks = val.detail.filter((fil) => fil.TSRVD_MGRRMK !== '')
     return {
       color: 'red',
-      label: 'No Price Added yet !',
+      label: checkRemarks.length > 0
+        ? `Price Rejected by Mgr. <br>${checkRemarks[0].TSRVD_MGRRMK}`
+        : 'No Price Added yet !',
       icon: 'edit'
     };
   } else if (statusOne.length > 0 && statusOne.length < val.detail.length) {

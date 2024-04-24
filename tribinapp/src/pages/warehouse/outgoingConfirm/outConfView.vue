@@ -137,6 +137,7 @@ const onConfirm = (val) => {
   $q.dialog({
     component: onCheckItem,
     componentProps: {
+      idHead: val.TDLVORD_DLVCD,
       dataHeader: val,
     },
     // persistent: true,

@@ -14,4 +14,8 @@ class T_DLVORDHEAD extends Model
         'TDLVORD_ISSUDT', 'TDLVORD_REMARK', 'TDLVORD_INVCD', 'updated_by', 'TDLVORD_MEKANIK', 'TDLVORD_JALAN_COST',
         'TDLVORD_VEHICLE_REGNUM'
     ];
+
+    public function dlvdet() {
+        return $this->hasMany(T_DLVORDDETA::class, 'TDLVORDDETA_DLVCD', 'TDLVORD_DLVCD');
+    }
 }

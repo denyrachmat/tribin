@@ -144,7 +144,7 @@
                   flat
                   color="indigo"
                   icon="check"
-                  @click="onClickProceed(props.row.SRVH_DOCNO)"
+                  @click="onClickProceed(props.row)"
                   dense
                   v-if="
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS == 1)

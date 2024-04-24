@@ -1775,7 +1775,17 @@ class DeliveryController extends Controller
 
     function unconfirmed(Request $request)
     {
-        $Delivery = T_DLVORDHEAD::on($this->dedicatedConnection)
+
+        $ITRN = C_ITRN::on($this->dedicatedConnection)
+            ->select('CITRN_DOCNO', 'CITRN_BRANCH')
+            ->where('CITRN_BRANCH', Auth::user()->branch)
+            ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
+
+        $Data = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
+            ->with(['dlvdet' => function($f) {
+                $f->join('M_ITM_GRP', 'TDLVORDDETA_ITMCD', 'MITM_ITMNM');
+            }])
             ->leftJoin('T_DLVORDDETA', function ($join) {
                 $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
             })
@@ -1785,22 +1795,22 @@ class DeliveryController extends Controller
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
             })
-            ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
+            ->leftJoinSub($ITRN, 'V2', function ($join) {
+                $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')
+                    ->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
+            })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->whereNull('T_DLVORDDETA.deleted_at')
             ->where('MITM_ITMTYPE', '!=', '3')
-            ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM');
-
-        $ITRN = C_ITRN::on($this->dedicatedConnection)
-            ->select('CITRN_DOCNO', 'CITRN_BRANCH')
-            ->where('CITRN_BRANCH', Auth::user()->branch)
-            ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
-
-        $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
-            ->leftJoinSub($ITRN, 'V2', function ($join) {
-                $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
-            })
+            ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
             ->whereNull('CITRN_DOCNO');
+
+        // $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
+        //     ->leftJoinSub($ITRN, 'V2', function ($join) {
+        //         $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')
+        //             ->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
+        //     })
+        //     ->whereNull('CITRN_DOCNO');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $Data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -1850,12 +1860,13 @@ class DeliveryController extends Controller
             ->whereNull('CITRN_DOCNO')->get();
 
         if (count($Data)) {
-            $Delivery = T_DLVORDDETA::on($this->dedicatedConnection)
-                ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_ITMQT')
-                ->where('TDLVORDDETA_DLVCD', $request->id)
-                ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-                ->get();
-            foreach ($Delivery as $r) {
+            // $Delivery = T_DLVORDDETA::on($this->dedicatedConnection)
+            //     ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_ITMQT')
+            //     ->where('TDLVORDDETA_DLVCD', $request->id)
+            //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            //     ->get();
+
+            foreach ($request->data as $r) {
                 C_ITRN::on($this->dedicatedConnection)->create([
                     'CITRN_BRANCH' => Auth::user()->branch,
                     'CITRN_LOCCD' => 'WH1',
@@ -1868,6 +1879,12 @@ class DeliveryController extends Controller
                     'CITRN_PRCAMT' => 0,
                     'created_by' => Auth::user()->nick_name,
                 ]);
+
+                T_DLVORDDETA::on($this->dedicatedConnection)
+                    ->where('id', $r->id)
+                    ->update([
+                        'TDLVORDDETA_ITMCD_ACT' => $r->TDLVORDDETA_ITMCD_ACT
+                    ]);
             }
         }
 

@@ -12,52 +12,135 @@
       </q-card-section>
 
       <q-card-section>
-        <div
-          :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
-          v-for="(row, idx) in rows"
-          :key="idx"
+        <fieldset style="border: 1px black solid; border-radius: 10px">
+          <legend style="margin-left: 1em; padding: 0.2em 0.8em">
+            <b>Item Checker</b>
+          </legend>
+          <div
+            :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
+            v-for="(row, idx) in rows"
+            :key="idx"
+          >
+            <div class="col">
+              <q-input
+                filled
+                dense
+                label="Item Request"
+                v-model="row.MITM_ITMNMREAL"
+                readonly
+              />
+            </div>
+            <div class="col q-pl-md">
+              <q-input
+                filled
+                dense
+                label="Qty"
+                v-model="row.TDLVORDDETA_ITMQT"
+                readonly
+              />
+            </div>
+            <div class="col q-pl-md">
+              <q-select
+                dense
+                filled
+                label="Item Code Confirmation"
+                v-model="row.TDLVORDDETA_ITMCD_ACT"
+                use-input
+                input-debounce="500"
+                :options="listItems"
+                @filter="
+                  (val, update, abort) =>
+                    filterFn(
+                      val ? val : row.MITM_ITMNMREAL,
+                      update,
+                      abort,
+                      'item'
+                    )
+                "
+                behavior="dialog"
+                option-label="MITM_ITMNM"
+                option-value="MITM_ITMCD"
+                emit-value
+                map-options
+                :loading="loading"
+              >
+              </q-select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset
+          style="
+            border: 1px black solid;
+            border-radius: 10px;
+            height: 35vh;
+            overflow: auto;
+          "
         >
-          <div class="col">
-            <q-input
-              filled
-              dense
-              label="Item Request"
-              v-model="row.MITM_ITMNMREAL"
-              readonly
-            />
+          <legend style="margin-left: 1em; padding: 0.2em 0.8em">
+            <div class="row">
+              <div class="col">
+                <b>Accesories</b>
+              </div>
+            </div>
+          </legend>
+
+          <div class="row">
+            <div class="col text-right">
+              <q-btn icon="add" color="indigo" flat dense @click="listAcc.push({TDLVACCESSORY_ITMCD: '', TDLVACCESSORY_ITMQT: 0})">
+                <q-tooltip>Add Accesories</q-tooltip>
+              </q-btn>
+            </div>
           </div>
-          <div class="col q-pl-md">
-            <q-input
-              filled
-              dense
-              label="Qty"
-              v-model="row.TDLVORDDETA_ITMQT"
-              readonly
-            />
+
+          <div
+            :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
+            v-for="(acc, idx) in listAcc"
+            :key="idx"
+          >
+            <div class="col">
+              <q-select
+                dense
+                filled
+                label="Item Code Accesories"
+                v-model="acc.TDLVACCESSORY_ITMCD"
+                use-input
+                input-debounce="500"
+                :options="listItems"
+                @filter="
+                  (val, update, abort) =>
+                    filterFn(
+                      val,
+                      update,
+                      abort,
+                      'item'
+                    )
+                "
+                behavior="dialog"
+                option-label="MITM_ITMNM"
+                option-value="MITM_ITMCD"
+                emit-value
+                map-options
+                :loading="loading"
+              >
+              </q-select>
+            </div>
+
+            <div class="col q-pl-md">
+              <q-input
+                filled
+                dense
+                label="Qty"
+                v-model="acc.TDLVACCESSORY_ITMQT"
+                :readonly="!acc.TDLVACCESSORY_ITMCD"
+              />
+            </div>
+
+            <div class="col-2 q-pl-md">
+              <q-btn icon="delete" color="red" flat dense @click="listAcc.splice(idx, 1)"/>
+            </div>
           </div>
-          <div class="col q-pl-md">
-            <q-select
-              dense
-              filled
-              label="Item Name"
-              v-model="row.TDLVORDDETA_ITMCD_ACT"
-              use-input
-              input-debounce="500"
-              :options="listItems"
-              @filter="
-                (val, update, abort) =>
-                  filterFn(val ? val : row.MITM_ITMNMREAL, update, abort, 'item')
-              "
-              behavior="dialog"
-              option-label="MITM_ITMNM"
-              option-value="MITM_ITMCD"
-              emit-value
-              map-options
-              :loading="loading"
-            >
-            </q-select>
-          </div>
-        </div>
+        </fieldset>
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
@@ -85,6 +168,7 @@ const props = defineProps({
 
 const rows = ref([]);
 const listItems = ref([]);
+const listAcc = ref([]);
 const loading = ref(false);
 
 onMounted(() => {
@@ -137,10 +221,12 @@ const onSubmitData = () => {
         .post("delivery/confirm", {
           id: props.idHead,
           data: rows.value,
+          acc: listAcc.value
         })
         .then((response) => {
           loading.value = false;
           listItems.value = response.data.data;
+          onDialogOK()
         })
         .catch(() => {
           loading.value = false;

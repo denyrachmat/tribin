@@ -44,7 +44,7 @@ class DeliveryController extends Controller
 
     function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
+        // return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
         return view('transaction.delivery');
     }
 
@@ -1821,45 +1821,46 @@ class DeliveryController extends Controller
 
     function confirmOutgoing(Request $request)
     {
-        $totalEmptyItemActual = T_DLVORDDETA::on($this->dedicatedConnection)
-            ->whereNull('TDLVORDDETA_ITMCD_ACT')
-            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-            ->where('TDLVORDDETA_DLVCD', $request->id)
-            ->count();
-        if ($totalEmptyItemActual > 0) {
-            return response()->json([['Please input Actual item']], 406);
-        }
+        // $totalEmptyItemActual = T_DLVORDDETA::on($this->dedicatedConnection)
+        //     ->whereNull('TDLVORDDETA_ITMCD_ACT')
+        //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+        //     ->where('TDLVORDDETA_DLVCD', $request->id)
+        //     ->count();
 
-        $Delivery = T_DLVORDHEAD::on($this->dedicatedConnection)
-            ->leftJoin('T_DLVORDDETA', function ($join) {
-                $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
-            })
-            ->leftJoin('M_CUS', function ($join) {
-                $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
-            })
-            ->leftJoin('M_ITM', function ($join) {
-                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
-            })
-            ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
-            ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->where('TDLVORD_DLVCD', $request->id)
-            ->whereNull('T_DLVORDDETA.deleted_at')
-            ->where('MITM_ITMTYPE', '!=', '3')
-            ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM');
+        // if ($totalEmptyItemActual > 0) {
+        //     return response()->json([['Please input Actual item']], 406);
+        // }
 
-        $ITRN = C_ITRN::on($this->dedicatedConnection)
-            ->select('CITRN_DOCNO', 'CITRN_BRANCH')
-            ->where('CITRN_BRANCH', Auth::user()->branch)
-            ->where('CITRN_DOCNO', $request->id)
-            ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
+        // $Delivery = T_DLVORDHEAD::on($this->dedicatedConnection)
+        //     ->leftJoin('T_DLVORDDETA', function ($join) {
+        //         $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
+        //     })
+        //     ->leftJoin('M_CUS', function ($join) {
+        //         $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+        //     })
+        //     ->leftJoin('M_ITM', function ($join) {
+        //         $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
+        //     })
+        //     ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
+        //     ->where('TDLVORD_BRANCH', Auth::user()->branch)
+        //     ->where('TDLVORD_DLVCD', $request->id)
+        //     ->whereNull('T_DLVORDDETA.deleted_at')
+        //     ->where('MITM_ITMTYPE', '!=', '3')
+        //     ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM');
 
-        $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
-            ->leftJoinSub($ITRN, 'V2', function ($join) {
-                $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
-            })
-            ->whereNull('CITRN_DOCNO')->get();
+        // $ITRN = C_ITRN::on($this->dedicatedConnection)
+        //     ->select('CITRN_DOCNO', 'CITRN_BRANCH')
+        //     ->where('CITRN_BRANCH', Auth::user()->branch)
+        //     ->where('CITRN_DOCNO', $request->id)
+        //     ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
 
-        if (count($Data)) {
+        // $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
+        //     ->leftJoinSub($ITRN, 'V2', function ($join) {
+        //         $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
+        //     })
+        //     ->whereNull('CITRN_DOCNO')->get();
+
+        if (count($request->data) > 0) {
             // $Delivery = T_DLVORDDETA::on($this->dedicatedConnection)
             //     ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_ITMQT')
             //     ->where('TDLVORDDETA_DLVCD', $request->id)
@@ -1867,24 +1868,44 @@ class DeliveryController extends Controller
             //     ->get();
 
             foreach ($request->data as $r) {
-                C_ITRN::on($this->dedicatedConnection)->create([
+                T_DLVORDDETA::on($this->dedicatedConnection)
+                    ->where('id', $r['id'])
+                    ->update([
+                        'TDLVORDDETA_ITMCD_ACT' => $r['TDLVORDDETA_ITMCD_ACT']
+                    ]);
+
+                C_ITRN::on($this->dedicatedConnection)->updateorcreate([
+                    'CITRN_BRANCH' => Auth::user()->branch,
+                    'CITRN_LOCCD' => 'WH1',
+                    'CITRN_DOCNO' => $request->id,
+                    'CITRN_FORM' => 'OUT-SHP',
+                    'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
+                ],[
                     'CITRN_BRANCH' => Auth::user()->branch,
                     'CITRN_LOCCD' => 'WH1',
                     'CITRN_DOCNO' => $request->id,
                     'CITRN_ISSUDT' => date('Y-m-d'),
                     'CITRN_FORM' => 'OUT-SHP',
-                    'CITRN_ITMCD' => $r->TDLVORDDETA_ITMCD_ACT,
-                    'CITRN_ITMQT' => $r->TDLVORDDETA_ITMQT * -1,
+                    'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
+                    'CITRN_ITMQT' => $r['TDLVORDDETA_ITMQT'] * -1,
                     'CITRN_PRCPER' => 0,
                     'CITRN_PRCAMT' => 0,
                     'created_by' => Auth::user()->nick_name,
                 ]);
+            }
+        } else {
+            return response()->json([['Data cannot empty !!']], 406);
+        }
 
-                T_DLVORDDETA::on($this->dedicatedConnection)
-                    ->where('id', $r->id)
-                    ->update([
-                        'TDLVORDDETA_ITMCD_ACT' => $r->TDLVORDDETA_ITMCD_ACT
-                    ]);
+        if (count($request->acc) > 0) {
+            foreach ($request->acc as $key => $valueAcc) {
+                $this->saveAccessory(
+                    new Request([
+                        'TDLVACCESSORY_DLVCD' => $request->id,
+                        'TDLVACCESSORY_ITMCD' => $valueAcc['TDLVACCESSORY_ITMCD'],
+                        'TDLVACCESSORY_ITMQT' => $valueAcc['TDLVACCESSORY_ITMQT'],
+                    ])
+                );
             }
         }
 

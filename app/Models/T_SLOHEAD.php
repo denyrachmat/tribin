@@ -15,4 +15,8 @@ class T_SLOHEAD extends Model
         'created_by', 'updated_by', 'TSLO_BRANCH', 'TSLO_TYPE', 'TSLO_SERVTRANS_COST', 'TSLO_PERIOD_FR', 'TSLO_PERIOD_TO', 'TSLO_USAGE_DESCRIPTION',
         'TSLO_MAP_URL'
     ];
+
+    public function sloDet() {
+        return $this->hasMany(T_SLODETA::class, 'TSLODETA_SLOCD', 'TSLO_SLOCD');
+    }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DistancePriceController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MaintenanceController;
@@ -222,6 +223,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('{id}', [DeliveryController::class, 'delete']);
     });
 
+    Route::resource('invoice', InvoiceController::class);
+    Route::prefix('invoices')->group(function() {
+        Route::post('search', [InvoiceController::class, 'search']);
+        Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
+    });
+
     #Terkait Receive Order
     Route::prefix('receive-order')->group(function () {
         Route::get('form', [ReceiveOrderController::class, 'index']);
@@ -260,6 +267,7 @@ Route::middleware('auth')->group(function () {
         Route::put('items/{id}', [QuotationController::class, 'updateItem']);
         Route::post('items/{id}', [QuotationController::class, 'saveItem']);
     });
+
     Route::prefix('quotationNew')->group(function () {
         Route::post('saveAPI', [QuotationController::class, 'saveAPI']);
         Route::delete('{id}', [QuotationController::class, 'deleteQuotation']);

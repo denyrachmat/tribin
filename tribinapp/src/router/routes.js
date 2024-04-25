@@ -13,6 +13,7 @@ const routes = [
       { path: 'servicesOrderList', component: () => import('pages/transaction/services/serviceOprView.vue') },
       { path: 'outgoing', component: () => import('pages/warehouse/outgoing/outgoingView.vue') },
       { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },
+      { path: 'invoice', component: () => import('pages/warehouse/invoice/invoiceView.vue') },
     ]
   },
 

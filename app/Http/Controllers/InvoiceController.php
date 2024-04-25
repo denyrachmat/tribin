@@ -143,13 +143,13 @@ class InvoiceController extends Controller
             ->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
             ->where('BRANCH', Auth::user()->branch)
             ->first();
-            
+
         $total = 0;
         $dlvDetParse = [];
         foreach ($request->dlvdet as $key => $value) {
-            $getSLOByItem = array_filter($request->sloDet, function($f) use ($value) 
-                { 
-                    return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD']; 
+            $getSLOByItem = array_filter($request->sloDet, function($f) use ($value)
+                {
+                    return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
                 });
 
             // return $getSLOByItem[0];
@@ -177,7 +177,7 @@ class InvoiceController extends Controller
             $request->all()
         ));
 
-        return $pdf->stream('invoiceDlv.pdf');
+        return base64_encode($pdf->output());
     }
 
     public function numberToSentence($nilai)

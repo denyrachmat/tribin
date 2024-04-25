@@ -68,15 +68,27 @@
 
         .col1 {
             float: left;
-            width: 10%;
+            width: 20%;
         }
 
-        .col12 {
+        .col2 {
+            float: left;
+            width: 40%;
+        }
+
+        .col3 {
+            float: left;
+            width: 60%;
+        }
+
+        .col4 {
+            float: left;
+            width: 80%;
+        }
+        .col5 {
             float: left;
             width: 100%;
         }
-
-
         /* Clear floats after the columns */
         .row:after {
             content: "";
@@ -124,8 +136,8 @@
     <div style="text-align: center">
         <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
         <div style="text-align: center; font-size: 16px;padding-bottom: 4px"><strong>{{$subHeader}}</strong></div>
-        <div style="text-align: center;font-size: 13px;padding-bottom: 10px"><strong>{{$addr}}</strong></div>
-        <div style="text-align: center;font-size: 13px;padding-bottom: 10px"><strong>{{$telp}}</strong></div>
+        <div style="text-align: center;font-size: 12px;padding-bottom: 10px"><strong>{{$addr}}</strong></div>
+        <div style="text-align: center;font-size: 12px;padding-bottom: 10px"><strong>{{$telp}}</strong></div>
     </div>
 
     <div>
@@ -137,46 +149,69 @@
     </div>
 
     <div class="row">
+        <div class="col3">
+            <table style="font-size: 12px">
+                <tr>
+                    <td>To</td>
+                    <td>:</td>
+                    <td>{{$MCUS_CUSNM}}</td>
+                </tr>
+                <tr>
+                    <td>Attn</td>
+                    <td>:</td>
+                    <td>{{$TQUO_ATTN}}</td>
+                </tr>
+                <tr>
+                    <td>Telp. / Fax</td>
+                    <td>:</td>
+                    <td>{{$MCUS_TELNO}}</td>
+                </tr>
+                <tr>
+                    <td>Subject</td>
+                    <td>:</td>
+                    <td>{{$TQUO_SBJCT}}</td>
+                </tr>
+                <tr>
+                    <td>Lokasi</td>
+                    <td>:</td>
+                    <td>{{$MCUS_ADDR1}}</td>
+                </tr>
+            </table>
+        </div>
         <div class="col">
-            <table style="font-size: 13px">
+            <table style="font-size: 12px">
                 <tr>
                     <td>Inv No</td>
                     <td>:</td>
                     <td>{{$TDLVORD_INVCD}}</td>
                 </tr>
                 <tr>
-                    <td>To</td>
+                    <td>Date</td>
                     <td>:</td>
-                    <td>{{$MCUS_CUSNM}}</td>
-                </tr>
-            </table>
-        </div>
-        <div class="col">
-            <table style="font-size: 13px">
-                <tr>
-                    <td>Phone</td>
-                    <td>:</td>
-                    <td>{{$MCUS_PIC_TELNO}}</td>
+                    <td>{{date('d-M-Y', strtotime($TDLVORD_ISSUDT))}}</td>
                 </tr>
                 <tr>
-                    <td>Address</td>
+                    <td>Telp. / Fax</td>
                     <td>:</td>
-                    <td>{{$MCUS_ADDR1}}</td>
+                    <td>{{$telp}}</td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        <div class="col5">
             Dengan hormat,
             <br><br>
             Bersama ini kami lakukan penagihan atas {{$TQUO_SBJCT}} dengan rincian sebagai berikut :
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        {{$TSLO_POCD}}
+    </div>
+    <div class="row" style="font-size: 12px; padding-top: 5px">
+        <div class="col5">
             <table class="tg">
                 <thead>
                     <tr>
@@ -207,8 +242,8 @@
             </table>
         </div>
     </div>
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12" style="text-align:right">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        <div class="col5" style="text-align:right">
             <table style="padding-left: 20%">
                 <tr>
                     <td><b>Total</b></td>
@@ -234,14 +269,14 @@
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        <div class="col5">
             Invoice/tagihan tersebut agar dapat ditransfer ke rekening kami sebagai berikut :
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        <div class="col5">
             <table class="tg">
                 <thead>
                     <tr>
@@ -266,22 +301,22 @@
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        <div class="col5">
             Pada keterangan slip transfer mohon diisi sejelas-jelasnya, seperti nama penyewa, periode, nomor invoice dan sebagainya.
             Untuk Pembayaran yang menggunakan Bilyet Giro/Cheque, dianggap lunas jika dana sudah masuk ke rekening kami.
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
+    <div class="row" style="font-size: 12px; padding-top: 10px">
+        <div class="col5">
             Demikian Invoice kami buat, atas perhatian dan kerjasama yang baik kami sampaikan terima kasih
         </div>
     </div>
 
-    <div class="row" style="font-size: 13px; position: absolute;
+    <div class="row" style="font-size: 12px; position: absolute;
             bottom: 10em; right: 10em">
-        <div class="col12">
+        <div class="col5">
             {{date('d M Y');}}
         </div>
 

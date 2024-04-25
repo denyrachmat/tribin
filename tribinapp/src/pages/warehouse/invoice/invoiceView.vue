@@ -137,11 +137,11 @@ const printInvoice = async (val) => {
     .post("invoices/printInvoice", val)
     .then((response) => {
       loading.value = false;
-      console.log(response)
-      window.open("data:application/pdf;base64, " + btoa(response.data));
-      // window
-      //   .open(process.env.API_WEB + "PDF/quotation/" + btoa(val), "_blank")
-      //   .focus();
+      let pdfWindow = window.open("")
+      pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) + "'></iframe>"
+      )
     })
     .catch((e) => {
       loading.value = false;

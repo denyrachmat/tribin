@@ -44,7 +44,7 @@ class DeliveryController extends Controller
 
     function index()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
+        return view('tribinapp_layouts', ['routeApp' => 'outgoing']);
         return view('transaction.delivery');
     }
 
@@ -498,7 +498,8 @@ class DeliveryController extends Controller
                 $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')
                     ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
             })
-            ->where('TDLVORD_BRANCH', Auth::user()->branch);
+            ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->whereNull('TDLVORDDETA_ITMCD_ACT');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

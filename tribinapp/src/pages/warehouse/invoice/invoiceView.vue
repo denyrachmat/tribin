@@ -72,8 +72,18 @@
                   color="indigo"
                   icon="print"
                   dense
+                  @click="printKwitansi(props.row.TDLVORD_DLVCD)"
                 >
                   <q-tooltip>Print Receipt</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="orange"
+                  icon="print"
+                  dense
+                  @click="printSJ(props.row.TDLVORD_DLVCD)"
+                >
+                  <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
@@ -135,6 +145,40 @@ const printInvoice = async (val) => {
   loading.value = true;
   await api_web
     .post("invoices/printInvoice", val)
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("")
+      pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) + "'></iframe>"
+      )
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+}
+
+const printKwitansi = async (val) => {
+  loading.value = true;
+  await api_web
+    .get(`invoices/printKwitansi/${btoa(val)}`)
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("")
+      pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) + "'></iframe>"
+      )
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+}
+
+const printSJ = async (val) => {
+  loading.value = true;
+  await api_web
+    .get(`invoices/printSJ/${btoa(val)}`)
     .then((response) => {
       loading.value = false;
       let pdfWindow = window.open("")

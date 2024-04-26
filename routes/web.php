@@ -227,6 +227,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('invoices')->group(function() {
         Route::post('search', [InvoiceController::class, 'search']);
         Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
+        Route::get('printKwitansi/{doc}', [InvoiceController::class, 'printKwitansi']);
+        Route::get('printSJ/{doc}', [InvoiceController::class, 'printSJ']);
     });
 
     #Terkait Receive Order

@@ -87,57 +87,77 @@
 
           <div class="row">
             <div class="col text-right">
-              <q-btn icon="add" color="indigo" flat dense @click="listAcc.push({TDLVACCESSORY_ITMCD: '', TDLVACCESSORY_ITMQT: 0})">
+              <q-btn
+                icon="add"
+                color="indigo"
+                flat
+                dense
+                @click="
+                  listAcc.push({
+                    TDLVACCESSORY_ITMCD: '',
+                    TDLVACCESSORY_ITMQT: 0,
+                  })
+                "
+              >
                 <q-tooltip>Add Accesories</q-tooltip>
               </q-btn>
             </div>
           </div>
 
-          <div
-            :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
-            v-for="(acc, idx) in listAcc"
-            :key="idx"
-          >
-            <div class="col">
-              <q-select
-                dense
-                filled
-                label="Item Code Accesories"
-                v-model="acc.TDLVACCESSORY_ITMCD"
-                use-input
-                input-debounce="500"
-                :options="listItems"
-                @filter="
-                  (val, update, abort) =>
-                    filterFn(
-                      val,
-                      update,
-                      abort,
-                      'item'
-                    )
-                "
-                behavior="dialog"
-                option-label="MITM_ITMNM"
-                option-value="MITM_ITMCD"
-                emit-value
-                map-options
-                :loading="loading"
-              >
-              </q-select>
-            </div>
+          <template v-if="listAcc.length > 0">
+            <div
+              :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
+              v-for="(acc, idx) in listAcc"
+              :key="idx"
+            >
+              <div class="col">
+                <q-select
+                  dense
+                  filled
+                  label="Item Code Accesories"
+                  v-model="acc.TDLVACCESSORY_ITMCD"
+                  use-input
+                  input-debounce="500"
+                  :options="listItems"
+                  @filter="
+                    (val, update, abort) => filterFn(val, update, abort, 'item')
+                  "
+                  behavior="dialog"
+                  option-label="MITM_ITMNM"
+                  option-value="MITM_ITMCD"
+                  emit-value
+                  map-options
+                  :loading="loading"
+                >
+                </q-select>
+              </div>
 
-            <div class="col q-pl-md">
-              <q-input
-                filled
-                dense
-                label="Qty"
-                v-model="acc.TDLVACCESSORY_ITMQT"
-                :readonly="!acc.TDLVACCESSORY_ITMCD"
-              />
-            </div>
+              <div class="col q-pl-md">
+                <q-input
+                  filled
+                  dense
+                  label="Qty"
+                  v-model="acc.TDLVACCESSORY_ITMQT"
+                  :readonly="!acc.TDLVACCESSORY_ITMCD"
+                />
+              </div>
 
-            <div class="col-2 q-pl-md">
-              <q-btn icon="delete" color="red" flat dense @click="listAcc.splice(idx, 1)"/>
+              <div class="col-2 q-pl-md">
+                <q-btn
+                  icon="delete"
+                  color="red"
+                  flat
+                  dense
+                  @click="listAcc.splice(idx, 1)"
+                />
+              </div>
+            </div>
+          </template>
+          <div v-else>
+            <div class="row">
+              <div class="col text-bold text-center">
+                No accesories choose, please click + button
+              </div>
             </div>
           </div>
         </fieldset>
@@ -221,12 +241,12 @@ const onSubmitData = () => {
         .post("delivery/confirm", {
           id: props.idHead,
           data: rows.value,
-          acc: listAcc.value
+          acc: listAcc.value,
         })
         .then((response) => {
           loading.value = false;
           listItems.value = response.data.data;
-          onDialogOK()
+          onDialogOK();
         })
         .catch(() => {
           loading.value = false;

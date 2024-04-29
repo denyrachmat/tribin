@@ -60,6 +60,15 @@
               <q-td auto-width>
                 <q-btn
                   flat
+                  :color="'red'"
+                  icon="list"
+                  dense
+                  @click="updateSuratJalan(props.row)"
+                >
+                  <q-tooltip>Update Surat Jalan</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
                   color="green"
                   icon="print"
                   dense
@@ -97,6 +106,8 @@
 import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
+
+import updateSJ from "./updateSJ.vue";
 
 const $q = useQuasar();
 
@@ -147,16 +158,17 @@ const printInvoice = async (val) => {
     .post("invoices/printInvoice", val)
     .then((response) => {
       loading.value = false;
-      let pdfWindow = window.open("")
+      let pdfWindow = window.open("");
       pdfWindow.document.write(
-          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-          encodeURI(response.data) + "'></iframe>"
-      )
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
     })
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const printKwitansi = async (val) => {
   loading.value = true;
@@ -164,31 +176,59 @@ const printKwitansi = async (val) => {
     .get(`invoices/printKwitansi/${btoa(val)}`)
     .then((response) => {
       loading.value = false;
-      let pdfWindow = window.open("")
+      let pdfWindow = window.open("");
       pdfWindow.document.write(
-          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-          encodeURI(response.data) + "'></iframe>"
-      )
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
     })
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const printSJ = async (val) => {
-  loading.value = true;
-  await api_web
-    .get(`invoices/printSJ/${btoa(val)}`)
-    .then((response) => {
-      loading.value = false;
-      let pdfWindow = window.open("")
-      pdfWindow.document.write(
+  $q.dialog({
+    title: "Options",
+    message: "Choose type surat jalan",
+    options: {
+      type: "radio",
+      model: "general",
+      // inline: true
+      items: [
+        { label: "General", value: "general" },
+        { label: "Forklift", value: "forklift" },
+        { label: "Genset", value: "genset" },
+      ],
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk(async (data) => {
+    loading.value = true;
+    await api_web
+      .get(`invoices/printSJ/${btoa(val)}`)
+      .then((response) => {
+        loading.value = false;
+        let pdfWindow = window.open("");
+        pdfWindow.document.write(
           "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-          encodeURI(response.data) + "'></iframe>"
-      )
-    })
-    .catch((e) => {
-      loading.value = false;
-    });
+            encodeURI(response.data) +
+            "'></iframe>"
+        );
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
+
+const updateSuratJalan = (val) => {
+  $q.dialog({
+    component: updateSJ,
+    // persistent: true,
+  }).onOk(async (val) => {
+    getConfirmedData();
+  });
 }
 </script>

@@ -93,6 +93,7 @@ class InvoiceController extends Controller
                 'TDLVORD_DLVCD',
                 'TDLVORD_ISSUDT',
                 'TDLVORD_INVCD',
+                'TDLVORD_REC_NO',
                 'TDLVORDDETA_SLOCD',
                 'MCUS_CUSNM',
                 'MCUS_TELNO',
@@ -118,6 +119,7 @@ class InvoiceController extends Controller
                 'TDLVORD_DLVCD',
                 'TDLVORD_ISSUDT',
                 'TDLVORD_INVCD',
+                'TDLVORD_REC_NO',
                 'TDLVORDDETA_SLOCD',
                 'MCUS_CUSNM',
                 'MCUS_TELNO',
@@ -223,7 +225,8 @@ class InvoiceController extends Controller
     public function printKwitansi($doc)
     {
         $doc = base64_decode($doc);
-        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)->select('TDLVORD_ISSUDT', 'MCUS_CUSNM', 'MCUS_ADDR1', 'TDLVORD_REMARK', 'MCUS_TELNO', 'TDLVORD_INVCD', 'TDLVORD_LINE')
+        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->select('TDLVORD_ISSUDT', 'MCUS_CUSNM', 'MCUS_ADDR1', 'TDLVORD_REMARK', 'MCUS_TELNO', 'TDLVORD_INVCD', 'TDLVORD_LINE', 'TDLVORD_REC_NO')
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
@@ -246,7 +249,8 @@ class InvoiceController extends Controller
                 $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
             ->where('TDLVORDDETA_DLVCD', $doc)
-            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)->get();
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->get();
 
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
             'name',
@@ -313,6 +317,8 @@ class InvoiceController extends Controller
         $this->fpdf->SetFont('Arial', 'B', 10);
         $this->fpdf->SetXY(7, 5);
         $this->fpdf->Cell(0, 8, $Company->name, 0, 0, 'L');
+        $this->fpdf->SetXY(150, 5);
+        $this->fpdf->Cell(7, 5, $RSHeader->TDLVORD_REC_NO, 0, 0, 'L');
         $this->fpdf->SetFont('Arial', '', 10);
         $this->fpdf->SetXY(7, 12);
         $this->fpdf->MultiCell(95, 4, $Company->address,  0, 'L');

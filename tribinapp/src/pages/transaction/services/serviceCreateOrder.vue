@@ -106,6 +106,7 @@
             height: 35vh;
             overflow: auto;
           "
+          :key="refreshKeys"
         >
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>Detail Items</b>
@@ -173,6 +174,7 @@
                     color="red"
                     flat
                     @click="onClickDeleteLines(idx)"
+                    dense
                   >
                     <q-tooltip>Delete line</q-tooltip>
                   </q-btn>
@@ -183,8 +185,20 @@
                     color="indigo"
                     flat
                     @click="onClickAddItem(idx)"
+                    dense
                   >
                     <q-tooltip>Add new item</q-tooltip>
+                  </q-btn>
+                </q-item-section>
+                <q-item-section side v-if="props.mode !== 'view'">
+                  <q-btn
+                    icon="photo"
+                    :color="items.TSRVD_PHOTO != '' ? 'blue' : 'orange'"
+                    flat
+                    @click="onClickAddPhoto(idx)"
+                    dense
+                  >
+                    <q-tooltip>Add photo</q-tooltip>
                   </q-btn>
                 </q-item-section>
               </q-item>
@@ -225,6 +239,7 @@ import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
 import itemCreate from "src/pages/master/items/itemCreate.vue";
 import customerView from "src/pages/master/customers/customerView.vue";
+import uploadPhoto from "./uploadPhoto.vue";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -255,6 +270,8 @@ const listItems = ref([]);
 const listCustomers = ref([]);
 const submitedItems = ref([]);
 const loading = ref(false);
+const refreshKeys = ref(0)
+
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "cust") {
@@ -303,6 +320,7 @@ const addItemLine = () => {
     TSRVD_LINE: submitedItems.value.length + 1,
     TSRVD_QTY: 1,
     TSRVD_CUSTRMK: "",
+    TSRVD_PHOTO: "",
   });
 };
 
@@ -314,6 +332,11 @@ const onClickDeleteLines = (idx) => {
     persistent: true,
   }).onOk(async () => {
     submitedItems.value.splice(idx, 1);
+  }).catch((val) => {
+    $q.notify({
+      color:'red',
+      message: `Something's wrong.`
+    })
   });
 };
 
@@ -351,7 +374,7 @@ const onSubmitData = () => {
 };
 
 const onAddCustClick = () => {
-  
+
   $q.dialog({
     component: customerView,
     // persistent: true,
@@ -360,5 +383,36 @@ const onAddCustClick = () => {
     await getCustomer("");
     submitedItems.value[idx].SRVH_CUSCD = val.MCUS_CUSCD;
   });
+}
+
+const onClickAddPhoto = (idx) => {
+  $q.dialog({
+    component: uploadPhoto,
+    componentProps: {
+      photo: submitedItems.value[idx].TSRVD_PHOTO,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    console.log(val)
+    if (val) {
+      submitedItems.value[idx].TSRVD_PHOTO = val
+    } else {
+      submitedItems.value[idx].TSRVD_PHOTO = ''
+    }
+
+    refreshKeys.value = refreshKeys.value + 1
+    console.log(submitedItems.value[idx])
+  })
+}
+
+const getBase64 = (file) => {
+   var reader = new FileReader();
+   reader.readAsDataURL(file);
+   reader.onload = function () {
+    //  console.log(reader.result);
+   };
+   reader.onerror = function (error) {
+     console.log('Error: ', error);
+   };
 }
 </script>

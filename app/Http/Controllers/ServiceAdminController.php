@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
@@ -46,7 +48,8 @@ class ServiceAdminController extends Controller
             'header.SRVH_CUSCD' => 'required',
             'detail.*' => 'required',
             'detail.*.TSRVD_ITMCD' => 'required',
-            'detail.*.TSRVD_QTY' => 'required'
+            'detail.*.TSRVD_QTY' => 'required',
+            'detail.*.TSRVD_PHOTO' => 'required'
         ], [
             'header.SRVH_ISSDT.required' => 'Issue Date cannot be null !',
             'header.SRVH_CUSCD.required' => 'Customer cannot be null !',
@@ -71,6 +74,17 @@ class ServiceAdminController extends Controller
 
         $det = [];
         foreach ($request->detail as $key => $value) {
+            ini_set('max_execution_time', '300');
+            // $nama_file = $req->file->hashName();
+            $base64_str = substr($value['TSRVD_PHOTO'], strpos($value['TSRVD_PHOTO'], ",")+1);
+
+            //decode base64 string
+            $base64_image = $base64_str; // your base64 encoded
+            @list($type, $file_data) = explode(';', $base64_image);
+            @list(, $file_data) = explode(',', $file_data);
+            $imageName = $headerStore->id.'/photo_service_'.date('Ymd_his').'.'.'jpg';
+            Storage::put($imageName, base64_decode($file_data));
+
             $det[] = T_SRV_DET::on($this->dedicatedConnection)->updateOrCreate([
                 'TSRVH_ID' => $headerStore->id,
             ], [
@@ -79,6 +93,7 @@ class ServiceAdminController extends Controller
                 'TSRVD_LINE' => $value['TSRVD_LINE'],
                 'TSRVD_CUSTRMK' => $value['TSRVD_CUSTRMK'],
                 'TSRVD_QTY' => $value['TSRVD_QTY'],
+                'TSRVD_PHOTO' => public_path($imageName),
                 'created_by' => Auth::user()->nick_name,
             ]);
         }

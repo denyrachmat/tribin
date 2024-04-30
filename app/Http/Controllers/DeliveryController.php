@@ -483,9 +483,10 @@ class DeliveryController extends Controller
 
     function searchAPI(Request $request)
     {
-        $RSSub = T_DLVORDDETA::on($this->dedicatedConnection)->select('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH', DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD'))
+        $RSSub = T_DLVORDDETA::on($this->dedicatedConnection)
+            ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH', DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD'))
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-            ->groupBy('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
+            ->groupBy('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
 
         $RSTemp = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
             "TDLVORD_DLVCD", "TDLVORD_CUSCD", "TDLVORD_ISSUDT",

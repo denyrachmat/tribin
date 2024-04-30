@@ -132,7 +132,7 @@
     </div>
 
     <div>
-        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>INVOICE</strong></span></div>
+        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>ESTIMATION SERVICE COST</strong></span></div>
     </div>
 
     <div class="row">

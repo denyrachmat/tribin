@@ -22,4 +22,8 @@ class T_DLVORDHEAD extends Model
     public function dlvacc() {
         return $this->hasMany(T_DLVACCESSORY::class, 'TDLVACCESSORY_DLVCD', 'TDLVORD_DLVCD');
     }
+
+    public function dlvsj(){
+        return $this->hasOne(T_DLVSJDETA::class, 'TDLVSJDETA_DLVCD', 'TDLVORD_DLVCD');
+    }
 }

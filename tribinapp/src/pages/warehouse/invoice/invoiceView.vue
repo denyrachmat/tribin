@@ -87,10 +87,11 @@
                 </q-btn>
                 <q-btn
                   flat
-                  color="orange"
+                  :color="!props.row.dlvsj ? 'grey': 'orange'"
                   icon="print"
                   dense
                   @click="printSJ(props.row.TDLVORD_DLVCD)"
+                  :disable="!props.row.dlvsj"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
@@ -226,6 +227,10 @@ const printSJ = async (val) => {
 const updateSuratJalan = (val) => {
   $q.dialog({
     component: updateSJ,
+    componentProps: {
+      idDlv: val.TDLVORD_DLVCD,
+      dataSJDB: val.dlvsj,
+    },
     // persistent: true,
   }).onOk(async (val) => {
     getConfirmedData();

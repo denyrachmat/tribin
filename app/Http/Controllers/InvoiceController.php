@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Codedge\Fpdf\Fpdf\Fpdf;
+use App\Models\T_DLVSJDETA;
 
 class InvoiceController extends Controller
 {
@@ -50,7 +51,29 @@ class InvoiceController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'TDLVSJDETA_DLVCD' => 'required',
+            'TDLVSJDETA_TYPE' => 'required',
+            'TDLVSJDETA_CONDGRP' => 'required',
+            'TDLVSJDETA_STARTDT' => 'required|date',
+            'TDLVSJDETA_ENDDT' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        T_DLVSJDETA::on($this->dedicatedConnection)->updateOrCreate([
+            'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
+        ],[
+            'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
+            'TDLVSJDETA_TYPE' => $request->TDLVSJDETA_TYPE,
+            'TDLVSJDETA_CONDGRP' => $request->TDLVSJDETA_CONDGRP,
+            'TDLVSJDETA_STARTDT' => $request->TDLVSJDETA_STARTDT,
+            'TDLVSJDETA_ENDDT' => $request->TDLVSJDETA_ENDDT,
+        ]);
+
+        return ['msg' => 'SJ Detail Saved !'];
     }
 
     /**
@@ -106,7 +129,7 @@ class InvoiceController extends Controller
             )
             ->with(['dlvdet' => function ($f) {
                 $f->join('M_ITM', 'TDLVORDDETA_ITMCD', 'MITM_ITMCD');
-            }, 'dlvacc'])
+            }, 'dlvacc', 'dlvsj'])
             ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
             ->join('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');

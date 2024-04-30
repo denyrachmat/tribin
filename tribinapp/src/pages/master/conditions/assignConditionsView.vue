@@ -23,6 +23,7 @@
             dense
             @row-click="(evt, row, index) => onClickTable(row)"
             :pagination="initialPagination"
+            :loading="loading"
           />
         </q-list>
       </q-card-section>

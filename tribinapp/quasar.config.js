@@ -53,7 +53,7 @@ module.exports = configure(function (ctx) {
         API: ctx.dev
           ? "http://tribin.test/api/"
           : "https://joss.jatpowerindo.co.id/api/",
-        API_WEB: !ctx.dev
+        API_WEB: ctx.dev
           ? "http://tribin.test/"
           : "https://joss.jatpowerindo.co.id/",
       },

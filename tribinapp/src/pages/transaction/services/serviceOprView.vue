@@ -205,7 +205,7 @@ const statusMaker = (val) => {
   const statusFive = val.detail.filter((fil) => fil.TSRVD_FLGSTS == 5);
 
   if (statusZero.length == val.detail.length) {
-    const checkRemarks = val.detail.filter((fil) => fil.TSRVD_MGRRMK !== '')
+    const checkRemarks = val.detail.filter((fil) => fil.TSRVD_MGRRMK != '')
     return {
       color: 'red',
       label: checkRemarks.length > 0

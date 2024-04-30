@@ -330,7 +330,7 @@ const onClickProceed = (val) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .put(`servicesAdmins/updateDetByIDHead/${btoa(val.SRVH_DOCNO)}`, {
+      .put(`servicesAdmins/updateDetByIDHead/${btoa(val.id)}`, {
         TSRVD_FLGSTS: 2,
       })
       .then((response) => {

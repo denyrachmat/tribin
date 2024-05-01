@@ -132,7 +132,7 @@
     </div>
 
     <div>
-        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>ESTIMATION SERVICE COST</strong></span></div>
+        <div style="text-align: center; font-size: 20px;padding-bottom: 15px"><span><strong>ESTIMATION SERVICE COST</strong></span></div>
     </div>
 
     <div class="row">
@@ -170,7 +170,9 @@
         <div class="col12">
             Dengan hormat,
             <br><br>
-            Bersama ini kami lakukan penagihan atas {{count($data[0]['detail'])}} item dengan rincian sebagai berikut :
+            Sehubungan dengan usaha untuk memberikan pelayanan yang memuaskan kepada customer kami,
+            <br>
+            maka berikut kami berikan total harga pengerjaan dari service tersebut :
         </div>
     </div>
 
@@ -230,46 +232,10 @@
 
     <div class="row" style="font-size: 13px; padding-top: 10px">
         <div class="col12">
-            Invoice/tagihan tersebut agar dapat ditransfer ke rekening kami sebagai berikut :
-        </div>
-    </div>
-
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
-            <table class="tg">
-                <thead>
-                    <tr>
-                        <td class="tg-0lax"><b>BANK</b></td>
-                        <td class="tg-0lax"><b>Atas Name</b></td>
-                        <td class="tg-0lax"><b>No Rekening</b></td>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="tg-0lax"><b>MANDIRI</b></td>
-                        <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
-                        <td class="tg-0lax"><b>113-0008-5858-99</b></td>
-                    </tr>
-                    <tr>
-                        <td class="tg-0lax"><b>MAYBANK INDONESIA</b></td>
-                        <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
-                        <td class="tg-0lax"><b>2760-8888-58</b></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
-            Pada keterangan slip transfer mohon diisi sejelas-jelasnya, seperti nama penyewa, periode, nomor invoice dan sebagainya.
-            Untuk Pembayaran yang menggunakan Bilyet Giro/Cheque, dianggap lunas jika dana sudah masuk ke rekening kami.
-        </div>
-    </div>
-
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
-            Demikian Invoice kami buat, atas perhatian dan kerjasama yang baik kami sampaikan terima kasih
+            Adapun rincian part serta harga yang di gunakan, kami lampirkan di halaman berikutnya
+            <br><br>
+            Hormat Kami,<br>
+            {{$header}}
         </div>
     </div>
 

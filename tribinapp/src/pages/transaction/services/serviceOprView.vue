@@ -151,7 +151,7 @@ onMounted(() => {
 const dataSrv = async () => {
   loading.value = true;
   await api_web
-    .post("servicesOPR/search", {
+    .post("servicesOPRs/search", {
       searchBy: "",
       searchValue: filter.value,
     })

@@ -176,10 +176,35 @@ class ServiceAdminController extends Controller
                 'MCUS_TELNO',
                 'MCUS_PIC_TELNO',
                 'T_SRV_HEAD.created_at',
+                'TSRVD_FLGSTS',
+                'TQUO_QUOCD',
+                DB::raw("CONCAT(T_SRV_HEAD.SRVH_DOCNO, ' - ', MCUS_CUSNM) AS LBLDATA"),
+                DB::raw("SUM(TSRVF_PRC) AS TOTFIX")
             )
-            ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD');
+            ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
+            ->join('T_SRV_FIXDET', 'TSRVD_ID', 'T_SRV_DET.id')
+            ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
+            ->leftjoin('T_QUOHEAD', 'TQUO_SBJCT', 'like', DB::raw("CONCAT('%',SRVH_DOCNO, '%')"))
+            ->groupBy(
+                'T_SRV_HEAD.id',
+                'T_SRV_HEAD.SRVH_DOCNO',
+                'T_SRV_HEAD.SRVH_ISSDT',
+                'MCUS_CUSNM',
+                'MCUS_CUSCD',
+                'MCUS_ADDR1',
+                'MCUS_TELNO',
+                'MCUS_PIC_TELNO',
+                'T_SRV_HEAD.created_at',
+                'TSRVD_FLGSTS',
+                'TQUO_QUOCD'
+            );
+
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        if ($request->has('onlyShowWoQuo') && $request->onlyShowWoQuo == true) {
+            $RSTemp->whereNull('TQUO_QUOCD');
         }
 
         $head = $RSTemp->get()->toArray();

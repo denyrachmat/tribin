@@ -411,7 +411,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::resource('servicesOPR', ServiceOprController::class);
-    Route::prefix('servicesOPR')->group(function () {
+    Route::prefix('servicesOPRs')->group(function () {
         Route::post('search' ,[ServiceOprController::class, 'search']);
     });
 });

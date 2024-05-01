@@ -332,9 +332,16 @@
         $totalAll += ($valueQuoDet['TQUODETA_PRC'] * $valueQuoDet['TQUODETA_ITMQT']);
                     @endphp
                     @endforeach
+                    @if($headerQuo->TQUO_SERVTRANS_COST > 0)
+                    <tr>
+                        <td class="tg-0lax">{{count($listQuoDet) + 1}}</td>
+                        <td class="tg-0lax" colspan="4">Service & Transport Cost</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($headerQuo->TQUO_SERVTRANS_COST)}}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="tg-0lax" colspan="5">Total</td>
-                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll)}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
                     </tr>
                     <!-- <tr>
                         <td class="tg-0lax" colspan="5">Jasa Service & Transportasi</td>
@@ -354,7 +361,7 @@
         <div class="col-12">
             <table style="font-size: 9">
                 <tr>
-                    <td colspan=2>RENTAL CONDITION :</td>
+                    <td colspan=2>TERM OF CONDITION :</td>
                 </tr>
                 @foreach($listCondition as $key => $valueCond)
                 <tr>

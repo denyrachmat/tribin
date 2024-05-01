@@ -323,7 +323,8 @@ class QuotationController extends Controller
             ->whereNotNull("TQUO_APPRVDT")
             ->whereNull("TSLO_QUOCD")
             : T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT"])
-            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
+            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
+            ->whereNull("TQUO_APPRVDT");
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

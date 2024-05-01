@@ -62,7 +62,7 @@
                                         <div class="nav nav-tabs" id="quotation-type-nav-tab" role="tablist">
                                             <button class="nav-link active" id="nav-rental-tab" data-bs-toggle="tab" data-bs-target="#nav-rental" type="button" role="tab">Rental</button>
                                             <button class="nav-link" id="nav-sale-tab" data-bs-toggle="tab" data-bs-target="#nav-sale" type="button" role="tab">Sale</button>
-                                            <button class="nav-link" id="nav-service-tab" data-bs-toggle="tab" data-bs-target="#nav-service" type="button" role="tab">Service</button>
+                                            <!-- <button class="nav-link" id="nav-service-tab" data-bs-toggle="tab" data-bs-target="#nav-service" type="button" role="tab">Service</button> -->
                                         </div>
                                     </nav>
                                     <div class="tab-content" id="quotation-type-nav-tabContent">
@@ -248,7 +248,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="tab-pane fade show" id="nav-service" role="tabpanel" tabindex="2">
+                                        <!-- <div class="tab-pane fade show" id="nav-service" role="tabpanel" tabindex="2">
                                             <div class="container-fluid">
                                                 <div class="row">
                                                     <div class="col">
@@ -256,7 +256,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                             </div>

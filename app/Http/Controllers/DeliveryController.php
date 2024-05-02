@@ -272,6 +272,7 @@ class DeliveryController extends Controller
 
         $LastLine = DB::connection($this->dedicatedConnection)->table('T_DLVORDHEAD')
             ->whereYear('created_at', '=', date('Y'))
+            ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->max('TDLVORD_LINE');
         if (empty($request->TDLVORD_DLVCD)) {
@@ -482,9 +483,15 @@ class DeliveryController extends Controller
 
     function searchAPI(Request $request)
     {
-        $RSSub = T_DLVORDDETA::on($this->dedicatedConnection)->select('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH', DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD'))
+        $RSSub = T_DLVORDDETA::on($this->dedicatedConnection)
+            ->select(
+                'TDLVORDDETA_ITMCD_ACT',
+                'TDLVORDDETA_DLVCD',
+                'TDLVORDDETA_BRANCH',
+                DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD')
+            )
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-            ->groupBy('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
+            ->groupBy('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
 
         $RSTemp = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
             "TDLVORD_DLVCD", "TDLVORD_CUSCD", "TDLVORD_ISSUDT",
@@ -1132,12 +1139,13 @@ class DeliveryController extends Controller
     function confirmDelivery(Request $request)
     {
         $affectedRow = T_DLVORDHEAD::on($this->dedicatedConnection)
-            ->where('TDLVORD_DLVCD', base64_decode($request->id))
+            ->where('TDLVORD_DLVCD', $request->id)
             ->where('TDLVORD_BRANCH', $request->TDLVORD_BRANCH)
             ->where('TDLVORD_DELIVERED_BY', Auth::user()->nick_name)
             ->update([
-                'TDLVORD_DELIVERED_AT' => date('Y-m-d H:i:s')
+                'TDLVORD_DELIVERED_AT' => date('Y-m-d H:i:s'),
             ]);
+
         $message = $affectedRow ? 'Assigned' : 'Something wrong please contact admin';
         return ['message' => $message];
     }
@@ -1784,7 +1792,7 @@ class DeliveryController extends Controller
 
         $Data = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
-            ->with(['dlvdet' => function($f) {
+            ->with(['dlvdet' => function ($f) {
                 $f->join('M_ITM_GRP', 'TDLVORDDETA_ITMCD', 'MITM_ITMNM');
             }])
             ->leftJoin('T_DLVORDDETA', function ($join) {
@@ -1868,6 +1876,18 @@ class DeliveryController extends Controller
             //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             //     ->get();
 
+            $cek = T_DLVORDHEAD::where(DB::raw('MONTH(created_at)'), date('M'))
+                ->where(DB::raw('YEAR(created_at)'), date('Y'))
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $IDKwitansi = 'K-'. (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -6) + 1));
+
+            T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->where('TDLVORD_DLVCD', $request->id)
+            ->update([
+                'TDLVORD_REC_NO' => $IDKwitansi
+            ]);
             foreach ($request->data as $r) {
                 T_DLVORDDETA::on($this->dedicatedConnection)
                     ->where('id', $r['id'])
@@ -1881,7 +1901,7 @@ class DeliveryController extends Controller
                     'CITRN_DOCNO' => $request->id,
                     'CITRN_FORM' => 'OUT-SHP',
                     'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
-                ],[
+                ], [
                     'CITRN_BRANCH' => Auth::user()->branch,
                     'CITRN_LOCCD' => 'WH1',
                     'CITRN_DOCNO' => $request->id,
@@ -1927,13 +1947,31 @@ class DeliveryController extends Controller
         }
 
         T_DLVACCESSORY::on($this->dedicatedConnection)->create([
-            'TDLVACCESSORY_DLVCD' => base64_decode($request->id),
+            'TDLVACCESSORY_DLVCD' => $request->TDLVACCESSORY_DLVCD,
             'TDLVACCESSORY_ITMCD' => $request->TDLVACCESSORY_ITMCD,
             'TDLVACCESSORY_ITMQT' => $request->TDLVACCESSORY_ITMQT,
             'created_by' => Auth::user()->nick_name,
             'TDLVACCESSORY_BRANCH' => Auth::user()->branch
         ]);
 
+        C_ITRN::on($this->dedicatedConnection)->updateorcreate([
+            'CITRN_BRANCH' => Auth::user()->branch,
+            'CITRN_LOCCD' => 'WH1',
+            'CITRN_DOCNO' => $request->TDLVACCESSORY_DLVCD,
+            'CITRN_FORM' => 'OUT-SHP',
+            'CITRN_ITMCD' => $request->TDLVACCESSORY_ITMCD,
+        ], [
+            'CITRN_BRANCH' => Auth::user()->branch,
+            'CITRN_LOCCD' => 'WH1',
+            'CITRN_DOCNO' => $request->TDLVACCESSORY_DLVCD,
+            'CITRN_ISSUDT' => date('Y-m-d'),
+            'CITRN_FORM' => 'OUT-SHP',
+            'CITRN_ITMCD' => $request->TDLVACCESSORY_ITMCD,
+            'CITRN_ITMQT' => $request->TDLVACCESSORY_ITMQT * -1,
+            'CITRN_PRCPER' => 0,
+            'CITRN_PRCAMT' => 0,
+            'created_by' => Auth::user()->nick_name,
+        ]);
         return [
             'message' => 'OK.'
         ];

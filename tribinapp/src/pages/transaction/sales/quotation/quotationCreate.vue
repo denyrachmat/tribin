@@ -85,6 +85,7 @@
                 emit-value
                 map-options
                 :loading="loading"
+                :readonly="quotationType === 3"
               />
             </div>
             <div class="col q-pl-md">
@@ -105,6 +106,7 @@
                 filled
                 v-model="quotationSubject"
                 :loading="loading"
+                :readonly="quotationType === 3"
               />
             </div>
             <div class="col q-pl-md">
@@ -133,6 +135,7 @@
             :options="[
               { label: 'Rental', value: 1 },
               { label: 'Sale', value: 2 },
+              { label: 'Service', value: 3 },
             ]"
             dense
             @update:model-value="(value) => onChangeType(value)"
@@ -140,7 +143,26 @@
           />
         </div>
 
-        <div class="q-pb-md" v-if="quotationType === 2">
+        <div class="q-pb-md" v-if="quotationType === 3">
+          <q-select
+            dense
+            filled
+            label="Service ID"
+            v-model="chooseServiceID"
+            :options="listServiceID"
+            behavior="dialog"
+            option-label="LBLDATA"
+            option-value="SRVH_DOCNO"
+            emit-value
+            map-options
+            :loading="loading"
+            @update:model-value="(value) => onChooseService(value)"
+            @click="dataSrv()"
+          >
+          </q-select>
+        </div>
+
+        <div class="q-pb-md" v-if="quotationType === 2 || quotationType === 3">
           <q-input
             prefix="Rp"
             label="Service & Transportation Price"
@@ -198,9 +220,7 @@
                 @click="onClickChooseBankAcc"
                 :loading="loading"
               >
-                <q-badge color="red" floating>{{
-                  payment.length
-                }}</q-badge>
+                <q-badge color="red" floating>{{ payment.length }}</q-badge>
               </q-btn>
               <q-btn
                 icon="visibility"
@@ -332,6 +352,7 @@
           color="primary"
           @click="onSubmitData()"
           :disable="stateSubmit"
+          :loading="loading"
         />
         <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
       </q-card-actions>
@@ -382,6 +403,8 @@ onMounted(async () => {
   if (props.quoHeader) {
     getSavedData(props.quoHeader);
   }
+
+  dataSrv()
 });
 
 const loading = ref(false);
@@ -397,6 +420,9 @@ const quotationType = ref(1);
 const quotationServPrice = ref(0);
 const payment = ref([]);
 const listSavedItems = ref([]);
+
+const chooseServiceID = ref("");
+const listServiceID = ref("");
 
 const listItems = ref([]);
 const listCustomers = ref([]);
@@ -495,7 +521,7 @@ const getSavedData = async (val) => {
       quotationConditions.value = hasil.condlist;
       quotationType.value = parseInt(hasil.TQUO_TYPE);
       quotationServPrice.value = hasil.TQUO_SERVTRANS_COST;
-      payment.value = hasil.payment
+      payment.value = hasil.payment;
 
       hasil.det.map((valDet) => {
         listSavedItems.value.push({
@@ -576,8 +602,25 @@ const onClickChooseBankAcc = () => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    payment.value = val
+    payment.value = val;
   });
+};
+
+const dataSrv = async () => {
+  loading.value = true;
+  await api_web
+    .post("servicesAdmins/search", {
+      searchBy: 'TSRVD_FLGSTS',
+      searchValue: '3',
+      onlyShowWoQuo: true
+    })
+    .then((response) => {
+      loading.value = false;
+      listServiceID.value = response.data.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 
 const onSubmitData = async () => {
@@ -630,23 +673,44 @@ const submitingData = async () => {
 };
 
 const onChangeType = (value) => {
-  // $q.dialog({
-  //   title: "Confirmation",
-  //   message: `Are you sure want to change type ? This action will clear you lines !!`,
-  //   cancel: true,
-  //   persistent: true,
-  // }).onOk(async () => {
-  //   quotationGroupConditions.value = "";
-  //   quotationConditions.value = [];
-  //   quotationServPrice.value = 0;
-  //   listSavedItems.value = [];
-  // });
-
   quotationGroupConditions.value = "";
   quotationConditions.value = [];
   quotationServPrice.value = 0;
   listSavedItems.value = [];
 };
+
+const onChooseService = async(val) => {
+  loading.value = true;
+  await api_web
+    .post("servicesAdmins/search", {
+      searchBy: 'SRVH_DOCNO',
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      const getData = response.data.data[0]
+
+      quotationCustomerCode.value = getData.MCUS_CUSCD
+      quotationSubject.value = `SERVICE - ${val}`
+      let listItems = []
+      getData.detail.map(valMap => {
+        valMap.list_fix_det.map(valMapDet => {
+          listSavedItems.value.push({
+            item: valMapDet.MITM_ITMCD,
+            usage: 0,
+            price: valMapDet.TSRVF_PRC,
+            electric: '',
+            qty: valMapDet.TSRVF_QTY,
+          });
+        })
+      })
+
+      console.log(getData)
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+}
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

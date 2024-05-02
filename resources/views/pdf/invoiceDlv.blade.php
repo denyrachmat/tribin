@@ -208,7 +208,7 @@
     </div>
 
     <div class="row" style="font-size: 12px; padding-top: 10px">
-        {{$TSLO_POCD}}
+        No PR: {{$TSLO_POCD}}
     </div>
     <div class="row" style="font-size: 12px; padding-top: 5px">
         <div class="col5">

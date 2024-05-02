@@ -87,7 +87,8 @@ class MeasurementController extends Controller
         M_UOM::on($this->dedicatedConnection)->create([
             'MUOM_UOMCD' => $request->MUOM_UOMCD,
             'MUOM_UOMNM' => $request->MUOM_UOMNM,
-            'MUOM_BRANCH' => Auth::user()->branch
+            'MUOM_BRANCH' => Auth::user()->branch,
+            'created_by' => Auth::user()->nick_name,
         ]);
         return ['msg' => 'OK'];
     }

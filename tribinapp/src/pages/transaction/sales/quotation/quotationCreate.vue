@@ -611,7 +611,7 @@ const dataSrv = async () => {
   await api_web
     .post("servicesAdmins/search", {
       searchBy: 'TSRVD_FLGSTS',
-      searchValue: '3',
+      searchValue: '1',
       onlyShowWoQuo: true
     })
     .then((response) => {

@@ -361,7 +361,7 @@ class PurchaseController extends Controller
     }
     function loadPOByIdApproval(Request $request)
     {
-        $RS = T_PCHORDDETA::on($request->conn)->select([
+        $RS = T_PCHORDDETA::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select([
             "id", 
             "TPCHORDDETA_ITMCD", 
             "MITM_ITMNMREAL AS MITM_ITMNM", 

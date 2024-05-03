@@ -1344,7 +1344,7 @@
     function loadQuotationDetail(data) {
         $.ajax({
             type: "GET",
-            url: `quotation/${btoa(data.doc)}`,
+            url: `quotation/olid/${btoa(data.doc)}`,
             dataType: "json",
             success: function(response) {
                 if (response.dataHeader[0].TQUO_TYPE === '1') {

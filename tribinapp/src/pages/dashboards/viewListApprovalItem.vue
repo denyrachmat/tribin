@@ -257,7 +257,7 @@ const getData = async () => {
 };
 
 const onApprove = () => {
-  q.dialog({
+  $q.dialog({
     title: "Confirm",
     message: "Are you sure want to Approve this quotation ?",
     cancel: true,

@@ -341,11 +341,11 @@ class HomeController extends Controller
     function newDirNotif()
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
+
+        $hasil = [];
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
 
             $Business = CompanyGroup::select('name', 'connection')->get();
-
-            $hasil = [];
             foreach ($Business as $key => $value) {
                 // Quotation Data
                 $RSDetail = DB::connection($value->connection)->table('T_QUODETA')
@@ -434,8 +434,8 @@ class HomeController extends Controller
                     'spk' => $SPK
                 ];
             }
-
-            return $hasil;
         }
+
+        return $hasil;
     }
 }

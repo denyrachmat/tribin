@@ -148,7 +148,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="row">
+                                                <!-- <div class="row">
                                                     <div class="col-md-6 mb-1">
                                                         <div class="input-group input-group-sm mb-1">
                                                             <span class="input-group-text">Operator Price</span>
@@ -161,7 +161,7 @@
                                                             <input type="text" id="orderMOBDEMOB" class="form-control orderInputItem">
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </div> -->
                                                 <div class="row">
                                                     <div class="col-md-12 mb-1 text-center">
                                                         <div class="btn-group btn-group-sm">

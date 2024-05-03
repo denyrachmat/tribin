@@ -87,8 +87,8 @@
                                                                         <th class="text-center">Qty</th>
                                                                         <th class="text-center">Usage</th>
                                                                         <th class="text-end">Price</th>
-                                                                        <th class="text-end">Operator</th>
-                                                                        <th class="text-end">MOB DEMOB</th>
+                                                                        <!-- <th class="text-end">Operator</th> -->
+                                                                        <!-- <th class="text-end">MOB DEMOB</th> -->
                                                                         <th class="text-center">Period From</th>
                                                                         <th class="text-center">Period To</th>
                                                                     </tr>
@@ -719,10 +719,10 @@
                 orderItemQty.value = selrow.cells[3].innerText
                 orderUsage.value = selrow.cells[4].innerText
                 orderPrice.value = selrow.cells[5].innerText
-                orderOperator.value = selrow.cells[6].innerText
-                orderMOBDEMOB.value = selrow.cells[7].innerText
-                orderPeriodFrom.value = selrow.cells[8].innerText
-                orderPeriodTo.value = selrow.cells[9].innerText
+                // orderOperator.value = selrow.cells[6].innerText
+                // orderMOBDEMOB.value = selrow.cells[7].innerText
+                orderPeriodFrom.value = selrow.cells[6].innerText
+                orderPeriodTo.value = selrow.cells[7].innerText
             }
         }
         newcell = newrow.insertCell(0)
@@ -746,16 +746,18 @@
         newcell.innerHTML = numeral(orderPrice.value).format(',')
         newcell.classList.add('text-end')
 
+        // newcell = newrow.insertCell(6)
+        // newcell.innerHTML = numeral(orderOperator.value).format(',')
+        // newcell.classList.add('text-end')
+
+        // newcell = newrow.insertCell(7)
+        // newcell.innerHTML = numeral(orderMOBDEMOB.value).format(',')
+        // newcell.classList.add('text-end')
+
         newcell = newrow.insertCell(6)
-        newcell.innerHTML = numeral(orderOperator.value).format(',')
-        newcell.classList.add('text-end')
+        newcell.innerHTML = orderPeriodFrom.value
 
         newcell = newrow.insertCell(7)
-        newcell.innerHTML = numeral(orderMOBDEMOB.value).format(',')
-        newcell.classList.add('text-end')
-        newcell = newrow.insertCell(8)
-        newcell.innerHTML = orderPeriodFrom.value
-        newcell = newrow.insertCell(9)
         newcell.innerHTML = orderPeriodTo.value
 
         tribinClearTextBoxByClassName('orderInputItem')
@@ -842,10 +844,10 @@
                 itemQty.push(orderTable.rows[i].cells[3].innerText.trim())
                 itemUsage.push(orderTable.rows[i].cells[4].innerText.trim())
                 itemPrice.push(price)
-                itemOperatorPrice.push(numeral(orderTable.rows[i].cells[6].innerText.trim()).value())
-                itemMobDemob.push(numeral(orderTable.rows[i].cells[7].innerText.trim()).value())
-                itemPeriodFrom.push(orderTable.rows[i].cells[8].innerText.trim())
-                itemPeriodTo.push(orderTable.rows[i].cells[9].innerText.trim())
+                // itemOperatorPrice.push(numeral(orderTable.rows[i].cells[6].innerText.trim()).value())
+                // itemMobDemob.push(numeral(orderTable.rows[i].cells[7].innerText.trim()).value())
+                itemPeriodFrom.push(orderTable.rows[i].cells[6].innerText.trim())
+                itemPeriodTo.push(orderTable.rows[i].cells[7].innerText.trim())
             }
         } else if (NavSale.classList.contains('active')) {
             FinalQuotationType = '2'
@@ -855,8 +857,8 @@
                 itemUsage.push(1)
                 itemQty.push(numeral(quotationSaleTable.rows[i].cells[3].innerText.trim()).value())
                 itemPrice.push(numeral(quotationSaleTable.rows[i].cells[4].innerText.trim()).value())
-                itemOperatorPrice.push(0)
-                itemMobDemob.push(0)
+                // itemOperatorPrice.push(0)
+                // itemMobDemob.push(0)
                 itemPeriodFrom.push(null)
                 itemPeriodTo.push(null)
             }
@@ -1116,10 +1118,10 @@
                                 orderItemQty.value = selrow.cells[3].innerText
                                 orderUsage.value = selrow.cells[4].innerText
                                 orderPrice.value = selrow.cells[5].innerText
-                                orderOperator.value = selrow.cells[6].innerText
-                                orderMOBDEMOB.value = selrow.cells[7].innerText
-                                orderPeriodFrom.value = selrow.cells[8].innerText
-                                orderPeriodTo.value = selrow.cells[9].innerText
+                                // orderOperator.value = selrow.cells[6].innerText
+                                // orderMOBDEMOB.value = selrow.cells[7].innerText
+                                orderPeriodFrom.value = selrow.cells[6].innerText
+                                orderPeriodTo.value = selrow.cells[7].innerText
                             }
                         }
                         newcell = newrow.insertCell(0)
@@ -1140,16 +1142,16 @@
                         newcell = newrow.insertCell(5)
                         newcell.classList.add('text-end')
                         newcell.innerHTML = numeral(arrayItem['TSLODETA_PRC']).format(',')
+                        // newcell = newrow.insertCell(6)
+                        // newcell.classList.add('text-end')
+                        // newcell.innerHTML = numeral(arrayItem['TSLODETA_OPRPRC']).format(',')
+                        // newcell = newrow.insertCell(7)
+                        // newcell.classList.add('text-end')
+                        // newcell.innerHTML = numeral(arrayItem['TSLODETA_MOBDEMOB']).format(',')
                         newcell = newrow.insertCell(6)
-                        newcell.classList.add('text-end')
-                        newcell.innerHTML = numeral(arrayItem['TSLODETA_OPRPRC']).format(',')
-                        newcell = newrow.insertCell(7)
-                        newcell.classList.add('text-end')
-                        newcell.innerHTML = numeral(arrayItem['TSLODETA_MOBDEMOB']).format(',')
-                        newcell = newrow.insertCell(8)
                         newcell.classList.add('text-center')
                         newcell.innerHTML = arrayItem['TSLODETA_PERIOD_FR']
-                        newcell = newrow.insertCell(9)
+                        newcell = newrow.insertCell(7)
                         newcell.classList.add('text-center')
                         newcell.innerHTML = arrayItem['TSLODETA_PERIOD_TO']
                     })
@@ -1382,8 +1384,8 @@
                                 orderItemQty.value = selrow.cells[3].innerText
                                 orderUsage.value = selrow.cells[4].innerText
                                 orderPrice.value = selrow.cells[5].innerText
-                                orderOperator.value = selrow.cells[6].innerText
-                                orderMOBDEMOB.value = selrow.cells[7].innerText
+                                // orderOperator.value = selrow.cells[6].innerText
+                                // orderMOBDEMOB.value = selrow.cells[7].innerText
                             }
                         }
                         newcell = newrow.insertCell(0)
@@ -1402,14 +1404,14 @@
                         newcell = newrow.insertCell(5)
                         newcell.classList.add('text-end')
                         newcell.innerHTML = numeral(arrayItem['TQUODETA_PRC']).format(',')
+                        // newcell = newrow.insertCell(6)
+                        // newcell.classList.add('text-end')
+                        // newcell.innerHTML = numeral(arrayItem['TQUODETA_OPRPRC']).format(',')
+                        // newcell = newrow.insertCell(7)
+                        // newcell.classList.add('text-end')
+                        // newcell.innerHTML = numeral(arrayItem['TQUODETA_MOBDEMOB']).format(',')
                         newcell = newrow.insertCell(6)
-                        newcell.classList.add('text-end')
-                        newcell.innerHTML = numeral(arrayItem['TQUODETA_OPRPRC']).format(',')
                         newcell = newrow.insertCell(7)
-                        newcell.classList.add('text-end')
-                        newcell.innerHTML = numeral(arrayItem['TQUODETA_MOBDEMOB']).format(',')
-                        newcell = newrow.insertCell(8)
-                        newcell = newrow.insertCell(9)
                     })
                     myContainer.innerHTML = ''
                     myContainer.appendChild(myfrag)
@@ -1530,8 +1532,8 @@
                             orderItemQty.value = selrow.cells[3].innerText
                             orderUsage.value = selrow.cells[4].innerText
                             orderPrice.value = selrow.cells[5].innerText
-                            orderOperator.value = selrow.cells[6].innerText
-                            orderMOBDEMOB.value = selrow.cells[7].innerText
+                            // orderOperator.value = selrow.cells[6].innerText
+                            // orderMOBDEMOB.value = selrow.cells[7].innerText
                         }
                     }
                     newcell = newrow.insertCell(0)
@@ -1616,10 +1618,10 @@
         orderTable.rows[pindex].cells[3].innerText = orderItemQty.value
         orderTable.rows[pindex].cells[4].innerText = orderUsage.value
         orderTable.rows[pindex].cells[5].innerText = orderPrice.value
-        orderTable.rows[pindex].cells[6].innerText = orderOperator.value
-        orderTable.rows[pindex].cells[7].innerText = orderMOBDEMOB.value
-        orderTable.rows[pindex].cells[8].innerText = orderPeriodFrom.value
-        orderTable.rows[pindex].cells[9].innerText = orderPeriodTo.value
+        // orderTable.rows[pindex].cells[6].innerText = orderOperator.value
+        // orderTable.rows[pindex].cells[7].innerText = orderMOBDEMOB.value
+        orderTable.rows[pindex].cells[6].innerText = orderPeriodFrom.value
+        orderTable.rows[pindex].cells[7].innerText = orderPeriodTo.value
         tribinClearTextBoxByClassName('orderInputItem')
     }
 

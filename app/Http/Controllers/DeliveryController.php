@@ -270,13 +270,12 @@ class DeliveryController extends Controller
             ->first();
 
 
-        $LastLine = DB::connection($this->dedicatedConnection)->table('T_DLVORDHEAD')
+        $LastLine = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->whereYear('created_at', '=', date('Y'))
             ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->max('TDLVORD_LINE')
-            ->first()
-            ->TDLVORD_LINE;
+            ->orderBy('TDLVORD_LINE', 'desc')
+            ->first();
         if (empty($request->TDLVORD_DLVCD)) {
             $quotationHeader = [];
             $newQuotationCode = '';

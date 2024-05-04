@@ -108,12 +108,12 @@ class ReceiveOrderController extends Controller
             'TSLODETA_USAGE_DESCRIPTION' => 'required|array',
             'TSLODETA_PRC' => 'required|array',
             'TSLODETA_PRC.*' => 'required|numeric',
-            'TSLODETA_MOBDEMOB' => 'required|array',
-            'TSLODETA_MOBDEMOB.*' => 'required|numeric',
-            'TSLODETA_OPRPRC' => 'required|array',
-            'TSLODETA_OPRPRC.*' => 'required|numeric',
-            'TSLODETA_MOBDEMOB' => 'required|array',
-            'TSLODETA_MOBDEMOB.*' => 'required|numeric',
+            // 'TSLODETA_MOBDEMOB' => 'required|array',
+            // 'TSLODETA_MOBDEMOB.*' => 'required|numeric',
+            // 'TSLODETA_OPRPRC' => 'required|array',
+            // 'TSLODETA_OPRPRC.*' => 'required|numeric',
+            // 'TSLODETA_MOBDEMOB' => 'required|array',
+            // 'TSLODETA_MOBDEMOB.*' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {

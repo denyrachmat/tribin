@@ -276,12 +276,12 @@ class DeliveryController extends Controller
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->max('TDLVORD_LINE')
             ->first()
-            ->pluck('TDLVORD_LINE');
+            ->TDLVORD_LINE;
         if (empty($request->TDLVORD_DLVCD)) {
             $quotationHeader = [];
             $newQuotationCode = '';
             $newInvoiceCode = '';
-            if (!$LastLine) {
+            if (empty($LastLine)) {
                 $LastLine = 1;
                 $newQuotationCode = 'SP-' . date('y') . '-0001';
                 $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');

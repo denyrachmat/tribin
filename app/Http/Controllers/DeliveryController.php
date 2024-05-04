@@ -274,9 +274,10 @@ class DeliveryController extends Controller
             ->whereYear('created_at', '=', date('Y'))
             ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->max('TDLVORD_LINE');
+            ->max('TDLVORD_LINE')
+            ->first()
+            ->pluck('TDLVORD_LINE');
         if (empty($request->TDLVORD_DLVCD)) {
-
             $quotationHeader = [];
             $newQuotationCode = '';
             $newInvoiceCode = '';

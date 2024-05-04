@@ -272,7 +272,7 @@ class DeliveryController extends Controller
 
         $LastLine = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->whereYear('created_at', '=', date('Y'))
-            ->whereMonth('created_at', '=', date('m'))
+            // ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->orderBy('TDLVORD_LINE', 'desc')
             ->first();

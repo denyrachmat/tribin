@@ -275,7 +275,8 @@ class DeliveryController extends Controller
             // ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->orderBy('TDLVORD_LINE', 'desc')
-            ->first();
+            ->first()
+            ->TDLVORD_LINE;
         if (empty($request->TDLVORD_DLVCD)) {
             $quotationHeader = [];
             $newQuotationCode = '';

@@ -836,7 +836,7 @@ class QuotationController extends Controller
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         $documentNumber = base64_decode($request->id);
 
-        if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
 
             $affectedRow = T_QUOHEAD::on($this->dedicatedConnection)
                 ->where('TQUO_QUOCD', $documentNumber)

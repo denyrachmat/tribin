@@ -50,7 +50,7 @@
             <div class="col">
                 <form action="{{route('actionlogin')}}" class="form-signin" method="post">
                     @csrf
-                    <div class="row">
+                    <div class="row form-group">
                         <div class="col mb-4">
                             <h1 class="display-4 text-primary mb-0"><a href="/">JOS</a></h1>
                             JAT Integrated Online System <i class="fas fa-link"></i>
@@ -63,7 +63,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row" id="ln1">
+                    <div class="row form-group" id="ln1">
                         <div class="col">
                             <input type="text" name="inputUserid" id="inputUserid" class="form-control" placeholder="UserID" required autocomplete="off" autofocus>
                             <div class="d-grid">
@@ -72,7 +72,7 @@
                         </div>
                     </div>
                     <div class="row" id="ln2">
-                        <div class="col form-group">
+                        <div class="col">
                             <a href="" id="btnback" title="back">Login as another account ?</a> <br><br>
                             <div class="input-group" id="show_hide_password">
                                 <input type="password" name="inputPassword" id="inputPassword" class="form-control" placeholder="Password" required>

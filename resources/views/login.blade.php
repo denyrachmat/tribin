@@ -72,7 +72,7 @@
                         </div>
                     </div>
                     <div class="row" id="ln2">
-                        <div class="col">
+                        <div class="col" class="form-group">
                             <a href="" id="btnback" title="back">Login as another account ?</a> <br><br>
                             <div class="input-group" id="show_hide_password">
                                 <input type="password" name="inputPassword" id="inputPassword" class="form-control" placeholder="Password" required>

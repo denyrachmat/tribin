@@ -685,7 +685,9 @@ class DeliveryController extends Controller
             $this->fpdf->Cell(29, 5, 'Lokasi Barang', 0, 0, 'L');
 
             $this->fpdf->SetXY(3, 92);
-            $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
+            // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
+            $this->fpdf->Cell(29, 5, $RSHeader->TQUO_PROJECT_LOCATION, 0, 0, 'L');
+
 
             $this->fpdf->SetFont('Arial', '', 7);
             $this->fpdf->SetXY(3, 107);

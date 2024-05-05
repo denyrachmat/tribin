@@ -433,7 +433,17 @@ class InvoiceController extends Controller
     public function printSJ($doc)
     {
         $doc = base64_decode($doc);
-        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)->select('TDLVORD_ISSUDT', 'MCUS_CUSNM', 'MCUS_ADDR1', 'TDLVORD_REMARK', 'MCUS_TELNO', 'TDLVORD_INVCD', 'TDLVORD_LINE')
+        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->select(
+                'TDLVORD_ISSUDT',
+                'MCUS_CUSNM',
+                'MCUS_ADDR1',
+                'TDLVORD_REMARK',
+                'MCUS_TELNO',
+                'TDLVORD_INVCD',
+                'TDLVORD_LINE',
+                'TQUO_PROJECT_LOCATION'
+            )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })

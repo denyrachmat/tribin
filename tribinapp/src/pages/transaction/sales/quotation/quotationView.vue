@@ -58,19 +58,16 @@
           <!-- For header -->
           <template v-slot:header="props">
             <q-tr :props="props">
+              <q-th auto-width>Action</q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
               </q-th>
-              <q-th auto-width>Action</q-th>
             </q-tr>
           </template>
 
           <!-- For Body -->
           <template v-slot:body="props">
             <q-tr :props="props">
-              <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.value }}
-              </q-td>
               <q-td auto-width>
                 <q-btn
                   flat
@@ -109,6 +106,9 @@
                 >
                   <q-tooltip>Print this quotation</q-tooltip>
                 </q-btn>
+              </q-td>
+              <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                {{ col.value }}
               </q-td>
             </q-tr>
           </template>

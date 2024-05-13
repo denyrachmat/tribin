@@ -129,11 +129,13 @@
     }
 
     function btnSaveOnclick(pthis) {
-        if (coaCode.value.trim().length <= 3) {
-            coaCode.focus()
-            alertify.warning(`Code is required`)
-            return
-        }
+        console.log(coaCode.value)
+        // if (coaCode.value.trim().length <= 3) {
+        //     coaCode.focus()
+        //     alertify.warning(`Code is required`)
+        //     return
+        // }
+
         if (coaName.value.trim().length <= 2) {
             coaName.focus()
             alertify.warning(`Name is required`)

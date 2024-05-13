@@ -1388,6 +1388,8 @@
                                 // orderMOBDEMOB.value = selrow.cells[7].innerText
                             }
                         }
+
+                        console.log(arrayItem)
                         newcell = newrow.insertCell(0)
                         newcell.classList.add('d-none')
                         newcell.innerHTML = arrayItem['id']

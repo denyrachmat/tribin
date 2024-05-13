@@ -201,22 +201,22 @@ const columnsItem = ref([
     align: "left",
     format: (val) => parseInt(val).toLocaleString(),
   },
-  {
-    name: "TQUODETA_OPRPRC",
-    label: "Operator",
-    field: "TQUODETA_OPRPRC",
-    sortable: true,
-    align: "left",
-    format: (val) => parseInt(val).toLocaleString(),
-  },
-  {
-    name: "TQUODETA_MOBDEMOB",
-    label: "MOB DEMOB",
-    field: "TQUODETA_MOBDEMOB",
-    sortable: true,
-    align: "left",
-    format: (val) => parseInt(val).toLocaleString(),
-  },
+  // {
+  //   name: "TQUODETA_OPRPRC",
+  //   label: "Operator",
+  //   field: "TQUODETA_OPRPRC",
+  //   sortable: true,
+  //   align: "left",
+  //   format: (val) => parseInt(val).toLocaleString(),
+  // },
+  // {
+  //   name: "TQUODETA_MOBDEMOB",
+  //   label: "MOB DEMOB",
+  //   field: "TQUODETA_MOBDEMOB",
+  //   sortable: true,
+  //   align: "left",
+  //   format: (val) => parseInt(val).toLocaleString(),
+  // },
   {
     name: "SUBTOT",
     label: "SUBTOTAL",
@@ -271,6 +271,8 @@ const onApprove = () => {
         .then((response) => {
           loading.value = false;
           getData();
+
+          onDialogOK()
         })
         .catch((e) => {
           loading.value = false;

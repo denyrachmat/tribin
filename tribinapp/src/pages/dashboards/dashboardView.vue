@@ -200,6 +200,8 @@ const onClickApprovalNumber = (data, typeAPI, conn) => {
   }).onOk(async (val) => {
     quotationGroupConditions.value = val.MCONDITION_RPT_STAT;
     quotationConditions.value = val.group;
+
+    getDataApproval()
   });
 };
 </script>

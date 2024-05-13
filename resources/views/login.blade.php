@@ -74,12 +74,14 @@
                     <div class="row" id="ln2">
                         <div class="col">
                             <a href="" id="btnback" title="back">Login as another account ?</a> <br><br>
-                            <div class="input-group" id="show_hide_password">
+                            <label class="sr-only" for="inlineFormInputGroup">Password</label>
+                            <div class="input-group mb-2" id="show_hide_password">
                                 <input type="password" name="inputPassword" id="inputPassword" class="form-control" placeholder="Password" required>
-                                <div class="input-group-addon">
-                                        <a href=""><i class="fa fa-eye-slash" aria-hidden="true"></i></a>
+                                <div class="input-group-prepend">
+                                    <a href="#" class="btn btn-primary btn-block"><i class="fa fa-eye-slash" aria-hidden="true"></i></a>
                                 </div>
                             </div>
+
                             <div class="d-grid">
                                 <button class="btn btn-primary btn-block" type="submit" onclick="btnLogin_eClick(event)">Sign in</button>
                             </div>

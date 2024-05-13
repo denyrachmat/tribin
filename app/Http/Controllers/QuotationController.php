@@ -323,8 +323,8 @@ class QuotationController extends Controller
             ->whereNotNull("TQUO_APPRVDT")
             ->whereNull("TSLO_QUOCD")
             : T_QUOHEAD::on($this->dedicatedConnection)->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT"])
-            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD")
-            ->whereNull("TQUO_APPRVDT");
+            ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
+            // ->whereNull("TQUO_APPRVDT");
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -372,7 +372,8 @@ class QuotationController extends Controller
     {
         $documentNumber = base64_decode($request->id);
 
-        $RS = T_QUODETA::on($this->dedicatedConnection)->select(["id", "TQUODETA_ITMCD", "MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
+        $RS = T_QUODETA::on($this->dedicatedConnection)
+            ->select(["id", "TQUODETA_ITMCD", "MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
             ->leftJoin("M_ITM", function ($join) {
                 $join->on("TQUODETA_ITMCD", "=", "MITM_ITMCD")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');

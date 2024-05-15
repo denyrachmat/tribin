@@ -82,7 +82,7 @@
                                                                 <thead class="table-light">
                                                                     <tr>
                                                                         <th class="d-none">idLine</th>
-                                                                        <th>Item Code</th>
+                                                                        <!-- <th>Item Code</th> -->
                                                                         <th>Item Name</th>
                                                                         <th class="text-center">Qty</th>
                                                                         <th class="text-center">Usage</th>
@@ -1380,12 +1380,9 @@
                                 selrow.classList.add('table-info')
                                 selectedRowAtOrderTable.value = event.target.parentElement.rowIndex
                                 orderItemCode.value = selrow.cells[1].innerText
-                                orderItemName.value = selrow.cells[2].innerText
-                                orderItemQty.value = selrow.cells[3].innerText
-                                orderUsage.value = selrow.cells[4].innerText
-                                orderPrice.value = selrow.cells[5].innerText
-                                // orderOperator.value = selrow.cells[6].innerText
-                                // orderMOBDEMOB.value = selrow.cells[7].innerText
+                                orderItemQty.value = selrow.cells[2].innerText
+                                orderUsage.value = selrow.cells[3].innerText
+                                orderPrice.value = selrow.cells[4].innerText
                             }
                         }
 
@@ -1395,15 +1392,15 @@
                         newcell.innerHTML = arrayItem['id']
                         newcell = newrow.insertCell(1)
                         newcell.innerHTML = arrayItem['TQUODETA_ITMCD']
+                        // newcell = newrow.insertCell(2)
+                        // newcell.innerHTML = arrayItem['MITM_ITMNM']
                         newcell = newrow.insertCell(2)
-                        newcell.innerHTML = arrayItem['MITM_ITMNM']
-                        newcell = newrow.insertCell(3)
                         newcell.classList.add('text-center')
                         newcell.innerHTML = 1
-                        newcell = newrow.insertCell(4)
+                        newcell = newrow.insertCell(3)
                         newcell.classList.add('text-center')
                         newcell.innerHTML = arrayItem['TQUODETA_USAGE_DESCRIPTION']
-                        newcell = newrow.insertCell(5)
+                        newcell = newrow.insertCell(4)
                         newcell.classList.add('text-end')
                         newcell.innerHTML = numeral(arrayItem['TQUODETA_PRC']).format(',')
                         // newcell = newrow.insertCell(6)
@@ -1412,8 +1409,8 @@
                         // newcell = newrow.insertCell(7)
                         // newcell.classList.add('text-end')
                         // newcell.innerHTML = numeral(arrayItem['TQUODETA_MOBDEMOB']).format(',')
-                        newcell = newrow.insertCell(6)
-                        newcell = newrow.insertCell(7)
+                        // newcell = newrow.insertCell(6)
+                        // newcell = newrow.insertCell(7)
                     })
                     myContainer.innerHTML = ''
                     myContainer.appendChild(myfrag)

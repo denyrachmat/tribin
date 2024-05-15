@@ -25,6 +25,7 @@ class ReceiveOrderController extends Controller
     }
     public function index()
     {
+        // return view('tribinapp_layouts', ['routeApp' => 'so']);
         $Usages = M_USAGE::on($this->dedicatedConnection)->get();
         return view('transaction.receive_order', ['usages' => $Usages]);
     }
@@ -173,6 +174,32 @@ class ReceiveOrderController extends Controller
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->get();
         return ['data' => $RS];
+    }
+
+    function searchApi(Request $request)
+    {
+        $columnMap = [
+            'TSLO_SLOCD',
+            'MCUS_CUSNM',
+            'TSLO_POCD',
+        ];
+
+        $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
+            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_ISSUDT", "TSLO_QUOCD", "TSLO_POCD",
+            "TSLO_ATTN", "TSLO_PLAN_DLVDT", "TSLO_ADDRESS_NAME", "TSLO_ADDRESS_DESCRIPTION", "TSLO_TYPE", "TSLO_SERVTRANS_COST", 'TSLO_MAP_URL',
+            'TSLO_ISCON'
+        ])
+            ->leftJoin("M_CUS", function ($join) {
+                $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
+                    ->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            // ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
+            ->where('TSLO_BRANCH', Auth::user()->branch);
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+        return ['data' => $RS->get()];
     }
 
     function searchDraft(Request $request)

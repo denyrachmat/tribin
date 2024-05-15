@@ -71,7 +71,7 @@
               <q-td auto-width>
                 <q-btn
                   flat
-                  color="orange"
+                  :color="props.row.TQUO_APPRVDT !== null ? 'grey' : 'orange'"
                   icon="edit"
                   @click="onClickEdit(props.row.TQUO_QUOCD)"
                   dense
@@ -85,7 +85,7 @@
                 </q-btn>
                 <q-btn
                   flat
-                  color="red"
+                  :color="props.row.TQUO_APPRVDT !== null ? 'grey' : 'red'"
                   icon="delete"
                   @click="onClickDelete(props.row.TQUO_QUOCD)"
                   dense

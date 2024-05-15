@@ -236,6 +236,7 @@ Route::middleware('auth')->group(function () {
         Route::get('form', [ReceiveOrderController::class, 'index']);
         Route::post('', [ReceiveOrderController::class, 'save']);
         Route::get('', [ReceiveOrderController::class, 'search']);
+        Route::post('searchAPI', [ReceiveOrderController::class, 'searchApi']);
         Route::put('{id}', [ReceiveOrderController::class, 'update']);
         Route::get('{id}', [ReceiveOrderController::class, 'loadById']);
         Route::delete('items/{id}', [ReceiveOrderController::class, 'deleteItemById']);

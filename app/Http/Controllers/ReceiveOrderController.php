@@ -194,7 +194,8 @@ class ReceiveOrderController extends Controller
                     ->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
             })
             // ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
-            ->where('TSLO_BRANCH', Auth::user()->branch);
+            ->where('TSLO_BRANCH', Auth::user()->branch)
+            ->orderBy('TSLO_ISSUDT', 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

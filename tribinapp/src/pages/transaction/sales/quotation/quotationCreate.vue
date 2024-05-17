@@ -401,7 +401,7 @@ onMounted(async () => {
   }
 
   if (props.quoHeader) {
-    getSavedData(props.quoHeader);
+    await getSavedData(props.quoHeader);
   }
 
   dataSrv()

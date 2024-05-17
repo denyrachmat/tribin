@@ -122,6 +122,8 @@ import { onMounted, ref } from "vue";
 import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
+import salesOrderCreate from "./salesOrderCreate.vue";
+
 const $q = useQuasar();
 
 const filterCol = ref("TQUO_QUOCD");
@@ -192,6 +194,18 @@ const dataRo = async() => {
       loading.value = false;
     });
 }
+
+const onClickNew = () => {
+  $q.dialog({
+    component: salesOrderCreate,
+    // componentProps: {
+    //   datas: data.data,
+    // },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataRo();
+  });
+};
 </script>
 <style lang="sass">
 .my-sticky-header-column-table

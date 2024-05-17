@@ -25,7 +25,7 @@ class ReceiveOrderController extends Controller
     }
     public function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'so']);
+        // return view('tribinapp_layouts', ['routeApp' => 'so']);
         $Usages = M_USAGE::on($this->dedicatedConnection)->get();
         return view('transaction.receive_order', ['usages' => $Usages]);
     }

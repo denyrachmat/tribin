@@ -42,7 +42,7 @@ class ReceiveOrderController extends Controller
             'TSLO_PLAN_DLVDT' => 'required',
             'TSLO_ADDRESS_NAME' => 'required',
             'TSLO_ADDRESS_DESCRIPTION' => 'required',
-            'TSLO_TYPE' => 'required',
+            'TSLO_TYPE' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -54,7 +54,6 @@ class ReceiveOrderController extends Controller
             ->whereYear('created_at', '=', date('Y'))
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->max('TSLO_LINE');
-
 
         $quotationHeader = [];
         $newDocumentCode = '';
@@ -83,6 +82,7 @@ class ReceiveOrderController extends Controller
             $POLastLine = 0;
             $newPOCode = $request->TSLO_POCD;
         }
+
         $quotationHeader = [
             'TSLO_SLOCD' => $newDocumentCode,
             'TSLO_CUSCD' => $request->TSLO_CUSCD,
@@ -153,6 +153,124 @@ class ReceiveOrderController extends Controller
         ];
     }
 
+    public function saveAPI(Request $request)
+    {
+        $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+        # data quotation header
+        $validator = Validator::make($request->all(), [
+            'TSLO_CUSCD' => 'required',
+            'TSLO_ATTN' => 'required',
+            // 'TSLO_QUOCD' => 'required',
+            'TSLO_ISSUDT' => 'required|date',
+            'TSLO_PLAN_DLVDT' => 'required',
+            'TSLO_ADDRESS_NAME' => 'required',
+            'TSLO_ADDRESS_DESCRIPTION' => 'required',
+            'TSLO_TYPE' => 'required',
+            'det' => 'array',
+            'det.*.TSLODETA_ITMCD' => 'required',
+            'det.*.TSLODETA_ITMQT' => 'required',
+            'det.*.TSLODETA_PRC' => 'required',
+            'det.*.TSLODETA_PERIOD_FR' => 'required',
+            'det.*.TSLODETA_PERIOD_TO' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        $LastLine = DB::connection($this->dedicatedConnection)->table('T_SLOHEAD')
+            ->whereMonth('created_at', '=', date('m'))
+            ->whereYear('created_at', '=', date('Y'))
+            ->where('TSLO_BRANCH', Auth::user()->branch)
+            ->max('TSLO_LINE');
+
+        $quotationHeader = [];
+        $newDocumentCode = '';
+        $newPOCode = '';
+
+        if ($request->has('TSLO_SLOCD') && !empty($request->TSLO_SLOCD)) {
+            $newDocumentCode = $request->TSLO_SLOCD;
+        } else {
+            if (!$LastLine) {
+                $LastLine = 1;
+                $newDocumentCode = '001/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            } else {
+                $LastLine++;
+                $newDocumentCode = substr('00' . $LastLine, -3) . '/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            }
+        }
+
+        if ($request->TSLO_POCD == '') {
+            $POLastLine = DB::connection($this->dedicatedConnection)->table('T_SLOHEAD')
+                ->whereMonth('created_at', '=', date('m'))
+                ->whereYear('created_at', '=', date('Y'))
+                ->max('TSLO_POLINE');
+            if (!$POLastLine) {
+                $POLastLine = 1;
+                $newPOCode = 'A-' . date('Ym') . '-1';
+            } else {
+                $POLastLine++;
+                $newPOCode = 'A-' . date('Ym') . '-' . $POLastLine;
+            }
+        } else {
+            $POLastLine = 0;
+            $newPOCode = $request->TSLO_POCD;
+        }
+
+        $quotationHeader = [
+            'TSLO_SLOCD' => $newDocumentCode,
+            'TSLO_CUSCD' => $request->TSLO_CUSCD,
+            'TSLO_LINE' => $LastLine,
+            'TSLO_ATTN' => $request->TSLO_ATTN,
+            'TSLO_QUOCD' => $request->TSLO_QUOCD,
+            'TSLO_POCD' => $newPOCode,
+            'TSLO_POLINE' => $POLastLine,
+            'TSLO_ISSUDT' => $request->TSLO_ISSUDT,
+            'TSLO_PLAN_DLVDT' => $request->TSLO_PLAN_DLVDT,
+            'TSLO_ADDRESS_NAME' => $request->TSLO_ADDRESS_NAME,
+            'TSLO_ADDRESS_DESCRIPTION' => $request->TSLO_ADDRESS_DESCRIPTION,
+            'TSLO_MAP_URL' => $request->TSLO_MAP_URL,
+            'TSLO_TYPE' => $request->TSLO_TYPE,
+            'TSLO_SERVTRANS_COST' => $request->TSLO_SERVTRANS_COST,
+            'TSLO_ISCON' => (int)$request->TSLO_ISCON,
+            'created_by' => Auth::user()->nick_name,
+            'TSLO_BRANCH' => Auth::user()->branch
+        ];
+
+        T_SLOHEAD::on($this->dedicatedConnection)->updateOrCreate([
+            'TSLO_SLOCD' => $request->TSLO_SLOCD,
+            'TSLO_LINE' => $LastLine,
+        ], $quotationHeader);
+
+        T_SLODETA::on($this->dedicatedConnection)->where('TSLODETA_SLOCD', $newDocumentCode)->delete();
+
+        $quotationDetail = [];
+        foreach ($request->det as $key => $value) {
+            $quotationDetail[] = T_SLODETA::on($this->dedicatedConnection)->create([
+                'TSLODETA_SLOCD' => $newDocumentCode,
+                'TSLODETA_ITMCD' => $value['TSLODETA_ITMCD'],
+                'TSLODETA_ITMQT' => $value['TSLODETA_ITMQT'],
+                'TSLODETA_USAGE_DESCRIPTION' => $value['TSLODETA_USAGE_DESCRIPTION'],
+                'TSLODETA_USAGE' => 0,
+                'TSLODETA_PRC' => $value['TSLODETA_PRC'],
+                'TSLODETA_OPRPRC' => 0,
+                'TSLODETA_MOBDEMOB' => 0,
+                'TSLODETA_PERIOD_FR' => $value['TSLODETA_PERIOD_FR'],
+                'TSLODETA_PERIOD_TO' => $value['TSLODETA_PERIOD_TO'],
+                'created_by' => Auth::user()->nick_name,
+                'TSLODETA_BRANCH' => Auth::user()->branch
+            ]);
+        }
+
+        return [
+            'msg' => 'OK', 'doc' => $newDocumentCode, '$RSLast' => $LastLine,
+            'quotationHeader' => $quotationHeader,
+            'quotationDetail' => $quotationDetail,
+            'newPOCode' => $newPOCode,
+        ];
+    }
+
     function search(Request $request)
     {
         $columnMap = [
@@ -187,12 +305,14 @@ class ReceiveOrderController extends Controller
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
             "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_ISSUDT", "TSLO_QUOCD", "TSLO_POCD",
             "TSLO_ATTN", "TSLO_PLAN_DLVDT", "TSLO_ADDRESS_NAME", "TSLO_ADDRESS_DESCRIPTION", "TSLO_TYPE", "TSLO_SERVTRANS_COST", 'TSLO_MAP_URL',
-            'TSLO_ISCON'
+            'TSLO_ISCON',
+            'TSLO_APPRVDT'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
                     ->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
             })
+            ->with('dlv')
             // ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->orderBy('TSLO_ISSUDT', 'desc');
@@ -245,6 +365,59 @@ class ReceiveOrderController extends Controller
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->get();
         return ['dataItem' => $RS, 'dataHeader' => $RSHeader];
+    }
+
+    function deleteByID($id)
+    {
+        $headerDelete = T_SLOHEAD::on($this->dedicatedConnection)
+            ->where('TSLO_SLOCD', base64_decode($id))
+            ->delete();
+
+        $detDelete = T_SLODETA::on($this->dedicatedConnection)
+            ->where('TSLODETA_SLOCD', base64_decode($id))
+            ->delete();
+
+        return [
+            'msg' => 'Delete OK',
+            'quotationHeader' => $headerDelete,
+            'quotationDetail' => $detDelete,
+        ];
+    }
+
+    function getSLOByIDAPI($id)
+    {
+        $getData = T_SLOHEAD::on($this->dedicatedConnection)
+            ->select(
+                'TSLO_SLOCD',
+                'TSLO_ISSUDT',
+                'TSLO_PLAN_DLVDT',
+                'TSLO_QUOCD',
+                'TSLO_POCD',
+                'TSLO_CUSCD',
+                'TSLO_ATTN',
+                DB::raw('CAST(TSLO_TYPE AS UNSIGNED) TSLO_TYPE'),
+                'TSLO_ADDRESS_NAME',
+                'TSLO_ADDRESS_DESCRIPTION',
+                'TSLO_SERVTRANS_COST',
+                DB::raw('TSLO_ISCON IS NOT NULL AS TSLO_ISCON')
+            )
+            ->where('TSLO_SLOCD', base64_decode($id))
+            ->with('det', function ($j) {
+                $j->select(
+                    'TSLODETA_SLOCD',
+                    'TSLODETA_ITMCD',
+                    'TSLODETA_ITMQT',
+                    'TSLODETA_USAGE_DESCRIPTION',
+                    'TSLODETA_PRC',
+                    'TSLODETA_PERIOD_FR',
+                    'TSLODETA_PERIOD_TO',
+                );
+            })
+            ->with('quot')
+            ->with('cust')
+            ->first();
+
+        return $getData;
     }
 
     function loadDraftById(Request $request)

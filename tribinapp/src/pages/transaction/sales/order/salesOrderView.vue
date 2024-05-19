@@ -5,7 +5,7 @@
         <span class="text-h4">Sales Order / Receive Order</span>
       </div>
       <div class="col text-right">
-        <q-btn icon="add" color="blue" @click="onClickNew">
+        <q-btn icon="add" color="blue" @click="onClickNew()">
           <q-tooltip>Create New RO</q-tooltip>
         </q-btn>
       </div>
@@ -46,7 +46,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="dataQuo()"
+              @update:model-value="dataRo()"
               debounce="1000"
             >
               <template v-slot:append>
@@ -71,41 +71,40 @@
               <q-td auto-width>
                 <q-btn
                   flat
-                  :color="props.row.TQUO_APPRVDT !== null ? 'grey' : 'orange'"
+                  :color="props.row.dlv.length > 0 ? 'grey' : 'orange'"
                   icon="edit"
-                  @click="onClickEdit(props.row.TQUO_QUOCD)"
+                  @click="onClickEdit(props.row.TSLO_SLOCD)"
                   dense
-                  :disable="props.row.TQUO_APPRVDT !== null"
                 >
                   <q-tooltip>{{
-                    !props.row.TQUO_APPRVDT
-                      ? "Edit this quotation"
-                      : "Quotation already approved, cannot edit !"
+                    props.row.dlv.length > 0
+                      ? "RO already used for delivery, cannot edit !"
+                      : "Edit this RO"
                   }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.TQUO_APPRVDT !== null ? 'grey' : 'red'"
+                  :color="props.row.dlv.length > 0 ? 'grey' : 'red'"
                   icon="delete"
-                  @click="onClickDelete(props.row.TQUO_QUOCD)"
+                  @click="onClickDelete(props.row.TSLO_SLOCD)"
                   dense
-                  :disable="props.row.TQUO_APPRVDT !== null"
+                  :disable="props.row.dlv.length > 0"
                 >
                   <q-tooltip>{{
-                    !props.row.TQUO_APPRVDT
-                      ? "Delete this quotation"
-                      : "Quotation already approved, cannot delete !"
+                    props.row.dlv.length > 0
+                      ? "RO already used for delivery, cannot delete !"
+                      : "Delete this RO"
                   }}</q-tooltip>
                 </q-btn>
-                <q-btn
+                <!-- <q-btn
                   flat
                   color="indigo"
                   icon="print"
-                  @click="onClickPrint(props.row.TQUO_QUOCD)"
+                  @click="onClickPrint(props.row.TSLO_SLOCD)"
                   dense
                 >
                   <q-tooltip>Print this quotation</q-tooltip>
-                </q-btn>
+                </q-btn> -->
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.value }}
@@ -126,7 +125,7 @@ import salesOrderCreate from "./salesOrderCreate.vue";
 
 const $q = useQuasar();
 
-const filterCol = ref("TQUO_QUOCD");
+const filterCol = ref("TSLO_SLOCD");
 const filter = ref("");
 const rows = ref([]);
 const columns = ref([
@@ -198,12 +197,36 @@ const dataRo = async() => {
 const onClickNew = () => {
   $q.dialog({
     component: salesOrderCreate,
-    // componentProps: {
-    //   datas: data.data,
-    // },
+  }).onOk(async (val) => {
+    dataRo();
+  });
+};
+
+const onClickEdit = (val) => {
+  console.log(val);
+  $q.dialog({
+    component: salesOrderCreate,
+    componentProps: {
+      sloHeader: val,
+    },
     // persistent: true,
   }).onOk(async (val) => {
     dataRo();
+  });
+};
+
+const onClickDelete = (val) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete this data ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web.delete(`receive-order/itemsAPI/${btoa(val)}`).then((res) => {
+      loading.value = false;
+      dataRo();
+    });
   });
 };
 </script>

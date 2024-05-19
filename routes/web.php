@@ -235,10 +235,15 @@ Route::middleware('auth')->group(function () {
     Route::prefix('receive-order')->group(function () {
         Route::get('form', [ReceiveOrderController::class, 'index']);
         Route::post('', [ReceiveOrderController::class, 'save']);
+        Route::post('saveAPI', [ReceiveOrderController::class, 'saveAPI']);
         Route::get('', [ReceiveOrderController::class, 'search']);
         Route::post('searchAPI', [ReceiveOrderController::class, 'searchApi']);
         Route::put('{id}', [ReceiveOrderController::class, 'update']);
         Route::get('{id}', [ReceiveOrderController::class, 'loadById']);
+        Route::get('getData/{id}', [ReceiveOrderController::class, 'getSLOByIDAPI']);
+        Route::delete('itemsAPI/{id}', [ReceiveOrderController::class, 'deleteByID']);
+
+
         Route::delete('items/{id}', [ReceiveOrderController::class, 'deleteItemById']);
         Route::put('items/{id}', [ReceiveOrderController::class, 'updateItem']);
     });

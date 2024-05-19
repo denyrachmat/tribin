@@ -1602,6 +1602,7 @@ class QuotationController extends Controller
     {
         $dataHeader = T_QUOHEAD::on($this->dedicatedConnection)
             ->where('TQUO_QUOCD', base64_decode($id))
+            ->with('cust')
             ->first();
 
         $dataDetail = T_QUODETA::on($this->dedicatedConnection)

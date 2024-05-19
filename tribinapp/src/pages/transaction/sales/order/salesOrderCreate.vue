@@ -131,8 +131,73 @@
                 :loading="loading"
               />
             </div>
+            <div class="col q-pl-md">
+              <q-select
+                dense
+                filled
+                label="Customer Name"
+                v-model="forms.TSLO_CUSCD"
+                use-input
+                input-debounce="500"
+                :options="listCustomers"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'cust')
+                "
+                behavior="dialog"
+                option-label="MCUS_CUSNM"
+                option-value="MCUS_CUSCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :readonly="quotationType === 3"
+              />
+            </div>
           </div>
         </fieldset>
+
+        <div class="row q-py-md">
+          <div class="col">
+            <q-btn-toggle
+              v-model="forms.TSLO_TYPE"
+              spread
+              no-caps
+              toggle-color="purple"
+              color="white"
+              text-color="black"
+              :options="[
+                { label: 'Rental', value: 1 },
+                { label: 'Sales', value: 2 },
+                { label: 'Service', value: 3 },
+              ]"
+            />
+          </div>
+        </div>
+
+        <div class="row" v-if="forms.TSLO_TYPE != 1">
+          <div class="col">
+            <q-input
+              prefix="Rp"
+              label="Service & Transportation Price"
+              v-model="forms.TSLO_SERVTRANS_COST"
+              filled
+              dense
+            />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <q-checkbox
+              v-model="forms.TSLO_ISCON"
+              label="Is Contract ?"
+              color="teal"
+              :toggle-indeterminate="false"
+              :true-value="1"
+              :false-value="0"
+              :indeterminate-value="0"
+            />
+          </div>
+        </div>
 
         <fieldset
           style="
@@ -141,6 +206,7 @@
             height: 35vh;
             overflow: auto;
           "
+          class="q-pa-md"
         >
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>Detail Items</b>
@@ -158,6 +224,15 @@
                 color="blue"
                 label="Add Lines"
                 @click="onAddItemLine"
+                :loading="loading"
+              >
+              </q-btn>
+              <q-btn
+                flat
+                icon="person"
+                color="indigo"
+                label="Customer"
+                @click="onCustView"
                 :loading="loading"
               >
               </q-btn>
@@ -181,53 +256,47 @@
                     </q-item-section>
                     <q-item-section>
                       <q-item-label class="text-center">
-                        <q-input v-model="quot.TSLODETA_ITMCD" readonly dense />
+                        <q-select
+                          dense
+                          filled
+                          label="Item Name"
+                          v-model="quot.TSLODETA_ITMCD"
+                          use-input
+                          input-debounce="500"
+                          :options="listItems"
+                          @filter="
+                            (val, update, abort) =>
+                              filterFn(val, update, abort, 'item')
+                          "
+                          behavior="dialog"
+                          option-label="MITM_ITMNM"
+                          option-value="MITM_ITMNM"
+                          emit-value
+                          map-options
+                          :loading="loading"
+                        >
+                        </q-select>
                       </q-item-label>
                       <q-item-label caption> Item Name </q-item-label>
                     </q-item-section>
                     <q-item-section>
                       <q-item-label>
-                        <q-input v-model="quot.TSLODETA_ITMQT" readonly dense />
+                        <q-input v-model="quot.TSLODETA_ITMQT" dense />
                       </q-item-label>
                       <q-item-label caption> Qty </q-item-label>
                     </q-item-section>
                     <q-item-section>
                       <q-item-label>
-                        <q-input v-model="quot.TSLODETA_USAGE" readonly dense />
+                        <q-input
+                          v-model="quot.TSLODETA_USAGE_DESCRIPTION"
+                          dense
+                        />
                       </q-item-label>
                       <q-item-label caption> Usage </q-item-label>
                     </q-item-section>
                     <q-item-section>
                       <q-item-label>
-                        <!-- <q-field
-                          :model-value="quot.TSLODETA_PRC"
-                          borderless
-                          @update:modelValue="e => {$emit('update:modelValue', e)}"
-                        >
-                          {{ quot.TSLODETA_PRC }}
-                          <template v-slot:control="{ id, emitValue }">
-                            <input
-                              :id="id"
-                              v-money="moneyFormatForDirective"
-                              class="input-1 money-input basis-medium"
-                              model-value="modelValue"
-                              @change.self="e => emitValue(e.target.value)"
-                            >
-                          </template>
-                        </q-field> -->
-
-                        <q-field
-                          filled
-                          v-model="quot.TSLODETA_PRC"
-                          label="Price with v-money directive"
-                          hint="Mask: $ #,###.00 #"
-                        >
-                          <template v-slot:control="{ id, floatingLabel, modelValue, emitValue }">
-                            <input :id="id" class="q-field__input text-right" :value="modelValue" @change="e => emitValue(e.target.value)" v-money3="moneyFormatForDirective" v-show="floatingLabel">
-                          </template>
-                        </q-field>
-                        <!-- <money3 v-model="quot.TSLODETA_PRC" v-bind="moneyFormatForDirective"></money3> {{ quot.TSLODETA_PRC }} -->
-                        <!-- <q-input v-model="quot.TSLODETA_PRC" readonly dense /> -->
+                        <q-input v-model="quot.TSLODETA_PRC" dense />
                       </q-item-label>
                       <q-item-label caption> Price </q-item-label>
                     </q-item-section>
@@ -235,7 +304,7 @@
                       <q-item-label>
                         <q-input
                           filled
-                          v-model="quot.TSLODETA_PERIOD_FROM"
+                          v-model="quot.TSLODETA_PERIOD_FR"
                           dense
                           :loading="loading"
                           @click="quotationIssueDate.qDateProxy.show()"
@@ -250,7 +319,7 @@
                                 transition-hide="scale"
                               >
                                 <q-date
-                                  v-model="quot.TSLODETA_PERIOD_FROM"
+                                  v-model="quot.TSLODETA_PERIOD_FR"
                                   mask="YYYY-MM-DD"
                                 >
                                   <div class="row items-center justify-end">
@@ -344,42 +413,65 @@
 </template>
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useQuasar, useDialogPluginComponent } from "quasar";
+import { useQuasar, useDialogPluginComponent, date } from "quasar";
 import { api, api_web } from "boot/axios";
-import { Money3Directive as money3 } from 'v-money3'
+import { Money3Directive as money3 } from "v-money3";
 
 const $q = useQuasar();
 
+const props = defineProps({
+  sloHeader: String,
+});
+
 const forms = ref({
   TSLO_SLOCD: "",
-  TSLO_ISSUDT: "",
+  TSLO_ISSUDT: date.formatDate(Date.now(), "YYYY-MM-DD"),
   TSLO_PLAN_DLVDT: "",
   TSLO_QUOCD: "",
   TSLO_POCD: "",
+  TSLO_CUSCD: "",
+  TSLO_ATTN: "",
+  TSLO_TYPE: 1,
+  TSLO_ADDRESS_NAME: "",
+  TSLO_ADDRESS_DESCRIPTION: "",
+  TSLO_SERVTRANS_COST: 0,
+  TSLO_ISCON: false,
 });
 
 const filterCol = ref("");
 const filter = ref("");
 
 const listQuo = ref([]);
+const listItems = ref([]);
+const listCustomers = ref([]);
 const loading = ref(false);
 const quotationType = ref(1);
 
 const quotDetail = ref([]);
 
-const moneyFormatForDirective = ref({
-  decimal: '.',
-  thousands: ',',
-  prefix: '$ ',
-  suffix: ' #',
-  precision: 2,
-  // masked: false /* doesn't work with directive */
+onMounted(async () => {
+  if (props.sloHeader && props.sloHeader !== "") {
+    await getROData(props.sloHeader);
+
+    console.log(forms.value);
+    await getQuotation(forms.value.TSLO_QUOCD);
+  }
+
+  getCustomer();
 });
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "quotation") {
       await getQuotation(val);
+    }
+
+    if (fun === "item") {
+      await getItem(val);
+    }
+
+    if (fun === "cust") {
+      await getCustomer(val);
     }
   });
 };
@@ -390,6 +482,7 @@ const getQuotation = async (val = "") => {
     .post("quotation/search", {
       searchBy: "MCUS_CUSNM",
       searchValue: val,
+      approval: 1,
     })
     .then((response) => {
       loading.value = false;
@@ -400,12 +493,58 @@ const getQuotation = async (val = "") => {
     });
 };
 
+const getItem = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("item/searchAPI", {
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listItems.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
 const getQuotType = () => {
-  return quotationType.value === 1
+  return forms.value.TSLO_TYPE === 1
     ? "Rental"
-    : quotationType.value === 2
+    : forms.value.TSLO_TYPE === 2
     ? "Sales"
     : "Service";
+};
+
+const getCustomer = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("customer/searchAPI", {
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listCustomers.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getROData = async (val) => {
+  loading.value = true;
+  await api_web
+    .get(`receive-order/getData/${btoa(val)}`)
+    .then((response) => {
+      loading.value = false;
+
+      console.log(response.data.det);
+      forms.value = response.data;
+      quotDetail.value = response.data.det;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
 };
 
 const onSelectQuotation = async (val) => {
@@ -415,11 +554,18 @@ const onSelectQuotation = async (val) => {
     .get(`transaction/quotation/view/${btoa(val)}`)
     .then((response) => {
       loading.value = false;
+
+      forms.value.TSLO_CUSCD = response.data.data.TQUO_CUSCD;
+      forms.value.TSLO_ADDRESS_NAME = response.data.data.cust.MCUS_CUSNM;
+      forms.value.TSLO_ADDRESS_DESCRIPTION = response.data.data.cust.MCUS_ADDR1;
+      forms.value.TSLO_ATTN = response.data.data.TQUO_ATTN;
+
+      quotDetail.value = [];
       response.data.data.det.map((valMap) => {
         quotDetail.value.push({
           TSLODETA_ITMCD: valMap.TQUODETA_ITMCD,
           TSLODETA_ITMQT: valMap.TQUODETA_ITMQT,
-          TSLODETA_USAGE: valMap.TQUODETA_USAGE,
+          TSLODETA_USAGE_DESCRIPTION: valMap.TQUODETA_USAGE,
           TSLODETA_PRC: valMap.TQUODETA_PRC,
           TSLODETA_PERIOD_FR: valMap.TQUODETA_PERIOD_FR,
           TSLODETA_PERIOD_TO: valMap.TQUODETA_PERIOD_TO,
@@ -435,7 +581,7 @@ const onAddItemLine = () => {
   quotDetail.value.push({
     TSLODETA_ITMCD: "",
     TSLODETA_ITMQT: "",
-    TSLODETA_USAGE: "",
+    TSLODETA_USAGE_DESCRIPTION: "",
     TSLODETA_PRC: 0,
     TSLODETA_PERIOD_FR: "",
     TSLODETA_PERIOD_TO: "",
@@ -460,9 +606,28 @@ const onSubmitData = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    onDialogOK();
+    loading.value = true;
+    await api_web
+      .post(`receive-order/saveAPI`, {
+        ...forms.value,
+        det: quotDetail.value,
+      })
+      .then((response) => {
+        loading.value = false;
+
+        $q.notify({
+          color: "green",
+          message: `${response.data.msg}`,
+        });
+        onDialogOK();
+      })
+      .catch(() => {
+        loading.value = false;
+      });
   });
 };
+
+const onCustView = () => {};
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 </script>

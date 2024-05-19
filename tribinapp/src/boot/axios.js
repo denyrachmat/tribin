@@ -32,14 +32,16 @@ api_web.interceptors.request.use((config) => {
 api.interceptors.response.use(function (response) {
   // Any status code that lie within the range of 2xx cause this function to trigger
   // Do something with response data
+    console.log(response);
   return response;
 }, function (e) {
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
     console.log(e);
+  let errors
   if (e.response) {
     if (e.response.status == 422) {
-      let errors = e.response.data.message;
+      errors = e.response.data.message;
       if (errors) {
         Object.keys(errors).map((val) => {
           errors[val].map((val_det) => {
@@ -70,7 +72,7 @@ api.interceptors.response.use(function (response) {
     }
 
     if (e.response.status == 406) {
-      let errors = e.response.data
+      errors = e.response.data
 
       errors.map((valErr, idx) => {
         valErr.map((valErrDet) => {
@@ -88,8 +90,16 @@ api.interceptors.response.use(function (response) {
         message: "You need to login to access this function!",
       });
     }
+
+    if (e.response.status == 500) {
+      Notify.create({
+        color: "negative",
+        message: "Something is wrong, please contact administrator",
+      });
+    }
   }
-  return Promise.reject(error);
+
+  // return Promise.reject(errors);
 });
 
 api_web.interceptors.response.use(function (response) {
@@ -106,10 +116,11 @@ api_web.interceptors.response.use(function (response) {
 }, function (e) {
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
+
+  // console.log(e)
   if (e.response) {
     if (e.response.status == 422) {
-      // console.log(e.response.data);
-      let errors = e.response.data.message;
+      errors = e.response.data.message;
       if (errors) {
         Object.keys(errors).map((val) => {
           errors[val].map((val_det) => {
@@ -139,14 +150,37 @@ api_web.interceptors.response.use(function (response) {
       }
     }
 
+    // console.log(e.response.data)
+    if (e.response.status == 406) {
+      console.log('masuk sini kena validasi')
+      // console.log(Object.values(e.response.data))
+
+      Object.values(e.response.data).map((valErr) => {
+        valErr.map((valErrDet) => {
+          console.log(valErrDet)
+          Notify.create({
+            color: "negative",
+            message: `${valErrDet}`,
+          });
+        })
+      })
+    }
+
     if (e.response.status == 401) {
       Notify.create({
         color: "negative",
         message: "You need to login to access this function!",
       });
     }
+
+    if (e.response.status == 500) {
+      Notify.create({
+        color: "negative",
+        message: "Something is wrong, please contact administrator",
+      });
+    }
   }
-  return Promise.reject(error);
+  // return Promise.reject(error);
 });
 
 export default boot(({ app }) => {

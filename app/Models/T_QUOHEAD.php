@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\M_CUS;
 
 class T_QUOHEAD extends Model
 {
@@ -19,4 +20,8 @@ class T_QUOHEAD extends Model
         'TQUO_APPRVBY', 'TQUO_APPRVDT', 'created_by', 'updated_by', 'TQUO_BRANCH', 'TQUO_TYPE', 'TQUO_SERVTRANS_COST',
         'TQUO_APPROVAL_HIS', 'TQUO_PROJECT_LOCATION'
     ];
+
+    public function cust() {
+        return $this->hasOne(M_CUS::class, 'MCUS_CUSCD', 'TQUO_CUSCD');
+    }
 }

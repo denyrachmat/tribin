@@ -305,7 +305,7 @@ class ReceiveOrderController extends Controller
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
             "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_ISSUDT", "TSLO_QUOCD", "TSLO_POCD",
             "TSLO_ATTN", "TSLO_PLAN_DLVDT", "TSLO_ADDRESS_NAME", "TSLO_ADDRESS_DESCRIPTION", "TSLO_TYPE", "TSLO_SERVTRANS_COST", 'TSLO_MAP_URL',
-            'TSLO_ISCON',
+            DB::raw('CAST(TSLO_ISCON AS UNSIGNED) TSLO_ISCON'),
             'TSLO_APPRVDT'
         ])
             ->leftJoin("M_CUS", function ($join) {
@@ -399,7 +399,7 @@ class ReceiveOrderController extends Controller
                 'TSLO_ADDRESS_NAME',
                 'TSLO_ADDRESS_DESCRIPTION',
                 'TSLO_SERVTRANS_COST',
-                DB::raw('TSLO_ISCON IS NOT NULL AS TSLO_ISCON')
+                DB::raw('CAST(TSLO_ISCON AS UNSIGNED) TSLO_ISCON')
             )
             ->where('TSLO_SLOCD', base64_decode($id))
             ->with('det', function ($j) {

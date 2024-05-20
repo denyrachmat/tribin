@@ -158,7 +158,7 @@ class DeliveryController extends Controller
                 $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
                     ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             })
-            ->leftJoin("M_ITM", function ($join) {
+            ->leftJoin("M_ITM_GRP", function ($join) {
                 $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMCD')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
             })
             ->where('TSLO_SLOCD', base64_decode($id))

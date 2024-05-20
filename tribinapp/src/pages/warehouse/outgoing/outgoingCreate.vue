@@ -109,7 +109,7 @@
                     {{ idx + 1 }}
                   </q-avatar>
                 </q-item-section>
-                <q-item-section>
+                <!-- <q-item-section>
                   <q-item-label>
                     <q-input
                       dense
@@ -119,7 +119,7 @@
                       readonly
                     />
                   </q-item-label>
-                </q-item-section>
+                </q-item-section> -->
                 <q-item-section>
                   <q-item-label>
                     <q-input

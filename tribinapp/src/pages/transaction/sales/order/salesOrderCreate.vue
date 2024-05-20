@@ -195,6 +195,7 @@
               :true-value="1"
               :false-value="0"
               :indeterminate-value="0"
+              :disable="loading"
             />
           </div>
         </div>

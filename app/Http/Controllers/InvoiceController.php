@@ -352,9 +352,9 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(7, 30);
         $this->fpdf->Cell(25, 5, 'Nomor Kwitansi', 0, 0, 'L');
         $this->fpdf->Cell(15, 5, ': ' . $RSHeader->TDLVORD_INVCD, 0, 0, 'L');
-        $this->fpdf->SetXY(150, 30);
-        $this->fpdf->Cell(25, 5, 'Proj. Location:', 0, 0, 'L');
-        $this->fpdf->Cell(15, 5, ': ' . $Subject->TQUO_PROJECT_LOCATION, 0, 0, 'L');
+        // $this->fpdf->SetXY(150, 30);
+        // $this->fpdf->Cell(25, 5, 'Proj. Location:', 0, 0, 'L');
+        // $this->fpdf->Cell(15, 5, ': ' . $Subject->TQUO_PROJECT_LOCATION, 0, 0, 'L');
         $this->fpdf->SetXY(7, 35);
         $this->fpdf->Cell(195, 110, '', 1, 0, 'L');
         $this->fpdf->SetXY(10, 40);
@@ -406,7 +406,7 @@ class InvoiceController extends Controller
         $Yfocus += 6;
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Lokasi', 0, 0, 'L');
-        $this->fpdf->Cell(50, 5, ': ' . $Attn->TSLO_ADDRESS_DESCRIPTION, 0, 0, 'L');
+        $this->fpdf->Cell(50, 5, ': ' . $Subject->TQUO_PROJECT_LOCATION, 0, 0, 'L');
         $this->fpdf->Line(63, $Yfocus + 5, 150, $Yfocus + 5);
         $Yfocus += 5;
         $this->fpdf->SetXY(110, $Yfocus);

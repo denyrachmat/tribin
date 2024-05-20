@@ -156,21 +156,21 @@
                     <td>:</td>
                     <td>{{$MCUS_CUSNM}}</td>
                 </tr>
-                <tr>
+                <!-- <tr>
                     <td>Attn</td>
                     <td>:</td>
                     <td>{{$TQUO_ATTN}}</td>
-                </tr>
+                </tr> -->
                 <tr>
                     <td>Telp. / Fax</td>
                     <td>:</td>
                     <td>{{$MCUS_TELNO}}</td>
                 </tr>
-                <tr>
+                <!-- <tr>
                     <td>Subject</td>
                     <td>:</td>
                     <td>{{$TQUO_SBJCT}}</td>
-                </tr>
+                </tr> -->
                 <tr>
                     <td>Lokasi</td>
                     <td>:</td>
@@ -207,9 +207,9 @@
         </div>
     </div>
 
-    <div class="row" style="font-size: 12px; padding-top: 10px">
+    <!-- <div class="row" style="font-size: 12px; padding-top: 10px">
         No PR: {{$TSLO_POCD}}
-    </div>
+    </div> -->
     <div class="row" style="font-size: 12px; padding-top: 5px">
         <div class="col5">
             <table class="tg">

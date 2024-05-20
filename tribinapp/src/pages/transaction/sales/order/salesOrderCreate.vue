@@ -416,7 +416,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useQuasar, useDialogPluginComponent, date } from "quasar";
 import { api, api_web } from "boot/axios";
-import { Money3Directive as money3 } from "v-money3";
+import customerView from "./customerView.vue";
 
 const $q = useQuasar();
 
@@ -558,7 +558,8 @@ const onSelectQuotation = async (val) => {
 
       forms.value.TSLO_CUSCD = response.data.data.TQUO_CUSCD;
       forms.value.TSLO_ADDRESS_NAME = response.data.data.cust.MCUS_CUSNM;
-      forms.value.TSLO_ADDRESS_DESCRIPTION = response.data.data.cust.MCUS_ADDR1;
+      forms.value.TSLO_ADDRESS_DESCRIPTION =
+        response.data.data.cust.TQUO_PROJECT_LOCATION;
       forms.value.TSLO_ATTN = response.data.data.TQUO_ATTN;
 
       quotDetail.value = [];
@@ -628,7 +629,26 @@ const onSubmitData = () => {
   });
 };
 
-const onCustView = () => {};
+const onCustView = () => {
+  $q.dialog({
+    component: customerView,
+    componentProps: {
+      custData: {
+        TSLO_CUSCD: forms.value.TSLO_CUSCD,
+        MCUS_CUSNM: forms.value.cust.MCUS_CUSNM,
+        TSLO_ATTN: forms.value.TSLO_ATTN,
+        TSLO_ADDRESS_NAME: forms.value.TSLO_ADDRESS_NAME,
+        TSLO_ADDRESS_DESCRIPTION: forms.value.TSLO_ADDRESS_DESCRIPTION,
+      },
+    },
+  }).onOk(async (val) => {
+    console.log(val)
+    forms.value.TSLO_CUSCD = val.TSLO_CUSCD;
+    forms.value.TSLO_ATTN = val.TSLO_ATTN;
+    forms.value.TSLO_ADDRESS_NAME = val.TSLO_ADDRESS_NAME;
+    forms.value.TSLO_ADDRESS_DESCRIPTION = val.TSLO_ADDRESS_DESCRIPTION;
+  });
+};
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 </script>

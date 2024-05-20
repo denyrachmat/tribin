@@ -25,7 +25,7 @@ class T_SLOHEAD extends Model
     }
 
     public function cust() {
-        return $this->hasOne(M_CUS::class, 'MCUS_CUSCD', 'TQUO_CUSCD');
+        return $this->hasOne(M_CUS::class, 'MCUS_CUSCD', 'TSLO_CUSCD');
     }
 
     public function quot() {

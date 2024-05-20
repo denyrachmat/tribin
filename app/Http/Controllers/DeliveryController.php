@@ -531,8 +531,8 @@ class DeliveryController extends Controller
                         )
                         ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
                         ->where('TDLVORDDETA_DLVCD', $valueSODet['TDLVORD_DLVCD'])
-                        ->leftJoin("M_ITM", function ($join) {
-                            $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')
+                        ->leftJoin("M_ITM_GRP", function ($join) {
+                            $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                                 ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
                         })
                         ->leftJoin('T_SLODETA', function ($join) {

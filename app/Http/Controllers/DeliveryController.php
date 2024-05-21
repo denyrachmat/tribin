@@ -1804,8 +1804,8 @@ class DeliveryController extends Controller
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->leftJoin('M_ITM', function ($join) {
-                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
+            ->leftJoin('M_ITM_GRP', function ($join) {
+                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM');
             })
             ->leftJoinSub($ITRN, 'V2', function ($join) {
                 $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')

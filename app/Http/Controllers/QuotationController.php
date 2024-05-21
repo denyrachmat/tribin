@@ -1601,7 +1601,23 @@ class QuotationController extends Controller
     public function viewAPI($id)
     {
         $dataHeader = T_QUOHEAD::on($this->dedicatedConnection)
-            ->select('T_QUOHEAD.*', DB::raw('CAST(T_QUOHEAD.TQUO_TYPE AS UNSIGNED) TQUO_TYPE'))
+            ->select(
+                'TQUO_QUOCD',
+                'TQUO_CUSCD',
+                'TQUO_LINE',
+                'TQUO_ATTN',
+                'TQUO_SBJCT',
+                'TQUO_ISSUDT',
+                'TQUO_APPRVBY',
+                'TQUO_APPRVDT',
+                'TQUO_REJCTBY',
+                'TQUO_REJCTDT',
+                'TQUO_BRANCH',
+                'TQUO_SERVTRANS_COST',
+                'TQUO_APPROVAL_HIS',
+                'TQUO_PROJECT_LOCATION',
+                DB::raw('CAST(T_QUOHEAD.TQUO_TYPE AS UNSIGNED) TQUO_TYPE')
+            )
             ->where('TQUO_QUOCD', base64_decode($id))
             ->with('cust')
             ->first();

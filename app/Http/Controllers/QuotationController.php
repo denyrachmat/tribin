@@ -1652,7 +1652,7 @@ class QuotationController extends Controller
                 'status' => true,
                 'msg' => 'Data Fetched',
                 'data' => array_merge(
-                    $dataHeader->toArray(),
+                    $dataHeader,
                     [
                         'det' => $dataDetail,
                         'condlist' => $condDetail,

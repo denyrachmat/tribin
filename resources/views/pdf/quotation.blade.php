@@ -260,7 +260,7 @@
 
     <div class="row" style="padding-top:5px;font-size: 9">
         <div class="col-12">
-        @if($headerQuo->TQUO_TYPE === 1)
+        @if($headerQuo->TQUO_TYPE == 1)
             <table class="tg">
                 <thead>
                     <tr>

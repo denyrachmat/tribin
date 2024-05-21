@@ -277,7 +277,7 @@ class DeliveryController extends Controller
             ->orderBy('TDLVORD_LINE', 'desc')
             ->first()
             ->TDLVORD_LINE;
-        if (empty($request->TDLVORD_DLVCD)) {
+        if (empty($request->TDLVORD_INVCD)) {
             $quotationHeader = [];
             $newQuotationCode = '';
             $newInvoiceCode = '';

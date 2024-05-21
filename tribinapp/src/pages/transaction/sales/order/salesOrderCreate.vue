@@ -556,6 +556,8 @@ const onSelectQuotation = async (val) => {
     .then((response) => {
       loading.value = false;
 
+      console.log(response.data.data)
+
       forms.value.TSLO_CUSCD = response.data.data.TQUO_CUSCD;
       forms.value.TSLO_ADDRESS_NAME = response.data.data.cust.MCUS_CUSNM;
       forms.value.TSLO_ADDRESS_DESCRIPTION =
@@ -635,7 +637,7 @@ const onCustView = () => {
     componentProps: {
       custData: {
         TSLO_CUSCD: forms.value.TSLO_CUSCD,
-        MCUS_CUSNM: forms.value.cust.MCUS_CUSNM,
+        MCUS_CUSNM: forms.value.TSLO_ADDRESS_NAME,
         TSLO_ATTN: forms.value.TSLO_ATTN,
         TSLO_ADDRESS_NAME: forms.value.TSLO_ADDRESS_NAME,
         TSLO_ADDRESS_DESCRIPTION: forms.value.TSLO_ADDRESS_DESCRIPTION,

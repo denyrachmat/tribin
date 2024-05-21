@@ -266,7 +266,8 @@ const onApprove = () => {
     loading.value = true;
       await api_web
         .put(`approve/quotations/${btoa(props.cd)}`,{
-          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH
+          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH,
+          conn: props.conn
         })
         .then((response) => {
           loading.value = false;
@@ -302,7 +303,8 @@ const onReject = () => {
       await api_web
         .put(`revise/quotations/${btoa(props.cd)}`,{
           remark: datas,
-          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH
+          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH,
+          conn: props.conn
         })
         .then((response) => {
           loading.value = false;

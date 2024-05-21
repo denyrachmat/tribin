@@ -846,7 +846,7 @@ class QuotationController extends Controller
 
         if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
 
-            $affectedRow = T_QUOHEAD::on($this->dedicatedConnection)
+            $affectedRow = T_QUOHEAD::on($request->conn)
                 ->where('TQUO_QUOCD', $documentNumber)
                 ->where('TQUO_BRANCH', $request->TQUO_BRANCH)
                 ->whereNull('TQUO_APPRVBY')
@@ -854,7 +854,7 @@ class QuotationController extends Controller
                     'TQUO_APPRVBY' => Auth::user()->nick_name, 'TQUO_APPRVDT' => date('Y-m-d H:i:s')
                 ]);
 
-            ApprovalHistory::on($this->dedicatedConnection)->create([
+            ApprovalHistory::on($request->conn)->create([
                 'created_by' => Auth::user()->nick_name,
                 'form' => 'QUOTATION',
                 'code' => $documentNumber,
@@ -873,9 +873,9 @@ class QuotationController extends Controller
 
     function reject(Request $request)
     {
-        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->conn);
         if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
-            $affectedRow = T_QUOHEAD::on($this->dedicatedConnection)
+            $affectedRow = T_QUOHEAD::on($request->conn)
                 ->where('TQUO_QUOCD', base64_decode($request->id))
                 ->where('TQUO_BRANCH', $request->TQUO_BRANCH)
                 ->update([

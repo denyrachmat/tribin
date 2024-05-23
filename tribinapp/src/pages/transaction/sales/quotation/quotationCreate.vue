@@ -86,7 +86,7 @@
                 map-options
                 :loading="loading"
                 :readonly="quotationType === 3"
-                :disable="quotationCode"
+                :disable="quotationCode !== ''"
               />
             </div>
             <div class="col q-pl-md">

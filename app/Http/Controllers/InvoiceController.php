@@ -205,10 +205,11 @@ class InvoiceController extends Controller
                 'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
                 'addr' => $RSCG->address,
                 'telp' => $RSCG->phone,
+                'isPPN' => $RSCG->flg_ppn,
                 'total' => $total,
                 'ppn' => $ppn,
                 'dlvDetNew' => $dlvDetParse,
-                'terbilang' => $this->numberToSentence($total + $ppn)
+                'terbilang' => $this->numberToSentence($RSCG->flg_ppn == 1 ? $total + $ppn : $total)
             ],
             $request->all()
         ));

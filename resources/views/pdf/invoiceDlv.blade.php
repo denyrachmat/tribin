@@ -265,7 +265,7 @@
                 <tr>
                     <td><b>Total Tagihan</b></td>
                     <td><b>:</b></td>
-                    <td><b>Rp {{number_format($total + $ppn,0,".",",")}}</b></td>
+                    <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
                 </tr>
                 @endif
                 <tr>

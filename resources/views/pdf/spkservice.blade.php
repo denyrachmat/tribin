@@ -206,12 +206,12 @@
     <div class="row" style="font-size: 13px; padding-top: 10px">
         <div class="col12" style="text-align:right">
             <table style="padding-left: 20%">
+                @if($isPPN == 1)
                 <tr>
                     <td><b>Total</b></td>
                     <td><b>:</b></td>
                     <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
                 </tr>
-                @if($isPPN == 1)
                 <tr>
                     <td><b>PPN (11%)</b></td>
                     <td><b>:</b></td>
@@ -224,7 +224,7 @@
                 </tr>
                 @else
                 <tr>
-                    <td><b>Total Tagihan</b></td>
+                    <td><b>Total</b></td>
                     <td><b>:</b></td>
                     <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
                 </tr>

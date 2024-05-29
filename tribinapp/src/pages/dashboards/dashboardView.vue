@@ -173,8 +173,12 @@ const intervalnya = ref(null)
 
 onMounted(async () => {
   await getDataApproval()
-  // intervalnya.value = setInterval(getDataApproval(), 2000);
+  intervalnya.value = setInterval(getDataApproval(), 10000);
 });
+
+onMounted(() => {
+  clearInterval(intervalnya.value)
+})
 
 const getDataApproval = async () => {
   loading.value = true

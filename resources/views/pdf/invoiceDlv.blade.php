@@ -250,6 +250,7 @@
                     <td><b>:</b></td>
                     <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
                 </tr>
+                @if($isPPN == 1)
                 <tr>
                     <td><b>PPN (11%)</b></td>
                     <td><b>:</b></td>
@@ -260,6 +261,13 @@
                     <td><b>:</b></td>
                     <td><b>Rp {{number_format($total + $ppn,0,".",",")}}</b></td>
                 </tr>
+                @else
+                <tr>
+                    <td><b>Total Tagihan</b></td>
+                    <td><b>:</b></td>
+                    <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
+                </tr>
+                @endif
                 <tr>
                     <td><b>Terbilang</b></td>
                     <td><b>:</b></td>

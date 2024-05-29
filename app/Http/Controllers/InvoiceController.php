@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\T_DLVSJDETA;
+use App\Models\CompanyGroup;
 
 class InvoiceController extends Controller
 {
@@ -174,6 +175,7 @@ class InvoiceController extends Controller
 
     public function printInvoice(Request $request)
     {
+        $getCompGroups = CompanyGroup::where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->first();
         $RSCG = COMPANY_BRANCH::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('name', 'address', 'phone', 'fax', 'letter_head')
             ->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
             ->where('BRANCH', Auth::user()->branch)
@@ -205,10 +207,11 @@ class InvoiceController extends Controller
                 'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
                 'addr' => $RSCG->address,
                 'telp' => $RSCG->phone,
+                'isPPN' => $getCompGroups->flg_ppn,
                 'total' => $total,
                 'ppn' => $ppn,
                 'dlvDetNew' => $dlvDetParse,
-                'terbilang' => $this->numberToSentence($total + $ppn)
+                'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total)
             ],
             $request->all()
         ));

@@ -159,7 +159,7 @@ class DeliveryController extends Controller
                     ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             })
             ->leftJoin("M_ITM_GRP", function ($join) {
-                $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMCD')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
+                $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMNM')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
             })
             ->where('TSLO_SLOCD', base64_decode($id))
             ->where('TSLO_BRANCH', Auth::user()->branch)
@@ -277,7 +277,7 @@ class DeliveryController extends Controller
             ->orderBy('TDLVORD_LINE', 'desc')
             ->first()
             ->TDLVORD_LINE;
-        if (empty($request->TDLVORD_DLVCD)) {
+        if (empty($request->TDLVORD_INVCD)) {
             $quotationHeader = [];
             $newQuotationCode = '';
             $newInvoiceCode = '';
@@ -1804,8 +1804,8 @@ class DeliveryController extends Controller
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->leftJoin('M_ITM', function ($join) {
-                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
+            ->leftJoin('M_ITM_GRP', function ($join) {
+                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM');
             })
             ->leftJoinSub($ITRN, 'V2', function ($join) {
                 $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')

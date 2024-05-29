@@ -183,7 +183,7 @@ class ServiceAdminController extends Controller
                 DB::raw("SUM(TSRVF_PRC) AS TOTFIX")
             )
             ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
-            ->join('T_SRV_FIXDET', 'TSRVD_ID', 'T_SRV_DET.id')
+            ->leftjoin('T_SRV_FIXDET', 'TSRVD_ID', 'T_SRV_DET.id')
             ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
             ->leftjoin('T_QUOHEAD', 'TQUO_SBJCT', 'like', DB::raw("CONCAT('%',SRVH_DOCNO, '%')"))
             ->groupBy(

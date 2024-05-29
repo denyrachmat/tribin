@@ -169,6 +169,7 @@
                 { label: 'Sales', value: 2 },
                 { label: 'Service', value: 3 },
               ]"
+              :disable="forms.TSLO_QUOCD !== ''"
             />
           </div>
         </div>
@@ -288,9 +289,24 @@
                     </q-item-section>
                     <q-item-section>
                       <q-item-label>
-                        <q-input
-                          v-model="quot.TSLODETA_USAGE_DESCRIPTION"
+                        <q-select
                           dense
+                          filled
+                          label="Usage"
+                          v-model="quot.TSLODETA_USAGE_DESCRIPTION"
+                          use-input
+                          input-debounce="500"
+                          :options="listUsage"
+                          @filter="
+                            (val, update, abort) =>
+                              filterFn(val, update, abort, 'usage')
+                          "
+                          behavior="dialog"
+                          option-label="MUSAGE_DESCALL"
+                          option-value="id"
+                          emit-value
+                          map-options
+                          :loading="loading"
                         />
                       </q-item-label>
                       <q-item-label caption> Usage </q-item-label>
@@ -449,16 +465,17 @@ const loading = ref(false);
 const quotationType = ref(1);
 
 const quotDetail = ref([]);
+const listUsage = ref([])
 
 onMounted(async () => {
+  await getUsage();
+  await getCustomer();
   if (props.sloHeader && props.sloHeader !== "") {
     await getROData(props.sloHeader);
 
     console.log(forms.value);
     await getQuotation(forms.value.TSLO_QUOCD);
   }
-
-  getCustomer();
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -473,6 +490,10 @@ const filterFn = (val, update, abort, fun) => {
 
     if (fun === "cust") {
       await getCustomer(val);
+    }
+
+    if (fun === "usage") {
+      await getUsage(val);
     }
   });
 };
@@ -532,6 +553,21 @@ const getCustomer = async (val) => {
     });
 };
 
+const getUsage = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("usage/searchAPI", {
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listUsage.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
 const getROData = async (val) => {
   loading.value = true;
   await api_web
@@ -541,8 +577,8 @@ const getROData = async (val) => {
 
       console.log(response.data.det);
       forms.value = response.data;
+      forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE);
 
-      forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE)
       quotDetail.value = response.data.det;
     })
     .catch(() => {
@@ -565,13 +601,14 @@ const onSelectQuotation = async (val) => {
       forms.value.TSLO_ADDRESS_DESCRIPTION =
         response.data.data.cust.TQUO_PROJECT_LOCATION;
       forms.value.TSLO_ATTN = response.data.data.TQUO_ATTN;
+      forms.value.TSLO_TYPE = parseInt(response.data.data.TQUO_TYPE);
 
       quotDetail.value = [];
       response.data.data.det.map((valMap) => {
         quotDetail.value.push({
           TSLODETA_ITMCD: valMap.TQUODETA_ITMCD,
           TSLODETA_ITMQT: valMap.TQUODETA_ITMQT,
-          TSLODETA_USAGE_DESCRIPTION: valMap.TQUODETA_USAGE,
+          TSLODETA_USAGE_DESCRIPTION: parseInt(valMap.TQUODETA_USAGE),
           TSLODETA_PRC: valMap.TQUODETA_PRC,
           TSLODETA_PERIOD_FR: valMap.TQUODETA_PERIOD_FR,
           TSLODETA_PERIOD_TO: valMap.TQUODETA_PERIOD_TO,

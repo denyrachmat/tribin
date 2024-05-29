@@ -20,7 +20,7 @@
           >
             <q-item-section avatar>
               <q-avatar
-                :color="items.TSRVD_FLGSTS === 0 ? 'red' : 'primary'"
+                :color="items.TSRVD_FLGSTS == 0 ? 'red' : 'primary'"
                 text-color="white"
               >
                 {{ items.TSRVD_LINE }}
@@ -197,7 +197,7 @@
                 <q-tooltip>Reject this as customer</q-tooltip>
               </q-btn>
             </q-item-section>
-            <q-item-section side v-if="props.mode === 'edit' && items.TSRVD_FLGSTS === 2">
+            <q-item-section side v-if="props.mode === 'edit' && items.TSRVD_FLGSTS == 2">
               <q-btn icon="task" color="indigo" outline @click="onClickDone(idx)">
                 <q-tooltip>Mark this problem as done</q-tooltip>
               </q-btn>

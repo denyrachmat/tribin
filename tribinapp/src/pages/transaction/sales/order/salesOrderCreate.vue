@@ -606,7 +606,7 @@ const onSelectQuotation = async (val) => {
         quotDetail.value.push({
           TSLODETA_ITMCD: valMap.TQUODETA_ITMCD,
           TSLODETA_ITMQT: valMap.TQUODETA_ITMQT,
-          TSLODETA_USAGE_DESCRIPTION: valMap.TQUODETA_USAGE,
+          TSLODETA_USAGE_DESCRIPTION: parseInt(valMap.TQUODETA_USAGE),
           TSLODETA_PRC: valMap.TQUODETA_PRC,
           TSLODETA_PERIOD_FR: valMap.TQUODETA_PERIOD_FR,
           TSLODETA_PERIOD_TO: valMap.TQUODETA_PERIOD_TO,

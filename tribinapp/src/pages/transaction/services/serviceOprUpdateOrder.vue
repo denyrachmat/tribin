@@ -44,7 +44,7 @@
             <q-item-section>
               <q-item-label>
                 <div class="cursor-pointer">
-                  <span v-if="!items.TSRVD_REMARK">
+                  <span v-if="!items.TSRVD_REMARK" class="bg-orange">
                     No comment yet !, Click here to add comment.
                   </span>
                   <span v-else>

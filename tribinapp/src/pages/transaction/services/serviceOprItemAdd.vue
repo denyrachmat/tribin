@@ -76,6 +76,7 @@
                   map-options
                   :loading="loading"
                   :readonly="props.mode === 'view'"
+                  @update:model-value="(value) => onSelectItem(value, idx)"
                   v-else
                 >
                 </q-select>
@@ -113,6 +114,7 @@
                 dense
                 :readonly="props.mode === 'view'"
                 v-else
+                @update:model-value="(value) => onInputQty(value, idx)"
               />
             </q-item-section>
 
@@ -265,4 +267,33 @@ const getTotal = (data) => {
 
   return hasil.toLocaleString();
 };
+
+const onSelectItem = (val, idx) => {
+  const getItemData = listItems.value.filter(fil => fil.MITM_ITMCD === val)
+  if (getItemData.length > 0) {
+    if (getItemData[0].STOCK > 0) {
+      listItemsSel.value[idx].TSRVF_PRC = getItemData[0].LATEST_PRC
+      listItemsSel.value[idx].STOCK = getItemData[0].STOCK
+    } else {
+      listItemsSel.value[idx].TSRVF_ITMCD = ''
+
+      $q.notify({
+        color:'red',
+        message: `Stock item ${val} (${getItemData[0].MITM_ITMNM}) is 0, please check stock status !`
+      })
+    }
+  }
+}
+
+const onInputQty = (val, idx) => {
+  if(val > listItemsSel.value[idx].STOCK) {
+    $q.notify({
+      color:'red',
+      message: `Stock item ${listItemsSel.value[idx].TSRVF_ITMCD} is 0, please check stock status !`
+    })
+
+    listItemsSel.value[idx].TSRVF_QTY = 0
+  }
+}
+
 </script>

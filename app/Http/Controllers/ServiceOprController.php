@@ -112,7 +112,8 @@ class ServiceOprController extends Controller
         ->where(DB::raw('(
             SELECT COUNT(*) FROM T_SRV_DET WHERE TSRVH_ID = T_SRV_HEAD.id
             and TSRVD_FLGSTS = 3
-        )'), '=', 0);
+        )'), '=', 0)
+        ->orderBy('created_at', 'desc');
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }

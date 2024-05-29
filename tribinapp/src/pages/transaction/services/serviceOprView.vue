@@ -208,7 +208,7 @@ const statusMaker = (val) => {
     const checkRemarks = val.detail.filter((fil) => fil.TSRVD_MGRRMK != '')
     return {
       color: 'red',
-      label: checkRemarks.length > 0
+      label: checkRemarks.length > 0 && checkRemarks[0].TSRVD_MGRRMK
         ? `Price Rejected by Mgr. <br>${checkRemarks[0].TSRVD_MGRRMK}`
         : 'No Price Added yet !',
       icon: 'edit'

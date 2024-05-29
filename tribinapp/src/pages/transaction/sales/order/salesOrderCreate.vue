@@ -541,6 +541,8 @@ const getROData = async (val) => {
 
       console.log(response.data.det);
       forms.value = response.data;
+
+      forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE)
       quotDetail.value = response.data.det;
     })
     .catch(() => {

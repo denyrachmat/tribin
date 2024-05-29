@@ -600,7 +600,7 @@ const onSelectQuotation = async (val) => {
       forms.value.TSLO_ADDRESS_DESCRIPTION =
         response.data.data.cust.TQUO_PROJECT_LOCATION;
       forms.value.TSLO_ATTN = response.data.data.TQUO_ATTN;
-      forms.value.TSLO_TYPE = response.data.data.TQUO_TYPE;
+      forms.value.TSLO_TYPE = parseInt(response.data.data.TQUO_TYPE);
 
       quotDetail.value = [];
       response.data.data.det.map((valMap) => {

@@ -468,15 +468,14 @@ const quotDetail = ref([]);
 const listUsage = ref([])
 
 onMounted(async () => {
+  await getUsage();
+  await getCustomer();
   if (props.sloHeader && props.sloHeader !== "") {
     await getROData(props.sloHeader);
 
     console.log(forms.value);
     await getQuotation(forms.value.TSLO_QUOCD);
   }
-
-  await getUsage();
-  getCustomer();
 });
 
 const filterFn = (val, update, abort, fun) => {

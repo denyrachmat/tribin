@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Storage;
+use App\Models\CompanyGroup;
 
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
@@ -263,6 +264,8 @@ class ServiceAdminController extends Controller
             'searchValue' => base64_decode($id)
         ]));
 
+        $getCompGroups = CompanyGroup::where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->first();
+
         $total = 0;
         foreach ($data['data'] as $key => $value) {
             foreach ($value['detail'] as $key => $valueDet) {
@@ -275,8 +278,11 @@ class ServiceAdminController extends Controller
         $pdf = Pdf::loadView('pdf.spkservice', [
             'data' => $data['data'],
             'total' => $total,
+            'isPPN' => $getCompGroups->flg_ppn,
+            'total' => $total,
             'ppn' => ($total * 0.11),
-            'terbilang' => $this->numberToSentence($total + ($total * 0.11)),
+            // 'terbilang' => $this->numberToSentence($total + ($total * 0.11)),
+            'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + ($total * 0.11) : $total),
             'header' => 'JAYA ABADI TEKNIK',
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'

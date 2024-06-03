@@ -293,7 +293,7 @@
                         <td class="tg-0lax">{{$valueDet['MITM_ITMCD']}}</td>
                         <td class="tg-0lax">{{$valueDet['MITM_ITMNM']}}</td>
                         <td class="tg-0lax">Rp {{number_format($valueDet['TSRVF_PRC'],0,".",",")}}</td>
-                        <td class="tg-0lax">Rp {{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
+                        <td class="tg-0lax">{{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
                         <td class="tg-0lax">Rp {{number_format($valueDet['SUBTOT_AMT'],0,".",",")}}</td>
                     </tr>
                     @endforeach

@@ -18,7 +18,7 @@
           </legend>
 
           <div class="row">
-            <div class="col">
+            <div class="col-sm-12">
               <q-input
                 label="RO Code"
                 dense
@@ -28,7 +28,7 @@
                 :loading="loading"
               />
             </div>
-            <div class="col q-pl-md">
+            <div class="col-sm-12 q-pl-md">
               <q-input
                 filled
                 v-model="forms.TSLO_ISSUDT"
@@ -62,7 +62,7 @@
                 </template>
               </q-input>
             </div>
-            <div class="col q-pl-md">
+            <div class="col-sm-12 q-pl-md">
               <q-input
                 filled
                 v-model="forms.TSLO_PLAN_DLVDT"
@@ -99,7 +99,7 @@
           </div>
 
           <div class="row">
-            <div class="col">
+            <div class="col-md-12">
               <q-select
                 dense
                 filled
@@ -122,7 +122,7 @@
               >
               </q-select>
             </div>
-            <div class="col q-pl-md">
+            <div class="col-md-12 q-pl-md">
               <q-input
                 label="PO Number"
                 dense
@@ -131,7 +131,7 @@
                 :loading="loading"
               />
             </div>
-            <div class="col q-pl-md">
+            <div class="col-md-12 q-pl-md">
               <q-select
                 dense
                 filled
@@ -182,6 +182,7 @@
               v-model="forms.TSLO_SERVTRANS_COST"
               filled
               dense
+              :disable="forms.TSLO_QUOCD !== ''"
             />
           </div>
         </div>
@@ -240,11 +241,145 @@
               </q-btn>
             </div>
           </div>
+          <template v-if="quotDetail.length > 0">
+            <div class="row" v-for="(quot, idx) in quotDetail" :key="idx">
+              <div class="col">
+                <q-avatar text-color="blue">
+                  {{ idx + 1 }}
+                </q-avatar>
+              </div>
+              <div class="col">
+                <q-select
+                  dense
+                  filled
+                  label="Item Name"
+                  v-model="quot.TSLODETA_ITMCD"
+                  use-input
+                  input-debounce="500"
+                  :options="listItems"
+                  @filter="
+                    (val, update, abort) => filterFn(val, update, abort, 'item')
+                  "
+                  behavior="dialog"
+                  option-label="MITM_ITMNM"
+                  option-value="MITM_ITMNM"
+                  emit-value
+                  map-options
+                  :loading="loading"
+                >
+                </q-select>
+              </div>
 
-          <div class="row">
-            <div class="col">
-              <q-list bordered dense>
-                <template v-if="quotDetail.length > 0">
+              <div class="col">
+                <q-input v-model="quot.TSLODETA_ITMQT" dense />
+              </div>
+
+              <div class="col">
+                <q-select
+                  dense
+                  filled
+                  label="Usage"
+                  v-model="quot.TSLODETA_USAGE_DESCRIPTION"
+                  use-input
+                  input-debounce="500"
+                  :options="listUsage"
+                  @filter="
+                    (val, update, abort) =>
+                      filterFn(val, update, abort, 'usage')
+                  "
+                  behavior="dialog"
+                  option-label="MUSAGE_DESCALL"
+                  option-value="id"
+                  emit-value
+                  map-options
+                  :loading="loading"
+                />
+              </div>
+              <div class="col">
+                <q-input v-model="quot.TSLODETA_PRC" dense />
+              </div>
+
+              <div class="col">
+                <q-input
+                  filled
+                  v-model="quot.TSLODETA_PERIOD_FR"
+                  dense
+                  :loading="loading"
+                  @click="quotationIssueDate.qDateProxy.show()"
+                  mask="####-##-##"
+                  fill-mask
+                >
+                  <template v-slot:append>
+                    <q-icon name="event" class="cursor-pointer">
+                      <q-popup-proxy
+                        cover
+                        transition-show="scale"
+                        transition-hide="scale"
+                      >
+                        <q-date
+                          v-model="quot.TSLODETA_PERIOD_FR"
+                          mask="YYYY-MM-DD"
+                        >
+                          <div class="row items-center justify-end">
+                            <q-btn
+                              v-close-popup
+                              label="Close"
+                              color="primary"
+                              flat
+                            />
+                          </div>
+                        </q-date>
+                      </q-popup-proxy>
+                    </q-icon>
+                  </template>
+                </q-input>
+              </div>
+
+              <div class="col">
+                <q-input
+                  filled
+                  v-model="quot.TSLODETA_PERIOD_TO"
+                  dense
+                  :loading="loading"
+                  @click="quotationIssueDate.qDateProxy.show()"
+                  mask="####-##-##"
+                  fill-mask
+                >
+                  <template v-slot:append>
+                    <q-icon name="event" class="cursor-pointer">
+                      <q-popup-proxy
+                        cover
+                        transition-show="scale"
+                        transition-hide="scale"
+                      >
+                        <q-date
+                          v-model="quot.TSLODETA_PERIOD_TO"
+                          mask="YYYY-MM-DD"
+                        >
+                          <div class="row items-center justify-end">
+                            <q-btn
+                              v-close-popup
+                              label="Close"
+                              color="primary"
+                              flat
+                            />
+                          </div>
+                        </q-date>
+                      </q-popup-proxy>
+                    </q-icon>
+                  </template>
+                </q-input>
+              </div>
+
+              <div class="col-1">
+                <q-btn
+                  icon="delete"
+                  color="red"
+                  flat
+                  @click="onClickDeleteLines(idx)"
+                />
+              </div>
+              <!-- <q-list bordered dense>
                   <q-item
                     v-for="(quot, idx) in quotDetail"
                     :key="idx"
@@ -403,14 +538,16 @@
                       />
                     </q-item-section>
                   </q-item>
-                </template>
-                <q-item class="q-my-sm" clickable v-ripple v-else>
-                  <q-item-section>
-                    <q-item-label> No Items Added </q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
+                  <q-item class="q-my-sm" clickable v-ripple v-else>
+                    <q-item-section>
+                      <q-item-label> No Items Added </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list> -->
             </div>
+          </template>
+          <div class="text-center" v-else>
+            No Items Added
           </div>
         </fieldset>
       </q-card-section>
@@ -465,7 +602,7 @@ const loading = ref(false);
 const quotationType = ref(1);
 
 const quotDetail = ref([]);
-const listUsage = ref([])
+const listUsage = ref([]);
 
 onMounted(async () => {
   await getUsage();
@@ -594,7 +731,7 @@ const onSelectQuotation = async (val) => {
     .then((response) => {
       loading.value = false;
 
-      console.log(response.data.data)
+      console.log(response.data.data);
 
       forms.value.TSLO_CUSCD = response.data.data.TQUO_CUSCD;
       forms.value.TSLO_ADDRESS_NAME = response.data.data.cust.MCUS_CUSNM;
@@ -602,6 +739,9 @@ const onSelectQuotation = async (val) => {
         response.data.data.cust.TQUO_PROJECT_LOCATION;
       forms.value.TSLO_ATTN = response.data.data.TQUO_ATTN;
       forms.value.TSLO_TYPE = parseInt(response.data.data.TQUO_TYPE);
+      forms.value.TSLO_SERVTRANS_COST = parseInt(
+        response.data.data.TQUO_SERVTRANS_COST
+      );
 
       quotDetail.value = [];
       response.data.data.det.map((valMap) => {
@@ -683,7 +823,7 @@ const onCustView = () => {
       },
     },
   }).onOk(async (val) => {
-    console.log(val)
+    console.log(val);
     forms.value.TSLO_CUSCD = val.TSLO_CUSCD;
     forms.value.TSLO_ATTN = val.TSLO_ATTN;
     forms.value.TSLO_ADDRESS_NAME = val.TSLO_ADDRESS_NAME;

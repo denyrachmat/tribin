@@ -57,6 +57,12 @@ class QuotationController extends Controller
             'TQUO_ATTN' => 'required',
             'TQUO_SBJCT' => 'required',
             'TQUO_ISSUDT' => 'required|date',
+        ],[
+           'TQUO_CUSCD.required' => 'Please choose customer first!!' ,
+           'TQUO_ATTN.required' => 'Please add Attn.!!',
+           'TQUO_SBJCT.required' => 'Please add Subject !!',
+           'TQUO_ISSUDT.required' => 'Please Fill Issue Date !!',
+           'TQUO_ISSUDT.date' => 'Issue Date should be date format!!'
         ]);
 
         if ($validator->fails()) {

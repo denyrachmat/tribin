@@ -149,7 +149,7 @@
                 emit-value
                 map-options
                 :loading="loading"
-                :readonly="quotationType == 3"
+                :disable="forms.TSLO_QUOCD !== ''"
               />
             </div>
           </div>
@@ -241,7 +241,7 @@
             </div>
           </div>
           <template v-if="quotDetail.length > 0">
-            <div class="row q-col-gutter-xs" v-for="(quot, idx) in quotDetail" :key="idx">
+            <div class="row q-col-gutter-xs q-pb-md" v-for="(quot, idx) in quotDetail" :key="idx">
               <div class="col-12 col-md-1 text-center">
                 <q-avatar text-color="white" color="primary">
                   {{ idx + 1 }}
@@ -270,7 +270,7 @@
               </div>
 
               <div class="col-4 col-md-1">
-                <q-input v-model="quot.TSLODETA_ITMQT" dense hint="Qty"/>
+                <q-input v-model="quot.TSLODETA_ITMQT" dense hint="Qty" outline/>
               </div>
 
               <div class="col-4 col-md-2" v-if="forms.TSLO_TYPE == 1">
@@ -297,7 +297,7 @@
               </div>
 
               <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-1' : 'col-4 col-md-3'}`">
-                <q-input v-model="quot.TSLODETA_PRC" dense hint="Price"/>
+                <q-input v-model="quot.TSLODETA_PRC" dense hint="Price" outline/>
               </div>
 
               <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-2' : 'col-6 col-md-2'}`">
@@ -568,14 +568,14 @@ const onSelectQuotation = async (val) => {
     .get(`transaction/quotation/view/${btoa(val)}`)
     .then(async (response) => {
       loading.value = false;
-         
+
       await getUsage();
       await getItem();
 
       forms.value.TSLO_CUSCD = response.data.data.TQUO_CUSCD;
       forms.value.TSLO_ADDRESS_NAME = response.data.data.cust.MCUS_CUSNM;
       forms.value.TSLO_ADDRESS_DESCRIPTION =
-        response.data.data.cust.TQUO_PROJECT_LOCATION;
+        response.data.data.TQUO_PROJECT_LOCATION;
       forms.value.TSLO_ATTN = response.data.data.TQUO_ATTN;
       forms.value.TSLO_TYPE = parseInt(response.data.data.TQUO_TYPE);
       forms.value.TSLO_SERVTRANS_COST = parseInt(

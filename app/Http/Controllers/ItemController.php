@@ -81,7 +81,7 @@ class ItemController extends Controller
     public function simpan(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'MITM_ITMCD' => 'required',
+            // 'MITM_ITMCD' => 'required',
             'MITM_ITMCD' => [
                 Rule::unique($this->dedicatedConnection . '.M_ITM', 'MITM_ITMCD')->where('MITM_BRANCH', Auth::user()->branch)
             ],
@@ -97,8 +97,10 @@ class ItemController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        $getLatestItemCode = M_ITM::on($this->dedicatedConnection)->where('MITM_ITMTYPE', 3)->orderBy('created_at', 'desc')->first();
+        $genItemCode = 'SRV-'.date('ym'). (empty($getLatestItemCode) ? '001' : sprintf('%03d', (int) substr($getLatestItemCode->MITM_ITMCD, -2) + 1));
         $hasil = M_ITM::on($this->dedicatedConnection)->create([
-            'MITM_ITMCD' => $request->MITM_ITMCD,
+            'MITM_ITMCD' => empty($request->MITM_ITMCD) ? $genItemCode : $request->MITM_ITMCD,
             'MITM_ITMNM' => $request->MITM_ITMNM,
             'MITM_STKUOM' => $request->MITM_STKUOM,
             'MITM_ITMTYPE' => $request->MITM_ITMTYPE,

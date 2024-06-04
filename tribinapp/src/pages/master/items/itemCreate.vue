@@ -131,11 +131,13 @@ const listCOA = ref([]);
 
 const props = defineProps({
   ItemCat: String,
+  ItemType: String,
 });
 
 onMounted(() => {
   getDataIndex();
   itemData.value.MITM_ITMCAT = props.ItemCat
+  itemData.value.MITM_ITMTYPE = props.ItemType
 });
 
 const filterFn = (val, update, abort, fun) => {

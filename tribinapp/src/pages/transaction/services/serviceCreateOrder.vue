@@ -344,7 +344,8 @@ const onClickAddItem = (idx) => {
   $q.dialog({
     component: itemCreate,
     componentProps: {
-      ItemCat: "SERVICE_ITEMM",
+      ItemCat: "SERVICE_ITEM",
+      ItemType: 3,
     },
     // persistent: true,
   }).onOk(async (val) => {

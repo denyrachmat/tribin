@@ -172,8 +172,10 @@ const loading = ref(false)
 const intervalnya = ref(null)
 
 onMounted(async () => {
-  await getDataApproval()
-  intervalnya.value = setInterval(getDataApproval(), 10000);
+  const test = await getDataApproval()
+  if (test) {
+    intervalnya.value = setInterval(getDataApproval, 10000);
+  }
 });
 
 onMounted(() => {
@@ -182,11 +184,13 @@ onMounted(() => {
 
 const getDataApproval = async () => {
   loading.value = true
-  const data = await api_web
+  return await api_web
     .get("/approval/notificationsAPI/top-user")
     .then((response) => {
       loading.value = false
       rows.value = response.data;
+
+      return response.data
     }).catch((e) => {
       loading.value = false
     });

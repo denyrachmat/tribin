@@ -10,7 +10,7 @@
         <q-card-section>
           <div class="text-h6">PR Review</div>
         </q-card-section>
-  
+
         <q-card-section class="q-pa-sm" style="height: 70vh; overflow: auto">
           <q-tabs
             v-model="tab"
@@ -23,11 +23,11 @@
           >
             <q-tab name="items" label="Items" />
           </q-tabs>
-  
+
           <q-separator />
-  
+
           <q-tab-panels v-model="tab" animated>
-            <q-tab-panel name="items">  
+            <q-tab-panel name="items">
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
@@ -39,8 +39,9 @@
                   ></q-input>
                 </div>
               </div>
-  
+
               <q-table
+                v-if="dataHasil.dataItem"
                 title="Item List"
                 :rows="dataHasil.dataItem"
                 :columns="columnsItem"
@@ -51,7 +52,7 @@
             </q-tab-panel>
           </q-tab-panels>
         </q-card-section>
-  
+
         <q-card-actions align="center">
           <q-btn-group>
             <q-btn
@@ -78,23 +79,23 @@
   import { ref, onMounted, computed } from "vue";
   import { date, useDialogPluginComponent, useQuasar } from "quasar";
   import { api_web } from "boot/axios";
-  
+
   const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
     useDialogPluginComponent();
-  
+
   const $q = useQuasar();
-  
+
   const props = defineProps({
     dataHeader: Array,
     cd: String,
     typeCD: String,
     conn: String,
   });
-  
+
   onMounted(() => {
     headerData.value = props.dataHeader;
   });
-  
+
   const loading = ref(false);
   const columnsItem = ref([
     {
@@ -118,7 +119,7 @@
       sortable: true,
       align: "left",
     },
-    
+
   ]);
   const dataHasil = ref([]);
   const tab = ref("items");
@@ -127,11 +128,11 @@
     TQUO_ATTN: "",
     TQUO_SBJCT: "",
   });
-  
+
   onMounted(() => {
     getData();
   });
-  
+
   const getData = async () => {
     loading.value = true;
     await api_web
@@ -141,6 +142,7 @@
         conn: props.conn
       })
       .then((response) => {
+        console.log(response.data.dataItem)
         loading.value = false;
         dataHasil.value = response.data;
       })
@@ -148,7 +150,7 @@
         loading.value = false;
       });
   };
-  
+
   const onApprove = () => {
     q.dialog({
       title: "Confirm",
@@ -170,7 +172,7 @@
           });
     })
   };
-  
+
   const onReject = () => {
     $q.dialog({
       title: "Confirm",
@@ -205,9 +207,8 @@
       });
     });
   };
-  
+
   const printQuot = () => {
     window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd), '_blank').focus();
   };
   </script>
-  

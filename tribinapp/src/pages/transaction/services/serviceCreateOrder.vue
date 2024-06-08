@@ -90,7 +90,14 @@
                 :readonly="props.mode === 'view'"
               >
                 <template v-slot:after>
-                  <q-btn round dense flat icon="person_add" @click="onAddCustClick()" color="cyan">
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    icon="person_add"
+                    @click="onAddCustClick()"
+                    color="cyan"
+                  >
                     <q-tooltip>Add new customer</q-tooltip>
                   </q-btn>
                 </template>
@@ -98,6 +105,20 @@
             </div>
           </div>
         </fieldset>
+
+        <div class="row q-py-md">
+          <div class="col">
+            <q-checkbox
+              v-model="internalSrv"
+              label="Internal Service ?"
+              color="teal"
+              :true-value="1"
+              :false-value="0"
+              :disable="loading"
+              @update:model-value="(val) => onCheckInternal(val)"
+            />
+          </div>
+        </div>
 
         <fieldset
           style="
@@ -134,7 +155,7 @@
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>
+                  <q-item-label class="text-center">
                     <q-select
                       dense
                       filled
@@ -153,8 +174,20 @@
                       emit-value
                       map-options
                       :loading="loading"
+                      v-if="internalSrv == 1"
                     >
                     </q-select>
+                    <q-btn
+                      icon="library_add"
+                      color="indigo"
+                      outline
+                      @click="onClickAddItem(idx)"
+                      dense
+                      label="Input Item"
+                      v-else
+                    >
+                      <q-tooltip>Add new item</q-tooltip>
+                    </q-btn>
                   </q-item-label>
                 </q-item-section>
                 <q-item-section>
@@ -179,7 +212,10 @@
                     <q-tooltip>Delete line</q-tooltip>
                   </q-btn>
                 </q-item-section>
-                <q-item-section side v-if="props.mode !== 'view'">
+                <q-item-section
+                  side
+                  v-if="props.mode !== 'view' && internalSrv == 1"
+                >
                   <q-btn
                     icon="library_add"
                     color="indigo"
@@ -270,7 +306,8 @@ const listItems = ref([]);
 const listCustomers = ref([]);
 const submitedItems = ref([]);
 const loading = ref(false);
-const refreshKeys = ref(0)
+const internalSrv = ref(0);
+const refreshKeys = ref(0);
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -284,11 +321,12 @@ const filterFn = (val, update, abort, fun) => {
   });
 };
 
-const getCustomer = async (val) => {
+const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
   loading.value = true;
   await api_web
     .post("customer/searchAPI", {
       searchValue: val,
+      searchCol: cols
     })
     .then((response) => {
       loading.value = false;
@@ -330,14 +368,16 @@ const onClickDeleteLines = (idx) => {
     message: `Do you want to delete this lines no ${idx + 1} ?`,
     cancel: true,
     persistent: true,
-  }).onOk(async () => {
-    submitedItems.value.splice(idx, 1);
-  }).catch((val) => {
-    $q.notify({
-      color:'red',
-      message: `Something's wrong.`
+  })
+    .onOk(async () => {
+      submitedItems.value.splice(idx, 1);
     })
-  });
+    .catch((val) => {
+      $q.notify({
+        color: "red",
+        message: `Something's wrong.`,
+      });
+    });
 };
 
 const onClickAddItem = (idx) => {
@@ -375,16 +415,15 @@ const onSubmitData = () => {
 };
 
 const onAddCustClick = () => {
-
   $q.dialog({
     component: customerView,
     // persistent: true,
   }).onOk(async (val) => {
-    console.log(val)
+    console.log(val);
     await getCustomer("");
     submitedItems.value[idx].SRVH_CUSCD = val.MCUS_CUSCD;
   });
-}
+};
 
 const onClickAddPhoto = (idx) => {
   $q.dialog({
@@ -394,26 +433,32 @@ const onClickAddPhoto = (idx) => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    console.log(val)
+    console.log(val);
     if (val) {
-      submitedItems.value[idx].TSRVD_PHOTO = val
+      submitedItems.value[idx].TSRVD_PHOTO = val;
     } else {
-      submitedItems.value[idx].TSRVD_PHOTO = ''
+      submitedItems.value[idx].TSRVD_PHOTO = "";
     }
 
-    refreshKeys.value = refreshKeys.value + 1
-    console.log(submitedItems.value[idx])
-  })
-}
+    refreshKeys.value = refreshKeys.value + 1;
+    console.log(submitedItems.value[idx]);
+  });
+};
 
 const getBase64 = (file) => {
-   var reader = new FileReader();
-   reader.readAsDataURL(file);
-   reader.onload = function () {
+  var reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = function () {
     //  console.log(reader.result);
-   };
-   reader.onerror = function (error) {
-     console.log('Error: ', error);
-   };
+  };
+  reader.onerror = function (error) {
+    console.log("Error: ", error);
+  };
+};
+
+const onCheckInternal = async (val) => {
+  if (val == 1) {
+    await getCustomer('connect_jos', 'MCUS_CGCON')
+  }
 }
 </script>

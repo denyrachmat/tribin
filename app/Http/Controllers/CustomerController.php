@@ -158,9 +158,10 @@ class CustomerController extends Controller
             ->where('MCUS_BRANCH', Auth::user()->branch);
 
         if (!empty($request->searchValue)) {
-            $RS = (clone $RSTemp)->where($request->has('searchCol') && !empty($request->searchCol)
-            ? $request->searchCol
-            : 'MCUS_CUSNM', 'like', '%' . $request->searchValue . '%')
+            $RS = (clone $RSTemp)->where((
+                !empty($request->searchCol)
+                ? $request->searchCol
+                : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
             ->get();
         } else {
             $RS = (clone $RSTemp)->get();

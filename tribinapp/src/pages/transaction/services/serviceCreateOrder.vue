@@ -312,7 +312,11 @@ const refreshKeys = ref(0);
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "cust") {
-      await getCustomer(val);
+      if (internalSrv.value == 1) {
+        await getCustomer('connect_jos', 'MCUS_CGCON');
+      } else {
+        await getCustomer(val);
+      }
     }
 
     if (fun === "item") {

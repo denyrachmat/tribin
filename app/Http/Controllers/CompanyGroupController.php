@@ -42,6 +42,7 @@ class CompanyGroupController extends Controller
             ->where('nick_name', Auth::user()->nick_name)
             ->where('connection', $dedicatedConnection)
             ->whereNull('deleted_at')->first();
+
         return ['code' => $rsCGRole->role_name, 'name' => $rsCGRole->description];
     }
 
@@ -106,7 +107,7 @@ class CompanyGroupController extends Controller
             $r->connection = Crypt::encryptString($r->connection);
         }
         unset($r);
-        
+
         return ['data' => $RS];
     }
 

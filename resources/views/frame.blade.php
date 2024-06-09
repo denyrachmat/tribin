@@ -140,10 +140,17 @@
         <div class="navbar-nav w-100"></div>
         <div class="navbar-nav">
             <div class="nav-item dropdown text-nowrap">
-                <a class="nav-link dropdown-toggle col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" role="button" data-bs-toggle="dropdown" onclick="showNotificationToApprove()">
-                    <span data-feather="mail" class="align-text-bottom"></span>
-                    <span class="badge text-bg-info" id="labelNotifAll"></span>
-                </a>
+                @if (in_array(Auth::user()->role, ['root', 'director','manager', 'general_manager']) )
+                    <a class="nav-link dropdown-toggle col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" role="button" data-bs-toggle="dropdown" onclick="showNotificationToApprove()">
+                        <span data-feather="mail" class="align-text-bottom"></span>
+                        <span class="badge text-bg-info" id="labelNotifAll"></span>
+                    </a>
+                @else
+                    <a class="nav-link dropdown-toggle col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" role="button" data-bs-toggle="dropdown">
+                        <span data-feather="mail" class="align-text-bottom"></span>
+                        <span class="badge text-bg-info" id="labelNotifAll"></span>
+                    </a>
+                @endif
                 <ul id="ulHeadContainer" class="dropdown-menu position-absolute dropdown-menu-lg-end dropdown-menu-md-end">
                     <li id="liHeadQuotation">
                         <h6 class="dropdown-header">Quotation</h6>
@@ -286,7 +293,12 @@
     <script src="{{ url('assets/bootstrap/js/bootstrap.bundle.min.js') }} "></script>
     <script src="{{ url('assets/js/inputmask.min.js') }} "></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js" integrity="sha384-gdQErvCNWvHQZj6XZM0dNsAoY4v+j5P1XDpNkcM3HJG1Yx04ecqIHk7+4VBOCHOG" crossorigin="anonymous"></script>
-    @if (!in_array(Auth::user()->role, ['director','manager', 'general_manager']) )
+    @if (in_array(Auth::user()->role, ['root', 'director','manager', 'general_manager']) )
+    <script>
+        showNotificationToApprove()
+    </script>
+    @endif
+
     <script>
         function showNotificationToApprove() {
             $.ajax({
@@ -349,11 +361,6 @@
             });
         }
 
-        showNotificationToApprove()
-    </script>
-    @endif
-
-    <script>
         const mybsCollapse = new bootstrap.Collapse(sidebarMenu, {
             toggle: false
         })

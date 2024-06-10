@@ -294,6 +294,7 @@ onMounted(async () => {
     await getItem();
     dataApi.value = props.header;
     submitedItems.value = props.detail;
+    internalSrv.value = parseInt(props.header.SRVH_ISINT)
   }
 });
 
@@ -408,7 +409,11 @@ const onSubmitData = () => {
     loading.value = true;
     await api_web
       .post("servicesAdmin", {
-        header: dataApi.value,
+        header: {
+          ...dataApi.value,
+          SRVH_ISINT: internalSrv.value
+        }
+        ,
         detail: submitedItems.value,
       })
       .then((val) => {

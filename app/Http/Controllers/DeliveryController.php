@@ -269,14 +269,15 @@ class DeliveryController extends Controller
             ->where('BRANCH', Auth::user()->branch)
             ->first();
 
-
-        $LastLine = T_DLVORDHEAD::on($this->dedicatedConnection)
+        $checkLine = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->whereYear('created_at', '=', date('Y'))
             // ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->orderBy('TDLVORD_LINE', 'desc')
-            ->first()
-            ->TDLVORD_LINE;
+            ->first();
+
+        $LastLine = empty($checkLine) ? 0 : $checkLine->TDLVORD_LINE;
+
         if (empty($request->TDLVORD_INVCD)) {
             $quotationHeader = [];
             $newQuotationCode = '';
@@ -330,7 +331,7 @@ class DeliveryController extends Controller
                 'created_by' => Auth::user()->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'TDLVORDDETA_BRANCH' => Auth::user()->branch,
-                'TDLVORDDETA_SLOCD' => $request->TDLVORDDETA_SLOCD
+                'TDLVORDDETA_SLOCD' => isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : ''
             ]);
         }
 
@@ -527,7 +528,7 @@ class DeliveryController extends Controller
                             DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
                             'MITM_ITMNM',
                             DB::raw('TDLVORDDETA_ITMQT as BALQT'),
-                            'TSLODETA_PRC'
+                            DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
                         )
                         ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
                         ->where('TDLVORDDETA_DLVCD', $valueSODet['TDLVORD_DLVCD'])
@@ -547,7 +548,8 @@ class DeliveryController extends Controller
                             'TDLVORDDETA_ITMCD',
                             'MITM_ITMNM',
                             'TDLVORDDETA_ITMQT',
-                            'TSLODETA_PRC'
+                            'TSLODETA_PRC',
+                            'TDLVORDDETA_PRC'
                         )
                         ->get()->toArray()
                 ]

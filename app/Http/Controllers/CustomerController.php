@@ -145,6 +145,7 @@ class CustomerController extends Controller
             'MCUS_CUSNM',
             'MCUS_ADDR1',
         ];
+
         $RS = M_CUS::on($this->dedicatedConnection)->select('*')
             ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('MCUS_BRANCH', Auth::user()->branch)

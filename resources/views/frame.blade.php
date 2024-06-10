@@ -295,7 +295,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js" integrity="sha384-gdQErvCNWvHQZj6XZM0dNsAoY4v+j5P1XDpNkcM3HJG1Yx04ecqIHk7+4VBOCHOG" crossorigin="anonymous"></script>
     @if (in_array(Auth::user()->role, ['root', 'director','manager', 'general_manager']) )
     <script>
-        showNotificationToApprove()
+        window.addEventListener("load", (event) => {
+            showNotificationToApprove()
+        });
     </script>
     @endif
 

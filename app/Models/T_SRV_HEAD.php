@@ -16,5 +16,6 @@ class T_SRV_HEAD extends Model
         'SRVH_BRANCH',
         'SRVH_ISSDT',
         'created_by',
+        'SRVH_ISINT'
     ];
 }

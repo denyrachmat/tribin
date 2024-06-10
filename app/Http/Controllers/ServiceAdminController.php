@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\T_SRV_FIXDET;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -71,6 +72,7 @@ class ServiceAdminController extends Controller
             'SRVH_BRANCH' => Auth::user()->branch,
             'SRVH_ISSDT' => $request->header['SRVH_ISSDT'],
             'created_by' => Auth::user()->nick_name,
+            'SRVH_ISINT' => $request->header['SRVH_ISINT'],
         ]);
 
         $det = [];
@@ -137,15 +139,46 @@ class ServiceAdminController extends Controller
     }
 
     public function updateDetByIDHead(Request $request, string $id){
-        $dataHead = T_SRV_DET::on($this->dedicatedConnection)
+        $dataHead = T_SRV_HEAD::on($this->dedicatedConnection)
+            ->where('id', base64_decode($id))
+            ->first();
+
+        $dataDet = T_SRV_DET::on($this->dedicatedConnection)
             ->where('TSRVH_ID', base64_decode($id))
             ->get();
 
-        foreach ($dataHead as $key => $value) {
+        $listForDODet = [];
+        foreach ($dataDet as $key => $value) {
             $this->updateByDet(new Request($request->all()), base64_encode($value->id));
+
+            if ($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1) {
+                $getFixedDet = T_SRV_FIXDET::on($this->dedicatedConnection)
+                    ->where('TSRVD_ID', $value->id)
+                    ->get();
+
+                foreach ($getFixedDet as $key => $valueFixedDet) {
+                    $listForDODet[] = [
+                        'TSLODETA_ITMCD' => $valueFixedDet->TSRVF_ITMCD,
+                        'BALQT' => $valueFixedDet->TSRVF_QTY,
+                        'TSLODETA_PRC' => $valueFixedDet->TSRVF_PRC,
+                    ];
+                }
+            }
         }
 
-        return ['msg' => 'Data has been updated'];
+        $postToDelivery = [];
+        if($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1 && $dataHead->SRVH_ISINT == 1) {
+            $createReq = new Request([
+                'TDLVORD_CUSCD' => $dataHead->SRVH_CUSCD,
+                'TDLVORD_ISSUDT' => $dataHead->SRVH_ISSDT,
+                'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
+                'SO_DET' => $listForDODet,
+            ]);
+
+            $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
+        }
+
+        return ['msg' => 'Data has been updated', 'dataHead' => $dataHead, 'data' => $postToDelivery];
     }
     /**
      * Remove the specified resource from storage.

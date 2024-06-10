@@ -71,7 +71,39 @@
               </q-input>
             </div>
             <div class="col q-pl-md">
-              <q-input v-model="MCUS_CUSNM" label="Customer" dense readonly />
+              <!-- <q-input v-model="MCUS_CUSNM" label="Customer" dense readonly /> -->
+              <q-select
+                dense
+                filled
+                label="Customer Choose"
+                v-model="MCUS_CUSNM"
+                use-input
+                input-debounce="500"
+                :options="listCustomers"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'cust')
+                "
+                behavior="dialog"
+                option-label="MCUS_CUSNM"
+                option-value="MCUS_CUSCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :readonly="TDLVORDDETA_SLOCD == ''"
+              >
+                <template v-slot:after>
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    icon="person_add"
+                    @click="onAddCustClick()"
+                    color="cyan"
+                  >
+                    <q-tooltip>Add new customer</q-tooltip>
+                  </q-btn>
+                </template>
+              </q-select>
             </div>
           </div>
 
@@ -140,9 +172,7 @@
                   <q-item-label>
                     Rp. {{ items.TSLODETA_PRC.toLocaleString() }}
                   </q-item-label>
-                  <q-item-label caption>
-                    Price
-                  </q-item-label>
+                  <q-item-label caption> Price </q-item-label>
                 </q-item-section>
                 <q-item-section side>
                   <q-btn
@@ -166,7 +196,12 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn label="OK" color="primary" @click="onSubmitData()" :loading="loading"/>
+        <q-btn
+          label="OK"
+          color="primary"
+          @click="onSubmitData()"
+          :loading="loading"
+        />
         <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
       </q-card-actions>
     </q-card>
@@ -185,19 +220,20 @@ const props = defineProps({
   dataHeader: Array,
 });
 
-onMounted(() => {
+onMounted(async () => {
+  await getCustomer(props.dataHeader.TDLVORD_CUSCD)
   if (Object.values(props.dataHeader).length > 0) {
-    console.log(props.dataHeader)
-    TDLVORD_DLVCD.value = props.dataHeader.TDLVORD_DLVCD
-    TDLVORD_INVCD.value = props.dataHeader.TDLVORD_INVCD
-    TDLVORD_CUSCD.value = props.dataHeader.TDLVORD_CUSCD
-    TDLVORD_ISSUDT.value = props.dataHeader.TDLVORD_ISSUDT
-    TDLVORDDETA_SLOCD.value = props.dataHeader.TDLVORDDETA_SLOCD
-    MCUS_CUSNM.value = props.dataHeader.MCUS_CUSNM
-    TDLVORD_REMARK.value = props.dataHeader.TDLVORD_REMARK
-    listItems.value = props.dataHeader.listItems
+    console.log(props.dataHeader);
+    TDLVORD_DLVCD.value = props.dataHeader.TDLVORD_DLVCD;
+    TDLVORD_INVCD.value = props.dataHeader.TDLVORD_INVCD;
+    TDLVORD_CUSCD.value = props.dataHeader.TDLVORD_CUSCD;
+    TDLVORD_ISSUDT.value = props.dataHeader.TDLVORD_ISSUDT;
+    TDLVORDDETA_SLOCD.value = props.dataHeader.TDLVORDDETA_SLOCD;
+    MCUS_CUSNM.value = props.dataHeader.MCUS_CUSNM;
+    TDLVORD_REMARK.value = props.dataHeader.TDLVORD_REMARK;
+    listItems.value = props.dataHeader.listItems;
   }
-})
+});
 
 const loading = ref(false);
 const TDLVORD_DLVCD = ref("");
@@ -209,10 +245,38 @@ const MCUS_CUSNM = ref("");
 const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
 
+const filterFn = (val, update, abort, fun) => {
+  update(async () => {
+    if (fun === "cust") {
+      getCustomer(val)
+    }
+
+    if (fun === "item") {
+      await getItem(val);
+    }
+  });
+};
+
+const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
+  loading.value = true;
+  await api_web
+    .post("customer/searchAPI", {
+      searchValue: val,
+      searchCol: cols
+    })
+    .then((response) => {
+      loading.value = false;
+      listCustomers.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
 const onSubmitData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure wan to save this outgoing ?`,
+    message: `Are you sure want to save this outgoing ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
@@ -228,7 +292,7 @@ const onSubmitData = () => {
       })
       .then((response) => {
         loading.value = false;
-        onDialogOK()
+        onDialogOK();
       })
       .catch((e) => {
         loading.value = false;

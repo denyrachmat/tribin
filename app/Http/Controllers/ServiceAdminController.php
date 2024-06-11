@@ -161,6 +161,7 @@ class ServiceAdminController extends Controller
                         'TSLODETA_ITMCD' => $valueFixedDet->TSRVF_ITMCD,
                         'BALQT' => $valueFixedDet->TSRVF_QTY,
                         'TSLODETA_PRC' => $valueFixedDet->TSRVF_PRC,
+                        'TDLVORDDETA_ITMCD_ACT' => $valueFixedDet->TSRVF_ITMCD,
                     ];
                 }
             }

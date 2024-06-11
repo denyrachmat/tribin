@@ -331,7 +331,8 @@ class DeliveryController extends Controller
                 'created_by' => Auth::user()->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'TDLVORDDETA_BRANCH' => Auth::user()->branch,
-                'TDLVORDDETA_SLOCD' => isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : ''
+                'TDLVORDDETA_SLOCD' => isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : '',
+                'TDLVORDDETA_ITMCD_ACT' => isset($valueSODet['TDLVORDDETA_ITMCD_ACT']) && !empty($valueSODet['TDLVORDDETA_ITMCD_ACT']) ? $valueSODet['TDLVORDDETA_ITMCD_ACT'] : ''
             ]);
         }
 

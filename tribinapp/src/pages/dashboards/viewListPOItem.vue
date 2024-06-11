@@ -41,6 +41,7 @@
             </div>
 
             <q-table
+              v-if="dataHasil.dataItem"
               title="Item List"
               :rows="dataHasil.dataItem"
               :columns="columnsItem"

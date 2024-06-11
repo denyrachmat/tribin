@@ -12,7 +12,7 @@ class T_DLVORDHEAD extends Model
     protected $fillable = [
         'TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'TDLVORD_CUSCD', 'TDLVORD_LINE',
         'TDLVORD_ISSUDT', 'TDLVORD_REMARK', 'TDLVORD_INVCD', 'updated_by', 'TDLVORD_MEKANIK', 'TDLVORD_JALAN_COST',
-        'TDLVORD_VEHICLE_REGNUM','TDLVORD_REC_NO'
+        'TDLVORD_VEHICLE_REGNUM','TDLVORD_REC_NO', 'TQUO_PROJECT_LOCATION'
     ];
 
     public function dlvdet() {

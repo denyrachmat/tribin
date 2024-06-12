@@ -294,6 +294,7 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if(count($payment) === 0)
                     <tr>
                         <td class="tg-0lax"><b>MANDIRI</b></td>
                         <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
@@ -304,6 +305,15 @@
                         <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
                         <td class="tg-0lax"><b>2760-8888-58</b></td>
                     </tr>
+                    @else
+                        @foreach($payment as $key => $valuePayment)
+                        <tr>
+                            <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
+                            <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
+                            <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
+                        </tr>
+                        @endforeach
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -329,7 +339,7 @@
         </div>
 
         <div class="row" style="padding-top: 7em">
-            (..................)
+            (Syapril, S.T)
         </div>
     </div>
 </body>

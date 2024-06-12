@@ -12,7 +12,7 @@ class T_DLVORDHEAD extends Model
     protected $fillable = [
         'TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'TDLVORD_CUSCD', 'TDLVORD_LINE',
         'TDLVORD_ISSUDT', 'TDLVORD_REMARK', 'TDLVORD_INVCD', 'updated_by', 'TDLVORD_MEKANIK', 'TDLVORD_JALAN_COST',
-        'TDLVORD_VEHICLE_REGNUM','TDLVORD_REC_NO', 'TQUO_PROJECT_LOCATION'
+        'TDLVORD_VEHICLE_REGNUM','TDLVORD_REC_NO'
     ];
 
     public function dlvdet() {
@@ -25,5 +25,17 @@ class T_DLVORDHEAD extends Model
 
     public function dlvsj(){
         return $this->hasOne(T_DLVSJDETA::class, 'TDLVSJDETA_DLVCD', 'TDLVORD_DLVCD');
+    }
+
+    public function payment(){
+        // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
+        return $this->hasManyThrough(
+            BranchPaymentAccount::class,
+            T_DLVPAYDETA::class,
+            'TDLVPAYDETA_DLVCD',
+            'id',
+            'TDLVORD_DLVCD',
+            'TDLVPAYDETA_IDPAY',
+        );
     }
 }

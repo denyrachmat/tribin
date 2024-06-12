@@ -1882,8 +1882,7 @@ class DeliveryController extends Controller
             //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             //     ->get();
 
-            $cek = T_DLVORDHEAD::where(DB::raw('MONTH(created_at)'), date('M'))
-                ->where(DB::raw('YEAR(created_at)'), date('Y'))
+            $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
                 ->orderBy('created_at', 'desc')
                 ->first();
 

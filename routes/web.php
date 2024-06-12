@@ -229,6 +229,7 @@ Route::middleware('auth')->group(function () {
         Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
         Route::get('printKwitansi/{doc}', [InvoiceController::class, 'printKwitansi']);
         Route::get('printSJ/{doc}', [InvoiceController::class, 'printSJ']);
+        Route::get('cekInv', [InvoiceController::class, 'cekKwitansiNo']);
     });
 
     #Terkait Receive Order

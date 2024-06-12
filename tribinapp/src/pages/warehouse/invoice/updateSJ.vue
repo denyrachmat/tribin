@@ -23,6 +23,18 @@
             />
           </div>
           <div class="col text-right">
+
+            <q-btn
+              color="indigo"
+              label="Choose Bank Account"
+              @click="onClickChooseBankAcc"
+              :loading="loading"
+            >
+              <q-badge color="red" floating>{{
+                dataSJ.payment.length
+              }}</q-badge>
+            </q-btn>
+
             <q-btn
               color="blue"
               label="Assign Conditions"
@@ -54,6 +66,7 @@
               filled
               v-model="dataSJ.TDLVSJDETA_STARTDT"
               label="Jam Masuk"
+              dense
             >
               <template v-slot:prepend>
                 <q-icon name="event" class="cursor-pointer">
@@ -111,6 +124,7 @@
               filled
               v-model="dataSJ.TDLVSJDETA_ENDDT"
               label="Jam Keluar"
+              dense
             >
               <template v-slot:prepend>
                 <q-icon name="event" class="cursor-pointer">
@@ -186,12 +200,14 @@ import { useQuasar, useDialogPluginComponent, date } from "quasar";
 
 import assignConditionsView from "pages/master/conditions/assignConditionsView.vue";
 import viewAssignedCond from "pages/master/conditions/viewAssignedCond.vue";
+import invoiceBankChoose from "./invoiceBankChoose.vue";
 
 const $q = useQuasar();
 
 const props = defineProps({
   idDlv: String,
   dataSJDB: Array,
+  payment: Array,
 });
 
 onMounted(() => {
@@ -199,6 +215,7 @@ onMounted(() => {
 
   if (props.dataSJDB) {
     dataSJ.value = props.dataSJDB;
+    dataSJ.value.payment = props.payment
   }
 });
 
@@ -215,6 +232,7 @@ const dataSJ = ref({
   TDLVSJDETA_STARTDT: "",
   TDLVSJDETA_ENDDT: "",
   condition: [],
+  payment: []
 });
 const groupCond = ref([]);
 const loading = ref(false);
@@ -272,6 +290,27 @@ const onSubmitData = () => {
 
 const optionsFn = (dates) => {
   return dates >= date.formatDate(new Date(), "YYYY/MM/DD");
+};
+
+const onClickChooseBankAcc = () => {
+  $q.dialog({
+    component: invoiceBankChoose,
+    componentProps: {
+      payment: dataSJ.value.payment,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    console.log(val)
+    let payment = []
+    val.map(valMap => {
+      payment.push({
+        TDLVPAYDETA_DLVCD: dataSJ.value.TDLVSJDETA_DLVCD,
+        TDLVPAYDETA_IDPAY: valMap.id,
+      })
+    })
+
+    dataSJ.value.payment = payment;
+  });
 };
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =

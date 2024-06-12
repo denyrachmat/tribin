@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\T_DLVSJDETA;
 use App\Models\CompanyGroup;
+use App\Models\T_DLVPAYDETA;
 
 class InvoiceController extends Controller
 {
@@ -73,6 +74,15 @@ class InvoiceController extends Controller
             'TDLVSJDETA_STARTDT' => $request->TDLVSJDETA_STARTDT,
             'TDLVSJDETA_ENDDT' => $request->TDLVSJDETA_ENDDT,
         ]);
+
+        T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $request->TDLVPAYDETA_DLVCD)->delete();
+
+        foreach ($request->payment as $key => $valuePays) {
+            T_DLVPAYDETA::on($this->dedicatedConnection)->create([
+                'TDLVPAYDETA_DLVCD' => $valuePays['TDLVPAYDETA_DLVCD'],
+                'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
+            ]);
+        }
 
         return ['msg' => 'SJ Detail Saved !'];
     }
@@ -130,7 +140,7 @@ class InvoiceController extends Controller
             )
             ->with(['dlvdet' => function ($f) {
                 $f->join('M_ITM', 'TDLVORDDETA_ITMCD', 'MITM_ITMCD');
-            }, 'dlvacc', 'dlvsj'])
+            }, 'dlvacc', 'dlvsj', 'payment'])
             ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
             ->join('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -211,6 +221,7 @@ class InvoiceController extends Controller
                 'total' => $total,
                 'ppn' => $ppn,
                 'dlvDetNew' => $dlvDetParse,
+                'payment' => $request->payment,
                 'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total)
             ],
             $request->all()
@@ -450,8 +461,21 @@ class InvoiceController extends Controller
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
+            ->leftJoin('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
+            ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
+            ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
             ->where("TDLVORD_DLVCD", $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->groupBy(
+                'TDLVORD_ISSUDT',
+                'MCUS_CUSNM',
+                'MCUS_ADDR1',
+                'TDLVORD_REMARK',
+                'MCUS_TELNO',
+                'TDLVORD_INVCD',
+                'TDLVORD_LINE',
+                'TQUO_PROJECT_LOCATION'
+            )
             ->first();
 
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
@@ -623,5 +647,13 @@ class InvoiceController extends Controller
         $pdfFile = $this->fpdf->Output("", "S");
 
         return base64_encode($pdfFile);
+    }
+
+    public function cekKwitansiNo() {
+        $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+        return $cek;
     }
 }

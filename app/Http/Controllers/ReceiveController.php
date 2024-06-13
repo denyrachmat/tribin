@@ -269,6 +269,28 @@ class ReceiveController extends Controller
         return ['data' => $RS];
     }
 
+    function searchApi(Request $request)
+    {
+        $columnMap = [
+            'TSLO_SLOCD',
+            'MCUS_CUSNM',
+            'TSLO_POCD',
+        ];
+
+        $RS = T_RCV_HEAD::on($this->dedicatedConnection)->select(["T_RCV_HEAD.id", "MSUP_SUPNM", "TRCV_RCVCD", "TRCV_ISSUDT", "MSUP_SUPCD", "TRCV_SUBMITTED_AT"])
+            ->leftJoin("M_SUP", function ($join) {
+                $join->on('TRCV_SUPCD', '=', 'MSUP_SUPCD')->on('TRCV_BRANCH', '=', 'MSUP_BRANCH');
+            })
+            ->where('TRCV_BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at');
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+        
+        return ['data' => $RS->get()];
+    }
+
     function submit(Request $request)
     {
         try {

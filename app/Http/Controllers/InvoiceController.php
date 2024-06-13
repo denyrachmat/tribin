@@ -364,7 +364,7 @@ class InvoiceController extends Controller
         $this->fpdf->Cell(0, 8, 'K W I T A N S I', 0, 0, 'C');
         $this->fpdf->SetFont('Arial', '', 10);
         $this->fpdf->SetXY(7, 30);
-        $this->fpdf->Cell(25, 5, 'Nomor Kwitansi', 0, 0, 'L');
+        $this->fpdf->Cell(25, 5, 'Nomor Invoice', 0, 0, 'L');
         $this->fpdf->Cell(15, 5, ': ' . $RSHeader->TDLVORD_INVCD, 0, 0, 'L');
         // $this->fpdf->SetXY(150, 30);
         // $this->fpdf->Cell(25, 5, 'Proj. Location:', 0, 0, 'L');

@@ -695,9 +695,9 @@ class PurchaseController extends Controller
 
     public function toPDFOnDashboard($type, $id, $conn){
         if ($type === 'pr') {
-            return $this->toPDF(new Request(['id' => $id]), $conn);
+            return $this->toPDF($id, $conn);
         } else {
-            return $this->POtoPDF(new Request(['id' => $id]), $conn);
+            return $this->POtoPDF($id, $conn);
         }
     }
 

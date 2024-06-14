@@ -401,9 +401,9 @@ class PurchaseController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'could not be deleted', 'affectedRow' => $affectedRow];
     }
 
-    public function toPDF(Request $request, $conn = '')
+    public function toPDF($id, $conn = '')
     {
-        $doc = base64_decode($request->id);
+        $doc = base64_decode($id);
         $RSHeader = T_PCHREQHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TPCHREQ_PURPOSE', 'TPCHREQ_ISSUDT', 'TPCHREQ_APPRVBY')
             ->where("TPCHREQ_PCHCD", $doc)
             ->where('TPCHREQ_BRANCH', Auth::user()->branch)
@@ -476,9 +476,9 @@ class PurchaseController extends Controller
         exit;
     }
 
-    public function POtoPDF(Request $request, $conn = '')
+    public function POtoPDF($id, $conn = '')
     {
-        $doc = base64_decode($request->id);
+        $doc = base64_decode($id);
         $RSCG = CompanyGroup::select('name', 'address', 'phone', 'fax')
             ->where('connection', $this->dedicatedConnection)
             ->first();

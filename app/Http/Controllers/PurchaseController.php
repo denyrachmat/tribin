@@ -240,6 +240,7 @@ class PurchaseController extends Controller
             ->update([
                 'TPCHORDDETA_ITMPRC_PER' => $request->TPCHORDDETA_ITMPRC_PER
             ]);
+
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
@@ -315,11 +316,11 @@ class PurchaseController extends Controller
     {
         // return ($this->dedicatedConnection);
         $RS = T_PCHREQDETA::on($request->conn)->select([
-                "id", 
-                "TPCHREQDETA_ITMCD", 
-                "MITM_ITMNM", 
-                "TPCHREQDETA_ITMQT", 
-                "TPCHREQDETA_REQDT", 
+                "id",
+                "TPCHREQDETA_ITMCD",
+                "MITM_ITMNM",
+                "TPCHREQDETA_ITMQT",
+                "TPCHREQDETA_REQDT",
                 "TPCHREQDETA_REMARK"
             ])
             ->leftJoin("M_ITM_GRP", function ($join) {
@@ -362,10 +363,10 @@ class PurchaseController extends Controller
     function loadPOByIdApproval(Request $request)
     {
         $RS = T_PCHORDDETA::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select([
-            "id", 
-            "TPCHORDDETA_ITMCD", 
-            "MITM_ITMNMREAL AS MITM_ITMNM", 
-            "TPCHORDDETA_ITMQT", 
+            "id",
+            "TPCHORDDETA_ITMCD",
+            "MITM_ITMNMREAL AS MITM_ITMNM",
+            "TPCHORDDETA_ITMQT",
             "TPCHORDDETA_ITMPRC_PER"
         ])
             ->leftJoin("M_ITM_GRP", function ($join) {
@@ -400,10 +401,10 @@ class PurchaseController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'could not be deleted', 'affectedRow' => $affectedRow];
     }
 
-    public function toPDF(Request $request)
+    public function toPDF(Request $request, $conn = '')
     {
         $doc = base64_decode($request->id);
-        $RSHeader = T_PCHREQHEAD::on($this->dedicatedConnection)->select('TPCHREQ_PURPOSE', 'TPCHREQ_ISSUDT', 'TPCHREQ_APPRVBY')
+        $RSHeader = T_PCHREQHEAD::on(empty($conn) ? $this->dedicatedConnection : $conn)->select('TPCHREQ_PURPOSE', 'TPCHREQ_ISSUDT', 'TPCHREQ_APPRVBY')
             ->where("TPCHREQ_PCHCD", $doc)
             ->where('TPCHREQ_BRANCH', Auth::user()->branch)
             ->get()->toArray();
@@ -475,13 +476,13 @@ class PurchaseController extends Controller
         exit;
     }
 
-    public function POtoPDF(Request $request)
+    public function POtoPDF(Request $request, $conn = '')
     {
         $doc = base64_decode($request->id);
         $RSCG = CompanyGroup::select('name', 'address', 'phone', 'fax')
             ->where('connection', $this->dedicatedConnection)
             ->first();
-        $RSHeader = T_PCHORDHEAD::on($this->dedicatedConnection)->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG')
+        $RSHeader = T_PCHORDHEAD::on(empty($conn) ? $this->dedicatedConnection : $conn)->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG')
             ->leftJoin('M_SUP', function ($join) {
                 $join->on('TPCHORD_SUPCD', '=', 'MSUP_SUPCD')
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
@@ -737,7 +738,7 @@ class PurchaseController extends Controller
         $dataPurchaseRequestApproved = [];
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
-            # Query untuk data Purchase Request dengan tipe "Normal" 
+            # Query untuk data Purchase Request dengan tipe "Normal"
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHREQDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD,TPCHREQDETA_BRANCH")
                 ->groupBy("TPCHREQDETA_PCHCD", "TPCHREQDETA_BRANCH")
@@ -971,18 +972,26 @@ class PurchaseController extends Controller
         }
     }
 
-    function approvePO(Request $request)
+    function approvePO(Request $request, $id)
     {
-        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->conn);
         if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
-            $affectedRow = T_PCHORDHEAD::on($this->dedicatedConnection)
-                ->where('TPCHORD_PCHCD', base64_decode($request->id))
+            $affectedRow = T_PCHORDHEAD::on($request->conn)
+                ->where('TPCHORD_PCHCD', base64_decode($id))
                 ->where('TPCHORD_BRANCH', $request->TPCHORD_BRANCH)
                 ->update([
-                    'TPCHORD_APPRVBY' => Auth::user()->nick_name, 'TPCHORD_APPRVDT' => date('Y-m-d H:i:s')
+                    'TPCHORD_APPRVBY' => Auth::user()->nick_name,
+                    'TPCHORD_APPRVDT' => date('Y-m-d H:i:s')
                 ]);
+
             $message = $affectedRow ? 'Approved' : 'Something wrong please contact admin';
-            return ['message' => $message];
+
+            return [
+                'message' => $message,
+                'data' => $request->all(),
+                'id' => base64_decode($id),
+                'user' => Auth::user()->nick_name
+            ];
         } else {
             return response()->json(['message' => 'forbidden'], 403);
         }

@@ -41,7 +41,7 @@ class SupplierController extends Controller
     public function index()
     {
         return view('master.supplier', [
-            'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),            
+            'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()
         ]);
     }
@@ -102,6 +102,34 @@ class SupplierController extends Controller
                 ->where('MSUP_BRANCH', Auth::user()->branch)
                 ->get();
         }
+        return ['data' => $RS];
+    }
+
+    function searchAPI(Request $request) {
+        if ($request->companyGroupOnly) {
+            if ($request->companyGroupOnly == 2) {
+                $RSTemp = M_SUP::on($this->dedicatedConnection)->select('*')
+                    ->whereNotNull("MSUP_CGCON")
+                    ->where('MSUP_BRANCH', Auth::user()->branch);
+            } else {
+                $RSTemp = M_SUP::on($this->dedicatedConnection)->select('*')
+                    ->where('MSUP_BRANCH', Auth::user()->branch);
+            }
+        } else {
+            $RSTemp = M_SUP::on($this->dedicatedConnection)->select('*')
+                ->where('MSUP_BRANCH', Auth::user()->branch);
+        }
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSTemp)->where((
+                !empty($request->searchCol)
+                ? $request->searchCol
+                : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
+            ->get();
+        } else {
+            $RS = (clone $RSTemp)->get();
+        }
+
         return ['data' => $RS];
     }
 

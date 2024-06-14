@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\T_SRV_HEAD;
+
 class HomeController extends Controller
 {
     protected $dedicatedConnection;
@@ -352,6 +353,7 @@ class HomeController extends Controller
                     ->selectRaw("COUNT(*) TTLDETAIL, TQUODETA_QUOCD,TQUODETA_BRANCH")
                     ->groupBy("TQUODETA_QUOCD", "TQUODETA_BRANCH")
                     ->whereNull('deleted_at');
+
                 $dataTobeApproved = T_QUOHEAD::on($value->connection)
                     ->select(DB::raw("
                         TQUO_QUOCD as APP_CD,
@@ -378,6 +380,7 @@ class HomeController extends Controller
                     ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD")
                     ->groupBy("TPCHREQDETA_PCHCD")
                     ->whereNull('deleted_at');
+
                 $dataPurchaseRequestTobeUpproved = T_PCHREQHEAD::on($value->connection)
                     ->select(DB::raw('
                         "Purchase Request" APP_CUSNM,
@@ -385,36 +388,48 @@ class HomeController extends Controller
                         max(TTLDETAIL),
                         max(T_PCHREQHEAD.created_at) CREATED_AT,
                         max(TPCHREQ_PURPOSE) APP_SBJCT,
-                        TPCHREQ_BRANCH
+                        TPCHREQ_BRANCH,
+                        TPCHREQ_SUPCD,
+                        MSUP_SUPNM
                     '))
                     ->joinSub($RSDetail, 'dt', function ($join) {
                         $join->on("TPCHREQ_PCHCD", "=", "TPCHREQDETA_PCHCD");
                     })
+                    ->join('M_SUP', 'TPCHREQ_SUPCD', 'MSUP_SUPCD')
                     ->whereNull("TPCHREQ_APPRVDT")
                     ->whereNull("TPCHREQ_REJCTDT")
                     ->where("TPCHREQ_TYPE", '2')
-                    ->groupBy('TPCHREQ_PCHCD', 'TPCHREQ_BRANCH')->get();
+                    ->groupBy(
+                        'TPCHREQ_PCHCD',
+                        'TPCHREQ_BRANCH',
+                        'TPCHREQ_SUPCD',
+                        'MSUP_SUPNM'
+                    )->get();
 
                 // PO Detail
                 $RSDetail = DB::connection($value->connection)->table('T_PCHORDDETA')
                     ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD")
                     ->groupBy("TPCHORDDETA_PCHCD")
                     ->whereNull('deleted_at');
+
                 $dataPurchaseOrderTobeUpproved = T_PCHORDHEAD::on($value->connection)
                     ->select(DB::raw("
                         TPCHORD_PCHCD APP_CD,
                         max(TTLDETAIL) APP_SBJCT,
                         MSUP_SUPNM APP_CUSNM,
+                        TPCHORD_REQCD REQ_CD,
                         max(T_PCHORDHEAD.created_at) CREATED_AT,
-                        TPCHORD_BRANCH
+                        TPCHORD_BRANCH,
+                        max(TPCHREQ_PURPOSE) APP_SBJCT
                     "))
                     ->joinSub($RSDetail, 'dt', function ($join) {
                         $join->on("TPCHORD_PCHCD", "=", "TPCHORDDETA_PCHCD");
                     })
                     ->join('M_SUP', 'TPCHORD_SUPCD', 'MSUP_SUPCD')
+                    ->join('T_PCHREQHEAD', 'TPCHORD_REQCD', 'TPCHREQ_PCHCD')
                     ->whereNull("TPCHORD_APPRVDT")
                     ->whereNull("TPCHORD_REJCTBY")
-                    ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM', 'TPCHORD_BRANCH')->get();
+                    ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM', 'TPCHORD_BRANCH', 'TPCHORD_REQCD')->get();
 
                 // SPK Detail
                 $SPK = C_SPK::on($value->connection)->select(DB::raw('CSPK_PIC_AS APP_SBJCT, CSPK_REFF_DOC APP_CD, CSPK_JOBDESK APP_SBJCT'))

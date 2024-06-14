@@ -404,7 +404,7 @@ class PurchaseController extends Controller
     public function toPDF(Request $request, $conn = '')
     {
         $doc = base64_decode($request->id);
-        $RSHeader = T_PCHREQHEAD::on(empty($conn) ? $this->dedicatedConnection : $conn)->select('TPCHREQ_PURPOSE', 'TPCHREQ_ISSUDT', 'TPCHREQ_APPRVBY')
+        $RSHeader = T_PCHREQHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TPCHREQ_PURPOSE', 'TPCHREQ_ISSUDT', 'TPCHREQ_APPRVBY')
             ->where("TPCHREQ_PCHCD", $doc)
             ->where('TPCHREQ_BRANCH', Auth::user()->branch)
             ->get()->toArray();
@@ -482,7 +482,7 @@ class PurchaseController extends Controller
         $RSCG = CompanyGroup::select('name', 'address', 'phone', 'fax')
             ->where('connection', $this->dedicatedConnection)
             ->first();
-        $RSHeader = T_PCHORDHEAD::on(empty($conn) ? $this->dedicatedConnection : $conn)->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG')
+        $RSHeader = T_PCHORDHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG')
             ->leftJoin('M_SUP', function ($join) {
                 $join->on('TPCHORD_SUPCD', '=', 'MSUP_SUPCD')
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
@@ -691,6 +691,14 @@ class PurchaseController extends Controller
         $this->fpdf->Output('purchase order ' . $doc . '.pdf', 'I');
 
         exit;
+    }
+
+    public function toPDFOnDashboard($type, $id, $conn){
+        if ($type === 'pr') {
+            return $this->toPDF(new Request(['id' => $id]), $conn);
+        } else {
+            return $this->POtoPDF(new Request(['id' => $id]), $conn);
+        }
     }
 
     public function formApproval()

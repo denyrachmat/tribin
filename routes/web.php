@@ -321,8 +321,10 @@ Route::group(['middleware' => 'cors'], function() {
         #Terkait laporan berupa Pdf
         Route::prefix('PDF')->group(function () {
             Route::get('quotation/{id}/{conn?}', [QuotationController::class, 'toNewPDF']);
-            Route::get('purchase-request/{id}/{conn?}', [PurchaseController::class, 'toPDF']);
-            Route::get('purchase-order/{id}/{conn?}', [PurchaseController::class, 'POtoPDF']);
+
+            Route::get('purchase/{type}/{id}/{conn}', [PurchaseController::class, 'toPDFOnDashboard']);
+            Route::get('purchase-request/{id}', [PurchaseController::class, 'toPDF']);
+            Route::get('purchase-order/{id}', [PurchaseController::class, 'POtoPDF']);
             Route::get('delivery-order/{id}', [DeliveryController::class, 'toPDF']);
             Route::get('SPK/{id}', [DeliveryController::class, 'SPKtoPDF']);
         });

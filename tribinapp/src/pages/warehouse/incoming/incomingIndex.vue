@@ -18,7 +18,7 @@
         <q-table
           title="Outgoing List"
           :rows="rows"
-          :columns="columns"
+          :columns="cols"
           row-key="TDLVORD_DLVCD"
           :loading="loading"
           dense
@@ -102,6 +102,8 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
+import incomingCreate from "./incomingCreate.vue";
+
 const $q = useQuasar()
 
 const rows = ref([]);
@@ -162,7 +164,7 @@ const getIncomingData = async () => {
 
 const onClickNew = (data = []) => {
   $q.dialog({
-    component: outgoingCreate,
+    component: incomingCreate,
     componentProps: {
       dataHeader: data,
     },

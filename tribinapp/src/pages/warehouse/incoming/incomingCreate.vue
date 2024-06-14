@@ -71,7 +71,7 @@
                 v-model="header.TRCV_SUPCD"
                 use-input
                 input-debounce="500"
-                :options="listCustomers"
+                :options="listSupplier"
                 @filter="
                   (val, update, abort) => filterFn(val, update, abort, 'cust')
                 "
@@ -85,6 +85,85 @@
               />
             </div>
           </div>
+        </fieldset>
+
+        <fieldset
+          style="
+            border: 1px black solid;
+            border-radius: 10px;
+            height: 35vh;
+            overflow: auto;
+          "
+        >
+          <legend style="margin-left: 1em; padding: 0.2em 0.8em">
+            <b>List Of Items</b>
+          </legend>
+
+          <q-list bordered dense>
+            <template v-if="listItems.length > 0">
+              <q-item
+                v-for="(items, idx) in listItems"
+                :key="idx"
+                class="q-my-sm"
+                dense
+                :loading="loading"
+              >
+                <q-item-section avatar>
+                  <q-avatar text-color="blue">
+                    {{ idx + 1 }}
+                  </q-avatar>
+                </q-item-section>
+                <!-- <q-item-section>
+                  <q-item-label>
+                    <q-input
+                      dense
+                      label="Item Code"
+                      filled
+                      v-model="items.TSLODETA_ITMCD"
+                      readonly
+                    />
+                  </q-item-label>
+                </q-item-section> -->
+                <q-item-section>
+                  <q-item-label>
+                    <q-input
+                      dense
+                      label="Item Name"
+                      filled
+                      v-model="items.MITM_ITMNM"
+                      readonly
+                    />
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>
+                    <q-input dense label="Qty" filled v-model="items.BALQT" />
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>
+                    Rp. {{ items.TSLODETA_PRC.toLocaleString() }}
+                  </q-item-label>
+                  <q-item-label caption> Price </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    icon="delete"
+                    color="red"
+                    flat
+                    @click="onClickDeleteLines(idx)"
+                  />
+                </q-item-section>
+              </q-item>
+            </template>
+            <q-item class="q-my-sm" clickable v-ripple v-else>
+              <q-item-section>
+                <q-item-label>
+                  Choose sales order first to access item list
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
         </fieldset>
       </q-card-section>
     </q-card>
@@ -107,7 +186,10 @@ const header = ref({
   TRCV_ISSUDT: "",
 });
 
+const listItems = ref([])
+
 const loading = ref(false);
+const listSupplier = ref([])
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -130,7 +212,7 @@ const getSupplier = async (val, cols = 'MSUP_SUPNM') => {
     })
     .then((response) => {
       loading.value = false;
-      listCustomers.value = response.data.data;
+      listSupplier.value = response.data.data;
     })
     .catch(() => {
       loading.value = false;

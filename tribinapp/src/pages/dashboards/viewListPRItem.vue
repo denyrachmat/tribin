@@ -40,6 +40,27 @@
                 </div>
               </div>
 
+              <div class="row q-pb-md">
+                <div class="col">
+                  <q-input
+                    dense
+                    filled
+                    label="Supplier"
+                    v-model="headerData.MSUP_SUPNM"
+                    readonly
+                  ></q-input>
+                </div>
+                <div class="col q-pl-md">
+                  <q-input
+                    dense
+                    filled
+                    label="Created Date"
+                    v-model="headerData.CREATED_AT"
+                    readonly
+                  ></q-input>
+                </div>
+              </div>
+
               <q-table
                 v-if="dataHasil.dataItem"
                 title="Item List"
@@ -55,6 +76,13 @@
 
         <q-card-actions align="center">
           <q-btn-group>
+            <q-btn
+              color="primary"
+              icon="print"
+              :disable="dataHasil.length === 0"
+              @click="printPR()"
+              flat
+            />
             <q-btn
               color="primary"
               icon="check"
@@ -152,7 +180,7 @@
   };
 
   const onApprove = () => {
-    q.dialog({
+    $q.dialog({
       title: "Confirm",
       message: "Are you sure want to Approve this quotation ?",
       cancel: true,
@@ -161,7 +189,8 @@
       loading.value = true;
         await api_web
           .put(`approve/purchase-request/${btoa(props.cd)}`,{
-            TPCHREQ_BRANCH: props.dataHeader.TPCHREQ_BRANCH
+            TPCHREQ_BRANCH: props.dataHeader.TPCHREQ_BRANCH,
+            conn: props.conn,
           })
           .then((response) => {
             loading.value = false;
@@ -195,7 +224,8 @@
         await api_web
           .put(`revise/purchase-request/${btoa(props.cd)}`,{
             remark: datas,
-            TPCHREQ_BRANCH: props.dataHeader.TPCHREQ_BRANCH
+            TPCHREQ_BRANCH: props.dataHeader.TPCHREQ_BRANCH,
+            conn: props.conn,
           })
           .then((response) => {
             loading.value = false;
@@ -208,7 +238,7 @@
     });
   };
 
-  const printQuot = () => {
-    window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd), '_blank').focus();
+  const printPR = () => {
+    window.open(process.env.API_WEB + 'PDF/purchase/pr/' + btoa(props.cd) + '/' + btoa(props.conn), '_blank').focus();
   };
   </script>

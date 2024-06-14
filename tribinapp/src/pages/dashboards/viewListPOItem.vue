@@ -33,8 +33,38 @@
                 <q-input
                   dense
                   filled
+                  label="PR Code"
+                  v-model="headerData.REQ_CD"
+                  readonly
+                ></q-input>
+              </div>
+              <div class="col q-pl-md">
+                <q-input
+                  dense
+                  filled
+                  label="Subject"
+                  v-model="headerData.APP_SBJCT"
+                  readonly
+                ></q-input>
+              </div>
+            </div>
+
+            <div class="row q-pb-md">
+              <div class="col">
+                <q-input
+                  dense
+                  filled
                   label="Supplier"
                   v-model="headerData.APP_CUSNM"
+                  readonly
+                ></q-input>
+              </div>
+              <div class="col q-pl-md">
+                <q-input
+                  dense
+                  filled
+                  label="Created Date"
+                  v-model="headerData.CREATED_AT"
                   readonly
                 ></q-input>
               </div>
@@ -55,6 +85,13 @@
 
       <q-card-actions align="center">
         <q-btn-group>
+          <q-btn
+            color="primary"
+            icon="print"
+            :disable="dataHasil.length === 0"
+            @click="printPO()"
+            flat
+          />
           <q-btn
             color="primary"
             icon="check"
@@ -160,7 +197,7 @@ const getData = async () => {
 };
 
 const onApprove = () => {
-  q.dialog({
+  $q.dialog({
     title: "Confirm",
     message: "Are you sure want to Approve this quotation ?",
     cancel: true,
@@ -170,10 +207,12 @@ const onApprove = () => {
     await api_web
       .put(`approve/purchase-order/${btoa(props.cd)}`, {
         TPCHORD_BRANCH: props.dataHeader.TPCHORD_BRANCH,
+        conn: props.conn,
       })
       .then((response) => {
         loading.value = false;
         getData();
+        onDialogOK();
       })
       .catch((e) => {
         loading.value = false;
@@ -204,6 +243,7 @@ const onReject = () => {
         .put(`revise/purchase-order/${btoa(props.cd)}`, {
           remark: datas,
           TPCHORD_BRANCH: props.dataHeader.TPCHORD_BRANCH,
+          conn: props.conn,
         })
         .then((response) => {
           loading.value = false;
@@ -216,9 +256,12 @@ const onReject = () => {
   });
 };
 
-const printQuot = () => {
+const printPO = () => {
   window
-    .open(process.env.API_WEB + "PDF/quotation/" + btoa(props.cd), "_blank")
+    .open(
+      process.env.API_WEB + "PDF/purchase/po/" + btoa(props.cd) + '/' + btoa(props.conn),
+      "_blank"
+    )
     .focus();
 };
 </script>

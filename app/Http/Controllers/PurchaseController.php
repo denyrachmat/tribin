@@ -418,7 +418,7 @@ class PurchaseController extends Controller
             $TPCHREQ_APPRVBY = $r['TPCHREQ_APPRVBY'];
         }
 
-        $RSDetail = T_PCHREQDETA::on($this->dedicatedConnection)->select('TPCHREQDETA_ITMCD', 'MITM_BRAND', 'MITM_ITMNM', 'MITM_MODEL', 'TPCHREQDETA_ITMQT', 'TPCHREQDETA_REQDT', 'TPCHREQDETA_REMARK')
+        $RSDetail = T_PCHREQDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TPCHREQDETA_ITMCD', 'MITM_BRAND', 'MITM_ITMNM', 'MITM_MODEL', 'TPCHREQDETA_ITMQT', 'TPCHREQDETA_REQDT', 'TPCHREQDETA_REMARK')
             ->leftJoin("M_ITM", function ($join) {
                 $join->on("TPCHREQDETA_ITMCD", "=", "MITM_ITMCD")
                     ->on("TPCHREQDETA_BRANCH", "=", "MITM_BRANCH");
@@ -509,7 +509,7 @@ class PurchaseController extends Controller
         }
         $RSUserWhoPrepare = User::select('name')->whereIn('nick_name', [$created_by])->first();
 
-        $RSDetail = T_PCHORDDETA::on($this->dedicatedConnection)->select('TPCHORDDETA_ITMCD', 'MITM_BRAND', 'MITM_ITMNM', 'MITM_MODEL', 'TPCHORDDETA_ITMQT', 'TPCHORDDETA_ITMPRC_PER', 'MITM_STKUOM')
+        $RSDetail = T_PCHORDDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TPCHORDDETA_ITMCD', 'MITM_BRAND', 'MITM_ITMNM', 'MITM_MODEL', 'TPCHORDDETA_ITMQT', 'TPCHORDDETA_ITMPRC_PER', 'MITM_STKUOM')
             ->leftJoin("M_ITM", function ($join) {
                 $join->on("TPCHORDDETA_ITMCD", "=", "MITM_ITMCD")
                     ->on('TPCHORDDETA_BRANCH', '=', 'MITM_BRANCH');

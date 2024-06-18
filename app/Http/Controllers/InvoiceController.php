@@ -216,21 +216,23 @@ class InvoiceController extends Controller
 
         $ppn = $total * 0.11;
 
-        $pdf = Pdf::loadView('pdf.invoiceDlv', array_merge(
-            [
-                'header' => $RSCG->letter_head,
-                'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-                'addr' => $RSCG->address,
-                'telp' => $RSCG->phone,
-                'isPPN' => $getCompGroups->flg_ppn,
-                'total' => $total,
-                'ppn' => $ppn,
-                'dlvDetNew' => $dlvDetParse,
-                'payment' => $request->payment,
-                'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total)
-            ],
-            $request->all()
-        )
+        $pdf = Pdf::loadView(
+            'pdf.invoiceDlv',
+            array_merge(
+                [
+                    'header' => $RSCG->letter_head,
+                    'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+                    'addr' => $RSCG->address,
+                    'telp' => $RSCG->phone,
+                    'isPPN' => $getCompGroups->flg_ppn,
+                    'total' => $total,
+                    'ppn' => $ppn,
+                    'dlvDetNew' => $dlvDetParse,
+                    'payment' => $request->payment,
+                    'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total)
+                ],
+                $request->all()
+            )
         );
 
         return base64_encode($pdf->output());
@@ -529,10 +531,12 @@ class InvoiceController extends Controller
                 ->where('TSLO_BRANCH', Auth::user()->branch)
                 ->first();
 
-            $Subject = T_QUOHEAD::on($this->dedicatedConnection)
-                ->where('TQUO_QUOCD', $Attn->TSLO_QUOCD)
-                ->where('TQUO_BRANCH', Auth::user()->branch)
-                ->first();
+            if (!empty($Attn)) {
+                $Subject = T_QUOHEAD::on($this->dedicatedConnection)
+                    ->where('TQUO_QUOCD', $Attn->TSLO_QUOCD)
+                    ->where('TQUO_BRANCH', Auth::user()->branch)
+                    ->first();
+            }
             break;
         }
 

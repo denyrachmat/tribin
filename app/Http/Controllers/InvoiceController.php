@@ -67,7 +67,7 @@ class InvoiceController extends Controller
 
         T_DLVSJDETA::on($this->dedicatedConnection)->updateOrCreate([
             'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
-        ],[
+        ], [
             'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
             'TDLVSJDETA_TYPE' => $request->TDLVSJDETA_TYPE,
             'TDLVSJDETA_CONDGRP' => $request->TDLVSJDETA_CONDGRP,
@@ -138,9 +138,14 @@ class InvoiceController extends Controller
                 'TQUO_SBJCT',
                 'TQUO_ATTN'
             )
-            ->with(['dlvdet' => function ($f) {
-                $f->join('M_ITM', 'TDLVORDDETA_ITMCD', 'MITM_ITMCD');
-            }, 'dlvacc', 'dlvsj', 'payment'])
+            ->with([
+                'dlvdet' => function ($f) {
+                    $f->join('M_ITM', 'TDLVORDDETA_ITMCD', 'MITM_ITMCD');
+                },
+                'dlvacc',
+                'dlvsj',
+                'payment'
+            ])
             ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
             ->join('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -202,7 +207,7 @@ class InvoiceController extends Controller
             $cek[] = $getSLOByItem;
             // return $getSLOByItem[0];
             if (count($getSLOByItem) > 0) {
-                $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC']  + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
+                $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
                 $total += $getTotalPrice;
                 $dlvDetParse[] = array_merge($value, ['dataSLO' => $getSLOByItem[0], 'totPRCSLO' => $getTotalPrice]);
                 // return array_merge($value, $getSLOByItem[0]);
@@ -225,7 +230,8 @@ class InvoiceController extends Controller
                 'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total)
             ],
             $request->all()
-        ));
+        )
+        );
 
         return base64_encode($pdf->output());
     }
@@ -314,10 +320,13 @@ class InvoiceController extends Controller
                 ->where('TSLO_BRANCH', Auth::user()->branch)
                 ->first();
 
-            $Subject = T_QUOHEAD::on($this->dedicatedConnection)
-                ->where('TQUO_QUOCD', $Attn->TSLO_QUOCD)
-                ->where('TQUO_BRANCH', Auth::user()->branch)
-                ->first();
+            if (!empty($Attn)) {
+                $Subject = T_QUOHEAD::on($this->dedicatedConnection)
+                    ->where('TQUO_QUOCD', $Attn->TSLO_QUOCD)
+                    ->where('TQUO_BRANCH', Auth::user()->branch)
+                    ->first();
+            }
+
             break;
         }
 
@@ -335,7 +344,7 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 ->first();
-            $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT)  + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
+            $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
             $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
             $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             $totalHargaSewa += $HargaSewa;
@@ -358,7 +367,7 @@ class InvoiceController extends Controller
         $this->fpdf->Cell(7, 5, $RSHeader->TDLVORD_REC_NO, 0, 0, 'L');
         $this->fpdf->SetFont('Arial', '', 10);
         $this->fpdf->SetXY(7, 12);
-        $this->fpdf->MultiCell(95, 4, $Company->address,  0, 'L');
+        $this->fpdf->MultiCell(95, 4, $Company->address, 0, 'L');
         $this->fpdf->SetFont('Arial', 'B', 14);
         $this->fpdf->SetXY(7, 20);
         $this->fpdf->Cell(0, 8, 'K W I T A N S I', 0, 0, 'C');
@@ -378,7 +387,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(10, 50);
         $this->fpdf->Cell(50, 5, 'Alamat', 0, 0, 'L');
         $this->fpdf->Cell(2, 5, ':');
-        $this->fpdf->MultiCell(138, 5,  $RSHeader->MCUS_ADDR1);
+        $this->fpdf->MultiCell(138, 5, $RSHeader->MCUS_ADDR1);
         $this->fpdf->Line(63, $this->fpdf->GetY() + 2, 180, $this->fpdf->GetY() + 2);
         $Yfocus = $this->fpdf->GetY() + 5;
         $this->fpdf->SetXY(10, $Yfocus);
@@ -541,7 +550,7 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 ->first();
-            $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT)  + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
+            $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
             $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
             $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             $totalHargaSewa += $HargaSewa;
@@ -649,10 +658,11 @@ class InvoiceController extends Controller
         return base64_encode($pdfFile);
     }
 
-    public function cekKwitansiNo() {
+    public function cekKwitansiNo()
+    {
         $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
-                ->orderBy('created_at', 'desc')
-                ->first();
+            ->orderBy('created_at', 'desc')
+            ->first();
 
         return $cek;
     }

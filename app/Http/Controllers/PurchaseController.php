@@ -846,12 +846,12 @@ class PurchaseController extends Controller
                 ->whereNull('deleted_at')
                 ->get();
             foreach ($RSPRDetail as $r) {
-                $totalRow = M_ITM::on($RSPR->MSUP_CGCON)
+                $totalRow = M_ITM::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)
                     ->where('MITM_ITMCD', $r->MITM_ITMCD)
                     ->where('MITM_BRANCH', $r->MITM_BRANCH)
                     ->count();
                 if ($totalRow === 0) {
-                    M_ITM::on($RSPR->MSUP_CGCON)->create([
+                    M_ITM::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)->create([
                         'MITM_ITMCD' => $r->MITM_ITMCD,
                         'MITM_ITMNM' => $r->MITM_ITMNM,
                         'MITM_STKUOM' => $r->MITM_STKUOM,

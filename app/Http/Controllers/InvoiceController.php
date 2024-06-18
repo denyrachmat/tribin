@@ -152,7 +152,7 @@ class InvoiceController extends Controller
             })
             ->leftJoin('T_SLOHEAD', 'TSLO_SLOCD', 'TDLVORDDETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TQUO_QUOCD', 'TSLO_QUOCD')
-            ->whereNotNull(DB::raw('RTRIM(TDLVORDDETA_ITMCD_ACT)'))
+            ->where(DB::raw('RTRIM(TDLVORDDETA_ITMCD_ACT)'), '<>', '')
             ->groupBy(
                 'TDLVORD_INVCD',
                 'TDLVORD_DLVCD',

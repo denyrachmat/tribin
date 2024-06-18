@@ -195,6 +195,7 @@
           .then((response) => {
             loading.value = false;
             getData();
+            onDialogOK();
           })
           .catch((e) => {
             loading.value = false;
@@ -230,6 +231,7 @@
           .then((response) => {
             loading.value = false;
             getData();
+            onDialogOK();
           })
           .catch((e) => {
             loading.value = false;

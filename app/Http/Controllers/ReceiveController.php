@@ -25,6 +25,7 @@ class ReceiveController extends Controller
 
     function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'incoming']);
         return view('transaction.receive');
     }
 
@@ -287,7 +288,7 @@ class ReceiveController extends Controller
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
-        
+
         return ['data' => $RS->get()];
     }
 

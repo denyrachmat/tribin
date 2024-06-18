@@ -1893,6 +1893,7 @@ class DeliveryController extends Controller
             ->update([
                 'TDLVORD_REC_NO' => $IDKwitansi
             ]);
+
             foreach ($request->data as $r) {
                 T_DLVORDDETA::on($this->dedicatedConnection)
                     ->where('id', $r['id'])

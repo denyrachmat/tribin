@@ -346,9 +346,17 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 ->first();
-            $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
-            $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
-            $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
+
+            if (!empty($Usage)) {
+                $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
+                $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
+                $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
+            } else {
+                $HargaSewa = 0;
+                $PeriodFrom = '';
+                $PeriodTo = '';
+            }
+
             $totalHargaSewa += $HargaSewa;
             $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
         }
@@ -358,7 +366,7 @@ class InvoiceController extends Controller
             $PPNAmount = $totalHargaSewa * 11 / 100;
         }
 
-        $subjek = ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT))));
+        $subjek = !empty($Subject) ? ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT)))) : '';
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
         $this->fpdf->AddPage("P", 'A4');
@@ -431,7 +439,7 @@ class InvoiceController extends Controller
         $Yfocus += 6;
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Lokasi', 0, 0, 'L');
-        $this->fpdf->Cell(50, 5, ': ' . $Subject->TQUO_PROJECT_LOCATION, 0, 0, 'L');
+        $this->fpdf->Cell(50, 5, ': ' . (!empty($Subject) ? $Subject->TQUO_PROJECT_LOCATION : ''), 0, 0, 'L');
         $this->fpdf->Line(63, $Yfocus + 5, 150, $Yfocus + 5);
         $Yfocus += 5;
         $this->fpdf->SetXY(110, $Yfocus);

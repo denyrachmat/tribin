@@ -818,7 +818,7 @@ class PurchaseController extends Controller
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         if (in_array($activeRole['code'], ['root','accounting', 'director', 'general_manager'])) {
             $PRCode = base64_decode($request->id);
-            $RSPR = T_PCHREQHEAD::on($this->dedicatedConnection)->select('TPCHREQ_SUPCD', 'MSUP_CGCON')
+            $RSPR = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select('TPCHREQ_SUPCD', 'MSUP_CGCON')
                 ->leftJoin('M_SUP', function ($join) {
                     $join->on('TPCHREQ_SUPCD', '=', 'MSUP_SUPCD')
                         ->on('TPCHREQ_BRANCH', '=', 'MSUP_BRANCH');
@@ -828,7 +828,7 @@ class PurchaseController extends Controller
                 ->first();
 
             # Periksa registrasi CG aktif di CG tujuan pada Customer Master
-            $RSCGActiveAsCustomer = M_CUS::on($RSPR->MSUP_CGCON)->select('MCUS_CUSCD')
+            $RSCGActiveAsCustomer = M_CUS::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)->select('MCUS_CUSCD')
                 ->where('MCUS_CGCON', $this->dedicatedConnection)->first();
 
             if (empty($RSCGActiveAsCustomer)) {
@@ -836,7 +836,7 @@ class PurchaseController extends Controller
             }
 
             # registrasi Item (jika belum ada) di CG tujuan pada Item Master
-            $RSPRDetail = T_PCHREQDETA::on($this->dedicatedConnection)->select('TPCHREQDETA_ITMQT', 'M_ITM.*')
+            $RSPRDetail = T_PCHREQDETA::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select('TPCHREQDETA_ITMQT', 'M_ITM.*')
                 ->leftJoin('M_ITM', function ($join) {
                     $join->on('TPCHREQDETA_ITMCD', '=', 'MITM_ITMCD')
                         ->on('TPCHREQDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -866,7 +866,7 @@ class PurchaseController extends Controller
                 }
             }
 
-            $affectedRow = T_PCHREQHEAD::on($this->dedicatedConnection)
+            $affectedRow = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)
                 ->where('TPCHREQ_PCHCD', $PRCode)
                 ->where('TPCHREQ_BRANCH', $request->TPCHREQ_BRANCH)
                 ->update([
@@ -879,7 +879,7 @@ class PurchaseController extends Controller
                     ->where('connection', $this->dedicatedConnection)
                     ->first();
 
-                $LastLine = DB::connection($this->dedicatedConnection)->table('T_PCHORDHEAD')
+                $LastLine = DB::connection($request->has('conn') ? $request->conn : $this->dedicatedConnection)->table('T_PCHORDHEAD')
                     ->whereMonth('created_at', '=', date('m'))
                     ->whereYear('created_at', '=', date('Y'))
                     ->whereYear('TPCHORD_BRANCH', '=', $request->TPCHREQ_BRANCH)
@@ -921,13 +921,13 @@ class PurchaseController extends Controller
                 }
 
                 # Simpan data ke Tabel PO Header
-                T_PCHORDHEAD::on($this->dedicatedConnection)->create($headerTable);
+                T_PCHORDHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->create($headerTable);
 
                 # Simpan data ke Tabel PO Detail
-                T_PCHORDDETA::on($this->dedicatedConnection)->insert($detailTable);
+                T_PCHORDDETA::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->insert($detailTable);
 
                 # Generate Sales Order Draft di CG tujuan
-                $LastLine = DB::connection($RSPR->MSUP_CGCON)->table('T_SLO_DRAFT_HEAD')
+                $LastLine = DB::connection($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)->table('T_SLO_DRAFT_HEAD')
                     ->whereMonth('created_at', '=', date('m'))
                     ->whereYear('created_at', '=', date('Y'))
                     ->whereYear('TSLODRAFT_BRANCH', '=', $request->TPCHREQ_BRANCH)
@@ -953,7 +953,7 @@ class PurchaseController extends Controller
                 ];
 
                 # Simpan data ke Tabel RO Header di CG tujuan
-                T_SLO_DRAFT_HEAD::on($RSPR->MSUP_CGCON)->create($headerTable);
+                T_SLO_DRAFT_HEAD::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)->create($headerTable);
 
                 # Simpan data ke Tabel RO Detail di CG tujuan
                 $detailTable = [];
@@ -968,7 +968,7 @@ class PurchaseController extends Controller
                         'TSLODRAFTDETA_BRANCH' => $request->TPCHREQ_BRANCH,
                     ];
                 }
-                T_SLO_DRAFT_DETAIL::on($RSPR->MSUP_CGCON)->insert($detailTable);
+                T_SLO_DRAFT_DETAIL::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)->insert($detailTable);
                 $message = 'Approved';
             } else {
                 $message =  'Something wrong please contact admin';

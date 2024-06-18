@@ -75,6 +75,7 @@
                   icon="edit"
                   @click="onClickEdit(props.row.TSLO_SLOCD)"
                   dense
+                  :disable="props.row.dlv.length > 0"
                 >
                   <q-tooltip>{{
                     props.row.dlv.length > 0

@@ -81,11 +81,50 @@
                 emit-value
                 map-options
                 :loading="loading"
-                :disable="forms.TSLO_QUOCD !== ''"
+                :disable="header.TRCV_RCVCD !== '' || inctype == 1"
+              />
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-select
+                dense
+                filled
+                label="PO Number"
+                v-model="header.PO_NO"
+                use-input
+                input-debounce="500"
+                :options="listPO"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'po')
+                "
+                behavior="dialog"
+                option-label="PO_CUSTDESC"
+                option-value="TPCHORD_PCHCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :disable="header.TRCV_RCVCD !== ''"
               />
             </div>
           </div>
         </fieldset>
+
+        <div class="row q-py-md">
+          <div class="col">
+            <q-btn-toggle
+              v-model="inctype"
+              spread
+              no-caps
+              toggle-color="purple"
+              color="white"
+              text-color="black"
+              :options="[
+                { label: 'From PO', value: 1 },
+                { label: 'Return', value: 2 },
+              ]"
+              :disable="header.TRCV_RCVCD !== ''"
+            />
+          </div>
+        </div>
 
         <fieldset
           style="
@@ -99,6 +138,19 @@
             <b>List Of Items</b>
           </legend>
 
+          <div class="row q-pb-sm">
+            <div class="col text-right">
+              <q-btn
+                flat
+                icon="add"
+                color="blue"
+                label="Add Lines"
+                @click="onAddItemLine"
+                :loading="loading"
+              >
+              </q-btn>
+            </div>
+          </div>
           <q-list bordered dense>
             <template v-if="listItems.length > 0">
               <q-item
@@ -113,17 +165,17 @@
                     {{ idx + 1 }}
                   </q-avatar>
                 </q-item-section>
-                <!-- <q-item-section>
+                <q-item-section>
                   <q-item-label>
                     <q-input
                       dense
                       label="Item Code"
                       filled
-                      v-model="items.TSLODETA_ITMCD"
+                      v-model="items.item_code"
                       readonly
                     />
                   </q-item-label>
-                </q-item-section> -->
+                </q-item-section>
                 <q-item-section>
                   <q-item-label>
                     <q-input
@@ -137,12 +189,17 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    <q-input dense label="Qty" filled v-model="items.BALQT" />
+                    <q-input
+                      dense
+                      label="Qty"
+                      filled
+                      v-model="items.quantity"
+                    />
                   </q-item-label>
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    Rp. {{ items.TSLODETA_PRC.toLocaleString() }}
+                    Rp. {{ items.unit_price.toLocaleString() }}
                   </q-item-label>
                   <q-item-label caption> Price </q-item-label>
                 </q-item-section>
@@ -186,10 +243,13 @@ const header = ref({
   TRCV_ISSUDT: "",
 });
 
-const listItems = ref([])
+const inctype = ref(1);
+
+const listItems = ref([]);
 
 const loading = ref(false);
-const listSupplier = ref([])
+const listSupplier = ref([]);
+const listPO = ref([]);
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -200,15 +260,19 @@ const filterFn = (val, update, abort, fun) => {
     if (fun === "item") {
       await getItem(val);
     }
+
+    if (fun === "po") {
+      await getPO(val);
+    }
   });
 };
 
-const getSupplier = async (val, cols = 'MSUP_SUPNM') => {
+const getSupplier = async (val, cols = "MSUP_SUPNM") => {
   loading.value = true;
   await api_web
     .post("supplier/searchAPI", {
       searchValue: val,
-      searchCol: cols
+      searchCol: cols,
     })
     .then((response) => {
       loading.value = false;
@@ -219,12 +283,12 @@ const getSupplier = async (val, cols = 'MSUP_SUPNM') => {
     });
 };
 
-const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
+const getCustomer = async (val, cols = "MCUS_CUSNM") => {
   loading.value = true;
   await api_web
     .post("customer/searchAPI", {
       searchValue: val,
-      searchCol: cols
+      searchCol: cols,
     })
     .then((response) => {
       loading.value = false;
@@ -235,4 +299,39 @@ const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
     });
 };
 
+const getPO = async (val, cols = "TPCHORD_PCHCD") => {
+  loading.value = true;
+  await api_web
+    .post("purchase-order/searchApprovedPO", {
+      searchValue: val,
+      searchCol: cols,
+    })
+    .then((response) => {
+      loading.value = false;
+      listPO.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const onClickDeleteLines = (idx) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to delete this lines no ${idx + 1} ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    listItems.value.splice(idx, 1);
+  });
+};
+
+const onAddItemLine = () => {
+  listItems.value.push({
+    item_code: "",
+    MITM_ITMNM: "",
+    quantity: "",
+    unit_price: "",
+  });
+};
 </script>

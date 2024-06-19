@@ -117,7 +117,8 @@ class PurchaseController extends Controller
                 T_PCHREQDETA::on($this->dedicatedConnection)->insert($quotationDetail);
             }
             return [
-                'msg' => 'OK', 'doc' => $newQuotationCode
+                'msg' => 'OK',
+                'doc' => $newQuotationCode
             ];
         } else {
             //Penyimpanan tambahan (setelah simpan sebelumnya dan mendapat nomor registrasi dokumen)
@@ -216,7 +217,8 @@ class PurchaseController extends Controller
         }
 
         return [
-            'msg' => 'OK', 'doc' => $newPOCode
+            'msg' => 'OK',
+            'doc' => $newPOCode
         ];
     }
 
@@ -227,7 +229,10 @@ class PurchaseController extends Controller
             ->where('TPCHREQ_PCHCD', base64_decode($request->id))
             ->where('TPCHREQ_BRANCH', Auth::user()->branch)
             ->update([
-                'TPCHREQ_PURPOSE' => $request->TPCHREQ_PURPOSE, 'TPCHREQ_ISSUDT' => $request->TPCHREQ_ISSUDT, 'TPCHREQ_TYPE' => $request->TPCHREQ_TYPE, 'TPCHREQ_SUPCD' => $request->TPCHREQ_SUPCD
+                'TPCHREQ_PURPOSE' => $request->TPCHREQ_PURPOSE,
+                'TPCHREQ_ISSUDT' => $request->TPCHREQ_ISSUDT,
+                'TPCHREQ_TYPE' => $request->TPCHREQ_TYPE,
+                'TPCHREQ_SUPCD' => $request->TPCHREQ_SUPCD
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
@@ -300,6 +305,23 @@ class PurchaseController extends Controller
         return ['data' => $RS];
     }
 
+    function searchApprovedPO(Request $request)
+    {
+        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )') AS PO_CUSTDESC"),"TPCHORD_PCHCD", "TPCHORD_SUPCD", "MSUP_SUPNM", "TPCHORD_ISSUDT", "TPCHORD_DLVDT", "TPCHORD_REQCD"])
+            ->leftJoin("M_SUP", function ($join) {
+                $join->on("TPCHORD_SUPCD", "=", "MSUP_SUPCD")
+                    ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
+            })
+            ->where('TPCHORD_BRANCH', Auth::user()->branch)
+            ->whereNotNull('TPCHORD_APPRVDT');
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        return ['data' => $RS->get()];
+    }
+
     function loadById(Request $request)
     {
         $RS = T_PCHREQDETA::on($this->dedicatedConnection)->select(["id", "TPCHREQDETA_ITMCD", "MITM_ITMNM", "TPCHREQDETA_ITMQT", "TPCHREQDETA_REQDT", "TPCHREQDETA_REMARK"])
@@ -316,13 +338,13 @@ class PurchaseController extends Controller
     {
         // return ($this->dedicatedConnection);
         $RS = T_PCHREQDETA::on($request->conn)->select([
-                "id",
-                "TPCHREQDETA_ITMCD",
-                "MITM_ITMNM",
-                "TPCHREQDETA_ITMQT",
-                "TPCHREQDETA_REQDT",
-                "TPCHREQDETA_REMARK"
-            ])
+            "id",
+            "TPCHREQDETA_ITMCD",
+            "MITM_ITMNM",
+            "TPCHREQDETA_ITMQT",
+            "TPCHREQDETA_REQDT",
+            "TPCHREQDETA_REMARK"
+        ])
             ->leftJoin("M_ITM_GRP", function ($join) {
                 $join->on("TPCHREQDETA_ITMCD", "=", "MITM_ITMNM")
                     ->on('TPCHREQDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -396,7 +418,8 @@ class PurchaseController extends Controller
     {
         $affectedRow = T_PCHREQDETA::on($this->dedicatedConnection)->where('id', $request->id)
             ->update([
-                'deleted_at' => date('Y-m-d H:i:s'), 'deleted_by' => Auth::user()->nick_name
+                'deleted_at' => date('Y-m-d H:i:s'),
+                'deleted_by' => Auth::user()->nick_name
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'could not be deleted', 'affectedRow' => $affectedRow];
     }
@@ -693,7 +716,8 @@ class PurchaseController extends Controller
         exit;
     }
 
-    public function toPDFOnDashboard($type, $id, $conn){
+    public function toPDFOnDashboard($type, $id, $conn)
+    {
         if ($type === 'pr') {
             return $this->toPDF($id, $conn);
         } else {
@@ -781,7 +805,8 @@ class PurchaseController extends Controller
                 ->groupBy('TPCHREQ_PCHCD', 'MPCHREQTYPE_NAME', 'TPCHREQ_TYPE', 'TPCHREQ_BRANCH')->get();
         }
         return [
-            'data' => $dataPurchaseRequestTobeUpproved, 'dataApproved' => $dataPurchaseRequestApproved
+            'data' => $dataPurchaseRequestTobeUpproved,
+            'dataApproved' => $dataPurchaseRequestApproved
         ];
     }
 
@@ -816,7 +841,7 @@ class PurchaseController extends Controller
     function approve(Request $request)
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['root','accounting', 'director', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
             $PRCode = base64_decode($request->id);
             $RSPR = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select('TPCHREQ_SUPCD', 'MSUP_CGCON')
                 ->leftJoin('M_SUP', function ($join) {
@@ -870,7 +895,8 @@ class PurchaseController extends Controller
                 ->where('TPCHREQ_PCHCD', $PRCode)
                 ->where('TPCHREQ_BRANCH', $request->TPCHREQ_BRANCH)
                 ->update([
-                    'TPCHREQ_APPRVBY' => Auth::user()->nick_name, 'TPCHREQ_APPRVDT' => date('Y-m-d H:i:s')
+                    'TPCHREQ_APPRVBY' => Auth::user()->nick_name,
+                    'TPCHREQ_APPRVDT' => date('Y-m-d H:i:s')
                 ]);
             if ($affectedRow) {
 
@@ -971,7 +997,7 @@ class PurchaseController extends Controller
                 T_SLO_DRAFT_DETAIL::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)->insert($detailTable);
                 $message = 'Approved';
             } else {
-                $message =  'Something wrong please contact admin';
+                $message = 'Something wrong please contact admin';
             }
 
             return ['message' => $message];
@@ -1013,7 +1039,8 @@ class PurchaseController extends Controller
                 ->where('TPCHREQ_PCHCD', base64_decode($request->id))
                 ->where('TPCHREQ_BRANCH', $request->TPCHREQ_BRANCH)
                 ->update([
-                    'TPCHREQ_REJCTBY' => Auth::user()->nick_name, 'TPCHREQ_REJCTDT' => date('Y-m-d H:i:s')
+                    'TPCHREQ_REJCTBY' => Auth::user()->nick_name,
+                    'TPCHREQ_REJCTDT' => date('Y-m-d H:i:s')
                 ]);
             $message = $affectedRow ? 'Approved' : 'Something wrong please contact admin';
             return ['message' => $message];
@@ -1030,7 +1057,8 @@ class PurchaseController extends Controller
                 ->where('TPCHORD_PCHCD', base64_decode($request->id))
                 ->where('TPCHORD_BRANCH', $request->TPCHORD_BRANCH)
                 ->update([
-                    'TPCHORD_REJCTBY' => Auth::user()->nick_name, 'TPCHORD_REJCTDT' => date('Y-m-d H:i:s')
+                    'TPCHORD_REJCTBY' => Auth::user()->nick_name,
+                    'TPCHORD_REJCTDT' => date('Y-m-d H:i:s')
                 ]);
             $message = $affectedRow ? 'Approved' : 'Something wrong please contact admin';
             return ['message' => $message];

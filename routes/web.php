@@ -357,6 +357,7 @@ Route::group(['middleware' => 'cors'], function() {
             Route::get('form', [PurchaseController::class, 'formOrder']);
             Route::post('', [PurchaseController::class, 'savePO']);
             Route::get('', [PurchaseController::class, 'searchPO']);
+            Route::post('searchApprovedPO', [PurchaseController::class, 'searchApprovedPO']);
             Route::get('document/{id}', [PurchaseController::class, 'loadPOById']);
             Route::get('approval-document/{id}', [PurchaseController::class, 'loadPOByIdApproval']);
             Route::post('approval-document', [PurchaseController::class, 'loadPOByIdApproval']);
@@ -399,7 +400,7 @@ Route::group(['middleware' => 'cors'], function() {
             Route::post('form/{id}', [ReceiveController::class, 'submit']);
             Route::post('', [ReceiveController::class, 'save']);
             Route::get('', [ReceiveController::class, 'search']);
-            Route::get('searchAPI', [ReceiveController::class, 'searchAPI']);
+            Route::post('searchAPI', [ReceiveController::class, 'searchAPI']);
             Route::get('outstanding-po', [ReceiveController::class, 'outstandingPO']);
             Route::get('outstanding-po/{id}', [ReceiveController::class, 'outstandingPOPerDocument']);
             Route::delete('item/{id}', [ReceiveController::class, 'delete']);

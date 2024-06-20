@@ -27,4 +27,8 @@ class T_PCHORDHEAD extends Model
         'TPCHORD_REQCD',
         'TPCHORD_BRANCH'
     ];
+
+    public function det() {
+        return $this->hasMany(T_PCHORDDETA::class, 'TPCHORDDETA_PCHCD', 'TPCHORD_PCHCD');
+    }
 }

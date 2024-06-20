@@ -120,7 +120,7 @@ class SupplierController extends Controller
                 ->where('MSUP_BRANCH', Auth::user()->branch);
         }
 
-        if (!empty($request->searchValue)) {
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS = (clone $RSTemp)->where((
                 !empty($request->searchCol)
                 ? $request->searchCol

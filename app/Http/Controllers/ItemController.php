@@ -143,6 +143,10 @@ class ItemController extends Controller
         $RSHead = $DataSet->table('M_ITM_GRP')->select('*')
             ->where('MITM_BRANCH', Auth::user()->branch);
 
+        if ($request->has('isITMCD') && $request->isITMCD == 1) {
+            $RSHead->where('IS_ITMCD', 1);
+        }
+
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->get();
         } else {

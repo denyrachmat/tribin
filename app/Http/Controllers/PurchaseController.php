@@ -312,6 +312,7 @@ class PurchaseController extends Controller
                 $join->on("TPCHORD_SUPCD", "=", "MSUP_SUPCD")
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
             })
+            ->with('det')
             ->where('TPCHORD_BRANCH', Auth::user()->branch)
             ->whereNotNull('TPCHORD_APPRVDT');
 

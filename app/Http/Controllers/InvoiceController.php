@@ -123,6 +123,7 @@ class InvoiceController extends Controller
     {
         $data = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->select(
+                DB::raw("CONCAT(TDLVORD_DLVCD, ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
                 'TDLVORD_INVCD',
                 'TDLVORD_DLVCD',
                 'TDLVORD_ISSUDT',

@@ -21,7 +21,7 @@
           <q-inner-loading :showing="loading" dark>
             <q-spinner-gears size="50px" color="primary" />
           </q-inner-loading>
-          <div class="row q-col-gutter-sm">
+          <div class="row q-col-gutter-md">
             <div class="col-12 col-sm-6">
               <q-input
                 label="Code"
@@ -62,7 +62,7 @@
             </div>
           </div>
 
-          <div class="row q-col-gutter-sm">
+          <div class="row q-col-gutter-md q-pt-md">
             <div class="col-12 col-sm-6">
               <q-select
                 dense
@@ -84,7 +84,7 @@
                 :disable="header.TRCV_RCVCD !== '' || inctype == 1"
               />
             </div>
-            <div class="col-12 col-sm-6">
+            <div class="col-12 col-sm-6" v-if="inctype == 1">
               <q-select
                 dense
                 filled
@@ -103,6 +103,39 @@
                 map-options
                 :loading="loading"
                 :disable="header.TRCV_RCVCD !== ''"
+                @update:model-value="(value) => onSelectPO(value)"
+              />
+            </div>
+            <div class="col-12 col-sm-6" v-else>
+              <q-select
+                dense
+                filled
+                label="JAT Invoice No"
+                v-model="header.INV_NO"
+                use-input
+                input-debounce="500"
+                :options="listInvoice"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'inv')
+                "
+                behavior="dialog"
+                option-label="LABEL"
+                option-value="TDLVORD_DLVCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :disable="header.TRCV_RCVCD !== ''"
+                @update:model-value="(value) => onSelectDN(value)"
+              />
+            </div>
+          </div>
+          <div class="row q-col-gutter-md q-pt-md">
+            <div class="col">
+              <q-input
+                label="Doc Supplier No"
+                dense
+                filled
+                v-model="header.TRCV_DOCNO"
               />
             </div>
           </div>
@@ -152,9 +185,9 @@
             </div>
           </div>
           <q-list bordered dense>
-            <template v-if="listItems.length > 0">
+            <template v-if="listDet.length > 0">
               <q-item
-                v-for="(items, idx) in listItems"
+                v-for="(items, idx) in listDet"
                 :key="idx"
                 class="q-my-sm"
                 dense
@@ -167,23 +200,25 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    <q-input
+                    <q-select
                       dense
+                      filled
                       label="Item Code"
-                      filled
                       v-model="items.item_code"
-                      readonly
-                    />
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    <q-input
-                      dense
-                      label="Item Name"
-                      filled
-                      v-model="items.MITM_ITMNM"
-                      readonly
+                      use-input
+                      input-debounce="500"
+                      :options="listItems"
+                      @filter="
+                        (val, update, abort) =>
+                          filterFn(val, update, abort, 'item')
+                      "
+                      behavior="dialog"
+                      option-label="MITM_ITMNMREAL"
+                      option-value="MITM_ITMNM"
+                      emit-value
+                      map-options
+                      :loading="loading"
+                      :disable="header.TRCV_RCVCD !== ''"
                     />
                   </q-item-label>
                 </q-item-section>
@@ -199,7 +234,12 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    Rp. {{ items.unit_price.toLocaleString() }}
+                    <q-input
+                      dense
+                      label="Price"
+                      filled
+                      v-model="items.unit_price"
+                    />
                   </q-item-label>
                   <q-item-label caption> Price </q-item-label>
                 </q-item-section>
@@ -223,6 +263,17 @@
           </q-list>
         </fieldset>
       </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn
+          label="OK"
+          color="primary"
+          @click="onSubmitData()"
+          :disable="stateSubmit"
+          :loading="loading"
+        />
+        <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
+      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
@@ -241,15 +292,23 @@ const header = ref({
   TRCV_RCVCD: "",
   TRCV_SUPCD: "",
   TRCV_ISSUDT: "",
+  INV_NO: "",
+  PO_NO: "",
+  TRCV_DOCNO: "",
 });
 
 const inctype = ref(1);
 
-const listItems = ref([]);
-
+const listDet = ref([]);
 const loading = ref(false);
 const listSupplier = ref([]);
 const listPO = ref([]);
+const listItems = ref([]);
+const listInvoice = ref([]);
+
+onMounted(() => {
+  getItem('')
+})
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -264,7 +323,27 @@ const filterFn = (val, update, abort, fun) => {
     if (fun === "po") {
       await getPO(val);
     }
+
+    if (fun === "inv") {
+      await getInvoice(val);
+    }
   });
+};
+
+const getItem = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("item/searchAPI", {
+      searchValue: val,
+      isITMCD: 1
+    })
+    .then((response) => {
+      loading.value = false;
+      listItems.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
 };
 
 const getSupplier = async (val, cols = "MSUP_SUPNM") => {
@@ -322,16 +401,73 @@ const onClickDeleteLines = (idx) => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    listItems.value.splice(idx, 1);
+    listDet.value.splice(idx, 1);
   });
 };
 
 const onAddItemLine = () => {
-  listItems.value.push({
+  listDet.value.push({
     item_code: "",
-    MITM_ITMNM: "",
     quantity: "",
     unit_price: "",
   });
 };
+
+const getInvoice = async (val, cols = "TDLVORD_DLVCD") => {
+  loading.value = true;
+  await api_web
+    .post("invoices/search", {
+      searchBy: cols,
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listInvoice.value = response.data.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const onSelectPO = (val) => {
+  let selPO = listPO.value.filter((fil) => fil.TPCHORD_PCHCD == val);
+
+  listDet.value = []
+  if (selPO.length > 0) {
+    selPO[0].det.map((valMap) => {
+      listDet.value.push({
+        item_code: valMap.TPCHORDDETA_ITMCD,
+        quantity: valMap.TPCHORDDETA_ITMQT,
+        unit_price: valMap.TPCHORDDETA_ITMPRC_PER,
+      });
+    });
+  }
+};
+
+const onSelectDN = (val) => {
+  let selDN = listInvoice.value.filter((fil) => fil.TDLVORD_DLVCD == val)
+
+  listDet.value = []
+  if (selDN.length > 0) {
+    // Accesories
+    selDN[0].dlvacc.map(accVal => {
+      listDet.value.push({
+        item_code: accVal.TDLVACCESSORY_ITMCD,
+        quantity: accVal.TDLVACCESSORY_ITMQT,
+        unit_price: 0,
+      });
+    })
+
+    // Item Detail
+    selDN[0].dlvdet.map(detVal => {
+      listDet.value.push({
+        item_code: detVal.TDLVORDDETA_ITMCD,
+        quantity: detVal.TDLVORDDETA_ITMQT,
+        unit_price: detVal.TDLVORDDETA_PRC,
+      });
+    })
+  }
+}
+
+const onSubmitData = () => {};
 </script>

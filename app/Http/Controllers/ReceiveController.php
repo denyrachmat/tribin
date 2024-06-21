@@ -25,7 +25,7 @@ class ReceiveController extends Controller
 
     function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'incoming']);
+        // return view('tribinapp_layouts', ['routeApp' => 'incoming']);
         return view('transaction.receive');
     }
 
@@ -99,7 +99,7 @@ class ReceiveController extends Controller
             })
             ->whereNull('deleted_at')
             ->where('TPCHORDDETA_BRANCH', Auth::user()->branch)
-            ->where('TPCHORD_PCHCD',  base64_decode($request->id))
+            ->where('TPCHORD_PCHCD', base64_decode($request->id))
             ->groupBy($groupedColumns)
             ->select(array_merge($groupedColumns, [DB::raw("SUM(TPCHORDDETA_ITMQT) AS POQT")]));
 
@@ -131,7 +131,8 @@ class ReceiveController extends Controller
 
         $affectedRow = T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $request->id)
             ->update([
-                'deleted_at' => date('Y-m-d H:i:s'), 'deleted_by' => Auth::user()->nick_name
+                'deleted_at' => date('Y-m-d H:i:s'),
+                'deleted_by' => Auth::user()->nick_name
             ]);
         if ($affectedRow) {
             $countRow = T_RCV_DETAIL::on($this->dedicatedConnection)
@@ -208,11 +209,13 @@ class ReceiveController extends Controller
         }
 
         return [
-            'msg' => 'OK', 'doc' => $createdObj->id
+            'msg' => 'OK',
+            'doc' => $createdObj->id
         ];
     }
 
-    function saveAPI(Request $request) {
+    function saveAPI(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'TRCV_SUPCD' => 'required',
             'TRCV_ISSUDT' => 'required|date',
@@ -223,19 +226,66 @@ class ReceiveController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'det.*' => 'required|array',
-            'det.*' => 'required|array',
-            'det.*' => 'required|numeric',
-            'det.*' => 'required|array',
-            'det.*' => 'required|numeric',
+            'det.*.item_code' => 'required|string',
+            'det.*.quantity' => 'required|numeric',
+            'det.*.unit_price' => 'required|numeric',
         ]);
+
+        $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+        $LastLine = T_RCV_HEAD::connection($this->dedicatedConnection)
+            ->whereMonth('created_at', '=', date('m'))
+            ->whereYear('created_at', '=', date('Y'))
+            ->where('TSLO_BRANCH', Auth::user()->branch)
+            ->first();
+
+        if ($request->has('TRCV_RCVCD') && !empty($request->TRCV_RCVCD)) {
+            $newDocumentCode = $request->TRCV_RCVCD;
+        } else {
+            if (!$LastLine) {
+                $newDocumentCode = '001/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            } else {
+                $getLastLine = explode('/', $LastLine->TRCV_RCVCD)[0];
+                $newDocumentCode = substr('00' . ((int) $getLastLine), -3) . '/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            }
+        }
+
+        $head = T_RCV_HEAD::on($this->dedicatedConnection)->updateOrCreate([
+            'TRCV_RCVCD' => $newDocumentCode,
+        ],[
+            'TRCV_RCVCD' => $newDocumentCode,
+            'TRCV_BRANCH' => $request->TRCV_BRANCH,
+            'TRCV_SUPCD' => $request->TRCV_SUPCD,
+            'TRCV_ISSUDT' => $request->TRCV_ISSUDT,
+            'TRCV_SUBMITTED_AT' => date('Y-m-d H:i:s'),
+            'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
+            'TRCV_DOCNO' => $request->TRCV_DOCNO,
+            'TRCV_REFFNO' => $request->TRCV_REFFNO,
+        ]);
+
+        T_RCV_DETAIL::on($this->dedicatedConnection)->where('id_header', $newDocumentCode)->delete();
+        foreach ($request->det as $key => $valueDet) {
+            T_RCV_DETAIL::on($this->dedicatedConnection)->create([
+                'id_header' => $head->id,
+                'branch' => Auth::user()->branch,
+                'po_number' => '',
+                'item_code' => $valueDet['item_code'],
+                'quantity' => $valueDet['quantity'],
+                'unit_price' => $valueDet['unit_price'],
+            ]);
+        }
+
+        return [
+            'msg' => 'Receive Stored',
+            'data' => $head
+        ];
     }
 
     function loadById(Request $request)
     {
         $documentNumber = base64_decode($request->id);
 
-        $RS = T_RCV_DETAIL::on($this->dedicatedConnection)->select(["id", "po_number",  "item_code", "MITM_ITMNM", "quantity", "unit_price"])
+        $RS = T_RCV_DETAIL::on($this->dedicatedConnection)->select(["id", "po_number", "item_code", "MITM_ITMNM", "quantity", "unit_price"])
             ->leftJoin("M_ITM", function ($join) {
                 $join->on("item_code", "=", "MITM_ITMCD")
                     ->on('branch', '=', 'MITM_BRANCH');

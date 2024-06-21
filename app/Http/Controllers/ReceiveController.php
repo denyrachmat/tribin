@@ -212,6 +212,25 @@ class ReceiveController extends Controller
         ];
     }
 
+    function saveAPI(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'TRCV_SUPCD' => 'required',
+            'TRCV_ISSUDT' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'det.*' => 'required|array',
+            'det.*' => 'required|array',
+            'det.*' => 'required|numeric',
+            'det.*' => 'required|array',
+            'det.*' => 'required|numeric',
+        ]);
+    }
+
     function loadById(Request $request)
     {
         $documentNumber = base64_decode($request->id);

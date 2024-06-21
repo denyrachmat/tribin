@@ -63,7 +63,7 @@
           </div>
 
           <div class="row q-col-gutter-md q-pt-md">
-            <div class="col-12 col-sm-6">
+            <div class="col-12 col-sm-6" v-if="inctype == 1">
               <q-select
                 dense
                 filled
@@ -73,11 +73,32 @@
                 input-debounce="500"
                 :options="listSupplier"
                 @filter="
-                  (val, update, abort) => filterFn(val, update, abort, 'cust')
+                  (val, update, abort) => filterFn(val, update, abort, 'supp')
                 "
                 behavior="dialog"
                 option-label="MSUP_SUPNM"
                 option-value="MSUP_SUPCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :disable="header.TRCV_RCVCD !== '' || inctype == 1"
+              />
+            </div>
+            <div class="col-12 col-sm-6" v-else>
+              <q-select
+                dense
+                filled
+                label="Customer Name"
+                v-model="header.TRCV_SUPCD"
+                use-input
+                input-debounce="500"
+                :options="listCustomer"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'cust')
+                "
+                behavior="dialog"
+                option-label="MCUS_CUSNM"
+                option-value="MCUS_CUSCD"
                 emit-value
                 map-options
                 :loading="loading"
@@ -89,7 +110,7 @@
                 dense
                 filled
                 label="PO Number"
-                v-model="header.PO_NO"
+                v-model="header.TRCV_REFFNO"
                 use-input
                 input-debounce="500"
                 :options="listPO"
@@ -111,7 +132,7 @@
                 dense
                 filled
                 label="JAT Invoice No"
-                v-model="header.INV_NO"
+                v-model="header.TRCV_REFFNO"
                 use-input
                 input-debounce="500"
                 :options="listInvoice"
@@ -155,6 +176,7 @@
                 { label: 'Return', value: 2 },
               ]"
               :disable="header.TRCV_RCVCD !== ''"
+              @change="(val) => header.TRCV_REFFNO = ''"
             />
           </div>
         </div>
@@ -241,7 +263,6 @@
                       v-model="items.unit_price"
                     />
                   </q-item-label>
-                  <q-item-label caption> Price </q-item-label>
                 </q-item-section>
                 <q-item-section side>
                   <q-btn
@@ -292,8 +313,7 @@ const header = ref({
   TRCV_RCVCD: "",
   TRCV_SUPCD: "",
   TRCV_ISSUDT: "",
-  INV_NO: "",
-  PO_NO: "",
+  TRCV_REFFNO: "",
   TRCV_DOCNO: "",
 });
 
@@ -302,18 +322,25 @@ const inctype = ref(1);
 const listDet = ref([]);
 const loading = ref(false);
 const listSupplier = ref([]);
+const listCustomer = ref([]);
 const listPO = ref([]);
 const listItems = ref([]);
 const listInvoice = ref([]);
 
 onMounted(() => {
   getItem('')
+  getCustomer('');
+  getSupplier('');
 })
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
+    if (fun === "supp") {
+      await getSupplier(val);
+    }
+
     if (fun === "cust") {
-      getSupplier(val);
+      await getCustomer(val);
     }
 
     if (fun === "item") {
@@ -371,7 +398,7 @@ const getCustomer = async (val, cols = "MCUS_CUSNM") => {
     })
     .then((response) => {
       loading.value = false;
-      listCustomers.value = response.data.data;
+      listCustomer.value = response.data.data;
     })
     .catch(() => {
       loading.value = false;
@@ -434,6 +461,7 @@ const onSelectPO = (val) => {
 
   listDet.value = []
   if (selPO.length > 0) {
+    header.value.TRCV_SUPCD = selPO[0].TPCHORD_SUPCD
     selPO[0].det.map((valMap) => {
       listDet.value.push({
         item_code: valMap.TPCHORDDETA_ITMCD,
@@ -449,6 +477,8 @@ const onSelectDN = (val) => {
 
   listDet.value = []
   if (selDN.length > 0) {
+    header.value.TRCV_SUPCD = selDN[0].TDLVORD_CUSCD
+
     // Accesories
     selDN[0].dlvacc.map(accVal => {
       listDet.value.push({
@@ -469,5 +499,31 @@ const onSelectDN = (val) => {
   }
 }
 
-const onSubmitData = () => {};
+const onSubmitData = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to save this Incoming ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .post(`receive/saveAPI`, {
+        ...forms.value,
+        det: quotDetail.value,
+      })
+      .then((response) => {
+        loading.value = false;
+
+        $q.notify({
+          color: "green",
+          message: `${response.data.msg}`,
+        });
+        onDialogOK();
+      })
+      .catch(() => {
+        loading.value = false;
+      });
+  });
+};
 </script>

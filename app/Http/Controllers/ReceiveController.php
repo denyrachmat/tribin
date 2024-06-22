@@ -25,7 +25,7 @@ class ReceiveController extends Controller
 
     function index()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'incoming']);
+        return view('tribinapp_layouts', ['routeApp' => 'incoming']);
         return view('transaction.receive');
     }
 
@@ -233,10 +233,9 @@ class ReceiveController extends Controller
 
         $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
-        $LastLine = T_RCV_HEAD::connection($this->dedicatedConnection)
+        $LastLine = T_RCV_HEAD::on($this->dedicatedConnection)
             ->whereMonth('created_at', '=', date('m'))
             ->whereYear('created_at', '=', date('Y'))
-            ->where('TSLO_BRANCH', Auth::user()->branch)
             ->first();
 
         if ($request->has('TRCV_RCVCD') && !empty($request->TRCV_RCVCD)) {
@@ -252,22 +251,23 @@ class ReceiveController extends Controller
 
         $head = T_RCV_HEAD::on($this->dedicatedConnection)->updateOrCreate([
             'TRCV_RCVCD' => $newDocumentCode,
-        ],[
+            'TRCV_BRANCH' => Auth::user()->branch,
+        ], [
             'TRCV_RCVCD' => $newDocumentCode,
-            'TRCV_BRANCH' => $request->TRCV_BRANCH,
+            'TRCV_BRANCH' => Auth::user()->branch,
             'TRCV_SUPCD' => $request->TRCV_SUPCD,
             'TRCV_ISSUDT' => $request->TRCV_ISSUDT,
-            'TRCV_SUBMITTED_AT' => date('Y-m-d H:i:s'),
-            'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
+            'created_by' => Auth::user()->nick_name,
             'TRCV_DOCNO' => $request->TRCV_DOCNO,
             'TRCV_REFFNO' => $request->TRCV_REFFNO,
         ]);
 
-        T_RCV_DETAIL::on($this->dedicatedConnection)->where('id_header', $newDocumentCode)->delete();
+        T_RCV_DETAIL::on($this->dedicatedConnection)->where('id_header', $head->id)->delete();
         foreach ($request->det as $key => $valueDet) {
             T_RCV_DETAIL::on($this->dedicatedConnection)->create([
                 'id_header' => $head->id,
                 'branch' => Auth::user()->branch,
+                'created_by' => Auth::user()->nick_name,
                 'po_number' => '',
                 'item_code' => $valueDet['item_code'],
                 'quantity' => $valueDet['quantity'],
@@ -347,12 +347,62 @@ class ReceiveController extends Controller
             'TSLO_POCD',
         ];
 
-        $RS = T_RCV_HEAD::on($this->dedicatedConnection)->select(["T_RCV_HEAD.id", "MSUP_SUPNM", "TRCV_RCVCD", "TRCV_ISSUDT", "MSUP_SUPCD", "TRCV_SUBMITTED_AT"])
+        $RS = T_RCV_HEAD::on($this->dedicatedConnection)->select([
+            "T_RCV_HEAD.id",
+            "TRCV_RCVCD",
+            "TRCV_ISSUDT",
+            "TRCV_REFFNO",
+            "TRCV_DOCNO",
+            DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CUSCD ELSE MSUP_SUPCD END AS MSUP_SUPCD"),
+            DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CUSNM ELSE MSUP_SUPNM END AS MSUP_SUPNM"),
+            DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CURCD ELSE MSUP_CURCD END AS MSUP_CURCD"),
+            "TRCV_SUBMITTED_AT",
+            DB::raw('SUM(quantity) AS TOT_RCV'),
+            DB::raw('SUM(quantity * unit_price) AS TOT_AMT'),
+            DB::raw('CASE WHEN MSUP_SUPCD IS NULL THEN 2 ELSE 1 END AS RCV_STATE'),
+            DB::raw('SUM(TRCVBC_BCQT) AS CONFIRMED_QTY')
+        ])
             ->leftJoin("M_SUP", function ($join) {
                 $join->on('TRCV_SUPCD', '=', 'MSUP_SUPCD')->on('TRCV_BRANCH', '=', 'MSUP_BRANCH');
             })
+            ->leftJoin("M_CUS", function ($join) {
+                $join->on('TRCV_SUPCD', '=', 'MCUS_CUSCD')->on('TRCV_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftJoin('T_RCV_DETAIL', "T_RCV_HEAD.id", 'id_header')
+            ->leftJoin('T_RCV_BC_DETAIL', "TRCV_RCVCD", 'TRCVBC_DOCNO')
+            ->with([
+                'bc',
+                'det' => function ($f) {
+                    $f->select(
+                        'id_header',
+                        'item_code',
+                        'quantity',
+                        'unit_price',
+                        DB::raw('CASE WHEN id_reff IS NULL THEN 0 ELSE 1 END AS IS_CONFIRMED')
+                    )
+                        ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'id_header')
+                        ->leftJoin('C_ITRN', function ($join) {
+                            $join->on('T_RCV_DETAIL.id', 'id_reff');
+                            $join->on('CITRN_DOCNO', 'TRCV_RCVCD');
+                            $join->where('CITRN_LOCCD', 'WH1');
+                        });
+                }
+            ])
             ->where('TRCV_BRANCH', Auth::user()->branch)
-            ->whereNull('deleted_at');
+            ->groupBy(
+                "T_RCV_HEAD.id",
+                "MSUP_SUPNM",
+                "MSUP_CURCD",
+                "TRCV_RCVCD",
+                "TRCV_ISSUDT",
+                "TRCV_DOCNO",
+                "TRCV_REFFNO",
+                "MSUP_SUPCD",
+                "MCUS_CUSCD",
+                "MCUS_CUSNM",
+                "MCUS_CURCD",
+                "TRCV_SUBMITTED_AT"
+            );
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -412,5 +462,59 @@ class ReceiveController extends Controller
             DB::rollBack();
             return response()->json([[$e->getMessage()]], 406);
         }
+    }
+
+    function confirmIncoming(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'TRCV_RCVCD' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        foreach ($request->det as $key => $value) {
+            $cek = C_ITRN::on($this->dedicatedConnection)
+                ->where('CITRN_LOCCD', 'WH1')
+                ->where('CITRN_DOCNO', $request->TRCV_RCVCD)
+                ->where('CITRN_FORM', 'INC-SHP')
+                ->where('id_reff', $value['id'])
+                ->first();
+
+            if (empty($cek) && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
+                C_ITRN::on($this->dedicatedConnection)->create([
+                    'CITRN_BRANCH' => Auth::user()->branch,
+                    'CITRN_LOCCD' => 'WH1',
+                    'CITRN_DOCNO' => $request->TRCV_RCVCD,
+                    'CITRN_ISSUDT' => $request->TRCV_ISSUDT,
+                    'CITRN_FORM' => 'INC-SHP',
+                    'CITRN_ITMCD' => $value['item_code'],
+                    'CITRN_ITMQT' => $value['quantity'],
+                    'CITRN_PRCPER' => $value['unit_price'],
+                    'CITRN_PRCAMT' => $value['unit_price'] * $value['quantity'],
+                    'created_by' => Auth::user()->nick_name,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'id_reff' => $value['id'],
+                ]);
+
+                T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $value['id'])->update([
+                    'updated_by' => Auth::user()->nick_name,
+                ]);
+            }
+        }
+
+        $cekConfirmed = array_filter($request->det, function ($f) {
+            return $f['IS_CONFIRMED'] == 1;
+        });
+
+        if (count($cekConfirmed) === count($request->det)) {
+            T_RCV_HEAD::on($this->dedicatedConnection)->where('TRCV_RCVCD', $request->TRCV_RCVCD)->update([
+                'TRCV_SUBMITTED_AT' => date('Y-m-d H:i:s'),
+                'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
+            ]);
+        }
+
+        return ['message' => 'Submitted successfully'];
     }
 }

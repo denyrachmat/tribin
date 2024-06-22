@@ -57,19 +57,16 @@
           <!-- For header -->
           <template v-slot:header="props">
             <q-tr :props="props">
+              <q-th auto-width>Action</q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
               </q-th>
-              <q-th auto-width>Action</q-th>
             </q-tr>
           </template>
 
           <!-- For Body -->
           <template v-slot:body="props">
             <q-tr :props="props">
-              <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.value }}
-              </q-td>
               <q-td auto-width>
                 <q-btn
                   flat
@@ -77,6 +74,7 @@
                   icon="edit"
                   @click="onClickNew(props.row)"
                   dense
+                  :disable="props.row.TRCV_SUBMITTED_AT"
                 >
                   <q-tooltip>Edit Data</q-tooltip>
                 </q-btn>
@@ -84,11 +82,24 @@
                   flat
                   color="red"
                   icon="delete"
-                  @click="onDelete(props.row.TDLVORD_DLVCD)"
+                  @click="onDelete(props.row.id)"
+                  dense
+                  :disable="props.row.TRCV_SUBMITTED_AT"
+                >
+                  <q-tooltip>Delete Data</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="indigo"
+                  icon="check"
+                  @click="onConfirmation(props.row)"
                   dense
                 >
-                  <q-tooltip>Edit Data</q-tooltip>
+                  <q-tooltip>Confirm Data</q-tooltip>
                 </q-btn>
+              </q-td>
+              <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                {{ col.value }}
               </q-td>
             </q-tr>
           </template>
@@ -103,6 +114,7 @@ import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
 import incomingCreate from "./incomingCreate.vue";
+import incomingConfirmDet from "./incomingConfirmDet.vue"
 
 const $q = useQuasar()
 
@@ -128,6 +140,14 @@ const cols = ref([
     field: "TOT_RCV",
     sortable: true,
     align: "left",
+    format: val => `${val.toLocaleString()}`,
+  },
+  {
+    name: "MSUP_CURCD",
+    label: "Currency",
+    field: "MSUP_CURCD",
+    sortable: true,
+    align: "left",
   },
   {
     name: "TOT_AMT",
@@ -135,6 +155,7 @@ const cols = ref([
     field: "TOT_AMT",
     sortable: true,
     align: "left",
+    format: val => `${val.toLocaleString()}`,
   },
 ])
 
@@ -172,5 +193,21 @@ const onClickNew = (data = []) => {
   }).onOk(async (val) => {
     getOutgoingData();
   });
+}
+
+const onConfirmation = (data = []) => {
+  $q.dialog({
+    component: incomingConfirmDet,
+    componentProps: {
+      dataHeader: data,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    getOutgoingData();
+  });
+}
+
+const onDelete = (data) => {
+
 }
 </script>

@@ -399,6 +399,8 @@ Route::group(['middleware' => 'cors'], function() {
             Route::put('form/{id}', [ReceiveController::class, 'update']);
             Route::post('form/{id}', [ReceiveController::class, 'submit']);
             Route::post('', [ReceiveController::class, 'save']);
+            Route::post('saveAPI', [ReceiveController::class, 'saveAPI']);
+            Route::post('confirmIncoming', [ReceiveController::class, 'confirmIncoming']);
             Route::get('', [ReceiveController::class, 'search']);
             Route::post('searchAPI', [ReceiveController::class, 'searchAPI']);
             Route::get('outstanding-po', [ReceiveController::class, 'outstandingPO']);

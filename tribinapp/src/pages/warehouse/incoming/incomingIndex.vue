@@ -70,32 +70,33 @@
               <q-td auto-width>
                 <q-btn
                   flat
-                  color="orange"
+                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'orange'"
                   icon="edit"
                   @click="onClickNew(props.row)"
                   dense
-                  :disable="props.row.TRCV_SUBMITTED_AT"
+                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
                 >
-                  <q-tooltip>Edit Data</q-tooltip>
+                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Edit Data'}}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  color="red"
+                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'red'"
                   icon="delete"
                   @click="onDelete(props.row.id)"
                   dense
-                  :disable="props.row.TRCV_SUBMITTED_AT"
+                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
                 >
-                  <q-tooltip>Delete Data</q-tooltip>
+                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Delete Data'}}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  color="indigo"
+                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'indigo'"
                   icon="check"
                   @click="onConfirmation(props.row)"
                   dense
+                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
                 >
-                  <q-tooltip>Confirm Data</q-tooltip>
+                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Confirm Data'}}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">

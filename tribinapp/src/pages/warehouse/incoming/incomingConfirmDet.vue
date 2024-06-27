@@ -348,6 +348,7 @@ onMounted(async () => {
 
     props.dataHeader.det.map((val) => {
       listDet.value.push({
+        id: val.id,
         item_code: val.item_code,
         quantity: val.quantity,
         unit_price: val.unit_price,
@@ -543,12 +544,13 @@ const onSubmitData = async (pass = false) => {
 const onConfirmAll = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to confirm all incoming item and save data ?`,
+    message: `Are you sure want to confirm all incoming item and save data ? This will confirm default qty.`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
     listDet.value.map((val) => {
       val.IS_CONFIRMED = 1;
+      val.CONFIRMED_QTY = val.quantity
     });
 
     onSubmitData(true);

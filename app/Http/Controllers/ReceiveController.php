@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\C_ITRN;
 use App\Models\T_PCHORDDETA;
+use App\Models\T_RCV_BC_DETAIL;
 use App\Models\T_RCV_DETAIL;
 use App\Models\T_RCV_HEAD;
 use Exception;
@@ -374,6 +375,7 @@ class ReceiveController extends Controller
                 'bc',
                 'det' => function ($f) {
                     $f->select(
+                        'T_RCV_DETAIL.id',
                         'id_header',
                         'item_code',
                         'quantity',
@@ -500,6 +502,25 @@ class ReceiveController extends Controller
 
                 T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $value['id'])->update([
                     'updated_by' => Auth::user()->nick_name,
+                ]);
+
+                $cekLatestBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+                    ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
+                    ->first();
+
+                $bc = '';
+                if (empty($cekLatestBarcode)) {
+                    $bc = 'BC'.date('Ymd').'0001';
+                } else {
+                    $bc = 'BC'.date('Ymd').sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
+                }
+
+                // Save to be incoming barcode
+                T_RCV_BC_DETAIL::on($this->dedicatedConnection)->create([
+                    'TRCVBC_BCCD' => $bc,
+                    'TRCVBC_DOCNO' => $request->TRCV_RCVCD,
+                    'TRCVBC_BCQT' => $value['CONFIRMED_QTY'],
+                    'TRCVBC_DETID' => $value['id'],
                 ]);
             }
         }

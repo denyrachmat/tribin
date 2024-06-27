@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccessRulesController;
+use App\Http\Controllers\AccountingIFController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CoaController;
@@ -429,6 +430,13 @@ Route::group(['middleware' => 'cors'], function() {
         Route::resource('servicesOPR', ServiceOprController::class);
         Route::prefix('servicesOPRs')->group(function () {
             Route::post('search' ,[ServiceOprController::class, 'search']);
+        });
+
+        Route::prefix('acc')->group(function() {
+            Route::get('form', [AccountingIFController::class, 'index']);
+            Route::post('searchAPI', [AccountingIFController::class, 'searchAPI']);
+            Route::get('submitClosing/{date}', [AccountingIFController::class, 'submitClosing']);
+
         });
     });
 });

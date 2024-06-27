@@ -16,6 +16,7 @@ const routes = [
       { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },
       { path: 'invoice', component: () => import('pages/warehouse/invoice/invoiceView.vue') },
       { path: 'incoming', component: () => import('pages/warehouse/incoming/incomingIndex.vue') },
+      { path: 'accIF', component: () => import('pages/transaction/accounting/closing/accClosingIndex.vue') },
     ]
   },
 

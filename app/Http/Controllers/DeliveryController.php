@@ -509,7 +509,7 @@ class DeliveryController extends Controller
                     ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->whereNull('TDLVORDDETA_ITMCD_ACT');
+            ->where('TDLVORDDETA_ITMCD_ACT', '');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

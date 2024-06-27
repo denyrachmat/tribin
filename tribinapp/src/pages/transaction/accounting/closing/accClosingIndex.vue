@@ -11,6 +11,8 @@
 
     <q-separator />
 
-    <div class="row q-pt-md"></div>
+    <div class="row q-pt-md">
+
+    </div>
   </div>
 </template>

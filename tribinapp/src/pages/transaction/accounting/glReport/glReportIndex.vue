@@ -4,15 +4,170 @@
       <div class="col">
         <span class="text-h4">GL Report</span>
       </div>
-      <div class="col text-right">
-      </div>
+      <div class="col text-right"></div>
     </div>
 
     <q-separator />
 
     <div class="row q-pt-md">
-      <div class="col"></div>
+      <div class="col">
+        <q-select
+          filled
+          label="Account Code From"
+          v-model="accFr"
+          use-input
+          input-debounce="500"
+          :options="listCOA"
+          @filter="(val, update, abort) => filterFn(val, update, abort, 'coa')"
+          behavior="dialog"
+          option-label="MCOA_COANM"
+          option-value="MCOA_COACD"
+          emit-value
+          map-options
+          :loading="loading"
+        >
+        </q-select>
+      </div>
+      <div class="col q-pl-md">
+        <q-select
+          filled
+          label="Account Code To"
+          v-model="accTo"
+          use-input
+          input-debounce="500"
+          :options="listCOA"
+          @filter="(val, update, abort) => filterFn(val, update, abort, 'coa')"
+          behavior="dialog"
+          option-label="MCOA_COANM"
+          option-value="MCOA_COACD"
+          emit-value
+          map-options
+          :loading="loading"
+        >
+        </q-select>
+      </div>
+    </div>
+
+    <div class="row q-pt-md">
+      <div class="col">
+        <q-input filled v-model="dateFr" label="Closing Date From">
+          <template v-slot:prepend>
+            <q-icon name="event" class="cursor-pointer">
+              <q-popup-proxy
+                cover
+                transition-show="scale"
+                transition-hide="scale"
+              >
+                <q-date v-model="dateFr" mask="YYYY-MM-DD">
+                  <div class="row items-center justify-end">
+                    <q-btn v-close-popup label="Close" color="primary" flat />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
+      </div>
+      <div class="col q-pl-md">
+        <q-input filled v-model="dateTo" label="Closing Date To">
+          <template v-slot:prepend>
+            <q-icon name="event" class="cursor-pointer">
+              <q-popup-proxy
+                cover
+                transition-show="scale"
+                transition-hide="scale"
+              >
+                <q-date v-model="dateTo" mask="YYYY-MM-DD">
+                  <div class="row items-center justify-end">
+                    <q-btn v-close-popup label="Close" color="primary" flat />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
+      </div>
+    </div>
+
+    <div class="row q-pt-md">
+      <div class="col">
+        <q-btn
+          :loading="loading"
+          label="export excel"
+          color="green"
+          @click="onExportReport()"
+        />
+      </div>
     </div>
   </div>
 </template>
-<script setup></script>
+<script setup>
+import { onMounted, ref } from "vue";
+import { useQuasar } from "quasar";
+import { api, api_web } from "boot/axios";
+
+const $q = useQuasar();
+
+const accFr = ref("");
+const accTo = ref("");
+const dateFr = ref("");
+const dateTo = ref("");
+const listCOA = ref([])
+const loading = ref(false);
+
+const filterFn = (val, update, abort, fun) => {
+  update(async () => {
+    if (fun === "coa") {
+      await getCOA(val);
+    }
+  });
+};
+
+const getCOA = async (val, cols = "MCOA_COACD") => {
+  loading.value = true;
+  await api_web
+    .post("coa/searchAPI", {
+      searchValue: val,
+      searchCol: cols,
+    })
+    .then((response) => {
+      loading.value = false;
+      listCOA.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const onExportReport = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to export excel report ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .post(`acc/exportGLReport`, {
+        accFr: accFr.value,
+        accTo: accTo.value,
+        dateFr: dateFr.value,
+        dateTo: dateTo.value,
+      }, {
+        responseType: 'arraybuffer'
+      })
+      .then((datas) => {
+        loading.value = false;
+        const link = document.createElement("a");
+        link.download = name;
+        // const data = await fetch(datas).then((res) => res.blob());
+        link.href = window.URL.createObjectURL(
+          new Blob([datas.data], { type: "application/vnd.ms-excel" })
+        );
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(link.href);
+      });
+  });
+};
+</script>

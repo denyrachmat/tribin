@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\View\Factory;
 use App\Models\T_GLHIST;
+use Excel;
+
+use App\Exports\acc\glReportExport;
 
 class AccountingIFController extends Controller
 {
@@ -59,5 +62,26 @@ class AccountingIFController extends Controller
             'msg' => 'Success',
             'data' => $insertedData
         ];
+    }
+
+    public function glreportform() {
+        return view('tribinapp_layouts', ['routeApp' => 'glReport']);
+    }
+
+    public function journalreportform() {
+        return view('tribinapp_layouts', ['routeApp' => 'journalReport']);
+    }
+
+    public function exportGLReport(Request $request) {
+        return Excel::download(new glReportExport(
+            $this->dedicatedConnection,
+            $request->accFr,
+            $request->accTo,
+            empty($request->dateFr) ? '1970-01-01' : $request->dateFr,
+            empty($request->dateTo) ? '2999-12-31' : $request->dateTo,
+        )
+        , 'glExport.xlsx');
+
+        return 'storage/app/public/glExport.xlsx';
     }
 }

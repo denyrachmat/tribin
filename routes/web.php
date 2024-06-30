@@ -135,6 +135,7 @@ Route::group(['middleware' => 'cors'], function() {
             Route::get('form', [CoaController::class, 'index']);
             Route::post('import', [CoaController::class, 'importFromAnotherCompany']);
             Route::get('', [CoaController::class, 'search']);
+            Route::post('searchAPI', [CoaController::class, 'searchAPI']);
             Route::post('', [CoaController::class, 'simpan']);
             Route::put('{id}', [CoaController::class, 'update']);
         });
@@ -434,9 +435,11 @@ Route::group(['middleware' => 'cors'], function() {
 
         Route::prefix('acc')->group(function() {
             Route::get('form', [AccountingIFController::class, 'index']);
+            Route::get('glreportform', [AccountingIFController::class, 'glreportform']);
+            Route::get('journalreportform', [AccountingIFController::class, 'journalreportform']);
+            Route::post('exportGLReport', [AccountingIFController::class, 'exportGLReport']);
             Route::post('searchAPI', [AccountingIFController::class, 'searchAPI']);
             Route::get('submitClosing/{date}', [AccountingIFController::class, 'submitClosing']);
-
         });
     });
 });

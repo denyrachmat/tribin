@@ -80,6 +80,22 @@ class CoaController extends Controller
         return ['data' => $RS];
     }
 
+    function searchAPI(Request $request)
+    {
+        // $columnMap = [
+        //     'MCOA_COACD',
+        //     'MCOA_COANM',
+        // ];
+        $RS = M_COA::on($this->dedicatedConnection)
+            ->select('MCOA_COACD', DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM"));
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', (string)$request->searchValue . '%');
+        }
+
+        return ['data' => $RS->get()];
+    }
+
     function update(Request $request)
     {
         $affectedRow = M_COA::on($this->dedicatedConnection)

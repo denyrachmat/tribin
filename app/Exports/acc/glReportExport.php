@@ -65,8 +65,8 @@ class glReportExport implements FromCollection, WithHeadings, WithEvents
                 'ACCDESC' => ($key === 0 || $value->ACC !== $data[$key - 1]->ACC) || str_contains($value->ACCDESC, 'Total') ? $value->ACCDESC : '',
                 'DOCCD' => $value->DOCCD,
                 'CURR' => $value->CURR,
-                'DBAMNT' => $value->DBAMNT,
-                'CRAMNT' => $value->CRAMNT,
+                'DBAMNT' => $value->DBAMNT == 0 ? '0' : $value->DBAMNT,
+                'CRAMNT' => $value->CRAMNT == 0 ? '0' : $value->CRAMNT,
             ];
         }
 

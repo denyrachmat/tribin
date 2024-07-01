@@ -19,6 +19,7 @@ const routes = [
       { path: 'accIF', component: () => import('pages/transaction/accounting/closing/accClosingIndex.vue') },
       { path: 'glReport', component: () => import('pages/transaction/accounting/glReport/glReportIndex.vue') },
       { path: 'journalReport', component: () => import('pages/transaction/accounting/journalReport/journalReportIndex.vue') },
+      { path: 'journalInput', component: () => import('pages/transaction/accounting/journalInput/journalInputIndex.vue') },
     ]
   },
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccessRulesController;
 use App\Http\Controllers\AccountingIFController;
+use App\Http\Controllers\AccountingJournalController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CoaController;
@@ -438,8 +439,14 @@ Route::group(['middleware' => 'cors'], function() {
             Route::get('glreportform', [AccountingIFController::class, 'glreportform']);
             Route::get('journalreportform', [AccountingIFController::class, 'journalreportform']);
             Route::post('exportGLReport', [AccountingIFController::class, 'exportGLReport']);
+            Route::post('exportJournalReport', [AccountingIFController::class, 'exportJournalReport']);
             Route::post('searchAPI', [AccountingIFController::class, 'searchAPI']);
             Route::get('submitClosing/{date}', [AccountingIFController::class, 'submitClosing']);
+
+            Route::prefix('journal')->group(function() {
+                Route::post('searchAPI', [AccountingJournalController::class, 'searchAPI']);
+                Route::resource('', AccountingJournalController::class);
+            });
         });
     });
 });

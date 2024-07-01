@@ -87,10 +87,15 @@ class CoaController extends Controller
         //     'MCOA_COANM',
         // ];
         $RS = M_COA::on($this->dedicatedConnection)
-            ->select('MCOA_COACD', DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM"));
+            ->select(
+                'MCOA_COACD', 
+                DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM"),
+                'MCOA_TYPE',
+                'MCOA_CURR'
+            );
 
-        if (!empty($request->searchBy) && !empty($request->searchValue)) {
-            $RS->where($request->searchBy, 'like', (string)$request->searchValue . '%');
+        if (!empty($request->searchCol) && !empty($request->searchValue)) {
+            $RS = (clone $RS)->where($request->searchCol, 'like', (string)$request->searchValue . '%');
         }
 
         return ['data' => $RS->get()];

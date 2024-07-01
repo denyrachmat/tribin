@@ -162,7 +162,7 @@ const onExportReport = () => {
         link.download = name;
         // const data = await fetch(datas).then((res) => res.blob());
         link.href = window.URL.createObjectURL(
-          new Blob([datas.data], { type: "application/vnd.ms-excel" })
+          new Blob([datas.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
         );
         link.click();
         link.remove();

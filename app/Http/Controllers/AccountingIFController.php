@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\acc\journalReportExport;
 use Illuminate\Http\Request;
 use App\Models\T_SLOHEAD;
 use Illuminate\Support\Facades\DB;
@@ -81,7 +82,14 @@ class AccountingIFController extends Controller
             empty($request->dateTo) ? '2999-12-31' : $request->dateTo,
         )
         , 'glExport.xlsx');
+    }
 
-        return 'storage/app/public/glExport.xlsx';
+    public function exportJournalReport(Request $request) {
+        return Excel::download(new journalReportExport(
+            $this->dedicatedConnection,
+            empty($request->dateFr) ? '1970-01-01' : $request->dateFr,
+            empty($request->dateTo) ? '2999-12-31' : $request->dateTo,
+        )
+        , 'journalExport.xlsx');
     }
 }

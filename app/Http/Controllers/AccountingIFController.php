@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\View\Factory;
 use App\Models\T_GLHIST;
-use Excel;
+use Maatwebsite\Excel\Facades\Excel;
 
 use App\Exports\acc\glReportExport;
 

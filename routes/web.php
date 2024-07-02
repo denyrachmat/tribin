@@ -19,6 +19,10 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\payroll\DashboardController;
+use App\Http\Controllers\payroll\DeductionController;
+use App\Http\Controllers\payroll\HelperController;
+use App\Http\Controllers\payroll\ProfileController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReceiveController;
@@ -68,7 +72,7 @@ Route::get('/version', function () {
     return app()->version();
 });
 
-Route::group(['middleware' => 'cors'], function() {
+Route::group(['middleware' => 'cors'], function () {
     Route::middleware('auth')->group(function () {
         Route::get('actionlogout', [LoginController::class, 'actionlogout'])->name('actionlogout');
 
@@ -229,7 +233,7 @@ Route::group(['middleware' => 'cors'], function() {
         });
 
         Route::resource('invoice', InvoiceController::class);
-        Route::prefix('invoices')->group(function() {
+        Route::prefix('invoices')->group(function () {
             Route::post('search', [InvoiceController::class, 'search']);
             Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
             Route::get('printKwitansi/{doc}', [InvoiceController::class, 'printKwitansi']);
@@ -420,21 +424,21 @@ Route::group(['middleware' => 'cors'], function() {
         #Terkait Service
         Route::resource('servicesAdmin', ServiceAdminController::class);
         Route::prefix('servicesAdmins')->group(function () {
-            Route::post('search' ,[ServiceAdminController::class, 'search']);
-            Route::put('updateByDet/{id}' ,[ServiceAdminController::class, 'updateByDet']);
-            Route::put('updateDetByIDHead/{id}' ,[ServiceAdminController::class, 'updateDetByIDHead']);
-            Route::get('printInvoice/{id}' ,[ServiceAdminController::class, 'printInvoicePDF']);
-            Route::get('viewUnapproveMgr' ,[ServiceAdminController::class, 'viewUnapproveMgr']);
-            Route::get('viewUnapproveMgrDet/{id}' ,[ServiceAdminController::class, 'viewUnapproveDetail']);
-            Route::get('listUnapproveMgr' ,[ServiceAdminController::class, 'showListUnapproveMgr']);
+            Route::post('search', [ServiceAdminController::class, 'search']);
+            Route::put('updateByDet/{id}', [ServiceAdminController::class, 'updateByDet']);
+            Route::put('updateDetByIDHead/{id}', [ServiceAdminController::class, 'updateDetByIDHead']);
+            Route::get('printInvoice/{id}', [ServiceAdminController::class, 'printInvoicePDF']);
+            Route::get('viewUnapproveMgr', [ServiceAdminController::class, 'viewUnapproveMgr']);
+            Route::get('viewUnapproveMgrDet/{id}', [ServiceAdminController::class, 'viewUnapproveDetail']);
+            Route::get('listUnapproveMgr', [ServiceAdminController::class, 'showListUnapproveMgr']);
         });
 
         Route::resource('servicesOPR', ServiceOprController::class);
         Route::prefix('servicesOPRs')->group(function () {
-            Route::post('search' ,[ServiceOprController::class, 'search']);
+            Route::post('search', [ServiceOprController::class, 'search']);
         });
 
-        Route::prefix('acc')->group(function() {
+        Route::prefix('acc')->group(function () {
             Route::get('form', [AccountingIFController::class, 'index']);
             Route::get('glreportform', [AccountingIFController::class, 'glreportform']);
             Route::get('journalreportform', [AccountingIFController::class, 'journalreportform']);
@@ -443,17 +447,80 @@ Route::group(['middleware' => 'cors'], function() {
             Route::post('searchAPI', [AccountingIFController::class, 'searchAPI']);
             Route::get('submitClosing/{date}', [AccountingIFController::class, 'submitClosing']);
 
-            Route::prefix('journal')->group(function() {
+            Route::prefix('journal')->group(function () {
                 Route::post('searchAPI', [AccountingJournalController::class, 'searchAPI']);
                 Route::resource('', AccountingJournalController::class);
             });
         });
+
+        Route::prefix('payroll')->group(function () {
+            // media related routes
+            Route::post('/media', [HelperController::class, 'storeMedia'])->name('storeMedia');
+            Route::get('/media/showMediaFromTempFolder/{name}', [HelperController::class, 'showMediaFromTempFolder'])->name('showMediaFromTempFolder');
+            Route::post('/media/base64EncodedData', [HelperController::class, 'storeMediaBase64'])->name('storeMediaBase64');
+            Route::post('/media/removeMediaFromTempFolder/{name}', [HelperController::class, 'removeMediaFromTempFolder'])->name('removeMediaFromTempFolder');
+            Route::post('/media/removeMedia/{model}/{model_id}/{collection}', [HelperController::class, 'removeMedia'])->name('removeMedia');
+            Route::post('/confirm/password', [HelperController::class, 'confirmPassword'])->name('confirmPassword');
+
+            // Dashboard Routes
+            Route::get("/dashboard", [DashboardController::class, 'dashboard'])->name('dashboard');
+
+            //admin profile route
+            Route::get("/profile", [ProfileController::class, 'index'])->name('profile.index');
+            Route::post("/profile", [ProfileController::class, 'update'])->name('profile.update');
+
+            //position routes
+            Route::resource('position', 'payroll/PositionController');
+            Route::post('getdata/position', "payroll/PositionController@getData")->name('position.getData');
+            Route::post('all-delete/position/', "payroll/PositionController@massDelete")->name('position.massDelete');
+
+            //deduction routes
+            Route::resource('deduction', DeductionController::class);
+            Route::post('getdata/deduction', [DeductionController::class, 'getData'])->name('deduction.getData');
+            Route::post('all-delete/deduction/', [DeductionController::class, 'massDelete'])->name('deduction.massDelete');
+
+            //schedule routes
+            Route::resource('schedule', 'payroll/ScheduleController');
+            Route::post('getdata/schedule', "payroll/ScheduleController@getData")->name('schedule.getData');
+            Route::post('all-delete/schedule/', "payroll/ScheduleController@massDelete")->name('schedule.massDelete');
+
+            //employee routes
+            Route::resource('employee', 'payroll/EmployeeController');
+            Route::post('getdata/employee', "payroll/EmployeeController@getData")->name('employee.getData');
+            Route::post('get-employees-data', "payroll/EmployeeController@getDataTable")->name('employee.getDataTable');
+            Route::post('all-delete/employee/', "payroll/EmployeeController@massDelete")->name('employee.massDelete');
+
+            //overtime routes
+            Route::resource('overtime', 'payroll/OvertimeController');
+            Route::post('getdata/overtime', "payroll/OvertimeController@getData")->name('overtime.getData');
+            Route::post('get-overtime-data', "payroll/OvertimeController@getDataTable")->name('overtime.getDataTable');
+            Route::post('all-delete/overtime/', "payroll/OvertimeController@massDelete")->name('overtime.massDelete');
+
+            //cashadvance routes
+            Route::resource('cashadvance', 'payroll/CashAdvanceController');
+            Route::post('getdata/cashadvance', "payroll/CashAdvanceController@getData")->name('cashadvance.getData');
+            Route::post('get-cashadvance-data', "payroll/CashAdvanceController@getDataTable")->name('cashadvance.getDataTable');
+            Route::post('all-delete/cashadvance/', "payroll/CashAdvanceController@massDelete")->name('cashadvance.massDelete');
+
+            //attendance routes
+            Route::resource('attendance', 'payroll/AttendanceController');
+            Route::post('getdata/attendance', "payroll/AttendanceController@getData")->name('attendance.getData');
+            Route::post('get-attendance-data', "payroll/AttendanceController@getDataTable")->name('attendance.getDataTable');
+            Route::post('all-delete/attendance/', "payroll/AttendanceController@massDelete")->name('attendance.massDelete');
+
+            //payroll routes
+            Route::get('payroll', "payroll/PayrollController@index")->name('payroll.index');
+            Route::post('getdata/payroll', "payroll/PayrollController@getData")->name('payroll.getData');
+            Route::post('get-payroll-data', "payroll/PayrollController@getDataTable")->name('payroll.getDataTable');
+            Route::post('payroll/download-payroll', "payroll/PayrollController@payrollExportPDF")->name('payroll.payrollExportPDF');
+            Route::post('payroll/download-payslip', "payroll/PayrollController@payslipExportPDF")->name('payroll.payslipExportPDF');
+        });
     });
 });
 
-Route::get('tribinapp/{path?}', function(){
+Route::get('tribinapp/{path?}', function () {
     return view('tribinapp');
-})->where('any','.*');
+})->where('any', '.*');
 
 
 

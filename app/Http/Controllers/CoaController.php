@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanyGroup;
 use App\Models\M_COA;
+use App\Models\M_COA_MAP;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,7 @@ class CoaController extends Controller
 
     public function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'coa']);
         return view('master.coa', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()
@@ -59,11 +61,25 @@ class CoaController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        M_COA::on($this->dedicatedConnection)->create([
+        M_COA::on($this->dedicatedConnection)->updateOrCreate([
+            'MCOA_COACD' => $request->MCOA_COACD,
+        ],[
             'MCOA_COACD' => $request->MCOA_COACD,
             'MCOA_COANM' => $request->MCOA_COANM,
             'MCOA_BRANCH' => Auth::user()->branch
         ]);
+
+        if($request->has('det') && count($request->det) > 0) {
+            foreach ($request->det as $key => $value) {
+                M_COA_MAP::on($this->dedicatedConnection)->create([
+                    'MCOAM_H_COACD' => $value['MCOAM_H_COACD'],
+                    'MCOAM_CR_COACD' => $value['MCOAM_CR_COACD'],
+                    'MCOAM_DB_COACD' => $value['MCOAM_DB_COACD'],
+                    'MCOAM_DESC' => $value['MCOAM_DESC'],
+                ]);
+            }
+        }
+
         return ['msg' => 'OK'];
     }
 
@@ -88,8 +104,9 @@ class CoaController extends Controller
         // ];
         $RS = M_COA::on($this->dedicatedConnection)
             ->select(
-                'MCOA_COACD', 
-                DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM"),
+                'MCOA_COACD',
+                'MCOA_COANM',
+                DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM_COMB"),
                 'MCOA_TYPE',
                 'MCOA_CURR'
             );
@@ -98,7 +115,14 @@ class CoaController extends Controller
             $RS = (clone $RS)->where($request->searchCol, 'like', (string)$request->searchValue . '%');
         }
 
-        return ['data' => $RS->get()];
+        $hasil = [];
+        foreach ($RS->get()->toArray() as $key => $value) {
+            $hasil[] = array_merge($value, [
+                'det' => M_COA_MAP::on($this->dedicatedConnection)->where('MCOAM_H_COACD', $value['MCOA_COACD'])->get()
+            ]);
+        }
+
+        return ['data' => $hasil];
     }
 
     function update(Request $request)

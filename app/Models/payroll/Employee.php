@@ -3,13 +3,13 @@
 namespace App\Models\payroll;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\HasMedia\HasMedia;
-use Spatie\MediaLibrary\HasMedia\HasMediaTrait;
-use Spatie\MediaLibrary\Models\Media;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Employee extends Model implements HasMedia
 {
-    use HasMediaTrait;
+    use InteractsWithMedia;
 
     protected $fillable = [
         'employee_id',
@@ -65,7 +65,7 @@ class Employee extends Model implements HasMedia
     	});
     }
 
-    public function registerMediaCollections(){
+    public function registerMediaCollections(): void {
         $this->addMediaCollection('avatar')
             ->singleFile()
             ->registerMediaConversions(function(Media $media){

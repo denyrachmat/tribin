@@ -1,4 +1,4 @@
-@extends('admin.layout.app')
+@extends('payroll.layout.app')
 
 @section('title') Employees @endsection
 
@@ -38,10 +38,10 @@
       <nav class="breadcrumb-container" aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
-            <a href="{{ route('admin.dashboard') }}"><i class="ik ik-home"></i></a>
+            <a href="{{ route('dashboard') }}"><i class="ik ik-home"></i></a>
           </li>
           <li class="breadcrumb-item">
-            <a href="{{ route('admin.employee.index') }}">Employees</a>
+            <a href="{{ route('employee.index') }}">Employees</a>
           </li>
           <li class="breadcrumb-item active" aria-current="page">List of Employees</li>
         </ol>
@@ -63,14 +63,14 @@
             <h5>List of Employees</h5>
           </div>
           <div class="card-body">
-              
+
           </div>
         </div>
         <!--End Tab Content-->
       </div>
     </div>
   </div>
-  
+
 </div>
 
 <div class="row">
@@ -84,7 +84,7 @@
 </div>
 
 <div class="showModel">
- 
+
 </div>
 
 @endsection
@@ -92,7 +92,7 @@
 @section('js')
 
 <script type="text/javascript">
-  
+
 $(document).ready(function() {
 
   // get data from serve ajax

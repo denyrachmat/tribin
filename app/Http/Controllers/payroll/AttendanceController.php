@@ -11,19 +11,20 @@ use Yajra\Datatables\Datatables;
 class AttendanceController extends Controller
 {
     private $folder = "payroll.attendance.";
+    private $route = "attendance.";
 
     public function index()
     {
         return View($this->folder.'index',[
-            'get_data' => route($this->folder.'getData'),
+            'get_data' => route($this->route.'getData'),
         ]);
     }
 
     public function getData(){
         return View($this->folder.'content',[
-            'add_new' => route($this->folder.'create'),
-            'getDataTable' => route($this->folder.'getDataTable'),
-            'moveToTrashAllLink' => route($this->folder.'massDelete'),
+            'add_new' => route($this->route.'create'),
+            'getDataTable' => route($this->route.'getDataTable'),
+            'moveToTrashAllLink' => route($this->route.'massDelete'),
         ]);
     }
 
@@ -36,8 +37,8 @@ class AttendanceController extends Controller
                     })
                     ->addColumn('action', function($data){
                             $btn = "<div class='table-actions'>
-                            <a href='".route($this->folder."edit",['id'=>$data->id])."'><i class='ik ik-edit-2 text-dark'></i></a>
-                            <a data-href='".route($this->folder."destroy",['id'=>$data->id])."' class='delete cursure-pointer'><i class='ik ik-trash-2 text-danger'></i></a>
+                            <a href='".route($this->route."edit",['id'=>$data->id])."'><i class='ik ik-edit-2 text-dark'></i></a>
+                            <a data-href='".route($this->route."destroy",['id'=>$data->id])."' class='delete cursure-pointer'><i class='ik ik-trash-2 text-danger'></i></a>
                             </div>";
                             return $btn;
                     })
@@ -66,7 +67,7 @@ class AttendanceController extends Controller
     {
         $employees = Employee::get();
         return View($this->folder."create",[
-            'form_store' => route($this->folder.'store'),
+            'form_store' => route($this->route.'store'),
             'employees' => $employees,
         ]);
     }
@@ -85,7 +86,7 @@ class AttendanceController extends Controller
         return response()->json([
             'status'=>true,
             'message'=>'New Attendance added successfully.',
-            'redirect_to' => route($this->folder.'index')
+            'redirect_to' => route($this->route.'index')
             ]);
     }
 
@@ -98,7 +99,7 @@ class AttendanceController extends Controller
         $employees = Employee::get();
         return View($this->folder.'edit',[
             'attendance' => $attendance,
-            'form_update' => route($this->folder.'update',['attendance'=>$attendance]),
+            'form_update' => route($this->route.'update',['attendance'=>$attendance]),
             'employees' => $employees,
         ]);
     }
@@ -116,7 +117,7 @@ class AttendanceController extends Controller
         return response()->json([
             'status'=>true,
             'message'=> 'Attendance updated successfully.',
-            'redirect_to' => route($this->folder.'index')
+            'redirect_to' => route($this->route.'index')
             ]);
     }
 
@@ -127,13 +128,13 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => "Your Record has been Permanent Delete!",
-                'getDataUrl' => route($this->folder.'getData'),
+                'getDataUrl' => route($this->route.'getData'),
             ]);
         }
         return response()->json([
             'status' => false,
             'message' => "Something went wrong please try later!",
-            'getDataUrl' => route($this->folder.'getData'),
+            'getDataUrl' => route($this->route.'getData'),
         ]);
     }
 
@@ -146,13 +147,13 @@ class AttendanceController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => "Your Record has been Permanent Delete!",
-                'getDataUrl' => route($this->folder.'getData'),
+                'getDataUrl' => route($this->route.'getData'),
             ]);
         }
         return response()->json([
             'status' => false,
             'message' => "Something went wrong please try later!",
-            'getDataUrl' => route($this->folder.'getData'),
+            'getDataUrl' => route($this->route.'getData'),
         ]);
     }
 }

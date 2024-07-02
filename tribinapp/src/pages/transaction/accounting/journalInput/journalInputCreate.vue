@@ -17,27 +17,6 @@
             <b>Header</b>
           </legend>
 
-          <div class="row q-col-gutter-sm">
-            <div class="col-12">
-              <q-btn-toggle
-                v-model="forms.MCOA_TYPE"
-                spread
-                class="my-custom-toggle"
-                no-caps
-                rounded
-                unelevated
-                toggle-color="primary"
-                color="white"
-                text-color="primary"
-                :options="[
-                  { label: 'Income', value: 'INC' },
-                  { label: 'Expense', value: 'OUT' },
-                ]"
-                :disable="forms.GLHIST_DOC !== ''"
-              />
-            </div>
-          </div>
-
           <div class="row q-col-gutter-sm q-pt-sm">
             <div class="col-12 col-sm-6">
               <q-input
@@ -89,6 +68,24 @@
           <template v-if="formsDet.length > 0">
             <div class="row q-col-gutter-sm q-pt-sm" v-for="(form, idx) in formsDet" :key="idx">
               <div class="col-12 col-sm-3">
+                <q-btn-toggle
+                  v-model="form.MCOA_TYPE"
+                  spread
+                  class="my-custom-toggle"
+                  no-caps
+                  rounded
+                  unelevated
+                  toggle-color="primary"
+                  color="white"
+                  text-color="primary"
+                  :options="[
+                    { label: 'Income', value: 'INC' },
+                    { label: 'Expense', value: 'OUT' },
+                  ]"
+                  disable
+                />
+              </div>
+              <div class="col-12 col-sm-2">
                 <q-select
                   filled
                   label="Account Code"
@@ -100,7 +97,7 @@
                     (val, update, abort) => filterFn(val, update, abort, 'coa')
                   "
                   behavior="dialog"
-                  option-label="MCOA_COANM"
+                  option-label="MCOA_COANM_COMB"
                   option-value="MCOA_COACD"
                   emit-value
                   map-options
@@ -113,7 +110,7 @@
               <div class="col-12 col-sm-2">
                 <q-input filled label="Valuta" v-model="form.GLHIST_CURR" dense/>
               </div>
-              <div class="col-12 col-sm-3">
+              <div class="col-12 col-sm-2">
                 <q-input
                   filled
                   label="Description"
@@ -121,10 +118,10 @@
                   dense
                 />
               </div>
-              <div class="col-12 col-sm-3">
+              <div class="col-12 col-sm-2">
                 <q-input filled label="Amount" v-model="form.GLHIST_AMT" dense/>
               </div>
-              <div class="col-12 col-sm-1">
+              <div class="col-12 col-sm-1" v-if="form.MCOA_TYPE === 'OUT'">
                 <q-btn icon="delete" @click="onClickDeleteLines(idx)" flat color="red"/>
               </div>
             </div>
@@ -180,7 +177,7 @@ onMounted(async () => {
 
     forms.value.GLHIST_DOC = props.header.GLHIST_DOC
     forms.value.GLHIST_EFFDT = props.header.GLHIST_EFFDT
-    forms.value.MCOA_TYPE = props.header.MCOA_TYPE
+    // forms.value.MCOA_TYPE = props.header.MCOA_TYPE
 
     formsDet.value = props.header.det
   }
@@ -215,12 +212,21 @@ const getCOA = async (val, cols = "MCOA_COACD") => {
 
 const onAddItemLine = () => {
   formsDet.value.push({
-    GLHIST_ACC: forms.value.GLHIST_ACC,
+    GLHIST_ACC: '',
     GLHIST_DOC: forms.value.GLHIST_DOC,
     GLHIST_AMT: 0,
     GLHIST_DESC: "",
     GLHIST_EFFDT: forms.value.GLHIST_EFFDT,
-    MCOA_TYPE: forms.value.MCOA_TYPE,
+    MCOA_TYPE: 'OUT',
+  });
+
+  formsDet.value.push({
+    GLHIST_ACC: '',
+    GLHIST_DOC: forms.value.GLHIST_DOC,
+    GLHIST_AMT: 0,
+    GLHIST_DESC: "",
+    GLHIST_EFFDT: forms.value.GLHIST_EFFDT,
+    MCOA_TYPE: 'INC',
   });
 };
 
@@ -232,6 +238,7 @@ const onClickDeleteLines = (idx) => {
     persistent: true,
   }).onOk(async () => {
     formsDet.value.splice(idx, 1);
+    formsDet.value.splice(idx + 1, 1);
   });
 };
 
@@ -240,6 +247,7 @@ const onChooseCOA = (value, idx) => {
 
   if (cekExists.length > 0) {
     formsDet.value[idx].GLHIST_CURR = cekExists[0].MCOA_CURR
+    // formsDet.value[idx].MCOA_TYPE = cekExists[0].MCOA_TYPE && cekExists[0].MCOA_TYPE !== '' ? cekExists[0].MCOA_TYPE : 'INC'
   }
 }
 

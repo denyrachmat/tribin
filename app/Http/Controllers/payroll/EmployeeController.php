@@ -9,24 +9,35 @@ use App\Http\Requests\EmployeeRequest;
 use App\Mail\StaffCreated;
 use Yajra\Datatables\Datatables;
 use Mail;
+use App\Models\User;
 
 class EmployeeController extends Controller
 {
     private $folder = "payroll.employee.";
+    private $route = "employee.";
 
     public function index()
     {
         return View($this->folder.'index',[
-            'get_data' => route($this->folder.'getData'),
+            'get_data' => route($this->route.'getData'),
         ]);
     }
 
     public function getData(){
         return View($this->folder.'content',[
-            'add_new' => route($this->folder.'create'),
-            'getDataTable' => route($this->folder.'getDataTable'),
-            'moveToTrashAllLink' => route($this->folder.'massDelete'),
+            'add_new' => route($this->route.'create'),
+            'getDataTable' => route($this->route.'getDataTable'),
+            'moveToTrashAllLink' => route($this->route.'massDelete'),
             'employees' => Employee::get(),
+            'counts' => [
+                'employees' => User::count(),
+                'on_time_perc' => 0,
+                'on_time_attendance' => 0,
+                'late_attendance' => 0,
+                'positions' => 0,
+                'deductions' => 0,
+                'schedules' => 0
+            ]
         ]);
     }
 

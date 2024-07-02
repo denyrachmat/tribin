@@ -125,13 +125,13 @@ class AccountingJournalController extends Controller
 
             $insertedData = T_GLHIST::on(($this->dedicatedConnection))->updateOrCreate([
                 'GLHIST_ACC' => $value['GLHIST_ACC'],
-                'GLHIST_AMT' => $request->MCOA_TYPE === 'INC' ? $value['GLHIST_AMT'] : $value['GLHIST_AMT'] * -1,
+                'GLHIST_AMT' => $value['MCOA_TYPE'] === 'INC' ? $value['GLHIST_AMT'] : $value['GLHIST_AMT'] * -1,
                 'GLHIST_CURR' => $value['GLHIST_CURR'],
                 'GLHIST_DESC' => $value['GLHIST_DESC'],
                 'GLHIST_DOC' => $DOCJournal,
                 'GLHIST_EFFDT' => $request->GLHIST_EFFDT,
                 'GLHIST_CRDT' => date('Y-m-d'),
-                'GLHIST_DOCTYPE' => $request->MCOA_TYPE . '-JRN',
+                'GLHIST_DOCTYPE' => $value['MCOA_TYPE'] . '-JRN',
                 'GLHIST_ITMCD' => ''
             ]);
         }

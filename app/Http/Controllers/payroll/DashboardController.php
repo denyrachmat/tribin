@@ -23,7 +23,10 @@ class DashboardController extends Controller
                 'employees' => User::count(),
                 'on_time_perc' => 0,
                 'on_time_attendance' => 0,
-                'late_attendance' => 0
+                'late_attendance' => 0,
+                'positions' => 0,
+                'deductions' => 0,
+                'schedules' => 0
             ]
     	]);
     }

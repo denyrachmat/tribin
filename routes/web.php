@@ -19,10 +19,17 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\payroll\AttendanceController;
+use App\Http\Controllers\payroll\CashAdvanceController;
 use App\Http\Controllers\payroll\DashboardController;
 use App\Http\Controllers\payroll\DeductionController;
+use App\Http\Controllers\payroll\EmployeeController;
 use App\Http\Controllers\payroll\HelperController;
+use App\Http\Controllers\payroll\OvertimeController;
+use App\Http\Controllers\payroll\PayrollController;
+use App\Http\Controllers\payroll\PositionController;
 use App\Http\Controllers\payroll\ProfileController;
+use App\Http\Controllers\payroll\ScheduleController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReceiveController;
@@ -470,9 +477,9 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post("/profile", [ProfileController::class, 'update'])->name('profile.update');
 
             //position routes
-            Route::resource('position', 'payroll/PositionController');
-            Route::post('getdata/position', "payroll/PositionController@getData")->name('position.getData');
-            Route::post('all-delete/position/', "payroll/PositionController@massDelete")->name('position.massDelete');
+            Route::resource('position', PositionController::class);
+            Route::post('getdata/position', [PositionController::class, 'getData'])->name('position.getData');
+            Route::post('all-delete/position/', [PositionController::class, 'massDelete'])->name('position.massDelete');
 
             //deduction routes
             Route::resource('deduction', DeductionController::class);
@@ -480,40 +487,40 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('all-delete/deduction/', [DeductionController::class, 'massDelete'])->name('deduction.massDelete');
 
             //schedule routes
-            Route::resource('schedule', 'payroll/ScheduleController');
-            Route::post('getdata/schedule', "payroll/ScheduleController@getData")->name('schedule.getData');
-            Route::post('all-delete/schedule/', "payroll/ScheduleController@massDelete")->name('schedule.massDelete');
+            Route::resource('schedule', ScheduleController::class);
+            Route::post('getdata/schedule', [ScheduleController::class, 'getData'])->name('schedule.getData');
+            Route::post('all-delete/schedule/', [ScheduleController::class, 'massDelete'])->name('schedule.massDelete');
 
             //employee routes
-            Route::resource('employee', 'payroll/EmployeeController');
-            Route::post('getdata/employee', "payroll/EmployeeController@getData")->name('employee.getData');
-            Route::post('get-employees-data', "payroll/EmployeeController@getDataTable")->name('employee.getDataTable');
-            Route::post('all-delete/employee/', "payroll/EmployeeController@massDelete")->name('employee.massDelete');
+            Route::resource('employee', EmployeeController::class);
+            Route::post('getdata/employee', [EmployeeController::class, 'getData'])->name('employee.getData');
+            Route::post('get-employees-data', [EmployeeController::class, 'getDataTable'])->name('employee.getDataTable');
+            Route::post('all-delete/employee/', [EmployeeController::class, 'massDelete'])->name('employee.massDelete');
 
             //overtime routes
-            Route::resource('overtime', 'payroll/OvertimeController');
-            Route::post('getdata/overtime', "payroll/OvertimeController@getData")->name('overtime.getData');
-            Route::post('get-overtime-data', "payroll/OvertimeController@getDataTable")->name('overtime.getDataTable');
-            Route::post('all-delete/overtime/', "payroll/OvertimeController@massDelete")->name('overtime.massDelete');
+            Route::resource('overtime', OvertimeController::class);
+            Route::post('getdata/overtime', [OvertimeController::class, 'getData'])->name('overtime.getData');
+            Route::post('get-overtime-data', [OvertimeController::class, 'getDataTable'])->name('overtime.getDataTable');
+            Route::post('all-delete/overtime/', [OvertimeController::class, 'massDelete'])->name('overtime.massDelete');
 
             //cashadvance routes
-            Route::resource('cashadvance', 'payroll/CashAdvanceController');
-            Route::post('getdata/cashadvance', "payroll/CashAdvanceController@getData")->name('cashadvance.getData');
-            Route::post('get-cashadvance-data', "payroll/CashAdvanceController@getDataTable")->name('cashadvance.getDataTable');
-            Route::post('all-delete/cashadvance/', "payroll/CashAdvanceController@massDelete")->name('cashadvance.massDelete');
+            Route::resource('cashadvance', CashAdvanceController::Class);
+            Route::post('getdata/cashadvance', [CashAdvanceController::Class, 'getData'])->name('cashadvance.getData');
+            Route::post('get-cashadvance-data', [CashAdvanceController::Class, 'getDataTable'])->name('cashadvance.getDataTable');
+            Route::post('all-delete/cashadvance/', [CashAdvanceController::Class, 'massDelete'])->name('cashadvance.massDelete');
 
             //attendance routes
-            Route::resource('attendance', 'payroll/AttendanceController');
-            Route::post('getdata/attendance', "payroll/AttendanceController@getData")->name('attendance.getData');
-            Route::post('get-attendance-data', "payroll/AttendanceController@getDataTable")->name('attendance.getDataTable');
-            Route::post('all-delete/attendance/', "payroll/AttendanceController@massDelete")->name('attendance.massDelete');
+            Route::resource('attendance', AttendanceController::class);
+            Route::post('getdata/attendance', [AttendanceController::class, 'getData'])->name('attendance.getData');
+            Route::post('get-attendance-data', [AttendanceController::class, 'getDataTable'])->name('attendance.getDataTable');
+            Route::post('all-delete/attendance/', [AttendanceController::class, 'massDelete'])->name('attendance.massDelete');
 
             //payroll routes
-            Route::get('payroll', "payroll/PayrollController@index")->name('payroll.index');
-            Route::post('getdata/payroll', "payroll/PayrollController@getData")->name('payroll.getData');
-            Route::post('get-payroll-data', "payroll/PayrollController@getDataTable")->name('payroll.getDataTable');
-            Route::post('payroll/download-payroll', "payroll/PayrollController@payrollExportPDF")->name('payroll.payrollExportPDF');
-            Route::post('payroll/download-payslip', "payroll/PayrollController@payslipExportPDF")->name('payroll.payslipExportPDF');
+            Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
+            Route::post('getdata/payroll', [PayrollController::class, 'getData'])->name('payroll.getData');
+            Route::post('get-payroll-data',  [PayrollController::class, 'getDataTable'])->name('payroll.getDataTable');
+            Route::post('payroll/download-payroll', [PayrollController::class, 'payrollExportPDF'])->name('payroll.payrollExportPDF');
+            Route::post('payroll/download-payslip', [PayrollController::class, 'payslipExportPDF'])->name('payroll.payslipExportPDF');
         });
     });
 });

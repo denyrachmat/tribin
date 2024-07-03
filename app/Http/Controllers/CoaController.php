@@ -104,6 +104,7 @@ class CoaController extends Controller
         // ];
         $RS = M_COA::on($this->dedicatedConnection)
             ->select(
+                'id',
                 'MCOA_COACD',
                 'MCOA_COANM',
                 DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM_COMB"),

@@ -108,7 +108,12 @@ class CoaController extends Controller
                 'MCOA_COANM',
                 DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM_COMB"),
                 'MCOA_TYPE',
-                'MCOA_CURR'
+                'MCOA_CURR',
+                DB::raw("CASE WHEN (SELECT COUNT(*) FROM M_COA_MAP WHERE MCOAM_H_COACD = MCOA_COACD) > 0
+                    THEN 'COMPLETE'
+                    ELSE 'PARTIAL'
+                END AS MAP_PARAM
+                ")
             );
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {

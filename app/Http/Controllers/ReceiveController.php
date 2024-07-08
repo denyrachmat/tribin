@@ -378,16 +378,25 @@ class ReceiveController extends Controller
                         'T_RCV_DETAIL.id',
                         'id_header',
                         'item_code',
-                        'quantity',
+                        DB::raw('quantity - COALESCE(SUM(TRCVBC_BCQT), 0) as quantity'),
                         'unit_price',
-                        DB::raw('CASE WHEN id_reff IS NULL THEN 0 ELSE 1 END AS IS_CONFIRMED')
+                        DB::raw('CASE WHEN id_reff IS NULL THEN 0 ELSE 1 END AS IS_CONFIRMED'),
+                        DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0) AS CONFIRMED_QTY')
                     )
                         ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'id_header')
                         ->leftJoin('C_ITRN', function ($join) {
                             $join->on('T_RCV_DETAIL.id', 'id_reff');
                             $join->on('CITRN_DOCNO', 'TRCV_RCVCD');
                             $join->where('CITRN_LOCCD', 'WH1');
-                        });
+                        })
+                        ->leftJoin('T_RCV_BC_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                        ->groupBy(
+                            'T_RCV_DETAIL.id',
+                            'id_header',
+                            'item_code',
+                            'quantity',
+                            'unit_price'
+                        );
                 }
             ])
             ->where('TRCV_BRANCH', Auth::user()->branch)
@@ -526,7 +535,7 @@ class ReceiveController extends Controller
         }
 
         $cekConfirmed = array_filter($request->det, function ($f) {
-            return $f['IS_CONFIRMED'] == 1;
+            return isset($f['IS_CONFIRMED']) && $f['IS_CONFIRMED'] == 1;
         });
 
         if (count($cekConfirmed) === count($request->det)) {

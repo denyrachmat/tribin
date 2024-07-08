@@ -1892,6 +1892,24 @@ class DeliveryController extends Controller
             //     ->where('TDLVORDDETA_DLVCD', $request->id)
             //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             //     ->get();
+            $hasilZero = [];
+            foreach ($request->data as $rCheck) {
+                $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')
+                ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
+                ->first();
+
+                if($cekStock->STOCK == 0) {
+                    $hasilZero[] = $cekStock->STOCK;
+                }
+            }
+
+            if(count($hasilZero) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'data' => $hasilZero,
+                    'msg' => 'Some item stock is empty !'
+                ], 406);
+            }
 
             $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
                 ->orderBy('created_at', 'desc')

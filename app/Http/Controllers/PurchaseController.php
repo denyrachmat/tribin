@@ -341,7 +341,10 @@ class PurchaseController extends Controller
         $RS = T_PCHREQDETA::on($request->conn)->select([
             "id",
             "TPCHREQDETA_ITMCD",
-            "MITM_ITMNM",
+            DB::raw("CASE WHEN IS_ITMCD = 1
+                THEN MITM_ITMNMREAL
+                ELSE MITM_ITMNM
+            END AS MITM_ITMNM"),
             "TPCHREQDETA_ITMQT",
             "TPCHREQDETA_REQDT",
             "TPCHREQDETA_REMARK"

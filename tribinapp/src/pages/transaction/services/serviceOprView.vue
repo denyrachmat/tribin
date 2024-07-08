@@ -169,6 +169,7 @@ const onClickPreview = (val, mode) => {
     SRVH_DOCNO: val.SRVH_DOCNO,
     SRVH_ISSDT: date.formatDate(val.SRVH_ISSDT, "YYYY-MM-DD"),
     SRVH_CUSCD: val.MCUS_CUSCD,
+    SRVH_ISINT: val.SRVH_ISINT,
   };
 
   let detail = [];

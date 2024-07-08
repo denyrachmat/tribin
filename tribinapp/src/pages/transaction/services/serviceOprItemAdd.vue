@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-mutating-props -->
 <template>
   <q-dialog
     ref="dialogRef"
@@ -83,7 +84,7 @@
               </q-item-label>
             </q-item-section>
 
-            <q-item-section>
+            <q-item-section v-if="props.header.SRVH_ISINT == 0">
               <div v-if="props.mode === 'view'">
                 <q-item-label>
                   {{ items.TSRVF_PRC.toLocaleString() }}
@@ -187,9 +188,11 @@ const $q = useQuasar();
 const props = defineProps({
   mode: String,
   dataItem: Array,
+  header: Object
 });
 
 onMounted(async () => {
+  console.log(props)
   if (props.dataItem.listFixDet) {
     listItemsSel.value = props.dataItem.listFixDet;
 
@@ -275,11 +278,11 @@ const onSelectItem = (val, idx) => {
       listItemsSel.value[idx].TSRVF_PRC = getItemData[0].LATEST_PRC
       listItemsSel.value[idx].STOCK = getItemData[0].STOCK
     } else {
-      listItemsSel.value[idx].TSRVF_ITMCD = ''
+      // listItemsSel.value[idx].TSRVF_ITMCD = ''
 
       $q.notify({
-        color:'red',
-        message: `Stock item ${val} (${getItemData[0].MITM_ITMNM}) is 0, please check stock status !`
+        color:'warning',
+        message: `Stock item ${val} (${getItemData[0].MITM_ITMNM}) is 0, You might be can't use this item !`
       })
     }
   }
@@ -288,11 +291,11 @@ const onSelectItem = (val, idx) => {
 const onInputQty = (val, idx) => {
   if(val > listItemsSel.value[idx].STOCK) {
     $q.notify({
-      color:'red',
-      message: `Stock item ${listItemsSel.value[idx].TSRVF_ITMCD} is 0, please check stock status !`
+      color:'warning',
+      message: `Stock item ${listItemsSel.value[idx].TSRVF_ITMCD} is 0, You might be can't use this item !`
     })
 
-    listItemsSel.value[idx].TSRVF_QTY = 0
+    // listItemsSel.value[idx].TSRVF_QTY = 0
   }
 }
 

@@ -1875,6 +1875,17 @@ class DeliveryController extends Controller
         //     })
         //     ->whereNull('CITRN_DOCNO')->get();
 
+        // Mau Cek Stock
+        // $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')->first();
+        // $cekSubmited = T_DLVORDHEAD::on($this->dedicatedConnection)
+        //     ->where('TDLVORD_DLVCD', $request->id)
+        //     ->where('TDLVORD_BRANCH', $request->TDLVORD_BRANCH)
+        //     ->first();
+
+        // if($cekSubmited-> $cekStock->STOCK){
+
+        // }
+
         if (count($request->data) > 0) {
             // $Delivery = T_DLVORDDETA::on($this->dedicatedConnection)
             //     ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_ITMQT')

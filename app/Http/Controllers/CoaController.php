@@ -51,9 +51,9 @@ class CoaController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'MCOA_COACD' => 'required',
-            'MCOA_COACD' => [
-                Rule::unique($this->dedicatedConnection . '.M_COA', 'MCOA_COACD')->where('MCOA_BRANCH', Auth::user()->branch)
-            ],
+            // 'MCOA_COACD' => [
+            //     Rule::unique($this->dedicatedConnection . '.M_COA', 'MCOA_COACD')->where('MCOA_BRANCH', Auth::user()->branch)
+            // ],
             'MCOA_COANM' => 'required',
         ]);
 

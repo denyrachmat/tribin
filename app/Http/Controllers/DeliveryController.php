@@ -1875,12 +1875,41 @@ class DeliveryController extends Controller
         //     })
         //     ->whereNull('CITRN_DOCNO')->get();
 
+        // Mau Cek Stock
+        // $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')->first();
+        // $cekSubmited = T_DLVORDHEAD::on($this->dedicatedConnection)
+        //     ->where('TDLVORD_DLVCD', $request->id)
+        //     ->where('TDLVORD_BRANCH', $request->TDLVORD_BRANCH)
+        //     ->first();
+
+        // if($cekSubmited-> $cekStock->STOCK){
+
+        // }
+
         if (count($request->data) > 0) {
             // $Delivery = T_DLVORDDETA::on($this->dedicatedConnection)
             //     ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_ITMQT')
             //     ->where('TDLVORDDETA_DLVCD', $request->id)
             //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             //     ->get();
+            $hasilZero = [];
+            foreach ($request->data as $rCheck) {
+                $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')
+                ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
+                ->first();
+
+                if($cekStock->STOCK == 0) {
+                    $hasilZero[] = $cekStock->STOCK;
+                }
+            }
+
+            if(count($hasilZero) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'data' => $hasilZero,
+                    'msg' => 'Some item stock is empty !'
+                ], 406);
+            }
 
             $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
                 ->orderBy('created_at', 'desc')

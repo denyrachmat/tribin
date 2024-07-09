@@ -107,6 +107,7 @@ class ServiceOprController extends Controller
             'MCUS_CUSNM',
             'MCUS_CUSCD',
             'T_SRV_HEAD.created_at',
+            'SRVH_ISINT'
         )
         ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
         ->where(DB::raw('(

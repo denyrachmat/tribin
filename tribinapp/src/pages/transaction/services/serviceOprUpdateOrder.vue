@@ -270,6 +270,7 @@ const onClickAddItem = (val, mode = "add") => {
     componentProps: {
       mode: mode,
       dataItem: submitedItems.value[val],
+      header: props.header
     },
     // persistent: true,
   }).onOk(async (res) => {

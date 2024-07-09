@@ -193,68 +193,67 @@
             <b>List Of Items</b>
           </legend>
 
-          <q-list bordered dense>
-            <template v-if="listDet.length > 0">
-              <q-item
-                v-for="(items, idx) in listDet"
-                :key="idx"
-                class="q-my-sm"
-                dense
-                :loading="loading"
-              >
-                <q-item-section avatar>
-                  <q-avatar text-color="blue">
-                    {{ idx + 1 }}
-                  </q-avatar>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    <q-select
-                      dense
-                      filled
-                      label="Item Code"
-                      v-model="items.item_code"
-                      use-input
-                      input-debounce="500"
-                      :options="listItems"
-                      @filter="
-                        (val, update, abort) =>
-                          filterFn(val, update, abort, 'item')
-                      "
-                      behavior="dialog"
-                      option-label="MITM_ITMNMREAL"
-                      option-value="MITM_ITMNM"
-                      emit-value
-                      map-options
-                      :loading="loading"
-                      readonly
-                    />
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    <q-input
-                      dense
-                      label="Qty"
-                      filled
-                      v-model="items.quantity"
-                      readonly
-                    />
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>
-                    <q-input
-                      dense
-                      label="Price"
-                      filled
-                      v-model="items.unit_price"
-                      readonly
-                    />
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn
+          <template v-if="listDet.length > 0">
+            <div
+              :class="`row q-col-gutter-md ${idx > 0 ? 'q-pt-md' : null}`"
+              v-for="(items, idx) in listDet"
+              :key="idx"
+            >
+              <div class="col-12 col-sm-1 text-center">
+                <q-avatar text-color="blue">
+                  {{ idx + 1 }}
+                </q-avatar>
+              </div>
+              <div class="col-12 col-sm-3">
+                <q-select
+                  dense
+                  filled
+                  label="Item Code"
+                  v-model="items.item_code"
+                  use-input
+                  input-debounce="500"
+                  :options="listItems"
+                  @filter="
+                    (val, update, abort) => filterFn(val, update, abort, 'item')
+                  "
+                  behavior="dialog"
+                  option-label="MITM_ITMNMREAL"
+                  option-value="MITM_ITMNM"
+                  emit-value
+                  map-options
+                  :loading="loading"
+                  readonly
+                />
+              </div>
+              <div class="col-12 col-sm-2">
+                <q-input
+                  dense
+                  label="Qty"
+                  filled
+                  v-model="items.quantity"
+                  readonly
+                />
+              </div>
+              <div class="col-12 col-sm-2">
+                <q-input
+                  dense
+                  label="Confirmed Qty"
+                  filled
+                  v-model="items.CONFIRMED_QTY"
+                  readonly
+                />
+              </div>
+              <div class="col-12 col-sm-3">
+                <q-input
+                  dense
+                  label="Price"
+                  filled
+                  v-model="items.unit_price"
+                  readonly
+                />
+              </div>
+              <div class="col-12 col-sm-1 text-center">
+                <q-btn
                     icon="check"
                     :color="items.IS_CONFIRMED == 1 ? 'grey' : 'indigo'"
                     flat
@@ -267,17 +266,16 @@
                         : "Not confirmed yet, click to confirm."
                     }}</q-tooltip>
                   </q-btn>
-                </q-item-section>
-              </q-item>
-            </template>
-            <q-item class="q-my-sm" clickable v-ripple v-else>
-              <q-item-section>
-                <q-item-label>
-                  Choose incoming first to access item list
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="row">
+              <div class="col-12 text-center">
+                Choose incoming first to access item list
+              </div>
+            </div>
+          </template>
         </fieldset>
       </q-card-section>
 
@@ -286,7 +284,7 @@
           label="Save"
           color="primary"
           @click="onSubmitData()"
-          :disable="listDet.filter(fil => fil.IS_CONFIRMED > 0).length > 0"
+          :disable="listDet.filter((fil) => fil.CONFIRMED_QTY > 0).length == 0"
           :loading="loading"
         />
         <q-btn
@@ -482,13 +480,13 @@ const onConfirmation = (id) => {
       type: "number", // optional
       min: 1,
       max: listDet.value[id].quantity,
-      isValid: val => val <= listDet.value[id].quantity,
+      isValid: (val) => val <= listDet.value[id].quantity,
     },
     cancel: true,
     persistent: true,
   }).onOk((datas) => {
     listDet.value[id].IS_CONFIRMED = 1;
-    listDet.value[id].CONFIRMED_QTY = datas
+    listDet.value[id].CONFIRMED_QTY = datas;
   });
 };
 
@@ -550,7 +548,7 @@ const onConfirmAll = () => {
   }).onOk(async () => {
     listDet.value.map((val) => {
       val.IS_CONFIRMED = 1;
-      val.CONFIRMED_QTY = val.quantity
+      val.CONFIRMED_QTY = val.quantity;
     });
 
     onSubmitData(true);

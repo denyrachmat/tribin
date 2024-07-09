@@ -373,7 +373,26 @@ class ReceiveController extends Controller
             ->leftJoin('T_RCV_DETAIL', "T_RCV_HEAD.id", 'id_header')
             ->leftJoin('T_RCV_BC_DETAIL', "TRCV_RCVCD", 'TRCVBC_DOCNO')
             ->with([
-                'bc',
+                'bc' => function($f) {
+                    $f->select(
+                        'TRCVBC_BCCD',
+                        'TRCV_RCVCD',
+                        'TRCVBC_DOCNO',
+                        'TRCVBC_BCQT',
+                        'MSUP_SUPNM',
+                        'item_code',
+                        'MITM_ITMNM',
+                        DB::raw("COALESCE((
+                            SELECT SUM(CITRN_ITMQT)
+                            FROM C_ITRN WHERE id_reff = TRCVBC_BCCD
+                            AND CITRN_LOCCD = 'WH1'
+                        ), 0) AS STOCK_QTY")
+                    )
+                    ->join('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                    ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
+                    ->join(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
+                    ->join('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
+                },
                 'det' => function ($f) {
                     $f->select(
                         'T_RCV_DETAIL.id',

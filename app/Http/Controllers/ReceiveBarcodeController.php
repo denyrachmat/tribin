@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReceiveBarcodeController extends Controller
 {
@@ -107,5 +108,12 @@ class ReceiveBarcodeController extends Controller
         }
 
         return ['data' => $RS->get()];
+    }
+
+    public function printBarcode(Request $request) {
+        // return view('pdf.barcode', ['data' => $request->data]);
+        $pdf = Pdf::loadView('pdf.barcode', ['data' => $request->data])->setPaper('a4');
+
+        return base64_encode($pdf->stream('barcode.pdf'));
     }
 }

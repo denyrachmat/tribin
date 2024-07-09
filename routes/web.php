@@ -426,6 +426,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::prefix('receiveBarcode')->group(function () {
             Route::resource('', ReceiveBarcodeController::class);
             Route::post('searchAPI', [ReceiveBarcodeController::class, 'searchAPI']);
+            Route::post('printBarcode', [ReceiveBarcodeController::class, 'printBarcode']);
         });
 
         Route::get('purchase-request-approval/{id}', [PurchaseController::class, 'loadByIdApproval']);
@@ -510,10 +511,10 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('all-delete/overtime/', [OvertimeController::class, 'massDelete'])->name('overtime.massDelete');
 
             //cashadvance routes
-            Route::resource('cashadvance', CashAdvanceController::Class);
-            Route::post('getdata/cashadvance', [CashAdvanceController::Class, 'getData'])->name('cashadvance.getData');
-            Route::post('get-cashadvance-data', [CashAdvanceController::Class, 'getDataTable'])->name('cashadvance.getDataTable');
-            Route::post('all-delete/cashadvance/', [CashAdvanceController::Class, 'massDelete'])->name('cashadvance.massDelete');
+            Route::resource('cashadvance', CashAdvanceController::class);
+            Route::post('getdata/cashadvance', [CashAdvanceController::class, 'getData'])->name('cashadvance.getData');
+            Route::post('get-cashadvance-data', [CashAdvanceController::class, 'getDataTable'])->name('cashadvance.getDataTable');
+            Route::post('all-delete/cashadvance/', [CashAdvanceController::class, 'massDelete'])->name('cashadvance.massDelete');
 
             //attendance routes
             Route::resource('attendance', AttendanceController::class);

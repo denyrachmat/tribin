@@ -98,6 +98,16 @@
                 >
                   <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Confirm Data'}}</q-tooltip>
                 </q-btn>
+                <q-btn
+                  flat
+                  :color="props.row.bc.length == 0 ? 'grey' : 'indigo'"
+                  icon="print"
+                  @click="onPrintBarcode(props.row.bc)"
+                  dense
+                  :disable="props.row.bc.length == 0"
+                >
+                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Confirm Data'}}</q-tooltip>
+                </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.value }}
@@ -210,5 +220,29 @@ const onConfirmation = (data = []) => {
 
 const onDelete = (data) => {
 
+}
+
+const onPrintBarcode = (data) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to print all of this DO barcode ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+  loading.value = true;
+  await api_web
+    .post(`receiveBarcode/printBarcode`, {
+      data: data
+    })
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("");
+      pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
+    })
+  })
 }
 </script>

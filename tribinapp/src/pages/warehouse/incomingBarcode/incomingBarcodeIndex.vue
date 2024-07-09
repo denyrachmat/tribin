@@ -170,6 +170,30 @@ const getIncomingData = async () => {
     });
 }
 
+const onPrint = (data) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to print this barcode ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+  loading.value = true;
+  await api_web
+    .post(`receiveBarcode/printBarcode`, {
+      data: [data]
+    })
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("");
+      pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
+    })
+  })
+}
+
 // const onClickNew = (data = []) => {
 //   $q.dialog({
 //     component: incomingCreate,

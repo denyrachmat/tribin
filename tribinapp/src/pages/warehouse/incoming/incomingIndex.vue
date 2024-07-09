@@ -6,7 +6,7 @@
       </div>
       <div class="col text-right">
         <q-btn icon="add" color="blue" @click="onClickNew()">
-          <q-tooltip>Create New Delivery</q-tooltip>
+          <q-tooltip>Create New Incoming</q-tooltip>
         </q-btn>
       </div>
     </div>
@@ -16,7 +16,7 @@
     <div class="row q-pt-md">
       <div class="col">
         <q-table
-          title="Outgoing List"
+          title="Updated Incoming List"
           :rows="rows"
           :columns="cols"
           row-key="TDLVORD_DLVCD"
@@ -31,7 +31,7 @@
             <q-select
               outlined
               v-model="filterCol"
-              :options="columns"
+              :options="col"
               label="Search Columns"
               option-value="name"
               option-label="label"
@@ -192,7 +192,7 @@ const onClickNew = (data = []) => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getOutgoingData();
+    getIncomingData();
   });
 }
 
@@ -204,7 +204,7 @@ const onConfirmation = (data = []) => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getOutgoingData();
+    getIncomingData();
   });
 }
 

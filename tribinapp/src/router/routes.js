@@ -17,6 +17,7 @@ const routes = [
       { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },
       { path: 'invoice', component: () => import('pages/warehouse/invoice/invoiceView.vue') },
       { path: 'incoming', component: () => import('pages/warehouse/incoming/incomingIndex.vue') },
+      { path: 'incomingBC', component: () => import('pages/warehouse/incomingBarcode/incomingBarcodeIndex.vue') },
       { path: 'accIF', component: () => import('pages/transaction/accounting/closing/accClosingIndex.vue') },
       { path: 'glReport', component: () => import('pages/transaction/accounting/glReport/glReportIndex.vue') },
       { path: 'journalReport', component: () => import('pages/transaction/accounting/journalReport/journalReportIndex.vue') },

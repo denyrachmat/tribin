@@ -124,13 +124,13 @@ class ReceiveController extends Controller
         return ['data' => $data];
     }
 
-    function delete(Request $request)
+    function delete($id)
     {
         $parentDoc = T_RCV_DETAIL::on($this->dedicatedConnection)->select('id_header')
-            ->where('id', $request->id)
+            ->where('id', $id)
             ->first();
 
-        $affectedRow = T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $request->id)
+        $affectedRow = T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $id)
             ->update([
                 'deleted_at' => date('Y-m-d H:i:s'),
                 'deleted_by' => Auth::user()->nick_name
@@ -140,6 +140,7 @@ class ReceiveController extends Controller
                 ->where('id_header', $parentDoc->id_header)
                 ->whereNull('deleted_at')
                 ->count();
+
             if ($countRow === 0) {
                 T_RCV_HEAD::on($this->dedicatedConnection)->where('id', $parentDoc->id_header)
                     ->update([
@@ -494,6 +495,13 @@ class ReceiveController extends Controller
                 ->first();
 
             if (empty($cek) && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
+                $bc = '';
+                if (empty($cekLatestBarcode)) {
+                    $bc = 'BC'.date('Ymd').'0001';
+                } else {
+                    $bc = 'BC'.date('Ymd').sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
+                }
+
                 C_ITRN::on($this->dedicatedConnection)->create([
                     'CITRN_BRANCH' => Auth::user()->branch,
                     'CITRN_LOCCD' => 'WH1',
@@ -501,12 +509,12 @@ class ReceiveController extends Controller
                     'CITRN_ISSUDT' => $request->TRCV_ISSUDT,
                     'CITRN_FORM' => 'INC-SHP',
                     'CITRN_ITMCD' => $value['item_code'],
-                    'CITRN_ITMQT' => $value['quantity'],
+                    'CITRN_ITMQT' => $value['CONFIRMED_QTY'],
                     'CITRN_PRCPER' => $value['unit_price'],
-                    'CITRN_PRCAMT' => $value['unit_price'] * $value['quantity'],
+                    'CITRN_PRCAMT' => $value['unit_price'] * $value['CONFIRMED_QTY'],
                     'created_by' => Auth::user()->nick_name,
                     'created_at' => date('Y-m-d H:i:s'),
-                    'id_reff' => $value['id'],
+                    'id_reff' => $bc,
                 ]);
 
                 T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $value['id'])->update([
@@ -516,13 +524,6 @@ class ReceiveController extends Controller
                 $cekLatestBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
                     ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
                     ->first();
-
-                $bc = '';
-                if (empty($cekLatestBarcode)) {
-                    $bc = 'BC'.date('Ymd').'0001';
-                } else {
-                    $bc = 'BC'.date('Ymd').sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
-                }
 
                 // Save to be incoming barcode
                 T_RCV_BC_DETAIL::on($this->dedicatedConnection)->create([
@@ -545,6 +546,6 @@ class ReceiveController extends Controller
             ]);
         }
 
-        return ['message' => 'Submitted successfully'];
+        return ['MSG' => 'Submitted successfully'];
     }
 }

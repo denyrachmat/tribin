@@ -32,6 +32,7 @@ use App\Http\Controllers\payroll\ProfileController;
 use App\Http\Controllers\payroll\ScheduleController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\ReceiveBarcodeController;
 use App\Http\Controllers\ReceiveController;
 use App\Http\Controllers\ReceiveOrderController;
 use App\Http\Controllers\ServiceOprController;
@@ -420,6 +421,11 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('outstanding-po', [ReceiveController::class, 'outstandingPO']);
             Route::get('outstanding-po/{id}', [ReceiveController::class, 'outstandingPOPerDocument']);
             Route::delete('item/{id}', [ReceiveController::class, 'delete']);
+        });
+
+        Route::prefix('receiveBarcode')->group(function () {
+            Route::resource('', ReceiveBarcodeController::class);
+            Route::post('searchAPI', [ReceiveBarcodeController::class, 'searchAPI']);
         });
 
         Route::get('purchase-request-approval/{id}', [PurchaseController::class, 'loadByIdApproval']);

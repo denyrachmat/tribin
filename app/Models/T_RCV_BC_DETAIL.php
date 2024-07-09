@@ -18,6 +18,6 @@ class T_RCV_BC_DETAIL extends Model
     ];
 
     public function det() {
-        return $this->hasMany(T_RCV_DETAIL::class, 'id_header');
+        return $this->belongsTo(T_RCV_DETAIL::class, 'id_header');
     }
 }

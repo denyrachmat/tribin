@@ -46,7 +46,7 @@
 </head>
 
 <body>
-<div class="container-md">
+<div class="container-sm">
     <div class="row row-cols-2">
         @foreach($data as $key => $value)
             <div class="col-xs-6 p-1 text-center">

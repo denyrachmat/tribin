@@ -15,6 +15,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\locationController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MeasurementController;
@@ -184,6 +185,13 @@ Route::group(['middleware' => 'cors'], function () {
             Route::put('{id}', [ItemController::class, 'update']);
             Route::post('searchAPI', [ItemController::class, 'searchAPI']);
             Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
+        });
+
+        # Terkait Location Master
+        Route::prefix('location')->group(function () {
+            Route::resource('', locationController::class);
+            Route::get('form', [locationController::class, 'index']);
+            Route::post('searchAPI', [locationController::class, 'searchAPI']);
         });
 
         # Terkait Customer Master

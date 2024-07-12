@@ -7,6 +7,7 @@ const routes = [
       { path: '', component: () => import('pages/IndexPage.vue') },
       { path: 'condition', component: () => import('pages/master/conditions/assignConditions.vue') },
       { path: 'coa', component: () => import('pages/master/coa/coaIndex.vue') },
+      { path: 'location', component: () => import('pages/master/location/locationIndex.vue') },
       { path: 'quotation', component: () => import('pages/transaction/sales/quotation/quotationView.vue') },
       { path: 'so', component: () => import('pages/transaction/sales/order/salesOrderView.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },

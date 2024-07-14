@@ -82,10 +82,12 @@ class transferRequestController extends Controller
                 'TLOCREQ_DOCNO',
                 'TLOCREQ_FRLOC',
                 'TLOCREQ_TOLOC',
+                'TLOCREQ_APPRVBY',
                 DB::raw('(select max(TLOCREQ_ISREP) from T_LOC_REQ tlr where tlr.TLOCREQ_DOCNO = TLOCREQ_DOCNO limit 1) as TLOCREQ_ISREP')
             )
             ->where('TLOCREQ_ISREP', 0)
             ->groupBy(
+                'TLOCREQ_APPRVBY',
                 'TLOCREQ_DOCNO',
                 'TLOCREQ_FRLOC',
                 'TLOCREQ_TOLOC',

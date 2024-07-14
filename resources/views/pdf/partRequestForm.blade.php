@@ -176,51 +176,26 @@
         </div>
     </div>
 
-    @foreach($data[0]['detail'] as $key => $value2)
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
-            <table>
-                <tr>
-                    <td><b>Item</b></td>
-                    <td><b>:</b></td>
-                    <td><b>{{$value2['TSRVD_ITMCD']}}</b></td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <div class="row" style="font-size: 13px; padding-top: 10px">
-        <div class="col12">
-            <table class="tg">
-                <thead>
-                    <tr>
-                        <th class="tg-0lax"><b>Item Code</b></th>
-                        <th class="tg-0lax"><b>Item Name</b></th>
-                        <th class="tg-0lax"><b>Price</b></th>
-                        <th class="tg-0lax"><b>Qty</b></th>
-                        <th class="tg-0lax"><b>Total Price</b></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php $tot = 0; @endphp
-                    @foreach($value2['list_fix_det'] as $key => $valueDet)
-                    @php $tot += $valueDet['SUBTOT_AMT']; @endphp
-                    <tr>
-                        <td class="tg-0lax">{{$valueDet['MITM_ITMCD']}}</td>
-                        <td class="tg-0lax">{{$valueDet['MITM_ITMNM']}}</td>
-                        <td class="tg-0lax">Rp {{number_format($valueDet['TSRVF_PRC'],0,".",",")}}</td>
-                        <td class="tg-0lax">{{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
-                        <td class="tg-0lax">Rp {{number_format($valueDet['SUBTOT_AMT'],0,".",",")}}</td>
-                    </tr>
-                    @endforeach
-                    <tr>
-                        <td class="tg-0lax" colspan=4 style="text-align: right"><b>Total</b></td>
-                        <td class="tg-0lax"><b>Rp {{number_format($tot, 0, ".", ",")}}</b></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endforeach
+    <table class="tg">
+        <thead>
+            <tr>
+                <th class="tg-0lax"><b>Item Code</b></th>
+                <th class="tg-0lax"><b>Item Name</b></th>
+                <th class="tg-0lax"><b>Qty</b></th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $tot = 0; @endphp
+            @foreach($value2['list_fix_det'] as $key => $valueDet)
+            @php $tot += $valueDet['SUBTOT_AMT']; @endphp
+            <tr>
+                <td class="tg-0lax">{{$valueDet['TLOCREQ_ITMCD']}}</td>
+                <td class="tg-0lax">{{$valueDet['MITM_ITMNM']}}</td>
+                <td class="tg-0lax">{{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
 
     <div class="row" style="font-size: 13px; position: absolute;
             bottom: 10em; right: 10em">

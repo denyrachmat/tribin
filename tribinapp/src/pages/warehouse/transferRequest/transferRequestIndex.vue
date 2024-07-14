@@ -74,6 +74,7 @@
                   icon="check"
                   @click="onClickApprove(props.row.TLOCREQ_DOCNO)"
                   dense
+                  :disable="props.row.TLOCREQ_APPRVBY !== null"
                 >
                   <q-tooltip>Approve Data</q-tooltip>
                 </q-btn>

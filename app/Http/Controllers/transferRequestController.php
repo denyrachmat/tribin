@@ -120,20 +120,22 @@ class transferRequestController extends Controller
                 ->where('CITRN_ITMQT','>', 0)
                 ->first();
 
-            // Issue Stock
-            $iss = C_ITRN::on($this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => Auth::user()->branch,
-                'CITRN_LOCCD' => $value['TLOCREQ_FRLOC'],
-                'CITRN_DOCNO' => $value['TLOCREQ_DOCNO'],
-                'CITRN_ISSUDT' => date('Y-m-d'),
-                'CITRN_FORM' => 'OUT-TRF-LOC',
-                'CITRN_ITMCD' => $value['TLOCREQ_ITMCD'],
-                'CITRN_ITMQT' => $value['TLOCREQ_QTY'] * -1,
-                'CITRN_PRCPER' => empty($cekForIss) ? 0 : $cekForIss->CITRN_PRCPER,
-                'CITRN_PRCAMT' => empty($cekForIss) ? 0 : $value['TLOCREQ_QTY'] * $cekForIss->CITRN_PRCPER,
-                'created_by' => Auth::user()->nick_name,
-                'id_reff' => empty($cekForIss) ? 0 : $cekForIss->id_reff,
-            ]);
+            if($value['TLOCREQ_ISREP'] == 0) {
+                // Issue Stock
+                $iss = C_ITRN::on($this->dedicatedConnection)->create([
+                    'CITRN_BRANCH' => Auth::user()->branch,
+                    'CITRN_LOCCD' => $value['TLOCREQ_FRLOC'],
+                    'CITRN_DOCNO' => $value['TLOCREQ_DOCNO'],
+                    'CITRN_ISSUDT' => date('Y-m-d'),
+                    'CITRN_FORM' => 'OUT-TRF-LOC',
+                    'CITRN_ITMCD' => $value['TLOCREQ_ITMCD'],
+                    'CITRN_ITMQT' => $value['TLOCREQ_QTY'] * -1,
+                    'CITRN_PRCPER' => empty($cekForIss) ? 0 : $cekForIss->CITRN_PRCPER,
+                    'CITRN_PRCAMT' => empty($cekForIss) ? 0 : $value['TLOCREQ_QTY'] * $cekForIss->CITRN_PRCPER,
+                    'created_by' => Auth::user()->nick_name,
+                    'id_reff' => empty($cekForIss) ? 0 : $cekForIss->id_reff,
+                ]);
+            }
 
             // Receive Stock
             $rcv = C_ITRN::on($this->dedicatedConnection)->create([
@@ -150,6 +152,13 @@ class transferRequestController extends Controller
                 'id_reff' => empty($cekForIss) ? 0 : $cekForIss->id_reff,
             ]);
         }
+
+        T_LOC_REQ::on($this->dedicatedConnection)
+        ->where('TLOCREQ_DOCNO', base64_decode($id))
+        ->update([
+            'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
+            'TLOCREQ_APPRVBY' => Auth::user()->nick_name
+        ]);
 
         return ['msg' => 'Transfer Approved !!'];
     }

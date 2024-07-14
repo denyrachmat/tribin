@@ -357,12 +357,7 @@ class ServiceAdminController extends Controller
 
     public function printPartRequestPDF($id)
     {
-        $data = $this->search(new Request([
-            'searchBy' => 'SRVH_DOCNO',
-            'searchValue' => base64_decode($id)
-        ]));
-
-        $valueDet['partReq'] = T_LOC_REQ::on($this->dedicatedConnection)
+        $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->where('TLOCREQ_DOCNO', base64_decode($id))
             ->join('M_ITM', 'MITM_ITMCD', 'TLOCREQ_ITMCD')
             ->get()

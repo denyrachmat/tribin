@@ -170,7 +170,7 @@
             <tr>
                 <td class="tg-0lax">{{$valueDet['TLOCREQ_ITMCD']}}</td>
                 <td class="tg-0lax">{{$valueDet['MITM_ITMNM']}}</td>
-                <td class="tg-0lax">{{number_format($valueDet['TSRVF_QTY'],0,".",",")}}</td>
+                <td class="tg-0lax">{{number_format($valueDet['TLOCREQ_QTY'],0,".",",")}}</td>
             </tr>
             @endforeach
         </tbody>

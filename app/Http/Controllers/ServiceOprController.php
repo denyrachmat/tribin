@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
 use App\Models\T_SRV_FIXDET;
+use App\Models\T_LOC_REQ;
 
 class ServiceOprController extends Controller
 {
@@ -136,10 +137,23 @@ class ServiceOprController extends Controller
                 return $f['TSRVD_FLGSTS'] === 2;
             });
 
+            $listPartReq = [];
+            foreach ($getDet as $keyDet => $valueDet) {
+                $listPartReq[] = array_merge(
+                    $valueDet,
+                    ['partReq' => array_merge(
+                        $listPartReq,
+                        T_LOC_REQ::on($this->dedicatedConnection)
+                        ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'].'-'.$valueDet['TSRVD_LINE'])
+                        ->get()
+                        ->toArray()
+                    )]
+                );
+            }
+
             $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 2 : 0)->get()->toArray();
             $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 3 : 1)->get()->toArray();
-
-            $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
+            $hasil[] = array_merge($value, ['detail' => $listPartReq, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
         }
 
         return ['data' => $hasil];

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Illuminate\Support\Facades\Validator;
+use App\Models\T_LOC_REQ;
 
 class InventoryController extends Controller
 {
@@ -359,5 +360,30 @@ class InventoryController extends Controller
                 'RCV' => $rcv
             ]];
         }
+    }
+
+    function saveTransferLocDraft(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'TLOCREQ_DOCNO' => 'required',
+            'TLOCREQ_FRLOC' => 'required',
+            'TLOCREQ_TOLOC' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        $create = [];
+        foreach ($request->detail as $key => $value) {
+            $create[] = T_LOC_REQ::on($this->dedicatedConnection)->create([
+                'TLOCREQ_DOCNO' => $request->TLOCREQ_DOCNO,
+                'TLOCREQ_ITMCD' => $value['TLOCREQ_ITMCD'],
+                'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
+                'TLOCREQ_FRLOC' => $request->TLOCREQ_FRLOC,
+                'TLOCREQ_TOLOC' => $request->TLOCREQ_TOLOC,
+            ]);
+        }
+
+        return ['msg' => 'OK', 'DATA' => $create];
     }
 }

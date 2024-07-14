@@ -185,9 +185,7 @@
             </tr>
         </thead>
         <tbody>
-            @php $tot = 0; @endphp
-            @foreach($value2['list_fix_det'] as $key => $valueDet)
-            @php $tot += $valueDet['SUBTOT_AMT']; @endphp
+            @foreach($data as $key => $valueDet)
             <tr>
                 <td class="tg-0lax">{{$valueDet['TLOCREQ_ITMCD']}}</td>
                 <td class="tg-0lax">{{$valueDet['MITM_ITMNM']}}</td>

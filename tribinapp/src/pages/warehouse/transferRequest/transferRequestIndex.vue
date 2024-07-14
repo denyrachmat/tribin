@@ -162,7 +162,7 @@ const onClickApprove = (val) => {
     .get(`inventory/transferRequest/approve/${btoa(val)}`)
     .then((response) => {
       loading.value = false;
-      rows.value = response.data.data;
+      getTFRequest()
     })
     .catch((e) => {
       loading.value = false;

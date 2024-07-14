@@ -172,7 +172,7 @@
             <br><br>
             Sehubungan dengan usaha untuk memberikan pelayanan yang memuaskan kepada customer kami,
             <br>
-            maka berikut kami berikan total harga pengerjaan dari service tersebut :
+            maka berikut kami membutuhkan part berikut :
         </div>
     </div>
 

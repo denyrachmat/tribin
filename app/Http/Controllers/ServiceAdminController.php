@@ -15,6 +15,7 @@ use App\Models\CompanyGroup;
 
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
+use App\Models\T_LOC_REQ;
 
 class ServiceAdminController extends Controller
 {
@@ -79,13 +80,13 @@ class ServiceAdminController extends Controller
         foreach ($request->detail as $key => $value) {
             ini_set('max_execution_time', '300');
             // $nama_file = $req->file->hashName();
-            $base64_str = substr($value['TSRVD_PHOTO'], strpos($value['TSRVD_PHOTO'], ",")+1);
+            $base64_str = substr($value['TSRVD_PHOTO'], strpos($value['TSRVD_PHOTO'], ",") + 1);
 
             //decode base64 string
             $base64_image = $base64_str; // your base64 encoded
             @list($type, $file_data) = explode(';', $base64_image);
             @list(, $file_data) = explode(',', $file_data);
-            $imageName = $headerStore->id.'/photo_service_'.date('Ymd_his').'.'.'jpg';
+            $imageName = $headerStore->id . '/photo_service_' . date('Ymd_his') . '.' . 'jpg';
             Storage::put($imageName, base64_decode($file_data));
 
             $det[] = T_SRV_DET::on($this->dedicatedConnection)->updateOrCreate([
@@ -132,13 +133,41 @@ class ServiceAdminController extends Controller
 
     public function updateByDet(Request $request, string $id)
     {
+        if ($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS === 3) {
+            $listDet = T_SRV_FIXDET::on($this->dedicatedConnection)
+                ->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD')
+                ->where('MITM_ITMTYPE', '<>', 3)
+                ->where('TSRVD_ID', base64_decode($id))
+                ->get();
+
+            $listEmptyStock = [];
+            foreach ($listDet as $key => $value) {
+                $cekStockonService = DB::connection($this->dedicatedConnection)
+                    ->table('V_STOCK_CHECK')
+                    ->where('CITRN_ITMCD', $value['TSRVF_ITMCD'])
+                    ->where('CITRN_LOCCD', 'WH-SRV')
+                    ->first();
+
+                if (empty($cekStockonService) || (!empty($cekStockonService) && $cekStockonService->CITRN_ITMQT < $value['TSRVF_QTY'])) {
+                    $listEmptyStock[] = 'Stock Item ' . $value['TSRVF_ITMCD'] . ' on service location is empty or not enough, please request part to warehouse!';
+                }
+            }
+
+            if (count($listEmptyStock) > 0) {
+                return response([
+                    'STOK' => $listEmptyStock
+                ], 406);
+            }
+        }
+
         T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))
             ->update($request->all());
 
         return ['msg' => 'Data has been updated'];
     }
 
-    public function updateDetByIDHead(Request $request, string $id){
+    public function updateDetByIDHead(Request $request, string $id)
+    {
         $dataHead = T_SRV_HEAD::on($this->dedicatedConnection)
             ->where('id', base64_decode($id))
             ->first();
@@ -168,7 +197,7 @@ class ServiceAdminController extends Controller
         }
 
         $postToDelivery = [];
-        if($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1 && $dataHead->SRVH_ISINT == 1) {
+        if ($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1 && $dataHead->SRVH_ISINT == 1) {
             $createReq = new Request([
                 'TDLVORD_CUSCD' => $dataHead->SRVH_CUSCD,
                 'TDLVORD_ISSUDT' => $dataHead->SRVH_ISSDT,
@@ -333,31 +362,20 @@ class ServiceAdminController extends Controller
             'searchValue' => base64_decode($id)
         ]));
 
-        $getCompGroups = CompanyGroup::where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->first();
-
-        $total = 0;
-        foreach ($data['data'] as $key => $value) {
-            foreach ($value['detail'] as $key => $valueDet) {
-                if (isset($valueDet['list_fix_det']) && count($valueDet['list_fix_det']) > 0) {
-                    $total += array_sum(array_column($valueDet['list_fix_det'], 'SUBTOT_AMT'));
-                }
-            }
-        }
+        $valueDet['partReq'] = T_LOC_REQ::on($this->dedicatedConnection)
+            ->where('TLOCREQ_DOCNO', base64_decode($id))
+            ->join('M_ITM', 'MITM_ITMCD', 'TLOCREQ_ITMCD')
+            ->get()
+            ->toArray();
 
         $pdf = Pdf::loadView('pdf.partRequestForm', [
-            'data' => $data['data'],
-            'total' => $total,
-            'isPPN' => $getCompGroups->flg_ppn,
-            'total' => $total,
-            'ppn' => ($total * 0.11),
-            // 'terbilang' => $this->numberToSentence($total + ($total * 0.11)),
-            'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + ($total * 0.11) : $total),
+            'data' => $data,
             'header' => 'JAYA ABADI TEKNIK',
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
         ]);
 
-        return $pdf->stream('invoice.pdf');
+        return $pdf->stream('part-request.pdf');
     }
 
     public function showListUnapproveMgr()
@@ -372,7 +390,8 @@ class ServiceAdminController extends Controller
         return $unapproveService;
     }
 
-    public function viewUnapproveDetail($id) {
+    public function viewUnapproveDetail($id)
+    {
         $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->first();
         $unapproveService = T_SRV_DET::on($this->dedicatedConnection)
             ->where('TSRVH_ID', $head->id)
@@ -383,7 +402,8 @@ class ServiceAdminController extends Controller
         return $unapproveService;
     }
 
-    public function viewUnapproveMgr() {
+    public function viewUnapproveMgr()
+    {
         return view('tribinapp_layouts', ['routeApp' => 'servicesApproval']);
     }
 }

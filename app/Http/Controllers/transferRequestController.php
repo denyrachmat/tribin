@@ -122,7 +122,7 @@ class transferRequestController extends Controller
                 ->where('CITRN_ITMQT','>', 0)
                 ->first();
 
-            if($value['TLOCREQ_ISREP'] === 0) {
+            if($value['TLOCREQ_ISREP'] < 1) {
                 // Issue Stock
                 $iss = C_ITRN::on($this->dedicatedConnection)->create([
                     'CITRN_BRANCH' => Auth::user()->branch,

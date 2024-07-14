@@ -41,6 +41,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UsageController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServiceAdminController;
+use App\Http\Controllers\transferRequestController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
 
@@ -415,6 +416,14 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('ledger', [InventoryController::class, 'stockLedger']);
             Route::get('transferLocForm', [InventoryController::class, 'transferLocForm']);
             Route::post('transferLoc', [InventoryController::class, 'transferLoc']);
+            Route::post('saveTransferLocDraft', [InventoryController::class, 'saveTransferLocDraft']);
+
+            Route::prefix('transferRequest')->group(function () {
+                Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);
+                Route::get('approve/{id}', [transferRequestController::class, 'approveData']);
+
+                Route::resource('', transferRequestController::class);
+            });
         });
 
         # Terkait Receive

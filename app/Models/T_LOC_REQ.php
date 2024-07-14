@@ -18,5 +18,6 @@ class T_LOC_REQ extends Model
         'TLOCREQ_FRLOC',
         'TLOCREQ_TOLOC',
         'TLOCREQ_APPRVBY',
+        'TLOCREQ_ISREP',
     ];
 }

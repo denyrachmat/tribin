@@ -20,6 +20,7 @@ const routes = [
       { path: 'incoming', component: () => import('pages/warehouse/incoming/incomingIndex.vue') },
       { path: 'incomingBC', component: () => import('pages/warehouse/incomingBarcode/incomingBarcodeIndex.vue') },
       { path: 'transferLoc', component: () => import('pages/warehouse/transferLocation/transferLocIndex.vue') },
+      { path: 'transferRequest', component: () => import('pages/warehouse/transferRequest/transferRequestIndex.vue') },
       { path: 'accIF', component: () => import('pages/transaction/accounting/closing/accClosingIndex.vue') },
       { path: 'glReport', component: () => import('pages/transaction/accounting/glReport/glReportIndex.vue') },
       { path: 'journalReport', component: () => import('pages/transaction/accounting/journalReport/journalReportIndex.vue') },

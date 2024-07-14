@@ -359,6 +359,7 @@ class ServiceAdminController extends Controller
     {
         $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->where('TLOCREQ_DOCNO', base64_decode($id))
+            ->where('TLOCREQ_ISREP', 0)
             ->join('M_ITM', 'MITM_ITMCD', 'TLOCREQ_ITMCD')
             ->get()
             ->toArray();

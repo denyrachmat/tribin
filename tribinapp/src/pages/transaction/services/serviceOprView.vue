@@ -183,6 +183,7 @@ const onClickPreview = (val, mode) => {
       TSRVD_CUSTRMK: valMap.TSRVD_CUSTRMK,
       TSRVD_REMARK: valMap.TSRVD_REMARK,
       listFixDet: valMap.list_fix_det,
+      partReq: valMap.partReq,
     });
   });
   $q.dialog({

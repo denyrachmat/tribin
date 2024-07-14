@@ -11,7 +11,7 @@
         <div class="text-h6">Update Order {{ dataApi.SRVH_DOCNO }}</div>
       </q-card-section>
 
-      <q-card-section class="q-pa-sm">
+      <q-card-section class="q-pa-sm" v-if="dataApi">
         <q-list bordered>
           <q-item
             v-for="(items, idx) in submitedItems"
@@ -154,7 +154,10 @@
               <q-item-label caption lines="1">Operator Remarks</q-item-label>
             </q-item-section>
 
-            <q-item-section side v-if="props.mode === 'edit' && items.TSRVD_FLGSTS < 2">
+            <q-item-section
+              side
+              v-if="props.mode === 'edit' && items.TSRVD_FLGSTS < 2"
+            >
               <q-btn
                 icon="construction"
                 color="green"
@@ -192,14 +195,76 @@
               </q-btn>
             </q-item-section>
             <q-item-section side v-if="props.mode === 'approvecust'">
-              <q-btn icon="cancel" color="red"
-                outline @click="onClickReject(idx)">
+              <q-btn
+                icon="cancel"
+                color="red"
+                outline
+                @click="onClickReject(idx)"
+              >
                 <q-tooltip>Reject this as customer</q-tooltip>
               </q-btn>
             </q-item-section>
-            <q-item-section side v-if="props.mode === 'edit' && items.TSRVD_FLGSTS == 2">
-              <q-btn icon="task" color="indigo" outline @click="onClickDone(idx)">
+            <q-item-section
+              side
+              v-if="props.mode === 'edit' && items.TSRVD_FLGSTS == 2"
+            >
+              <q-btn
+                icon="task"
+                color="indigo"
+                outline
+                @click="onClickDone(idx)"
+              >
                 <q-tooltip>Mark this problem as done</q-tooltip>
+              </q-btn>
+            </q-item-section>
+            <q-item-section
+              side
+              v-if="
+                items.partReq &&
+                props.mode === 'edit' &&
+                items.TSRVD_FLGSTS == 2 &&
+                items.partReq.length === 0
+              "
+            >
+              <q-btn
+                icon="compare_arrows"
+                :color="
+                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                    .length > 0
+                    ? 'grey'
+                    : 'orange'
+                "
+                outline
+                @click="onClickRequest(idx)"
+                :disable="
+                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                    .length > 0
+                "
+              >
+                <q-tooltip>{{
+                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                    .length > 0
+                    ? "Already send request to warehouse, please wait till request fullfiled"
+                    : "Request Part to Warehouse"
+                }}</q-tooltip>
+              </q-btn>
+            </q-item-section>
+            <q-item-section
+              side
+              v-if="
+                items.partReq &&
+                props.mode === 'edit' &&
+                items.TSRVD_FLGSTS == 2 &&
+                items.partReq.length > 0
+              "
+            >
+              <q-btn
+                icon="compare_arrows"
+                color="cyan"
+                outline
+                @click="onClickPrintRequest(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
+              >
+                <q-tooltip>Print Part Request</q-tooltip>
               </q-btn>
             </q-item-section>
           </q-item>
@@ -235,6 +300,7 @@ import { onMounted, ref } from "vue";
 import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
 import serviceOprItemAdd from "./serviceOprItemAdd.vue";
+import itemRequestIndex from "../../warehouse/itemRequest/itemRequestIndex.vue";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -270,7 +336,7 @@ const onClickAddItem = (val, mode = "add") => {
     componentProps: {
       mode: mode,
       dataItem: submitedItems.value[val],
-      header: props.header
+      header: props.header,
     },
     // persistent: true,
   }).onOk(async (res) => {
@@ -303,7 +369,6 @@ const onSubmitData = () => {
 };
 
 const onClickApprove = (idx) => {
-    console.log(submitedItems.value[idx])
   $q.dialog({
     title: "Confirmation",
     message: `Do you want to approve this price ?`,
@@ -324,7 +389,6 @@ const onClickApprove = (idx) => {
       });
   });
 };
-
 
 const onClickReject = (idx) => {
   $q.dialog({
@@ -368,5 +432,42 @@ const onClickDone = (idx) => {
         loading.value = false;
       });
   });
+};
+
+const onClickRequest = (idx) => {
+  console.log(submitedItems.value[idx]);
+  let listDet = [];
+  submitedItems.value[idx].listFixDet.map((valMap) => {
+    listDet.push({
+      TLOCREQ_ITMCD: valMap.TSRVF_ITMCD,
+      TLOCREQ_QTY: valMap.TSRVF_QTY,
+    });
+  });
+  $q.dialog({
+    component: itemRequestIndex,
+    componentProps: {
+      dataHeader: {
+        TLOCREQ_DOCNO:
+          dataApi.value.SRVH_DOCNO + "-" + submitedItems.value[idx].TSRVD_LINE,
+        TLOCREQ_FRLOC: "WH1",
+        TLOCREQ_TOLOC: "WH-SRV",
+        TLOCREQ_ISREP: true
+      },
+      dataDet: listDet,
+    },
+    // persistent: true,
+  }).onOk(async (res) => {
+    loading.value = false;
+    onDialogOK();
+  });
+};
+
+const onClickPrintRequest = (val) => {
+  window
+    .open(
+      process.env.API_WEB + "servicesAdmins/printPartRequest/" + btoa(val),
+      "_blank"
+    )
+    .focus();
 };
 </script>

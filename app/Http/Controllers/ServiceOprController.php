@@ -141,13 +141,11 @@ class ServiceOprController extends Controller
             foreach ($getDet as $keyDet => $valueDet) {
                 $listPartReq[] = array_merge(
                     $valueDet,
-                    ['partReq' => array_merge(
-                        $listPartReq,
-                        T_LOC_REQ::on($this->dedicatedConnection)
-                        ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'].'-'.$valueDet['TSRVD_LINE'])
-                        ->get()
-                        ->toArray()
-                    )]
+                    ['partReq' => T_LOC_REQ::on($this->dedicatedConnection)
+                    ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'].'-'.$valueDet['TSRVD_LINE'])
+                    ->get()
+                    ->toArray()
+                    ]
                 );
             }
 

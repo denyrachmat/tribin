@@ -381,6 +381,7 @@ class InventoryController extends Controller
                 'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
                 'TLOCREQ_FRLOC' => $request->TLOCREQ_FRLOC,
                 'TLOCREQ_TOLOC' => $request->TLOCREQ_TOLOC,
+                'TLOCREQ_ISREP' => $request->has('TLOCREQ_ISREP') ? $request->TLOCREQ_ISREP : 0
             ]);
         }
 

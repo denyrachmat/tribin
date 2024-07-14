@@ -141,26 +141,7 @@
                 <tr>
                     <td>Inv No</td>
                     <td>:</td>
-                    <td>{{$data[0]['SRVH_DOCNO']}}</td>
-                </tr>
-                <tr>
-                    <td>To</td>
-                    <td>:</td>
-                    <td>{{$data[0]['MCUS_CUSNM']}}</td>
-                </tr>
-            </table>
-        </div>
-        <div class="col">
-            <table style="font-size: 13px">
-                <tr>
-                    <td>Phone</td>
-                    <td>:</td>
-                    <td>{{$data[0]['MCUS_PIC_TELNO']}}</td>
-                </tr>
-                <tr>
-                    <td>Address</td>
-                    <td>:</td>
-                    <td>{{$data[0]['MCUS_ADDR1']}}</td>
+                    <td>{{$data[0]['TLOCREQ_DOCNO']}}</td>
                 </tr>
             </table>
         </div>

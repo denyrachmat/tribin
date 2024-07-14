@@ -326,6 +326,40 @@ class ServiceAdminController extends Controller
         return $pdf->stream('invoice.pdf');
     }
 
+    public function printPartRequestPDF($id)
+    {
+        $data = $this->search(new Request([
+            'searchBy' => 'SRVH_DOCNO',
+            'searchValue' => base64_decode($id)
+        ]));
+
+        $getCompGroups = CompanyGroup::where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->first();
+
+        $total = 0;
+        foreach ($data['data'] as $key => $value) {
+            foreach ($value['detail'] as $key => $valueDet) {
+                if (isset($valueDet['list_fix_det']) && count($valueDet['list_fix_det']) > 0) {
+                    $total += array_sum(array_column($valueDet['list_fix_det'], 'SUBTOT_AMT'));
+                }
+            }
+        }
+
+        $pdf = Pdf::loadView('pdf.partRequestForm', [
+            'data' => $data['data'],
+            'total' => $total,
+            'isPPN' => $getCompGroups->flg_ppn,
+            'total' => $total,
+            'ppn' => ($total * 0.11),
+            // 'terbilang' => $this->numberToSentence($total + ($total * 0.11)),
+            'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + ($total * 0.11) : $total),
+            'header' => 'JAYA ABADI TEKNIK',
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
+        ]);
+
+        return $pdf->stream('invoice.pdf');
+    }
+
     public function showListUnapproveMgr()
     {
         $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)

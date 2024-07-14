@@ -105,7 +105,20 @@
                       .length === props.row.detail.length
                   "
                 >
-                  <q-tooltip>Print this order</q-tooltip>
+                  <q-tooltip>Print Estimation Price</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  color="orange"
+                  icon="print"
+                  @click="onClickPrintPR(props.row.SRVH_DOCNO)"
+                  dense
+                  v-if="
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
+                      .length === props.row.detail.length
+                  "
+                >
+                  <q-tooltip>Print Part Request</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -275,7 +288,11 @@ const onClickView = (val) => {
     componentProps: {
       header: header,
       detail: detail,
-      mode: val.detail.filter(fil => fil.TSRVD_FLGSTS === 1).length === val.detail.length ? "approvecust" : "view",
+      mode:
+        val.detail.filter((fil) => fil.TSRVD_FLGSTS === 1).length ===
+        val.detail.length
+          ? "approvecust"
+          : "view",
     },
     // persistent: true,
   }).onOk(async (val) => {
@@ -287,6 +304,15 @@ const onClickPrint = (val) => {
   window
     .open(
       process.env.API_WEB + "servicesAdmins/printInvoice/" + btoa(val),
+      "_blank"
+    )
+    .focus();
+};
+
+const onClickPrintPR = (val) => {
+  window
+    .open(
+      process.env.API_WEB + "servicesAdmins/printPartRequest/" + btoa(val),
       "_blank"
     )
     .focus();
@@ -370,39 +396,42 @@ const statusMaker = (val) => {
 
   if (statusZero.length == val.detail.length) {
     return {
-      color: 'red',
-      label: 'No Price Added yet !',
-      icon: 'edit'
+      color: "red",
+      label: "No Price Added yet !",
+      icon: "edit",
     };
   } else if (statusOne.length > 0 && statusOne.length < val.detail.length) {
     return {
-      color: 'warning',
-      label: 'Please Add item & price',
-      icon: 'payments'
+      color: "warning",
+      label: "Please Add item & price",
+      icon: "payments",
     };
   } else if (statusFive.length > 0 && statusFive.length == val.detail.length) {
     return {
-      color: 'indigo',
-      label: 'Added Price Done, Waiting Manager Confirmation',
-      icon: 'price_check'
+      color: "indigo",
+      label: "Added Price Done, Waiting Manager Confirmation",
+      icon: "price_check",
     };
   } else if (statusOne.length > 0 && statusOne.length == val.detail.length) {
     return {
-      color: 'green',
-      label: 'Manager has been approve, Waiting Cust. Confirmation',
-      icon: 'price_check'
+      color: "green",
+      label: "Manager has been approve, Waiting Cust. Confirmation",
+      icon: "price_check",
     };
   } else if (statusTwo.length > 0 && statusTwo.length >= val.detail.length) {
     return {
-      color: 'cyan',
-      label: 'Cust. has been approved, continue to fix.',
-      icon: 'engineering'
+      color: "cyan",
+      label: "Cust. has been approved, continue to fix.",
+      icon: "engineering",
     };
-  } else if (statusThree.length > 0 && statusThree.length === val.detail.length) {
+  } else if (
+    statusThree.length > 0 &&
+    statusThree.length === val.detail.length
+  ) {
     return {
-      color: 'primary',
-      label: 'Fix has been done',
-      icon: 'fact_check'
+      color: "primary",
+      label: "Fix has been done",
+      icon: "fact_check",
     };
   }
 };

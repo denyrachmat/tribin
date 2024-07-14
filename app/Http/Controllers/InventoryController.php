@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Illuminate\Support\Facades\Validator;
 
 class InventoryController extends Controller
 {
@@ -281,5 +282,82 @@ class InventoryController extends Controller
         header('Content-Disposition: attachment;filename="' . $filename . '.xlsx"');
         header('Cache-Control: max-age=0');
         $writer->save('php://output');
+    }
+
+    function transferLocForm()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'transferLoc']);
+    }
+
+    function transferLoc(Request $request) {
+        # data quotation detail item
+        $validator = Validator::make($request->all(), [
+            'LOCFROM' => 'required',
+            'LOCTO' => 'required',
+            'ITMCD' => 'required',
+            'QTY' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        // $cekITRN = C_ITRN::on($this->dedicatedConnection)
+        //     ->where('CITRN_ITMCD');
+
+        $cekStock = DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
+            ->where('CITRN_ITMCD', $request->ITMCD)
+            ->where('CITRN_LOCCD', $request->LOCFROM)
+            ->first();
+
+        if ($cekStock === null || (!empty($cekStock) && $cekStock->CITRN_ITMQT < $request->QTY)) {
+            return response([
+                'STOK' => ['Stock less than inputed qty or stock not exists!!']
+            ], 406);
+        } else {
+            $cekLatestTrf = C_ITRN::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)', date('Y')))
+                ->where('CITRN_FORM', 'INC-TRF-LOC')
+                ->where('CITRN_DOCNO', 'like', 'TRF%')
+                ->first();
+
+            if (empty($cekLatestTrf)) {
+                $TRFCODE = 'TRF'.date('Y').'0001';
+            } else {
+                $TRFCODE = 'TRF'.date('Y').sprintf('%04d', (int) substr($cekLatestTrf->CITRN_DOCNO, -3) + 1);
+            }
+
+            // Issue Stock
+            $iss = C_ITRN::on($this->dedicatedConnection)->create([
+                'CITRN_BRANCH' => Auth::user()->branch,
+                'CITRN_LOCCD' => $request->LOCFROM,
+                'CITRN_DOCNO' => $request->has('DOC') && !empty($request->DOC) ? $request->DOC : $TRFCODE,
+                'CITRN_ISSUDT' => date('Y-m-d'),
+                'CITRN_FORM' => 'OUT-TRF-LOC',
+                'CITRN_ITMCD' => $request->ITMCD,
+                'CITRN_ITMQT' => $request->QTY * -1,
+                'CITRN_PRCPER' => $cekStock->CITRN_PRCPER,
+                'CITRN_PRCAMT' => $request->QTY * $cekStock->CITRN_PRCPER,
+                'created_by' => Auth::user()->nick_name,
+            ]);
+
+            // Receive Stock
+            $rcv = C_ITRN::on($this->dedicatedConnection)->create([
+                'CITRN_BRANCH' => Auth::user()->branch,
+                'CITRN_LOCCD' => $request->LOCTO,
+                'CITRN_DOCNO' => $request->has('DOC') && !empty($request->DOC) ? $request->DOC : $TRFCODE,
+                'CITRN_ISSUDT' => date('Y-m-d'),
+                'CITRN_FORM' => 'INC-TRF-LOC',
+                'CITRN_ITMCD' => $request->ITMCD,
+                'CITRN_ITMQT' => $request->QTY,
+                'CITRN_PRCPER' => $cekStock->CITRN_PRCPER,
+                'CITRN_PRCAMT' => $request->QTY * $cekStock->CITRN_PRCPER,
+                'created_by' => Auth::user()->nick_name,
+            ]);
+
+            return ['msg' => 'OK', 'DATA' => [
+                'ISS' => $iss,
+                'RCV' => $rcv
+            ]];
+        }
     }
 }

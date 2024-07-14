@@ -413,6 +413,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('ledger-form', [InventoryController::class, 'formLedger']);
             Route::get('status', [InventoryController::class, 'stockStatus']);
             Route::get('ledger', [InventoryController::class, 'stockLedger']);
+            Route::get('transferLocForm', [InventoryController::class, 'transferLocForm']);
+            Route::post('transferLoc', [InventoryController::class, 'transferLoc']);
         });
 
         # Terkait Receive
@@ -450,6 +452,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::put('updateByDet/{id}', [ServiceAdminController::class, 'updateByDet']);
             Route::put('updateDetByIDHead/{id}', [ServiceAdminController::class, 'updateDetByIDHead']);
             Route::get('printInvoice/{id}', [ServiceAdminController::class, 'printInvoicePDF']);
+            Route::get('printPartRequest/{id}', [ServiceAdminController::class, 'printPartRequestPDF']);
             Route::get('viewUnapproveMgr', [ServiceAdminController::class, 'viewUnapproveMgr']);
             Route::get('viewUnapproveMgrDet/{id}', [ServiceAdminController::class, 'viewUnapproveDetail']);
             Route::get('listUnapproveMgr', [ServiceAdminController::class, 'showListUnapproveMgr']);

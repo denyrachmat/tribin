@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Illuminate\Support\Facades\Validator;
 use App\Models\T_LOC_REQ;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InventoryController extends Controller
 {
@@ -386,5 +387,30 @@ class InventoryController extends Controller
         }
 
         return ['msg' => 'OK', 'DATA' => $create];
+    }
+
+    public function printHandoverPDF(Request $request)
+    {
+        $data = T_LOC_REQ::on($this->dedicatedConnection)
+            ->where('TLOCREQ_DOCNO', base64_decode($request->data))
+            ->join('M_ITM', 'MITM_ITMCD', 'TLOCREQ_ITMCD')
+            ->get()
+            ->toArray();
+
+        // return view('pdf.handoverStock', [
+        //     'data' => $data,
+        //     'header' => 'JAYA ABADI TEKNIK',
+        //     'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+        //     'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
+        // ]);
+
+        $pdf = Pdf::loadView('pdf.handoverStock', [
+            'data' => $data,
+            'header' => 'JAYA ABADI TEKNIK',
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
+        ]);
+
+        return $pdf->stream('part-handover.pdf');
     }
 }

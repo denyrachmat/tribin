@@ -417,6 +417,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('transferLocForm', [InventoryController::class, 'transferLocForm']);
             Route::post('transferLoc', [InventoryController::class, 'transferLoc']);
             Route::post('saveTransferLocDraft', [InventoryController::class, 'saveTransferLocDraft']);
+            Route::post('printHandoverPDF', [InventoryController::class, 'printHandoverPDF']);
 
             Route::prefix('transferRequest')->group(function () {
                 Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);

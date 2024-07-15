@@ -4,8 +4,7 @@
       <div class="col">
         <span class="text-h4">Transfer Request</span>
       </div>
-      <div class="col text-right">
-      </div>
+      <div class="col text-right"></div>
     </div>
 
     <q-separator />
@@ -70,13 +69,33 @@
               <q-td auto-width>
                 <q-btn
                   flat
-                  color="indigo"
+                  :color="
+                    props.row.TLOCREQ_APPRVBY !== null ? 'grey' : 'indigo'
+                  "
                   icon="check"
                   @click="onClickApprove(props.row.TLOCREQ_DOCNO)"
                   dense
                   :disable="props.row.TLOCREQ_APPRVBY !== null"
                 >
-                  <q-tooltip>Approve Data</q-tooltip>
+                  <q-tooltip>{{
+                    props.row.TLOCREQ_APPRVBY !== null
+                      ? "Request has been approved"
+                      : "Approve Data"
+                  }}</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  :color="props.row.TLOCREQ_APPRVBY !== null ? 'cyan' : 'grey'"
+                  icon="print"
+                  @click="onClickPrint(props.row.TLOCREQ_DOCNO)"
+                  dense
+                  :disable="props.row.TLOCREQ_APPRVBY === null"
+                >
+                  <q-tooltip>{{
+                    props.row.TLOCREQ_APPRVBY === null
+                      ? "Please Aprove first"
+                      : "Print handover request"
+                  }}</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
@@ -91,7 +110,7 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
-const $q = useQuasar()
+const $q = useQuasar();
 
 const rows = ref([]);
 const columns = ref([
@@ -121,21 +140,20 @@ const columns = ref([
     label: "Is Replacement ?",
     field: "TLOCREQ_ISREP",
     sortable: true,
-    format: val => `${val == 1 ? 'Yes' : 'No'}`,
+    format: (val) => `${val == 1 ? "Yes" : "No"}`,
     align: "left",
   },
-
 ]);
 const loading = ref(false);
-const filterCol = ref('')
-const filter = ref('')
+const filterCol = ref("");
+const filter = ref("");
 
 onMounted(() => {
-    getTFRequest()
-})
+  getTFRequest();
+});
 
 const getTFRequest = async () => {
-    loading.value = true;
+  loading.value = true;
   await api_web
     .post(`inventory/transferRequest/searchAPI`, {
       searchBy: filterCol.value,
@@ -148,7 +166,7 @@ const getTFRequest = async () => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const onClickApprove = (val) => {
   $q.dialog({
@@ -159,14 +177,41 @@ const onClickApprove = (val) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-    .get(`inventory/transferRequest/approve/${btoa(val)}`)
-    .then((response) => {
-      loading.value = false;
-      getTFRequest()
-    })
-    .catch((e) => {
-      loading.value = false;
-    });
-  })
-}
+      .get(`inventory/transferRequest/approve/${btoa(val)}`)
+      .then((response) => {
+        loading.value = false;
+        getTFRequest();
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
+
+const onClickPrint = (val) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to print this transfer ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .post(`inventory/printHandoverPDF`,{
+        data: btoa(val)
+      })
+      .then((response) => {
+        loading.value = false;
+        let pdfWindow = window.open("");
+        pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+            encodeURI(response.data) +
+            "'></iframe>"
+        );
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
 </script>

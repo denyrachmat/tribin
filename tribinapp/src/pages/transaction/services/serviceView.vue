@@ -109,19 +109,6 @@
                 </q-btn>
                 <q-btn
                   flat
-                  color="orange"
-                  icon="print"
-                  @click="onClickPrintPR(props.row.SRVH_DOCNO)"
-                  dense
-                  v-if="
-                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
-                      .length === props.row.detail.length
-                  "
-                >
-                  <q-tooltip>Print Part Request</q-tooltip>
-                </q-btn>
-                <q-btn
-                  flat
                   color="red"
                   icon="delete"
                   @click="onClickDelete(props.row.SRVH_DOCNO)"

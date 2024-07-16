@@ -411,6 +411,6 @@ class InventoryController extends Controller
             'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
         ]);
 
-        return $pdf->stream('part-handover.pdf');
+        return base64_encode($pdf->stream('part-handover.pdf'));
     }
 }

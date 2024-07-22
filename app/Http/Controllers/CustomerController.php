@@ -165,7 +165,7 @@ class CustomerController extends Controller
                 : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
             ->get();
         } else {
-            $RS = (clone $RSTemp)->get();
+            $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
         }
 
         return ['data' => $RS];

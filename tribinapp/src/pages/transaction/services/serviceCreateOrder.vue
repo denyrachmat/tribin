@@ -13,6 +13,20 @@
       </q-card-section>
 
       <q-card-section class="q-pa-sm">
+        <div class="row q-pb-md">
+          <div class="col">
+            <q-checkbox
+              v-model="internalSrv"
+              label="Internal Service ?"
+              color="teal"
+              :true-value="1"
+              :false-value="0"
+              :disable="loading"
+              @update:model-value="(val) => onCheckInternal(val)"
+            />
+          </div>
+        </div>
+
         <fieldset style="border: 1px black solid; border-radius: 10px">
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>Header</b>
@@ -106,20 +120,6 @@
           </div>
         </fieldset>
 
-        <div class="row q-py-md">
-          <div class="col">
-            <q-checkbox
-              v-model="internalSrv"
-              label="Internal Service ?"
-              color="teal"
-              :true-value="1"
-              :false-value="0"
-              :disable="loading"
-              @update:model-value="(val) => onCheckInternal(val)"
-            />
-          </div>
-        </div>
-
         <fieldset
           style="
             border: 1px black solid;
@@ -174,10 +174,9 @@
                       emit-value
                       map-options
                       :loading="loading"
-                      v-if="internalSrv == 1"
                     >
                     </q-select>
-                    <q-btn
+                    <!-- <q-btn
                       icon="library_add"
                       color="indigo"
                       outline
@@ -187,7 +186,7 @@
                       v-else
                     >
                       <q-tooltip>Add new item</q-tooltip>
-                    </q-btn>
+                    </q-btn> -->
                   </q-item-label>
                 </q-item-section>
                 <q-item-section>
@@ -214,7 +213,7 @@
                 </q-item-section>
                 <q-item-section
                   side
-                  v-if="props.mode !== 'view' && internalSrv == 1"
+                  v-if="props.mode !== 'view'"
                 >
                   <q-btn
                     icon="library_add"
@@ -347,6 +346,9 @@ const getItem = async (val) => {
   await api_web
     .post("item/searchAPI", {
       searchValue: val,
+      isForServ: 1,
+      isITMCD: 1,
+      useCustomer: dataApi.value.SRVH_CUSCD
     })
     .then((response) => {
       loading.value = false;
@@ -391,9 +393,11 @@ const onClickAddItem = (idx) => {
     componentProps: {
       ItemCat: "SERVICE_ITEM",
       ItemType: 3,
+      isAutoCD: true
     },
     // persistent: true,
   }).onOk(async (val) => {
+    console.log(val)
     await getItem("");
     submitedItems.value[idx].TSRVD_ITMCD = val.MITM_ITMNM;
   });
@@ -467,6 +471,8 @@ const getBase64 = (file) => {
 
 const onCheckInternal = async (val) => {
   if (val == 1) {
+    dataApi.value.SRVH_CUSCD = ''
+    listCustomers.value = []
     await getCustomer('connect_jos', 'MCUS_CGCON')
   }
 }

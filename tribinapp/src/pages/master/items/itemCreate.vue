@@ -20,6 +20,7 @@
               dense
               v-model="itemData.MITM_ITMCD"
               filled
+              :readonly="props.isAutoCD"
             />
           </div>
           <div class="col q-pl-md">
@@ -132,6 +133,7 @@ const listCOA = ref([]);
 const props = defineProps({
   ItemCat: String,
   ItemType: String,
+  isAutoCD: Boolean
 });
 
 onMounted(() => {

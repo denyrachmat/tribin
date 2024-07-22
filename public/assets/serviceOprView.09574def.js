@@ -1,1 +1,0 @@
-import{_ as e,B as c,R as t,I as s}from"./index.a582e5d0.js";const a={},o={class:"q-pa-md"},r=s("div",{class:"row q-pb-md"},[s("div",{class:"col"},[s("span",{class:"text-h4"},"Order List ")])],-1),_=[r];function d(n,i){return c(),t("div",o,_)}var p=e(a,[["render",d]]);export{p as default};

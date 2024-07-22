@@ -217,15 +217,6 @@ const onAddItemLine = () => {
     GLHIST_AMT: 0,
     GLHIST_DESC: "",
     GLHIST_EFFDT: forms.value.GLHIST_EFFDT,
-    MCOA_TYPE: 'OUT',
-  });
-
-  formsDet.value.push({
-    GLHIST_ACC: '',
-    GLHIST_DOC: forms.value.GLHIST_DOC,
-    GLHIST_AMT: 0,
-    GLHIST_DESC: "",
-    GLHIST_EFFDT: forms.value.GLHIST_EFFDT,
     MCOA_TYPE: 'INC',
   });
 };
@@ -278,4 +269,6 @@ const onSubmitData = () => {
       });
   });
 };
+
+const checkTotalQty = computed(() => 0)
 </script>

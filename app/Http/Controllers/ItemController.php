@@ -36,7 +36,8 @@ class ItemController extends Controller
         ]);
     }
 
-    public function getItemForIndex()  {
+    public function getItemForIndex()
+    {
         return [
             'coas' => M_COA::on($this->dedicatedConnection)->select('*')->get(),
             'branches' => M_BRANCH::on($this->dedicatedConnection)->get(),
@@ -46,11 +47,12 @@ class ItemController extends Controller
         ];
     }
 
-    public function getListCoas(Request $request) {
+    public function getListCoas(Request $request)
+    {
         $data = M_COA::on($this->dedicatedConnection)->select('*');
 
         if (!empty($request->search)) {
-            $data->where('MCOA_COANM', 'like', '%'.$request->search.'%');
+            $data->where('MCOA_COANM', 'like', '%' . $request->search . '%');
         }
 
         return $data->get();
@@ -82,9 +84,9 @@ class ItemController extends Controller
     {
         $validator = Validator::make($request->all(), [
             // 'MITM_ITMCD' => 'required',
-            'MITM_ITMCD' => [
-                Rule::unique($this->dedicatedConnection . '.M_ITM', 'MITM_ITMCD')->where('MITM_BRANCH', Auth::user()->branch)
-            ],
+            // 'MITM_ITMCD' => [
+            //     Rule::unique($this->dedicatedConnection . '.M_ITM', 'MITM_ITMCD')->where('MITM_BRANCH', Auth::user()->branch)
+            // ],
             'MITM_ITMNM' => 'required',
             'MITM_STKUOM' => 'required',
             'MITM_ITMTYPE' => 'required',
@@ -98,7 +100,7 @@ class ItemController extends Controller
         }
 
         $getLatestItemCode = M_ITM::on($this->dedicatedConnection)->where('MITM_ITMTYPE', 3)->orderBy('created_at', 'desc')->first();
-        $genItemCode = 'SRV-'.date('ym'). (empty($getLatestItemCode) ? '001' : sprintf('%03d', (int) substr($getLatestItemCode->MITM_ITMCD, -2) + 1));
+        $genItemCode = 'SRV-' . date('ym') . (empty($getLatestItemCode) ? '001' : sprintf('%03d', (int) substr($getLatestItemCode->MITM_ITMCD, -2) + 1));
         $hasil = M_ITM::on($this->dedicatedConnection)->create([
             'MITM_ITMCD' => empty($request->MITM_ITMCD) ? $genItemCode : $request->MITM_ITMCD,
             'MITM_ITMNM' => $request->MITM_ITMNM,
@@ -147,6 +149,10 @@ class ItemController extends Controller
             $RSHead->where('IS_ITMCD', 1);
         }
 
+        if ($request->has('isForServ') && $request->isForServ == 1) {
+            $RSHead->where('MITM_ITMTYPE', 3);
+        }
+
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->get();
         } else {
@@ -155,6 +161,36 @@ class ItemController extends Controller
 
         return ['data' => $RS];
     }
+
+    function searchAPIStockAndPriceOnly(Request $request): array
+    {
+        $columnMap = [
+            DB::raw('MITM_ITMNM as MITM_ITMCD'),
+            DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNM"),
+            'MITM_SPEC',
+            'LATEST_PRC',
+            'STOCK'
+        ];
+
+        $DataSet = DB::connection($this->dedicatedConnection);
+        $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
+            ->where('MITM_BRANCH', Auth::user()->branch)
+            ->where('LATEST_PRC', '>', 0)
+            ->where('STOCK', '>', 0);
+
+        if ($request->has('isITMCD') && $request->isITMCD == 1) {
+            $RSHead->where('IS_ITMCD', 1);
+        }
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->paginate(50, [], 'page', $request->page);
+        } else {
+            $RS = (clone $RSHead)->paginate(50, [], 'page', $request->page);
+        }
+
+        return ['data' => $RS];
+    }
+
     function searchAPITBL(Request $request)
     {
         $columnMap = [
@@ -169,6 +205,14 @@ class ItemController extends Controller
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch)
             ->where('IS_ITMCD', 1);
+
+        if ($request->has('isITMCD') && $request->isITMCD == 1) {
+            $RSHead->where('IS_ITMCD', 1);
+        }
+
+        if ($request->has('isForServ') && $request->isForServ == 1) {
+            $RSHead->where('MITM_ITMTYPE', 3);
+        }
 
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%')->get();
@@ -220,5 +264,9 @@ class ItemController extends Controller
             header('Cache-Control: max-age=0');
             $writer->save('php://output');
         }
+    }
+
+    function getLatestItemServiceCode()
+    {
     }
 }

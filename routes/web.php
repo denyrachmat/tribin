@@ -31,6 +31,7 @@ use App\Http\Controllers\payroll\PayrollController;
 use App\Http\Controllers\payroll\PositionController;
 use App\Http\Controllers\payroll\ProfileController;
 use App\Http\Controllers\payroll\ScheduleController;
+use App\Http\Controllers\POSController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReceiveBarcodeController;
@@ -186,6 +187,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::put('{id}', [ItemController::class, 'update']);
             Route::post('searchAPI', [ItemController::class, 'searchAPI']);
             Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
+            Route::post('searchAPIStockAndPriceOnly', [ItemController::class, 'searchAPIStockAndPriceOnly']);
+            Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);
         });
 
         # Terkait Location Master
@@ -486,6 +489,9 @@ Route::group(['middleware' => 'cors'], function () {
                 Route::post('searchAPI', [AccountingJournalController::class, 'searchAPI']);
                 Route::resource('', AccountingJournalController::class);
             });
+        });
+        Route::prefix('pos')->group(function () {
+            Route::resource('', POSController::class);
         });
 
         Route::prefix('payroll')->group(function () {

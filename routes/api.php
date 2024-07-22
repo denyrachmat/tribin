@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessRulesController;
 use App\Http\Controllers\API\OutgoingController;
 use App\Http\Controllers\ConditionController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\ItemController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ServiceAdminController;
 use Illuminate\Http\Request;
@@ -38,6 +39,10 @@ Route::get('/logout', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
+    Route::prefix('item')->group(function () {
+        Route::post('searchAPI', [ItemController::class, 'searchAPI']);
+    });
+
     Route::group(['prefix' => 'conditions'], function() {
         Route::get('getdata', [ConditionController::class, 'getData']);
         Route::get('getCompaniesDetail', [ConditionController::class, 'getCompaniesDetail']);

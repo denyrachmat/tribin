@@ -14,7 +14,7 @@
             <q-list bordered :loading="loading">
               <template v-if="selectedItems.length > 0">
                 <q-item
-                  v-for="selItem in selectedItems"
+                  v-for="(selItem, idx) in selectedItems"
                   :key="selItem.id"
                   class="q-my-sm"
                   v-ripple
@@ -30,17 +30,30 @@
 
                   <q-item-section>
                     <q-item-label>{{ selItem.MITM_ITMNM }}</q-item-label>
-                    <q-item-label caption lines="1">{{
-                      selItem.LATEST_PRC
-                    }}</q-item-label>
+                    <q-item-label lines="1">
+                      Rp {{ selItem.LATEST_PRC.toLocaleString() }} x
+                      {{ selItem.sellQty.toLocaleString() }} =
+                      <b>{{
+                        (selItem.LATEST_PRC * selItem.sellQty).toLocaleString()
+                      }}</b>
+                    </q-item-label>
                   </q-item-section>
 
                   <q-item-section side>
-                    <q-icon
-                      name="delete"
-                      color="red"
-                      @click="onDeleteSelItem(idx)"
-                    />
+                    <q-btn-group flat>
+                      <q-btn
+                        icon="edit"
+                        color="orange"
+                        @click="onEditSelItem(idx)"
+                        dense
+                      />
+                      <q-btn
+                        icon="delete"
+                        color="red"
+                        @click="onDeleteSelItem(idx)"
+                        dense
+                      />
+                    </q-btn-group>
                   </q-item-section>
                 </q-item>
               </template>
@@ -54,16 +67,22 @@
           <div class="col bg-white vertical-middle">
             <div class="row">
               <div class="col q-pa-sm" style="height: 20vh">
-                <div class="text-h6 text-bold">Total : Rp. {{ getTotal }}</div>
+                <div class="text-h6 text-bold">
+                  Total : Rp. {{ getTotal.toLocaleString() }}
+                </div>
               </div>
             </div>
             <q-separator />
             <div class="row" style="height: 10vh">
               <div class="col-sm-6 col-12 q-pa-sm">
-                <q-btn color="primary" class="full-width"> Submit </q-btn>
+                <q-btn color="primary" class="full-width" @click="onSubmited()">
+                  Submit
+                </q-btn>
               </div>
               <div class="col-sm-6 col-12 q-pa-sm">
-                <q-btn color="red" class="full-width"> Cancel </q-btn>
+                <q-btn color="red" class="full-width" @click="onCancelSales()">
+                  Cancel
+                </q-btn>
               </div>
             </div>
           </div>
@@ -72,38 +91,50 @@
       <div class="col q-pa-xs q-gutter-sm">
         <div class="row bg-white" style="height: 10vh; overflow: auto">
           <div class="col">
-            <q-input filled v-model="searchItem" label="Search Item" dense @update:model-value="onInputSearch()"/>
+            <q-input
+              filled
+              v-model="searchItem"
+              label="Search Item"
+              dense
+              @update:model-value="(val) => onInputSearch(val)"
+              :debounce="1000"
+            />
           </div>
         </div>
-        <div class="row bg-white" style="height: 80vh; overflow: auto">
+        <div class="row bg-white" style="height: 70vh; overflow: auto">
           <div class="col">
             <div class="row q-col-gutter-sm">
               <div
-                class="col-6"
+                class="col-6 q-pa-sm"
                 v-for="(item, n) in listItems"
                 :key="`sm-${n}`"
               >
                 <q-card flat bordered>
+                  <q-badge color="orange" floating>{{
+                    (
+                      parseInt(item.STOCK) - (item.sellQty ? parseInt(item.sellQty) : 0)
+                    ).toLocaleString()
+                  }}</q-badge>
                   <div class="text-center">
                     <q-icon name="category" size="8em" />
                   </div>
                   <q-card-section>
                     <div class="row items-center">
                       <div class="col text-bold ellipsis">
-                        {{ item.MITM_ITMNM }}
+                        {{ item.MITM_ITMNM }} {{ item.sellQty }}
                       </div>
                     </div>
                   </q-card-section>
                   <q-list>
-                    <q-item clickable @click="onAddItems(item)">
+                    <q-item clickable @click="onAddItems(item, n)">
                       <q-item-section avatar>
                         <q-icon color="primary" name="add" />
                       </q-item-section>
                       <q-item-section>
                         <q-item-label>Add Item</q-item-label>
-                        <q-item-label caption
-                          >Rp. {{ item.LATEST_PRC }}</q-item-label
-                        >
+                        <q-item-label caption lines="2">
+                          Rp. {{ parseInt(item.LATEST_PRC).toLocaleString() }}
+                        </q-item-label>
                       </q-item-section>
                     </q-item>
                   </q-list>
@@ -141,6 +172,7 @@ const listItems = ref([]);
 const selectedItems = ref([]);
 const loading = ref(false);
 const page = ref(0);
+const searchItem = ref("");
 
 onMounted(() => {
   getItem("");
@@ -148,7 +180,10 @@ onMounted(() => {
 
 const getTotal = computed(() =>
   selectedItems.value.length > 0
-    ? selectedItems.value.reduce((acc, cur) => acc + cur.LATEST_PRC, 0)
+    ? selectedItems.value.reduce(
+        (acc, cur) => acc + parseFloat(cur.LATEST_PRC) * parseInt(cur.sellQty),
+        0
+      )
     : 0
 );
 
@@ -179,23 +214,23 @@ const getItem = async (val) => {
     });
 };
 
-const onAddItems = (val) => {
+const onAddItems = (vals, idx) => {
   $q.dialog({
     dark: true,
     title: "Prompt",
     message: "How many qty?",
     prompt: {
-      model: "",
+      model: 0,
       type: "number", // optional
-      isValid: val => val.STOCK > 0,
+      isValid: (val) => val > 0 && val <= listItems.value[idx].STOCK,
     },
     cancel: true,
     persistent: true,
   })
     .onOk((data) => {
       selectedItems.value.push({
-        ...val,
-        sellQty: data
+        ...vals,
+        sellQty: data,
       });
       // console.log('>>>> OK, received', data)
     })
@@ -212,6 +247,27 @@ const onLoad = async (index, done) => {
   done();
 };
 
+const onInputSearch = (val) => {
+  getItem(val);
+};
+
+const onEditSelItem = (idx) => {
+  $q.dialog({
+    dark: true,
+    title: "Prompt",
+    message: "How many qty?",
+    prompt: {
+      model: selectedItems.value[idx].sellQty,
+      type: "number", // optional
+      isValid: (val) => val > 0 && val <= selectedItems.value[idx].STOCK,
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk((data) => {
+    selectedItems.value[idx].sellQty = data;
+  });
+};
+
 const onDeleteSelItem = (idx) => {
   $q.dialog({
     title: "Confirmation",
@@ -220,6 +276,28 @@ const onDeleteSelItem = (idx) => {
     persistent: true,
   }).onOk(async () => {
     selectedItems.value.splice(idx, 1);
+  });
+};
+
+const onCancelSales = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to cancel sales ??`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    selectedItems.value = [];
+  });
+};
+
+const onSubmited = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to process this sales ??`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    selectedItems.value = [];
   });
 };
 </script>

@@ -262,6 +262,24 @@
                 icon="compare_arrows"
                 color="cyan"
                 outline
+                @click="onClickUpdateUsageService(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
+              >
+                <q-tooltip>Update Service Usage</q-tooltip>
+              </q-btn>
+            </q-item-section>
+            <q-item-section
+              side
+              v-if="
+                items.partReq &&
+                props.mode === 'edit' &&
+                items.TSRVD_FLGSTS == 2 &&
+                items.partReq.length > 0
+              "
+            >
+              <q-btn
+                icon="compare_arrows"
+                color="cyan"
+                outline
                 @click="onClickPrintRequest(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
               >
                 <q-tooltip>Print Part Request</q-tooltip>
@@ -462,6 +480,10 @@ const onClickRequest = (idx) => {
     onDialogOK();
   });
 };
+
+const onClickUpdateUsageService = (val) => {
+
+}
 
 const onClickPrintRequest = (val) => {
   window

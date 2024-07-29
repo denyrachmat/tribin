@@ -441,6 +441,7 @@ const onClickRequest = (idx) => {
     listDet.push({
       TLOCREQ_ITMCD: valMap.TSRVF_ITMCD,
       TLOCREQ_QTY: valMap.TSRVF_QTY,
+      TLOCREQ_ISREP: 1
     });
   });
   $q.dialog({
@@ -451,9 +452,9 @@ const onClickRequest = (idx) => {
           dataApi.value.SRVH_DOCNO + "-" + submitedItems.value[idx].TSRVD_LINE,
         TLOCREQ_FRLOC: "WH1",
         TLOCREQ_TOLOC: "WH-SRV",
-        TLOCREQ_ISREP: true
       },
       dataDet: listDet,
+      qtyOnly: true
     },
     // persistent: true,
   }).onOk(async (res) => {

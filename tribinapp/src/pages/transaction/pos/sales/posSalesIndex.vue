@@ -10,7 +10,10 @@
     <div class="row bg-grey q-pa-md full-width" style="height: 86vh">
       <div class="col-4 q-pa-xs">
         <div class="row bg-white">
-          <div class="col" style="height: 50vh; overflow: auto">
+          <div
+            class="col"
+            style="height: 50vh; overflow: auto; font-size: 10px"
+          >
             <q-list bordered :loading="loading">
               <template v-if="selectedItems.length > 0">
                 <q-item
@@ -101,7 +104,11 @@
             />
           </div>
         </div>
-        <div class="row bg-white" style="height: 70vh; overflow: auto">
+        <div
+          class="row bg-white"
+          style="height: 70vh; overflow: auto"
+          :key="refreshIdx"
+        >
           <div class="col">
             <div class="row q-col-gutter-sm">
               <div
@@ -112,7 +119,8 @@
                 <q-card flat bordered>
                   <q-badge color="orange" floating>{{
                     (
-                      parseInt(item.STOCK) - (item.sellQty ? parseInt(item.sellQty) : 0)
+                      parseInt(item.STOCK) -
+                      getSellQty(item.MITM_ITMCD)
                     ).toLocaleString()
                   }}</q-badge>
                   <div class="text-center">
@@ -121,12 +129,20 @@
                   <q-card-section>
                     <div class="row items-center">
                       <div class="col text-bold ellipsis">
-                        {{ item.MITM_ITMNM }} {{ item.sellQty }}
+                        {{ item.MITM_ITMNM }}
                       </div>
                     </div>
                   </q-card-section>
                   <q-list>
-                    <q-item clickable @click="onAddItems(item, n)">
+                    <q-item
+                      clickable
+                      @click="onAddItems(item, n)"
+                      :disable="
+                        item.STOCK -
+                        getSellQty(item.MITM_ITMCD) ===
+                        0
+                      "
+                    >
                       <q-item-section avatar>
                         <q-icon color="primary" name="add" />
                       </q-item-section>
@@ -173,6 +189,7 @@ const selectedItems = ref([]);
 const loading = ref(false);
 const page = ref(0);
 const searchItem = ref("");
+const refreshIdx = ref(0);
 
 onMounted(() => {
   getItem("");
@@ -203,7 +220,6 @@ const getItem = async (val) => {
           (item) => item.MITM_ITMCD === valItem.MITM_ITMCD
         );
 
-        console.log(indexItm);
         if (indexItm === -1) {
           listItems.value.push(valItem);
         }
@@ -228,10 +244,19 @@ const onAddItems = (vals, idx) => {
     persistent: true,
   })
     .onOk((data) => {
-      selectedItems.value.push({
-        ...vals,
-        sellQty: data,
-      });
+      refreshIdx.value = refreshIdx.value + 1;
+      const findIndex = selectedItems.value.findIndex(
+        (item) => item.MITM_ITMCD === vals.MITM_ITMCD
+      );
+
+      if (findIndex !== -1) {
+        selectedItems.value[findIndex].sellQty = data;
+      } else {
+        selectedItems.value.push({
+          ...vals,
+          sellQty: data,
+        });
+      }
       // console.log('>>>> OK, received', data)
     })
     .onCancel(() => {
@@ -277,6 +302,18 @@ const onDeleteSelItem = (idx) => {
   }).onOk(async () => {
     selectedItems.value.splice(idx, 1);
   });
+};
+
+const getSellQty = (items) => {
+  let indexItm = selectedItems.value.findIndex(
+    (item) => item.MITM_ITMCD === items
+  );
+
+  if (indexItm !== -1 && selectedItems.value[indexItm].sellQty) {
+    return selectedItems.value[indexItm].sellQty;
+  } else {
+    return 0
+  }
 };
 
 const onCancelSales = () => {

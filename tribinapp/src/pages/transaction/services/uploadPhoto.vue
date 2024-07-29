@@ -1,7 +1,7 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <div class="bg-white">
-      <div class="row" style="min-height: 50vh; max-width: 80vh">
+      <div class="row" style="min-height: 50vh; max-width: 90vh">
         <div class="col">
           <q-card v-if="uploadedPhoto">
             <q-card-section>

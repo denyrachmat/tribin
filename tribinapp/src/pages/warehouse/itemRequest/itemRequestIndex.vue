@@ -28,6 +28,7 @@
                 dense
                 filled
                 v-model="header.TLOCREQ_DOCNO"
+                :readonly="qtyOnly"
               />
             </div>
           </div>
@@ -50,6 +51,7 @@
                 emit-value
                 map-options
                 :loading="loading"
+                :readonly="qtyOnly"
               />
             </div>
             <div class="col-12 col-sm-6">
@@ -70,6 +72,7 @@
                 emit-value
                 map-options
                 :loading="loading"
+                :readonly="qtyOnly"
               />
             </div>
           </div>
@@ -111,12 +114,24 @@
                   emit-value
                   map-options
                   :loading="loading"
+                :readonly="qtyOnly"
                 >
                 </q-select>
               </div>
 
-              <div class="col-12 col-sm-5">
+              <div class="col-12 col-sm-3">
                 <q-input label="Qty" dense filled v-model="list.TLOCREQ_QTY" />
+              </div>
+
+              <div class="col-12 col-sm-2">
+                <q-checkbox
+                  v-model="list.TLOCREQ_ISREP"
+                  label="Is replacement ?"
+                  color="teal"
+                  :true-value="1"
+                  :false-value="0"
+                  :disable="loading"
+                />
               </div>
 
               <div class="col-12 col-sm-1">
@@ -154,6 +169,7 @@ const $q = useQuasar();
 const props = defineProps({
   dataHeader: Array,
   dataDet: Array,
+  qtyOnly: Boolean
 });
 
 const header = ref({
@@ -238,6 +254,7 @@ const onSubmitData = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
+    loading.value = true;
     await api_web
       .post(`inventory/saveTransferLocDraft`, {
         TLOCREQ_DOCNO: header.value.TLOCREQ_DOCNO,
@@ -246,27 +263,7 @@ const onSubmitData = () => {
         detail: listDet.value,
       })
       .then(async (response) => {
-        if (header.value.TLOCREQ_ISREP) {
-          await api_web
-            .post(`inventory/saveTransferLocDraft`, {
-              TLOCREQ_DOCNO: header.value.TLOCREQ_DOCNO,
-              TLOCREQ_FRLOC: header.value.TLOCREQ_TOLOC,
-              TLOCREQ_TOLOC: header.value.TLOCREQ_FRLOC,
-              TLOCREQ_ISREP: 1,
-              detail: listDet.value,
-            })
-            .then((response) => {
-              loading.value = false;
-
-              $q.notify({
-                color: "green",
-                message: `${response.data.msg}`,
-              });
-
-              onDialogOK();
-            });
-        } else {
-          loading.value = false;
+        loading.value = false;
 
           $q.notify({
             color: "green",
@@ -274,7 +271,6 @@ const onSubmitData = () => {
           });
 
           onDialogOK();
-        }
       })
       .catch((err) => {
         loading.value = false;

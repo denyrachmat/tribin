@@ -382,8 +382,19 @@ class InventoryController extends Controller
                 'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
                 'TLOCREQ_FRLOC' => $request->TLOCREQ_FRLOC,
                 'TLOCREQ_TOLOC' => $request->TLOCREQ_TOLOC,
-                'TLOCREQ_ISREP' => $request->has('TLOCREQ_ISREP') ? $request->TLOCREQ_ISREP : 0
+                'TLOCREQ_ISREP' => 0
             ]);
+
+            if ($value['TLOCREQ_ISREP'] == 1) {
+                $create[] = T_LOC_REQ::on($this->dedicatedConnection)->create([
+                    'TLOCREQ_DOCNO' => $request->TLOCREQ_DOCNO,
+                    'TLOCREQ_ITMCD' => $value['TLOCREQ_ITMCD'],
+                    'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
+                    'TLOCREQ_FRLOC' => $request->TLOCREQ_TOLOC,
+                    'TLOCREQ_TOLOC' => $request->TLOCREQ_FRLOC,
+                    'TLOCREQ_ISREP' => $value['TLOCREQ_ISREP']
+                ]);
+            }
         }
 
         return ['msg' => 'OK', 'DATA' => $create];

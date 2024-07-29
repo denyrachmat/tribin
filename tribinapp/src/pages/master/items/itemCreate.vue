@@ -21,6 +21,7 @@
               v-model="itemData.MITM_ITMCD"
               filled
               :readonly="props.isAutoCD"
+              v-if="checkIsNeeded('MITM_ITMCD')"
             />
           </div>
           <div class="col q-pl-md">
@@ -29,6 +30,7 @@
               dense
               v-model="itemData.MITM_ITMNM"
               filled
+              v-if="checkIsNeeded('MITM_ITMNM')"
             />
           </div>
         </div>
@@ -46,6 +48,7 @@
               emit-value
               map-options
               :loading="loading"
+              v-if="checkIsNeeded('MITM_STKUOM')"
             />
           </div>
           <div class="col q-pl-md">
@@ -54,6 +57,7 @@
               dense
               v-model="itemData.MITM_BRAND"
               filled
+              v-if="checkIsNeeded('MITM_BRAND')"
             />
           </div>
         </div>
@@ -64,6 +68,7 @@
               dense
               v-model="itemData.MITM_MODEL"
               filled
+              v-if="checkIsNeeded('MITM_MODEL')"
             />
           </div>
           <div class="col q-pl-md">
@@ -72,6 +77,7 @@
               dense
               v-model="itemData.MITM_SPEC"
               filled
+              v-if="checkIsNeeded('MITM_SPEC')"
             />
           </div>
         </div>
@@ -93,6 +99,7 @@
               emit-value
               map-options
               :loading="loading"
+              v-if="checkIsNeeded('MITM_COACD')"
             />
           </div>
         </div>
@@ -133,7 +140,8 @@ const listCOA = ref([]);
 const props = defineProps({
   ItemCat: String,
   ItemType: String,
-  isAutoCD: Boolean
+  isAutoCD: Boolean,
+  listOpenField: Array
 });
 
 onMounted(() => {
@@ -162,7 +170,7 @@ const onSubmitData = () => {
     persistent: true,
   }).onOk(async () => {
     await api_web.post("item", itemData.value).then((val) => {
-      onDialogOK(val.data.data.value);
+      onDialogOK(val.data.data);
     });
   });
 };
@@ -180,4 +188,8 @@ const getDataIndex = async () => {
       loading.value = false;
     });
 };
+
+const checkIsNeeded = (field) => {
+  return props.listOpenField.length === 0 || props.listOpenField.includes(field)
+}
 </script>

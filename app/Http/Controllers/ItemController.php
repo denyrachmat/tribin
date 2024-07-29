@@ -90,8 +90,8 @@ class ItemController extends Controller
             'MITM_ITMNM' => 'required',
             'MITM_STKUOM' => 'required',
             'MITM_ITMTYPE' => 'required',
-            'MITM_BRAND' => 'required',
-            'MITM_SPEC' => 'required',
+            // 'MITM_BRAND' => 'required',
+            // 'MITM_SPEC' => 'required',
             'MITM_ITMCAT' => 'required',
         ]);
 
@@ -135,22 +135,30 @@ class ItemController extends Controller
     function searchAPI(Request $request)
     {
         $columnMap = [
-            'MITM_ITMCD',
-            'MITM_ITMNM',
+            DB::raw('MITM_ITMNM as MITM_ITMCD'),
+            DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNM"),
             'MITM_SPEC',
+            'LATEST_PRC',
+            'STOCK'
         ];
 
 
         $DataSet = DB::connection($this->dedicatedConnection);
-        $RSHead = $DataSet->table('M_ITM_GRP')->select('*')
+        $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch);
 
         if ($request->has('isITMCD') && $request->isITMCD == 1) {
-            $RSHead->where('IS_ITMCD', 1);
+            // $RSHead->where('IS_ITMCD', 1);
         }
 
         if ($request->has('isForServ') && $request->isForServ == 1) {
             $RSHead->where('MITM_ITMTYPE', 3);
+
+            if ($request->has('useCustomer') && !empty($request->useCustomer)) {
+                $RSHead->join('T_SRV_DET', 'MITM_ITMNM', 'TSRVD_ITMCD')
+                    ->leftJoin('T_SRV_HEAD', 'TSRVH_ID', 'T_SRV_HEAD.id')
+                    ->where('SRVH_CUSCD', $request->useCustomer);
+            }
         }
 
         if (!empty($request->searchValue)) {

@@ -72,15 +72,15 @@
                   :color="
                     props.row.TLOCREQ_APPRVBY !== null ? 'grey' : 'indigo'
                   "
-                  icon="check"
-                  @click="onClickApprove(props.row.TLOCREQ_DOCNO)"
+                  icon="done_all"
+                  @click="onClickApprove(props.row)"
                   dense
                   :disable="props.row.TLOCREQ_APPRVBY !== null"
                 >
                   <q-tooltip>{{
                     props.row.TLOCREQ_APPRVBY !== null
                       ? "Request has been approved"
-                      : "Approve Data"
+                      : "Approve All Data"
                   }}</q-tooltip>
                 </q-btn>
                 <q-btn
@@ -109,6 +109,7 @@
 import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
+import transferRequestPreview from "./transferRequestPreview.vue";
 
 const $q = useQuasar();
 
@@ -132,6 +133,13 @@ const columns = ref([
     name: "TLOCREQ_TOLOC",
     label: "To Location",
     field: "TLOCREQ_TOLOC",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "OS_TF",
+    label: "Qty Need to Transfer",
+    field: "OS_TF",
     sortable: true,
     align: "left",
   },
@@ -170,21 +178,15 @@ const getTFRequest = async () => {
 
 const onClickApprove = (val) => {
   $q.dialog({
-    title: "Confirmation",
-    message: `Are you sure want to approve this transfer ?`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    loading.value = true;
-    await api_web
-      .get(`inventory/transferRequest/approve/${btoa(val)}`)
-      .then((response) => {
-        loading.value = false;
-        getTFRequest();
-      })
-      .catch((e) => {
-        loading.value = false;
-      });
+    component: transferRequestPreview,
+    componentProps: {
+      dataHeader: val,
+      dataDet: val.detail,
+    },
+    // persistent: true,
+  }).onOk(async (res) => {
+    loading.value = false;
+    onDialogOK();
   });
 };
 
@@ -197,8 +199,8 @@ const onClickPrint = (val) => {
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .post(`inventory/printHandoverPDF`,{
-        data: btoa(val)
+      .post(`inventory/printHandoverPDF`, {
+        data: btoa(val),
       })
       .then((response) => {
         loading.value = false;

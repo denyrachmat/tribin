@@ -102,6 +102,7 @@
                 map-options
                 :loading="loading"
                 :readonly="props.mode === 'view'"
+                @update:model-value="(value) => submitedItems = []"
               >
                 <template v-slot:after>
                   <q-btn
@@ -393,7 +394,11 @@ const onClickAddItem = (idx) => {
     componentProps: {
       ItemCat: "SERVICE_ITEM",
       ItemType: 3,
-      isAutoCD: true
+      listOpenField: [
+        'MITM_ITMCD',
+        'MITM_ITMNM',
+        'MITM_STKUOM',
+      ]
     },
     // persistent: true,
   }).onOk(async (val) => {

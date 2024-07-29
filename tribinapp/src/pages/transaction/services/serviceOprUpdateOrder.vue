@@ -262,24 +262,6 @@
                 icon="compare_arrows"
                 color="cyan"
                 outline
-                @click="onClickUpdateUsageService(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
-              >
-                <q-tooltip>Update Service Usage</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section
-              side
-              v-if="
-                items.partReq &&
-                props.mode === 'edit' &&
-                items.TSRVD_FLGSTS == 2 &&
-                items.partReq.length > 0
-              "
-            >
-              <q-btn
-                icon="compare_arrows"
-                color="cyan"
-                outline
                 @click="onClickPrintRequest(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
               >
                 <q-tooltip>Print Part Request</q-tooltip>
@@ -319,6 +301,7 @@ import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
 import serviceOprItemAdd from "./serviceOprItemAdd.vue";
 import itemRequestIndex from "../../warehouse/itemRequest/itemRequestIndex.vue";
+import serviceUsageView from "./serviceUsageView.vue";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -430,28 +413,40 @@ const onClickReject = (idx) => {
   });
 };
 
-const onClickDone = (idx) => {
-  $q.dialog({
-    title: "Confirmation",
-    message: `Do you want to mark this problem as done ?`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    loading.value = true;
-    await api_web
-      .put(`servicesAdmins/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
-        TSRVD_FLGSTS: 3,
-      })
-      .then((response) => {
-        loading.value = false;
-        onDialogOK();
-      })
-      .catch((e) => {
-        loading.value = false;
-      });
-  });
-};
+// const onClickDone = (idx) => {
+//   $q.dialog({
+//     title: "Confirmation",
+//     message: `Do you want to mark this problem as done ?`,
+//     cancel: true,
+//     persistent: true,
+//   }).onOk(async () => {
+//     loading.value = true;
+//     await api_web
+//       .put(`servicesAdmins/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
+//         TSRVD_FLGSTS: 3,
+//       })
+//       .then((response) => {
+//         loading.value = false;
+//         onDialogOK();
+//       })
+//       .catch((e) => {
+//         loading.value = false;
+//       });
+//   });
+// };
 
+const onClickDone = (val) => {
+  $q.dialog({
+    component: serviceUsageView,
+    componentProps: {
+      detail: submitedItems.value[val].listFixDet,
+    }
+  }).onOk(async (res) => {
+
+  });
+}
+
+// serviceUsageView
 const onClickRequest = (idx) => {
   console.log(submitedItems.value[idx]);
   let listDet = [];
@@ -480,10 +475,6 @@ const onClickRequest = (idx) => {
     onDialogOK();
   });
 };
-
-const onClickUpdateUsageService = (val) => {
-
-}
 
 const onClickPrintRequest = (val) => {
   window

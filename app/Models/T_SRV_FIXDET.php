@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class T_SRV_FIXDET extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $table = 'T_SRV_FIXDET';
     protected $fillable = [
         'TSRVD_ID',

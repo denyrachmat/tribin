@@ -70,29 +70,29 @@
                 <q-btn
                   flat
                   :color="
-                    props.row.TLOCREQ_APPRVBY !== null ? 'grey' : 'indigo'
+                    props.row.OS_TF == 0 ? 'grey' : 'indigo'
                   "
                   icon="done_all"
                   @click="onClickApprove(props.row)"
                   dense
-                  :disable="props.row.TLOCREQ_APPRVBY !== null"
+                  :disable="props.row.OS_TF == 0"
                 >
                   <q-tooltip>{{
-                    props.row.TLOCREQ_APPRVBY !== null
+                    props.row.OS_TF == 0
                       ? "Request has been approved"
                       : "Approve All Data"
                   }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.TLOCREQ_APPRVBY !== null ? 'cyan' : 'grey'"
+                  :color="props.row.OS_TF == 0 ? 'cyan' : 'grey'"
                   icon="print"
                   @click="onClickPrint(props.row.TLOCREQ_DOCNO)"
                   dense
-                  :disable="props.row.TLOCREQ_APPRVBY === null"
+                  :disable="props.row.OS_TF == 0"
                 >
                   <q-tooltip>{{
-                    props.row.TLOCREQ_APPRVBY === null
+                    props.row.OS_TF == 0
                       ? "Please Aprove first"
                       : "Print handover request"
                   }}</q-tooltip>

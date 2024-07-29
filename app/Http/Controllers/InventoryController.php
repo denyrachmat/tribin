@@ -424,4 +424,15 @@ class InventoryController extends Controller
 
         return base64_encode($pdf->stream('part-handover.pdf'));
     }
+
+    function viewStockByItemLoc($item, $loc) {
+        return C_ITRN::on($this->dedicatedConnection)
+            ->select(
+                DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK')
+            )
+            ->where('CITRN_ITMCD', base64_decode($item))
+            ->where('CITRN_LOCCD', base64_decode($loc))
+            ->first()
+            ->STOCK;
+    }
 }

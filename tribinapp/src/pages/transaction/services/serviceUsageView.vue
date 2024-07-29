@@ -11,8 +11,70 @@
         <div class="text-h6">View Usage Service Part</div>
       </q-card-section>
 
-      <q-card-section class="q-pa-sm" v-if="dataApi">
+      <q-card-section class="q-pa-sm">
+        <q-list bordered>
+          <q-item
+            class="q-my-sm"
+            clickable
+            v-ripple
+            v-if="listItem.length === 0"
+          >
+            <q-item-section> No items added </q-item-section>
+          </q-item>
+          <q-item
+            v-for="(items, idx) in listItem"
+            :key="idx"
+            class="q-my-sm"
+            clickable
+            v-ripple
+            v-else
+          >
+            <q-item-section avatar>
+              <q-avatar color="primary" text-color="white">
+                {{ idx + 1 }}
+              </q-avatar>
+            </q-item-section>
 
+            <q-item-section>
+              <q-item-label>
+                <div>
+                  <q-item-label v-if="!loading">
+                    {{
+                      items.MITM_ITMNM
+                        ? items.MITM_ITMNM
+                        : listItems.filter(
+                            (fil) => fil.MITM_ITMCD == items.TSRVF_ITMCD
+                          )[0].MITM_ITMNM
+                    }}
+                  </q-item-label>
+                  <q-item-label v-else>
+                    Please wait, loading item description
+                  </q-item-label>
+                  <q-item-label caption> Item </q-item-label>
+                </div>
+              </q-item-label>
+            </q-item-section>
+
+            <q-item-section>
+              <q-input
+                label="Requested Qty"
+                v-model="items.STOCK"
+                filled
+                dense
+                readonly
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-input
+                label="Used Qty"
+                v-model="items.TSRVF_QTY"
+                filled
+                dense
+              />
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -49,25 +111,52 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const $q = useQuasar();
 
 const props = defineProps({
-  header: Array,
   detail: Array,
-  mode: String,
 });
 
-const dataApi = ref({
-  SRVH_DOCNO: "",
-  SRVH_ISSDT: date.formatDate(Date.now(), "YYYY-MM-DD"),
-  SRVH_CUSCD: "",
-});
 const submitedItems = ref([]);
+const listItem = ref([])
 const loading = ref(false);
 
 onMounted(async () => {
-  if (props.header) {
-    // await getCustomer();
-    // await getItem();
-    dataApi.value = props.header;
-    submitedItems.value = props.detail;
+  console.log(props.detail)
+  if (props.detail.length > 0) {
+    await getItem();
+
+    props.detail.map(async (val) => {
+      listItem.value.push({
+        ...val,
+        STOCK: await getStockList(val.TSRVF_ITMCD)
+      })
+    })
   }
 });
+
+const getStockList = async (item, loc = 'WH-SRV') => {
+  loading.value = true;
+  return await api_web
+    .get(`inventory/viewStockByItemLoc/${btoa(item)}/${btoa(loc)}`)
+    .then((response) => {
+      loading.value = false;
+      return response.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getItem = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("item/searchAPITBL", {
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listItems.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
 </script>

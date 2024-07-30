@@ -347,7 +347,7 @@ const getItem = async (val) => {
   await api_web
     .post("item/searchAPI", {
       searchValue: val,
-      isForServ: 1,
+      isForServ: internalSrv.value == 1 ? 0 : 1,
       isITMCD: 1,
       useCustomer: dataApi.value.SRVH_CUSCD
     })

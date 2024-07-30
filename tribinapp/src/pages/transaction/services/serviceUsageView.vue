@@ -84,8 +84,8 @@
           @click="onSubmitData()"
           :disable="
             loading ||
-            submitedItems.filter((fil) => fil.listFixDet).length === 0 ||
-            submitedItems.filter((fil) => fil.TSRVD_REMARK).length === 0
+            listItem.filter(fil => fil.STOCK == 0).length > 0 ||
+            listItem.filter(fil => fil.TSRVF_QTY > fil.STOCK).length > 0
           "
           :loading="loading"
         />

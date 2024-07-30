@@ -148,7 +148,7 @@ class ItemController extends Controller
             ->where('MITM_BRANCH', Auth::user()->branch);
 
         if ($request->has('isITMCD') && $request->isITMCD == 1) {
-            // $RSHead->where('IS_ITMCD', 1);
+            $RSHead->where('IS_ITMCD', 1);
         }
 
         if ($request->has('isForServ') && $request->isForServ == 1) {

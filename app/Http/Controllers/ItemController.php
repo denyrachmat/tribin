@@ -173,6 +173,7 @@ class ItemController extends Controller
     function searchAPIStockAndPriceOnly(Request $request): array
     {
         $columnMap = [
+            'MITM_ITMNM',
             DB::raw('MITM_ITMNM as MITM_ITMCD'),
             DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNM"),
             'MITM_SPEC',

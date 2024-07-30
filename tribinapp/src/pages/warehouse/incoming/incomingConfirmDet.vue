@@ -342,7 +342,7 @@ onMounted(async () => {
       TRCV_DOCNO: props.dataHeader.TRCV_DOCNO,
     };
 
-    inctype.value = props.dataHeader.RCV_STATE;
+    inctype.value = parseInt(props.dataHeader.RCV_STATE);
 
     props.dataHeader.det.map((val) => {
       listDet.value.push({

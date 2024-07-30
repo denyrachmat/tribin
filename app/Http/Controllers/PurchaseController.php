@@ -844,7 +844,7 @@ class PurchaseController extends Controller
 
     function approve(Request $request)
     {
-        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->has('conn') ? $request->conn : $this->dedicatedConnection);
         if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
             $PRCode = base64_decode($request->id);
             $RSPR = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select('TPCHREQ_SUPCD', 'MSUP_CGCON')

@@ -1006,7 +1006,7 @@ class PurchaseController extends Controller
 
             return ['message' => $message];
         } else {
-            return response()->json(['message' => 'forbidden'], 403);
+            return response()->json(['message' => 'forbidden', 'data' => $activeRole], 403);
         }
     }
 

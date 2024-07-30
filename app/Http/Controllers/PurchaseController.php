@@ -818,7 +818,7 @@ class PurchaseController extends Controller
     {
         $data = [];
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             # Query untuk data Purchase Order
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHORDDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD, TPCHORDDETA_BRANCH")
@@ -845,7 +845,7 @@ class PurchaseController extends Controller
     function approve(Request $request)
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->has('conn') ? $request->conn : $this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             $PRCode = base64_decode($request->id);
             $RSPR = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select('TPCHREQ_SUPCD', 'MSUP_CGCON')
                 ->leftJoin('M_SUP', function ($join) {
@@ -1013,7 +1013,7 @@ class PurchaseController extends Controller
     function approvePO(Request $request, $id)
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->conn);
-        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             $affectedRow = T_PCHORDHEAD::on($request->conn)
                 ->where('TPCHORD_PCHCD', base64_decode($id))
                 ->where('TPCHORD_BRANCH', $request->TPCHORD_BRANCH)
@@ -1038,7 +1038,7 @@ class PurchaseController extends Controller
     function reject(Request $request)
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->has('conn') ? $request->conn : $this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             $affectedRow = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)
                 ->where('TPCHREQ_PCHCD', base64_decode($request->id))
                 ->where('TPCHREQ_BRANCH', $request->TPCHREQ_BRANCH)
@@ -1056,7 +1056,7 @@ class PurchaseController extends Controller
     function rejectPO(Request $request)
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
-        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
+        if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
             $affectedRow = T_PCHORDHEAD::on($this->dedicatedConnection)
                 ->where('TPCHORD_PCHCD', base64_decode($request->id))
                 ->where('TPCHORD_BRANCH', $request->TPCHORD_BRANCH)

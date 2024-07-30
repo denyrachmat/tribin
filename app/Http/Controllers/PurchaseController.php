@@ -1037,9 +1037,9 @@ class PurchaseController extends Controller
 
     function reject(Request $request)
     {
-        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($request->has('conn') ? $request->conn : $this->dedicatedConnection);
         if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'general_manager'])) {
-            $affectedRow = T_PCHREQHEAD::on($this->dedicatedConnection)
+            $affectedRow = T_PCHREQHEAD::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)
                 ->where('TPCHREQ_PCHCD', base64_decode($request->id))
                 ->where('TPCHREQ_BRANCH', $request->TPCHREQ_BRANCH)
                 ->update([

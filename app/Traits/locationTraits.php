@@ -87,7 +87,7 @@ trait LocationTraits
             ];
         }
     }
-
+// Test
     function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '')
     {
         $bc = '';

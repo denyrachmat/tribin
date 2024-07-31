@@ -215,6 +215,12 @@
                 @click="onClickDone(idx)"
               >
                 <q-tooltip>Mark this problem as done</q-tooltip>
+                <q-badge
+                  color="red"
+                  floating
+                  v-if="submitedItems[idx].listFixDet.filter(fil => fil.TSRVF_ISCONF == 0).length > 0"
+                  >{{submitedItems[idx].listFixDet.filter(fil => fil.TSRVF_ISCONF == 0).length}}</q-badge
+                >
               </q-btn>
             </q-item-section>
             <q-item-section
@@ -282,7 +288,20 @@
             submitedItems.filter((fil) => fil.TSRVD_REMARK).length === 0
           "
           :loading="loading"
-        />
+        >
+          <q-tooltip>
+            {{
+                loading
+                ? 'Please wait on loading'
+                : (
+                  submitedItems.filter((fil) => fil.listFixDet).length === 0 ||
+                  submitedItems.filter((fil) => fil.TSRVD_REMARK).length === 0
+                  ? 'Please make sure Used Qty not more bigger than Requested Qty'
+                  : 'Submit Service'
+                )
+            }}
+          </q-tooltip>
+        </q-btn>
         <q-btn
           flat
           label="Cancel"
@@ -352,7 +371,7 @@ const onSubmitData = () => {
   } else {
     $q.dialog({
       title: "Confirmation",
-      message: `Do you want to submit this data ?`,
+      message: `Do you want to confirmed this data ?`,
       cancel: true,
       persistent: true,
     }).onOk(async () => {
@@ -439,10 +458,11 @@ const onClickDone = (val) => {
   $q.dialog({
     component: serviceUsageView,
     componentProps: {
-      detail: submitedItems.value[val].listFixDet,
+      idDetail: submitedItems.value[val].id,
+      detail: submitedItems.value[val].listFixDet.filter(fil => fil.TSRVF_ISCONF == 0),
     }
   }).onOk(async (res) => {
-
+    onDialogOK();
   });
 }
 

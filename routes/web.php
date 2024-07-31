@@ -421,6 +421,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('transferLoc', [InventoryController::class, 'transferLoc']);
             Route::post('saveTransferLocDraft', [InventoryController::class, 'saveTransferLocDraft']);
             Route::post('printHandoverPDF', [InventoryController::class, 'printHandoverPDF']);
+            Route::get('uploadStockTakeView', [InventoryController::class, 'uploadStockTakeView']);
+            Route::post('uploadStockTake', [InventoryController::class, 'uploadStockTake']);
             Route::get('viewStockByItemLoc/{item}/{loc}', [InventoryController::class, 'viewStockByItemLoc']);
             Route::prefix('transferRequest')->group(function () {
                 Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);
@@ -463,6 +465,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::prefix('servicesAdmins')->group(function () {
             Route::post('search', [ServiceAdminController::class, 'search']);
             Route::put('updateByDet/{id}', [ServiceAdminController::class, 'updateByDet']);
+            Route::put('confirmDoneItem/{id}', [ServiceAdminController::class, 'confirmDoneItem']);
             Route::put('updateDetByIDHead/{id}', [ServiceAdminController::class, 'updateDetByIDHead']);
             Route::get('printInvoice/{id}', [ServiceAdminController::class, 'printInvoicePDF']);
             Route::get('printPartRequest/{id}', [ServiceAdminController::class, 'printPartRequestPDF']);

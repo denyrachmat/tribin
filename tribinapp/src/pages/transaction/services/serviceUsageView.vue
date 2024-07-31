@@ -83,9 +83,7 @@
           color="primary"
           @click="onSubmitData()"
           :disable="
-            loading ||
-            listItem.filter(fil => fil.STOCK == 0).length > 0 ||
-            listItem.filter(fil => fil.TSRVF_QTY > fil.STOCK).length > 0
+            loading
           "
           :loading="loading"
         />
@@ -111,28 +109,29 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const $q = useQuasar();
 
 const props = defineProps({
+  idDetail: String,
   detail: Array,
 });
 
 const submitedItems = ref([]);
-const listItem = ref([])
+const listItem = ref([]);
 const loading = ref(false);
+const listItems = ref([]);
 
 onMounted(async () => {
-  console.log(props.detail)
   if (props.detail.length > 0) {
     await getItem();
 
     props.detail.map(async (val) => {
       listItem.value.push({
         ...val,
-        STOCK: await getStockList(val.TSRVF_ITMCD)
-      })
-    })
+        STOCK: await getStockList(val.TSRVF_ITMCD),
+      });
+    });
   }
 });
 
-const getStockList = async (item, loc = 'WH-SRV') => {
+const getStockList = async (item, loc = "WH-SRV") => {
   loading.value = true;
   return await api_web
     .get(`inventory/viewStockByItemLoc/${btoa(item)}/${btoa(loc)}`)
@@ -158,5 +157,33 @@ const getItem = async (val) => {
     .catch(() => {
       loading.value = false;
     });
+};
+
+const onSubmitData = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message:
+      listItem.value.filter((fil) => fil.STOCK == 0).length > 0
+        ? `There are Requested qty still 0, that item wouldn't be confirmed, continue ?`
+        : listItem.value.filter((fil) => fil.TSRVF_QTY > fil.STOCK).length > 0
+        ? `There are used qty more than requested qty, that item wouldn't be confirmed, continue ?`
+        : `Do you want to approve this price ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+
+    await api_web
+      .put(`servicesAdmins/confirmDoneItem/${btoa(props.idDetail)}`, {
+        data: listItem.value,
+      })
+      .then((response) => {
+        loading.value = false;
+        onDialogOK();
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
 };
 </script>

@@ -12,9 +12,16 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Illuminate\Support\Facades\Validator;
 use App\Models\T_LOC_REQ;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\LocationTraits;
+use Illuminate\Http\File;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Imports\importStockTake;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Models\T_RCV_HEAD;
 
 class InventoryController extends Controller
 {
+    use LocationTraits;
     protected $dedicatedConnection;
 
     public function __construct()
@@ -42,7 +49,7 @@ class InventoryController extends Controller
             ->groupBy('CITRN_ITMCD');
 
         $InOut = C_ITRN::on($this->dedicatedConnection)
-            ->where('CITRN_ISSUDT',  $param['date'])
+            ->where('CITRN_ISSUDT', $param['date'])
             ->where('CITRN_LOCCD', $param['location'])
             ->where('CITRN_BRANCH', Auth::user()->branch)
             ->select(
@@ -83,12 +90,14 @@ class InventoryController extends Controller
 
     function stockStatus(Request $request)
     {
-        return ['data' => $this->queryStockStatus([
-            'date' => $request->has('date') ? $request->date : date('Y-m-d'),
-            'location' => $request->location,
-            'searchBy' => $request->searchBy,
-            'searchValue' => $request->searchValue,
-        ])];
+        return [
+            'data' => $this->queryStockStatus([
+                'date' => $request->has('date') ? $request->date : date('Y-m-d'),
+                'location' => $request->location,
+                'searchBy' => $request->searchBy,
+                'searchValue' => $request->searchValue,
+            ])
+        ];
     }
 
     function report(Request $request)
@@ -229,13 +238,15 @@ class InventoryController extends Controller
 
     function stockLedger(Request $request)
     {
-        return ['data' => $this->queryStockLedger([
-            'date' => $request->date,
-            'date2' => $request->date2,
-            'location' => $request->location,
-            'searchBy' => $request->searchBy,
-            'searchValue' => $request->searchValue,
-        ])];
+        return [
+            'data' => $this->queryStockLedger([
+                'date' => $request->date,
+                'date2' => $request->date2,
+                'location' => $request->location,
+                'searchBy' => $request->searchBy,
+                'searchValue' => $request->searchValue,
+            ])
+        ];
     }
 
     function reportLedger(Request $request)
@@ -291,79 +302,8 @@ class InventoryController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'transferLoc']);
     }
 
-    function transferLoc(Request $request) {
-        # data quotation detail item
-        $validator = Validator::make($request->all(), [
-            'LOCFROM' => 'required',
-            'LOCTO' => 'required',
-            'ITMCD' => 'required',
-            'QTY' => 'required|numeric',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 406);
-        }
-
-        // $cekITRN = C_ITRN::on($this->dedicatedConnection)
-        //     ->where('CITRN_ITMCD');
-
-        $cekStock = DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
-            ->where('CITRN_ITMCD', $request->ITMCD)
-            ->where('CITRN_LOCCD', $request->LOCFROM)
-            ->first();
-
-        if ($cekStock === null || (!empty($cekStock) && $cekStock->CITRN_ITMQT < $request->QTY)) {
-            return response([
-                'STOK' => ['Stock less than inputed qty or stock not exists!!']
-            ], 406);
-        } else {
-            $cekLatestTrf = C_ITRN::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)', date('Y')))
-                ->where('CITRN_FORM', 'INC-TRF-LOC')
-                ->where('CITRN_DOCNO', 'like', 'TRF%')
-                ->first();
-
-            if (empty($cekLatestTrf)) {
-                $TRFCODE = 'TRF'.date('Y').'0001';
-            } else {
-                $TRFCODE = 'TRF'.date('Y').sprintf('%04d', (int) substr($cekLatestTrf->CITRN_DOCNO, -3) + 1);
-            }
-
-            // Issue Stock
-            $iss = C_ITRN::on($this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => Auth::user()->branch,
-                'CITRN_LOCCD' => $request->LOCFROM,
-                'CITRN_DOCNO' => $request->has('DOC') && !empty($request->DOC) ? $request->DOC : $TRFCODE,
-                'CITRN_ISSUDT' => date('Y-m-d'),
-                'CITRN_FORM' => 'OUT-TRF-LOC',
-                'CITRN_ITMCD' => $request->ITMCD,
-                'CITRN_ITMQT' => $request->QTY * -1,
-                'CITRN_PRCPER' => $cekStock->CITRN_PRCPER,
-                'CITRN_PRCAMT' => $request->QTY * $cekStock->CITRN_PRCPER,
-                'created_by' => Auth::user()->nick_name,
-            ]);
-
-            // Receive Stock
-            $rcv = C_ITRN::on($this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => Auth::user()->branch,
-                'CITRN_LOCCD' => $request->LOCTO,
-                'CITRN_DOCNO' => $request->has('DOC') && !empty($request->DOC) ? $request->DOC : $TRFCODE,
-                'CITRN_ISSUDT' => date('Y-m-d'),
-                'CITRN_FORM' => 'INC-TRF-LOC',
-                'CITRN_ITMCD' => $request->ITMCD,
-                'CITRN_ITMQT' => $request->QTY,
-                'CITRN_PRCPER' => $cekStock->CITRN_PRCPER,
-                'CITRN_PRCAMT' => $request->QTY * $cekStock->CITRN_PRCPER,
-                'created_by' => Auth::user()->nick_name,
-            ]);
-
-            return ['msg' => 'OK', 'DATA' => [
-                'ISS' => $iss,
-                'RCV' => $rcv
-            ]];
-        }
-    }
-
-    function saveTransferLocDraft(Request $request) {
+    function saveTransferLocDraft(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'TLOCREQ_DOCNO' => 'required',
             'TLOCREQ_FRLOC' => 'required',
@@ -425,7 +365,8 @@ class InventoryController extends Controller
         return base64_encode($pdf->stream('part-handover.pdf'));
     }
 
-    function viewStockByItemLoc($item, $loc) {
+    function viewStockByItemLoc($item, $loc)
+    {
         return C_ITRN::on($this->dedicatedConnection)
             ->select(
                 DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK')
@@ -434,5 +375,52 @@ class InventoryController extends Controller
             ->where('CITRN_LOCCD', base64_decode($loc))
             ->first()
             ->STOCK;
+    }
+
+    function uploadStockTakeView()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'stocktake']);
+    }
+
+    function uploadStockTake(Request $req)
+    {
+        ini_set('max_execution_time', '300');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+
+        $req->file->storeAs('/public/upload_stock_take/', $nama_file);
+        $createdHeader = T_RCV_HEAD::on($this->dedicatedConnection)
+            ->updateOrCreate([
+                'TRCV_DOCNO' => "STK-".date('Ymd'),
+            ],[
+                'TRCV_BRANCH' => Auth::user()->branch,
+                'TRCV_RCVCD' => '',
+                'TRCV_ISSUDT' => $req->date,
+                'TRCV_SUBMITTED_AT' => date('Y-m-d'),
+                'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
+                'TRCV_DOCNO' => "STK-".date('Ymd'),
+                'TRCV_SUPCD' => '',
+                'created_by' => Auth::user()->nick_name,
+            ]);
+
+
+        if ($extNya == 'xls') {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+            $writer = new Xlsx($spreadsheet);
+            $nama_file = $fileHash . '.xlsx';
+            $writer->save('/public/upload_stock_take/' . $nama_file);
+        }
+
+        $importer = new importStockTake($req->date, $createdHeader->id);
+
+        Excel::import($importer, public_path('/storage/upload_stock_take/' . $nama_file));
+
+        return ['msg' => 'Upload Success'];
     }
 }

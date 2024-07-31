@@ -15,6 +15,7 @@ class T_SRV_FIXDET extends Model
         'TSRVF_ITMCD',
         'TSRVF_PRC',
         'TSRVF_QTY',
+        'TSRVF_ISCONF',
         'created_by',
     ];
 }

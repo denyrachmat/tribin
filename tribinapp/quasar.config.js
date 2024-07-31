@@ -52,10 +52,10 @@ module.exports = configure(function (ctx) {
       env: {
         API: ctx.dev
           ? "http://tribin.test/api/"
-          : "https://joss.jatpowerindo.co.id/api/",
+          : "http://tribin.test/api/",
         API_WEB: ctx.dev
           ? "http://tribin.test/"
-          : "https://joss.jatpowerindo.co.id/",
+          : "http://tribin.test/",
       },
       target: {
         browser: ["es2019", "edge88", "firefox78", "chrome87", "safari13.1"],

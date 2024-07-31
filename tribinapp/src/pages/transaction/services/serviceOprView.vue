@@ -154,6 +154,7 @@ const dataSrv = async () => {
     .post("servicesOPRs/search", {
       searchBy: "",
       searchValue: filter.value,
+      allFixed: 1
     })
     .then((response) => {
       loading.value = false;

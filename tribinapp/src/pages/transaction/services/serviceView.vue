@@ -226,7 +226,7 @@ const dataSrv = async () => {
   await api_web
     .post("servicesAdmins/search", {
       searchBy: filterCol.value,
-      searchValue: filter.value,
+      searchValue: filter.value
     })
     .then((response) => {
       loading.value = false;

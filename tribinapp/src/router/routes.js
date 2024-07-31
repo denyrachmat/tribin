@@ -16,6 +16,7 @@ const routes = [
       { path: 'incomingBC', component: () => import('pages/warehouse/incomingBarcode/incomingBarcodeIndex.vue') },
       { path: 'transferLoc', component: () => import('pages/warehouse/transferLocation/transferLocIndex.vue') },
       { path: 'transferRequest', component: () => import('pages/warehouse/transferRequest/transferRequestIndex.vue') },
+      { path: 'stocktake', component: () => import('pages/warehouse/stockTake/stockTakeIndex.vue') },
       { path: 'services', component: () => import('pages/transaction/services/serviceView.vue') },
       { path: 'servicesApproval', component: () => import('pages/transaction/services/serviceApproval.vue') },
       { path: 'servicesOrderList', component: () => import('pages/transaction/services/serviceOprView.vue') },
@@ -26,6 +27,7 @@ const routes = [
       { path: 'journalReport', component: () => import('pages/transaction/accounting/journalReport/journalReportIndex.vue') },
       { path: 'journalInput', component: () => import('pages/transaction/accounting/journalInput/journalInputIndex.vue') },
       { path: 'pos', component: () => import('pages/transaction/pos/sales/posSalesIndex.vue') },
+
     ]
   },
 

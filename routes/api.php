@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessRulesController;
 use App\Http\Controllers\API\OutgoingController;
 use App\Http\Controllers\ConditionController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ServiceAdminController;
@@ -38,12 +39,12 @@ Route::get('/logout', function (Request $request) {
     return ['message' => 'ok logout'];
 })->middleware('auth:sanctum');
 
-Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
+Route::group(['prefix' => 'master', 'middleware' => 'api'], function () {
     Route::prefix('item')->group(function () {
         Route::post('searchAPI', [ItemController::class, 'searchAPI']);
     });
 
-    Route::group(['prefix' => 'conditions'], function() {
+    Route::group(['prefix' => 'conditions'], function () {
         Route::get('getdata', [ConditionController::class, 'getData']);
         Route::get('getCompaniesDetail', [ConditionController::class, 'getCompaniesDetail']);
         Route::get('getdataGroup', [ConditionController::class, 'getDataGroup']);
@@ -51,10 +52,13 @@ Route::group(['prefix' => 'master', 'middleware' => 'api'], function() {
         Route::delete('deleteDataGroup/{id}', [ConditionController::class, 'deleteDataGroup']);
     });
 });
+Route::middleware(["auth:sanctum"])->group(function () {
+    Route::post('inventory/uploadStockTake', [InventoryController::class, 'uploadStockTake']);
+});
 
-Route::group(['prefix' => 'transaction', 'middleware' => ['api']], function() {
+Route::group(['prefix' => 'transaction', 'middleware' => ['api']], function () {
     Route::resource('delivery', OutgoingController::class);
-    Route::group(['prefix' => 'quotation'], function() {
+    Route::group(['prefix' => 'quotation'], function () {
         Route::get('view/{id}', [QuotationController::class, 'viewAPI']);
     });
 });

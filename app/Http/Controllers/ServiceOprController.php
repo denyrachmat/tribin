@@ -14,8 +14,11 @@ use App\Models\T_SRV_DET;
 use App\Models\T_SRV_FIXDET;
 use App\Models\T_LOC_REQ;
 
+use App\Traits\LocationTraits;
+
 class ServiceOprController extends Controller
 {
+    use LocationTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -53,6 +56,7 @@ class ServiceOprController extends Controller
                 'TSRVD_FLGSTS' => $value['TSRVD_FLGSTS'],
                 'TSRVD_REMARK' => $value['TSRVD_REMARK']
             ]);
+
             foreach ($value['listFixDet'] as $key => $valueDet) {
                 $hasil[] = T_SRV_FIXDET::on($this->dedicatedConnection)->updateOrCreate([
                     'TSRVD_ID' => $value['id'],
@@ -65,6 +69,8 @@ class ServiceOprController extends Controller
                 ]);
             }
         }
+
+        return ['msg' => 'Success','data' => $hasil];
     }
 
     /**
@@ -125,9 +131,12 @@ class ServiceOprController extends Controller
         $hasil = [];
         foreach ($head as $key => $value) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
-            ->with(['listFixDet' => function($j) {
+            ->with(['listFixDet' => function($j) use ($request) {
                 $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
                 $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
+                if(!($request->has('allFixed') && $request->allFixed === 1)){
+                    $j->where('TSRVF_ISCONF', 0);
+                }
             }])
             ->where('TSRVH_ID', $value['id'])
             ->get()

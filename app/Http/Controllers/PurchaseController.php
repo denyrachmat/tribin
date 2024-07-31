@@ -307,7 +307,7 @@ class PurchaseController extends Controller
 
     function searchApprovedPO(Request $request)
     {
-        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )') AS PO_CUSTDESC"),"TPCHORD_PCHCD", "TPCHORD_SUPCD", "MSUP_SUPNM", "TPCHORD_ISSUDT", "TPCHORD_DLVDT", "TPCHORD_REQCD"])
+        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )') AS PO_CUSTDESC"), "TPCHORD_PCHCD", "TPCHORD_SUPCD", "MSUP_SUPNM", "TPCHORD_ISSUDT", "TPCHORD_DLVDT", "TPCHORD_REQCD"])
             ->leftJoin("M_SUP", function ($join) {
                 $join->on("TPCHORD_SUPCD", "=", "MSUP_SUPCD")
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
@@ -506,7 +506,7 @@ class PurchaseController extends Controller
     public function POtoPDF($id, $conn = '')
     {
         $doc = base64_decode($id);
-        $RSCG = CompanyGroup::select('name', 'address', 'phone', 'fax')
+        $RSCG = CompanyGroup::select('name', 'address', 'phone', 'fax', 'flg_ppn')
             ->where('connection', $this->dedicatedConnection)
             ->first();
         $RSHeader = T_PCHORDHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG')
@@ -633,7 +633,7 @@ class PurchaseController extends Controller
         $nomor = 1;
         $grandTotal = 0;
         $subTotal = 0;
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         foreach ($RSDetail as $r) {
             $lineTotal = $r['TPCHORDDETA_ITMPRC_PER'] * $r['TPCHORDDETA_ITMQT'];
             $this->fpdf->SetXY(3, $y);
@@ -651,40 +651,43 @@ class PurchaseController extends Controller
         $grandTotal = $vatValue + $subTotal;
         $this->fpdf->SetXY(3, $y);
         $this->fpdf->SetFont('Arial', 'I', 10);
-        $this->fpdf->MultiCell(125, 15, 'Say ' . ucwords($this->numberToSentence($grandTotal)), 1);
+        $this->fpdf->MultiCell(125, 10, ucwords($this->numberToSentence($grandTotal)), 1);
 
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(128, $y);
-        $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
-        $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
-        $y += 5;
-        $this->fpdf->SetXY(128, $y);
-        $this->fpdf->Cell(35, 5, 'VAT/PPN', 1, 0);
-        $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
+        if ($RSCG->flg_ppn == 1) {
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(128, $y);
+            $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
+            $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
+            $y += 5;
+            $this->fpdf->SetXY(128, $y);
+            $this->fpdf->Cell(35, 5, 'VAT/PPN', 1, 0);
+            $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
+        }
+
         $y += 5;
         $this->fpdf->SetXY(128, $y);
         $this->fpdf->Cell(35, 5, 'Total', 1, 0);
         $this->fpdf->Cell(35, 5, number_format($grandTotal), 1, 0, 'R');
         $y += 5;
         $this->fpdf->SetXY(3, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(10, 5, 'Note', 0);
         $y += 5;
         $this->fpdf->SetXY(3 + 10, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(150, 5, '1. Semua pengiriman barang harus disertakan nota/faktur/kwitansi', 0);
         $y += 5;
         $this->fpdf->SetXY(3 + 10, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(150, 5, '2. Barang akan kami kembalikan apabila tidak sesuai pesanan', 0);
         $y += 5;
         $this->fpdf->SetXY(3 + 10, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(150, 5, '3. Nomor Purchase Order (PO) harus dicantumkan dalam nota/faktur/kwitansi', 0);
 
         $y += 5;
         $this->fpdf->SetXY(90, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(27, 5, 'Order By', 1, 'C');
         $this->fpdf->SetXY(90 + 27, $y);
         $this->fpdf->MultiCell(27, 5, 'Prepared By', 1, 'C');
@@ -695,7 +698,7 @@ class PurchaseController extends Controller
 
         $y += 5;
         $this->fpdf->SetXY(90, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(27, 15, '', 1, 'C');
         $this->fpdf->SetXY(90 + 27, $y);
         $this->fpdf->MultiCell(27, 15, '', 1, 'C');
@@ -706,7 +709,7 @@ class PurchaseController extends Controller
 
         $y += 15;
         $this->fpdf->SetXY(90, $y);
-        $this->fpdf->SetFont('Arial', '', 10);
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->MultiCell(27, 5, '', 1, 'C');
         $this->fpdf->SetXY(90 + 27, $y);
         $this->fpdf->MultiCell(27, 5, $RSUserWhoPrepare->name, 1, 'C');

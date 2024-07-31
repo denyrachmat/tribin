@@ -17,8 +17,11 @@ use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
 use App\Models\T_LOC_REQ;
 
+use App\Traits\LocationTraits;
+
 class ServiceAdminController extends Controller
 {
+    use LocationTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -210,6 +213,58 @@ class ServiceAdminController extends Controller
 
         return ['msg' => 'Data has been updated', 'dataHead' => $dataHead, 'data' => $postToDelivery];
     }
+
+    public function confirmDoneItem(Request $request, string $id)
+    {
+        $hasil = T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', base64_decode($id));
+        if ((clone $hasil)->count() > 0) {
+            $cekDataOS = (clone $hasil)->where('TSRVF_ISCONF', 0)->count();
+
+            if ($cekDataOS > 0) {
+                $cekData = [];
+                foreach ($request->data as $key => $value) {
+                    if ($value['STOCK'] > 0 && (int) $value['TSRVF_QTY'] > 0 && $value['STOCK'] >= (int) $value['TSRVF_QTY']) {
+                        $cekOld = T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $value['id'])->where('TSRVF_ISCONF', 0)->first();
+                        $cekData[] = ['value' => $value, 'check' => $cekOld];
+                        $createdNew = T_SRV_FIXDET::on($this->dedicatedConnection)->create($cekOld->toArray());
+                        T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $createdNew->id)->update([
+                            'TSRVF_ISCONF' => 1
+                        ]);
+
+                        T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $value['id'])->delete();
+                    }
+                }
+
+                return response(['msg' => 'Some item has been updated !', 'data' => $cekData]);
+            } else {
+                $cekDataAll = (clone $hasil)->get()->toArray();
+                $doc = T_SRV_HEAD::on($this->dedicatedConnection)->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
+                    ->where('T_SRV_DET.id', base64_decode($id))
+                    ->first();
+
+                foreach ($cekDataAll as $key => $valueDet) {
+                    // Move Location from service to after service
+                    $this->transferLoc(new Request([
+                        'LOCFROM' => 'WH-SRV',
+                        'LOCTO' => 'WH-SRV-DONE',
+                        'ITMCD' => $valueDet['TSRVF_ITMCD'],
+                        'QTY' => $valueDet['TSRVF_QTY'],
+                        'DOC' => "{$doc->SRVH_DOCNO}-{base64_decode($id)}"
+                    ]));
+                }
+
+                // Set to done
+                (clone $hasil)->update([
+                    'TSRVD_FLGSTS' => 3
+                ]);
+
+                return response(['msg' => 'All fixed item has been submited']);
+            }
+        } else {
+            return response()->json('ID Not found, please check again !!', 406);
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -277,10 +332,13 @@ class ServiceAdminController extends Controller
         $hasil = [];
         foreach ($head as $key => $value) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
-                ->with(['listFixDet' => function ($j) {
-                    $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
-                    $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
-                }])
+                ->with([
+                    'listFixDet' => function ($j) {
+                        $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
+                        $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
+                        $j->where('TSRVF_ISCONF', 1);
+                    }
+                ])
                 ->where('TSRVH_ID', $value['id'])
                 ->get()
                 ->toArray();

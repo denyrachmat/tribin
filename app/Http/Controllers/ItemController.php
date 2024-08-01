@@ -27,7 +27,7 @@ class ItemController extends Controller
 
     public function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'item']);
+        // return view('tribinapp_layouts', ['routeApp' => 'item']);
         return view('master.item', [
             'coas' => M_COA::on($this->dedicatedConnection)->select('*')->get(),
             'branches' => M_BRANCH::on($this->dedicatedConnection)->get(),

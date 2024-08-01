@@ -1915,7 +1915,7 @@ class DeliveryController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->first();
 
-            $IDKwitansi = 'K-'. (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -6) + 1));
+            $IDKwitansi = 'A-'. (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -6) + 1));
 
             T_DLVORDHEAD::on($this->dedicatedConnection)
             ->where('TDLVORD_DLVCD', $request->id)

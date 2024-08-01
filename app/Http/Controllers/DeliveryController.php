@@ -1899,13 +1899,13 @@ class DeliveryController extends Controller
             }
 
             // Validation if stock 0
-            // if(count($hasilZero) > 0) {
-            //     return response()->json([
-            //         'status' => false,
-            //         'data' => $hasilZero,
-            //         'msg' => 'Some item stock is empty !'
-            //     ], 406);
-            // }
+            if(count($hasilZero) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'data' => $hasilZero,
+                    'msg' => 'Some item stock is empty !'
+                ], 406);
+            }
 
             $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
                 ->orderBy('created_at', 'desc')

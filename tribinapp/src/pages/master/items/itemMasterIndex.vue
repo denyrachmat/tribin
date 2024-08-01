@@ -8,7 +8,7 @@
         <q-btn icon="add" color="blue" @click="onClickNew()">
           <q-tooltip>Create New Item</q-tooltip>
         </q-btn>
-        <q-btn icon="add" color="blue" @click="onExportData()" flat>
+        <q-btn icon="download" color="blue" @click="onExportData()" flat>
           <q-tooltip>Export to Excel</q-tooltip>
         </q-btn>
       </div>
@@ -146,13 +146,6 @@ const cols = ref([
     sortable: true,
     align: "left",
   },
-  {
-    name: "MITM_BRANCH",
-    label: "Category",
-    field: "MITM_BRANCH",
-    sortable: true,
-    align: "left",
-  },
 ])
 
 const loading = ref(false);
@@ -198,6 +191,30 @@ const onClickNew = (data = null) => {
 
 const onExportData = () => {
 
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to export all this item ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .post(`item/exportExcel`, null, {
+        responseType: 'arraybuffer'
+      })
+      .then((datas) => {
+        loading.value = false;
+        const link = document.createElement("a");
+        link.download = name;
+        // const data = await fetch(datas).then((res) => res.blob());
+        link.href = window.URL.createObjectURL(
+          new Blob([datas.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+        );
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(link.href);
+      });
+  });
 }
 
 const onDelete = (data) => {

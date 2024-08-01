@@ -1,0 +1,24 @@
+Project JAT
+Meeting 31 Jul 2024
+1. Bug Item baru code otomatis di menu service order ✅
+2. Item Input Baru hanya input item code, Item name & UOM ✅
+3. width upload foto kurang lebar ✅
+4. Add kepemilikan item terhadap item service ✅
+5. WH Barang Rusak ✅
+6. Flag tiap part request replacement / tidak ✅
+7. Validasi stock stock transfer request > 0 saja ✅
+8. Detail realisasi stock transfer request per detail ✅
+9. Detail confirm close finish service per item ✅
+10. PO & SO Print Mapping PPN (PT => ya, CV => ya, Service => tidak, Retail => Tidak) ✅
+11. Bug tampilan print PO jika itemnya banyak
+12. No invoice di kwitansi reset tiap tahun ✅
+13. Format invoice berdasarkan lokasi user / branch user
+14. Nomor Kwitansi prefix nya dari K- ganti A- ✅
+15. Remake Item Master & Export data (80%)
+16. Daily Report ( Belum Jelas bentukan reportnya )
+17. Split Barcode di Incoming WH
+18. Barcode Create untuk stok yg sudah masuk gudang
+19. Master Price
+20. Mapping Purchase & Sales di COA
+21. Point Of Sales
+22. HR Payroll

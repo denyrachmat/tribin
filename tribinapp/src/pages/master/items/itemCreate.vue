@@ -93,13 +93,85 @@
               behavior="dialog"
               option-label="MCOA_COANM"
               option-value="MCOA_COACD"
-              @filter="
-                (val, update, abort) => filterFn(val, update, abort)
-              "
+              @filter="(val, update, abort) => filterFn(val, update, abort)"
               emit-value
               map-options
               :loading="loading"
               v-if="checkIsNeeded('MITM_COACD')"
+            />
+          </div>
+          <div class="col q-pl-md">
+            <q-input
+              label="Category"
+              dense
+              v-model="itemData.MITM_ITMCAT"
+              filled
+              v-if="checkIsNeeded('MITM_ITMCAT') && isNewCat"
+            >
+              <template v-slot:append>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  :icon="isNewCat ? 'list' : 'add'"
+                  @click="isNewCat = !isNewCat"
+                >
+                  <q-tooltip>{{
+                    isNewCat
+                      ? "Choose existing category"
+                      : "Insert new category"
+                  }}</q-tooltip>
+                </q-btn>
+              </template>
+            </q-input>
+            <q-select
+              dense
+              filled
+              label="Category"
+              v-model="itemData.MITM_ITMCAT"
+              :options="listCat"
+              :loading="loading"
+              v-else-if="checkIsNeeded('MITM_ITMCAT') && !isNewCat"
+            >
+              <template v-slot:append>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  :icon="isNewCat ? 'list' : 'add'"
+                  @click="isNewCat = !isNewCat"
+                >
+                  <q-tooltip>{{
+                    isNewCat
+                      ? "Choose existing category"
+                      : "Insert new category"
+                  }}</q-tooltip>
+                </q-btn>
+              </template>
+            </q-select>
+          </div>
+        </div>
+
+        <div class="row q-pt-md">
+          <div class="col">
+            <q-option-group
+              v-model="itemData.MITM_ITMTYPE"
+              :options="[
+                {
+                  label: 'Finished Good',
+                  value: '1',
+                },
+                {
+                  label: 'Spare Parts',
+                  value: '2',
+                },
+                {
+                  label: 'Service',
+                  value: '3',
+                },
+              ]"
+              color="primary"
+              inline
             />
           </div>
         </div>
@@ -131,27 +203,30 @@ const itemData = ref({
   MITM_SPEC: "",
   MITM_ITMCAT: "",
   MITM_COACD: "",
-  MITM_ITMCAT: ""
+  MITM_ITMCAT: "",
 });
 const loading = ref(false);
+const isNewCat = ref(false);
 const listUOM = ref([]);
 const listCOA = ref([]);
+const listCat = ref([]);
 
 const props = defineProps({
   ItemCat: String,
   ItemType: String,
   isAutoCD: Boolean,
   listOpenField: Array,
-  dataForUpdate: Object
+  dataForUpdate: Object,
 });
 
 onMounted(() => {
   getDataIndex();
-  itemData.value.MITM_ITMCAT = props.ItemCat
-  itemData.value.MITM_ITMTYPE = props.ItemType
+  getCategory();
+  itemData.value.MITM_ITMCAT = props.ItemCat;
+  itemData.value.MITM_ITMTYPE = props.ItemType;
 
   if (props.dataForUpdate) {
-    itemData.value = props.dataForUpdate
+    itemData.value = props.dataForUpdate;
   }
 });
 
@@ -194,7 +269,22 @@ const getDataIndex = async () => {
     });
 };
 
+const getCategory = async () => {
+  loading.value = true;
+  await api_web
+    .get("item/getCategory")
+    .then((response) => {
+      loading.value = false;
+      listCat.value = response.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
 const checkIsNeeded = (field) => {
-  return props.listOpenField.length === 0 || props.listOpenField.includes(field)
-}
+  return (
+    props.listOpenField.length === 0 || props.listOpenField.includes(field)
+  );
+};
 </script>

@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\master\itemMasterExport;
 
 class ItemController extends Controller
 {
@@ -27,7 +29,7 @@ class ItemController extends Controller
 
     public function index()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'item']);
+        return view('tribinapp_layouts', ['routeApp' => 'item']);
         return view('master.item', [
             'coas' => M_COA::on($this->dedicatedConnection)->select('*')->get(),
             'branches' => M_BRANCH::on($this->dedicatedConnection)->get(),
@@ -210,6 +212,7 @@ class ItemController extends Controller
             'MITM_SPEC',
             'MITM_STKUOM',
             'MITM_ITMCAT',
+            'MITM_ITMTYPE',
             'LATEST_PRC',
             'STOCK'
         ];
@@ -277,6 +280,23 @@ class ItemController extends Controller
             header('Cache-Control: max-age=0');
             $writer->save('php://output');
         }
+    }
+
+    function getCategory(){
+        $data = M_ITM::on($this->dedicatedConnection)
+            ->select('MITM_ITMCAT')
+            ->groupBy('MITM_ITMCAT')
+            ->get()
+            ->pluck('MITM_ITMCAT');
+
+        return $data;
+    }
+
+    function exportExcel() {
+        return Excel::download(new itemMasterExport(
+            $this->dedicatedConnection
+        )
+        , 'itemMasterExport.xlsx');
     }
 
     function getLatestItemServiceCode()

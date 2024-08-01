@@ -181,6 +181,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form', [ItemController::class, 'index']);
             Route::get('formAPI', [ItemController::class, 'getItemForIndex']);
             Route::post('getListCoasAPI', [ItemController::class, 'getListCoas']);
+            Route::get('getCategory', [ItemController::class, 'getCategory']);
+
             Route::post('import', [ItemController::class, 'importFromAnotherCompany']);
             Route::get('', [ItemController::class, 'search']);
             Route::post('', [ItemController::class, 'simpan']);
@@ -189,6 +191,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
             Route::post('searchAPIStockAndPriceOnly', [ItemController::class, 'searchAPIStockAndPriceOnly']);
             Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);
+            Route::post('exportExcel', [ItemController::class, 'exportExcel']);
         });
 
         # Terkait Location Master

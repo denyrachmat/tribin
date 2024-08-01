@@ -1894,7 +1894,7 @@ class DeliveryController extends Controller
             //     ->get();
             $hasilZero = [];
             foreach ($request->data as $rCheck) {
-                $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')
+                $cekStock = DB::connection($this->dedicatedConnection)->table('M_ITM_GRP')
                 ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
                 ->first();
 

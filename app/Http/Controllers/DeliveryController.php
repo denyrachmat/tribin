@@ -1887,11 +1887,6 @@ class DeliveryController extends Controller
         // }
 
         if (count($request->data) > 0) {
-            // $Delivery = T_DLVORDDETA::on($this->dedicatedConnection)
-            //     ->select('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_ITMQT')
-            //     ->where('TDLVORDDETA_DLVCD', $request->id)
-            //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-            //     ->get();
             $hasilZero = [];
             foreach ($request->data as $rCheck) {
                 $cekStock = DB::connection($this->dedicatedConnection)->table('M_ITM_GRP')
@@ -1903,13 +1898,14 @@ class DeliveryController extends Controller
                 }
             }
 
-            if(count($hasilZero) > 0) {
-                return response()->json([
-                    'status' => false,
-                    'data' => $hasilZero,
-                    'msg' => 'Some item stock is empty !'
-                ], 406);
-            }
+            // Validation if stock 0
+            // if(count($hasilZero) > 0) {
+            //     return response()->json([
+            //         'status' => false,
+            //         'data' => $hasilZero,
+            //         'msg' => 'Some item stock is empty !'
+            //     ], 406);
+            // }
 
             $cek = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)'), date('Y'))
                 ->orderBy('created_at', 'desc')

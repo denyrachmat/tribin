@@ -1801,6 +1801,7 @@ class DeliveryController extends Controller
             ->with(['dlvdet' => function ($f) {
                 $f->select(
                     'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
                     'T_DLVORDDETA.TDLVORDDETA_ITMCD',
                     'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
                     'T_DLVORDDETA.TDLVORDDETA_ITMQT',
@@ -1808,6 +1809,7 @@ class DeliveryController extends Controller
                     'MITM_ITMNMREAL'
                 )->groupBy(
                     'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
                     'T_DLVORDDETA.TDLVORDDETA_ITMCD',
                     'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
                     'T_DLVORDDETA.TDLVORDDETA_ITMQT',

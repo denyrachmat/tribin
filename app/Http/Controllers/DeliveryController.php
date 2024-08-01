@@ -1799,6 +1799,11 @@ class DeliveryController extends Controller
         $Data = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
             ->with(['dlvdet' => function ($f) {
+                $f->select(
+                    'T_DLVORDDETA.*',
+                    'MITM_ITMNM',
+                    'MITM_ITMNMREAL'
+                );
                 $f->join('M_ITM_GRP', 'TDLVORDDETA_ITMCD', 'MITM_ITMNM');
             }])
             ->leftJoin('T_DLVORDDETA', function ($join) {

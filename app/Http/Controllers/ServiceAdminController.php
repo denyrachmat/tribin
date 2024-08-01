@@ -65,7 +65,7 @@ class ServiceAdminController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $cekHariIni = T_SRV_HEAD::on($this->dedicatedConnection)->whereBetween('created_at', [date('y-m-d 00:00:00'), date('y-m-d 23:59:59')])->first();
+        $cekHariIni = T_SRV_HEAD::on($this->dedicatedConnection)->whereBetween('created_at', [date('y-m-d 00:00:00'), date('y-m-d 23:59:59')])->orderBy('created_at', 'desc')->first();
         $IDSPK = 'JAT/SRV/' . date('y/m/d') . '/' . (empty($cekHariIni) ? '0001' : sprintf('%04d', (int) substr($cekHariIni->SRVH_DOCNO, -3) + 1));
 
         $headerStore = T_SRV_HEAD::on($this->dedicatedConnection)->updateOrCreate([

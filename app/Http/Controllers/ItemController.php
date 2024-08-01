@@ -27,6 +27,7 @@ class ItemController extends Controller
 
     public function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'item']);
         return view('master.item', [
             'coas' => M_COA::on($this->dedicatedConnection)->select('*')->get(),
             'branches' => M_BRANCH::on($this->dedicatedConnection)->get(),
@@ -101,7 +102,9 @@ class ItemController extends Controller
 
         $getLatestItemCode = M_ITM::on($this->dedicatedConnection)->where('MITM_ITMTYPE', 3)->orderBy('created_at', 'desc')->first();
         $genItemCode = 'SRV-' . date('ym') . (empty($getLatestItemCode) ? '001' : sprintf('%03d', (int) substr($getLatestItemCode->MITM_ITMCD, -2) + 1));
-        $hasil = M_ITM::on($this->dedicatedConnection)->create([
+        $hasil = M_ITM::on($this->dedicatedConnection)->updateOrCreate([
+            'MITM_ITMCD' => empty($request->MITM_ITMCD) ? $genItemCode : $request->MITM_ITMCD,
+        ],[
             'MITM_ITMCD' => empty($request->MITM_ITMCD) ? $genItemCode : $request->MITM_ITMCD,
             'MITM_ITMNM' => $request->MITM_ITMNM,
             'MITM_STKUOM' => $request->MITM_STKUOM,
@@ -205,6 +208,8 @@ class ItemController extends Controller
             DB::raw('MITM_ITMNM as MITM_ITMCD'),
             DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNM"),
             'MITM_SPEC',
+            'MITM_STKUOM',
+            'MITM_ITMCAT',
             'LATEST_PRC',
             'STOCK'
         ];

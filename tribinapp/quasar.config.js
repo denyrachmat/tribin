@@ -51,11 +51,11 @@ module.exports = configure(function (ctx) {
       vueRouterMode: "hash", // available values: 'hash', 'history'
       env: {
         API: ctx.dev
-          ? "http://tribin.test/api/"
-          : "http://tribin.test/api/",
+          ? "https://joss.jatpowerindo.co.id/api/"
+          : "https://joss.jatpowerindo.co.id/api/",
         API_WEB: ctx.dev
-          ? "http://tribin.test/"
-          : "http://tribin.test/",
+          ? "https://joss.jatpowerindo.co.id/"
+          : "https://joss.jatpowerindo.co.id/",
       },
       target: {
         browser: ["es2019", "edge88", "firefox78", "chrome87", "safari13.1"],

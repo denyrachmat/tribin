@@ -8,6 +8,7 @@ const routes = [
       { path: 'condition', component: () => import('pages/master/conditions/assignConditions.vue') },
       { path: 'coa', component: () => import('pages/master/coa/coaIndex.vue') },
       { path: 'location', component: () => import('pages/master/location/locationIndex.vue') },
+      { path: 'item', component: () => import('pages/master/items/itemMasterIndex.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
       { path: 'outgoing', component: () => import('pages/warehouse/outgoing/outgoingView.vue') },
       { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },

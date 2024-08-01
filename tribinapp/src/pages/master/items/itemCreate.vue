@@ -141,13 +141,18 @@ const props = defineProps({
   ItemCat: String,
   ItemType: String,
   isAutoCD: Boolean,
-  listOpenField: Array
+  listOpenField: Array,
+  dataForUpdate: Object
 });
 
 onMounted(() => {
   getDataIndex();
   itemData.value.MITM_ITMCAT = props.ItemCat
   itemData.value.MITM_ITMTYPE = props.ItemType
+
+  if (props.dataForUpdate) {
+    itemData.value = props.dataForUpdate
+  }
 });
 
 const filterFn = (val, update, abort, fun) => {

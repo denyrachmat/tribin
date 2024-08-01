@@ -430,9 +430,9 @@
                         <td style="height: 5em;"></td>
                     </tr>
                     <tr>
-                        <td>Marketing Dept</td>
-                        <td>Pimpinan</td>
-                        <td>Penyewa / Pembeli</td>
+                        <td>{{$headerQuo->created_by}}</td>
+                        <td>Syapril, S.T</td> <!-- Harcode sementara -->
+                        <td>{{$headerQuo->TQUO_ATTN}}</td>
                     </tr>
                 </table>
             </div>

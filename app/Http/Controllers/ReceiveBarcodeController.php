@@ -101,7 +101,7 @@ class ReceiveBarcodeController extends Controller
             ->join('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
             ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
             ->join(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
-            ->join('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
+            ->leftjoin('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%{ $request->searchValue }%');

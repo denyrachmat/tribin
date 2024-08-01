@@ -1803,6 +1803,10 @@ class DeliveryController extends Controller
                     'T_DLVORDDETA.*',
                     'MITM_ITMNM',
                     'MITM_ITMNMREAL'
+                )->groupBy(
+                    'T_DLVORDDETA.*',
+                    'MITM_ITMNM',
+                    'MITM_ITMNMREAL'
                 );
                 $f->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')

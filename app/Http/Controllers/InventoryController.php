@@ -400,7 +400,7 @@ class InventoryController extends Controller
                 'TRCV_DOCNO' => "STK-".date('Ymd'),
             ],[
                 'TRCV_BRANCH' => Auth::user()->branch,
-                'TRCV_RCVCD' => '',
+                'TRCV_RCVCD' => "STK-".date('Ymd'),
                 'TRCV_ISSUDT' => $req->date,
                 'TRCV_SUBMITTED_AT' => date('Y-m-d'),
                 'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,

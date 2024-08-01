@@ -14,7 +14,7 @@ Meeting 31 Jul 2024
 12. No invoice di kwitansi reset tiap tahun ✅
 13. Format invoice berdasarkan lokasi user / branch user
 14. Nomor Kwitansi prefix nya dari K- ganti A- ✅
-15. Remake Item Master & Export data (80%)
+15. Remake Item Master & Export data ✅
 16. Daily Report ( Belum Jelas bentukan reportnya )
 17. Split Barcode di Incoming WH
 18. Barcode Create untuk stok yg sudah masuk gudang

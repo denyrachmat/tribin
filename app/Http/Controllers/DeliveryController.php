@@ -1804,7 +1804,10 @@ class DeliveryController extends Controller
                     'MITM_ITMNM',
                     'MITM_ITMNMREAL'
                 );
-                $f->join('M_ITM_GRP', 'TDLVORDDETA_ITMCD', 'MITM_ITMNM');
+                $f->leftJoin("M_ITM_GRP", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+                });
             }])
             ->leftJoin('T_DLVORDDETA', function ($join) {
                 $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');

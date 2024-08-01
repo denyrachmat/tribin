@@ -1800,7 +1800,17 @@ class DeliveryController extends Controller
             ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
             ->with(['dlvdet' => function ($f) {
                 $f->select(
-                    'T_DLVORDDETA.*',
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'MITM_ITMNM',
+                    'MITM_ITMNMREAL'
+                )->groupBy(
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
                     'MITM_ITMNM',
                     'MITM_ITMNMREAL'
                 );

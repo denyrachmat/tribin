@@ -1388,13 +1388,11 @@ class QuotationController extends Controller
                 $join->on("TQUODETA_ITMCD", "=", "MITM_ITMNM")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->leftJoin("M_USAGE", 'TQUODETA_USAGE', 'MUSAGE_CD')
+            ->leftJoin("M_USAGE", 'TQUODETA_USAGE', 'M_USAGE.id')
             ->whereNull("T_QUODETA.deleted_at")
             ->where("TQUODETA_QUOCD", $doc)
             ->where('TQUODETA_BRANCH', Auth::user()->branch)
             ->get()->toArray();
-
-        // return $RSDetail;
 
         $RSCondition = T_QUOCOND::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TQUOCOND_CONDI')
             ->where('TQUOCOND_QUOCD', $doc)

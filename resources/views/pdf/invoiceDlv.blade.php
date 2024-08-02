@@ -228,7 +228,7 @@
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
                                 <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
-                                <td class="tg-0lax">{{$value['dataSLO']['TSLODETA_USAGE_DESCRIPTION']}}</td>
+                                <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} - {{$value['dataSLO']['MUSAGE_DESCRIPTION']}}</td>
                                 <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
                                 <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'],0,".",",") }}</td>
                             </tr>
@@ -333,9 +333,9 @@
     </div>
 
     <div class="row" style="font-size: 12px; position: absolute;
-            bottom: 10em; right: 10em">
+            bottom: 10em; left: 10em">
         <div class="col5">
-            {{date('d M Y');}}
+            Hormat Kami
         </div>
 
         <div class="row" style="padding-top: 7em">

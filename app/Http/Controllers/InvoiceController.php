@@ -78,9 +78,9 @@ class InvoiceController extends Controller
         T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $request->TDLVPAYDETA_DLVCD)->delete();
 
         foreach ($request->payment as $key => $valuePays) {
-            T_DLVPAYDETA::on($this->dedicatedConnection)->create([
-                'TDLVPAYDETA_DLVCD' => $valuePays['TDLVPAYDETA_DLVCD'],
-                'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
+            T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
+                'TDLVPAYDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
+                'TDLVPAYDETA_IDPAY' => $valuePays['id'],
             ]);
         }
 
@@ -142,7 +142,7 @@ class InvoiceController extends Controller
             )
             ->with([
                 'dlvdet' => function ($f) {
-                    $f->join('M_ITM', 'TDLVORDDETA_ITMCD', 'MITM_ITMCD');
+                    $f->join('M_ITM', 'TDLVORDDETA_ITMCD_ACT', 'MITM_ITMCD');
                 },
                 'dlvacc',
                 'dlvsj',
@@ -183,7 +183,9 @@ class InvoiceController extends Controller
                 $value,
                 [
                     'sloDet' => T_SLODETA::on($this->dedicatedConnection)
-                        ->where('TSLODETA_SLOCD', $value['TDLVORDDETA_SLOCD'])->get()
+                        ->where('TSLODETA_SLOCD', $value['TDLVORDDETA_SLOCD'])
+                        ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
+                        ->get()
                 ]
             );
         }
@@ -218,7 +220,7 @@ class InvoiceController extends Controller
         }
 
         $ppn = $total * 0.11;
-
+        
         $pdf = Pdf::loadView(
             'pdf.invoiceDlv',
             array_merge(
@@ -469,6 +471,8 @@ class InvoiceController extends Controller
     public function printSJ($doc)
     {
         $doc = base64_decode($doc);
+
+        $getCompGroups = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
         $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->select(
                 'TDLVORD_ISSUDT',
@@ -478,14 +482,23 @@ class InvoiceController extends Controller
                 'MCUS_TELNO',
                 'TDLVORD_INVCD',
                 'TDLVORD_LINE',
-                'TQUO_PROJECT_LOCATION'
+                'TQUO_PROJECT_LOCATION',
+                'TSLODETA_PERIOD_FR',
+                'TSLODETA_PERIOD_TO',
+                'TSLODETA_PRC',
+                'TSLODETA_ITMQT',
+                'TDLVSJDETA_TYPE',
+                'TDLVSJDETA_STARTDT',
+                'TDLVSJDETA_ENDDT'
             )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->leftJoin('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
             ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
+            ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
+            ->leftJoin('T_DLVSJDETA', 'TDLVSJDETA_DLVCD', 'TDLVORD_DLVCD')
             ->where("TDLVORD_DLVCD", $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->groupBy(
@@ -496,12 +509,20 @@ class InvoiceController extends Controller
                 'MCUS_TELNO',
                 'TDLVORD_INVCD',
                 'TDLVORD_LINE',
-                'TQUO_PROJECT_LOCATION'
+                'TQUO_PROJECT_LOCATION',
+                'TSLODETA_PERIOD_FR',
+                'TSLODETA_PERIOD_TO',
+                'TSLODETA_PRC',
+                'TSLODETA_ITMQT',
+                'TDLVSJDETA_TYPE',
+                'TDLVSJDETA_STARTDT',
+                'TDLVSJDETA_ENDDT'
             )
             ->first();
 
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'TDLVORDDETA_ITMCD',
+            'TDLVORDDETA_ITMCD_ACT',
             'TDLVORDDETA_ITMQT',
             'MITM_ITMNM',
             'MITM_STKUOM',
@@ -510,9 +531,10 @@ class InvoiceController extends Controller
             'MITM_ITMNM',
             'MITM_MODEL',
             'MITM_BRAND',
+            'MITM_ITMCAT',
         )
             ->leftJoin('M_ITM', function ($join) {
-                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+                $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
             ->where('TDLVORDDETA_DLVCD', $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)->get();
@@ -619,16 +641,65 @@ class InvoiceController extends Controller
         $this->fpdf->Line(3, 42, 205, 42);
         $this->fpdf->Line(3, 43, 205, 43);
 
+        // Isi Header
+        $this->fpdf->SetXY(3, 36.5);
+        $this->fpdf->Cell(29, 5, 'No', 0, 0, 'L');
+        $this->fpdf->SetXY(15, 36.5);
+        $this->fpdf->Cell(29, 5, 'Part Number', 0, 0, 'L');
+        $this->fpdf->SetXY(45, 36.5);
+        $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
+        $this->fpdf->SetXY(100, 36.5);
+        $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
+        $this->fpdf->SetXY(120, 36.5);
+        $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
+        $this->fpdf->SetXY(145, 36.5);
+        $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
+        $this->fpdf->SetXY(170, 36.5);
+        $this->fpdf->Cell(29, 5, 'Keterangan', 0, 0, 'L');
+
         # body
         $nomor = 1;
         $Y = 45;
         foreach ($RSDetail as $r) {
+            if ($Y > 85) {
+                $this->fpdf->AddPage();
+
+                $Y = 45;
+            }
+
             $this->fpdf->SetXY(3, $Y);
-            $this->fpdf->Cell(12, 5, $nomor++, 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, $r->TDLVORDDETA_ITMCD, 0, 0, 'L');
-            $this->fpdf->Cell(67, 5, $r->MITM_ITMNM, 0, 0, 'L');
-            $this->fpdf->Cell(20, 5, $r->TDLVORDDETA_ITMQT . ' ' . $r->MITM_STKUOM, 0, 0, 'R');
-            $Y += 5;
+            $this->fpdf->Cell(29, 5, $nomor++, 0, 0, 'L');
+            $this->fpdf->SetXY(15, $Y);
+            $this->fpdf->Cell(29, 5, $r->TDLVORDDETA_ITMCD_ACT, 0, 0, 'L');
+            $this->fpdf->SetXY(45, $Y);
+            $this->fpdf->Cell(29, 5, $r->MITM_ITMNM, 0, 0, 'L');
+            $this->fpdf->SetXY(100, $Y);
+            $this->fpdf->Cell(29, 5, "{$r->TDLVORDDETA_ITMQT} {$r->MITM_STKUOM}", 0, 0, 'L');
+            $this->fpdf->SetXY(120, $Y);
+            $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
+            $this->fpdf->SetXY(145, $Y);
+            $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
+            if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+                $this->fpdf->SetXY(170, $Y);
+                $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
+                $this->fpdf->SetXY(170, $Y + 5);
+                $this->fpdf->Cell(29, 5, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 0, 'L');
+            } else {
+                $this->fpdf->SetXY(170, $Y);
+                $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
+                $Y += 5;
+                $this->fpdf->SetXY(170, $Y);
+                $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
+                $Y += 5;
+                $this->fpdf->SetXY(170, $Y);
+                $this->fpdf->Cell(29, 5, 'Solar :', 0, 0, 'L');
+            }
+
+            if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+                $Y += 10;
+            } else {
+                $Y += 15;
+            }
         }
 
         # baris bawah
@@ -636,38 +707,54 @@ class InvoiceController extends Controller
         $this->fpdf->Line(3, 91, 205, 91);
         $this->fpdf->Line(3, 97, 205, 97);
         $this->fpdf->Line(3, 98, 205, 98);
-        $this->fpdf->SetXY(3, 36.5);
-        $this->fpdf->Cell(29, 5, 'No', 0, 0, 'L');
-        $this->fpdf->SetXY(15, 36.5);
-        $this->fpdf->Cell(29, 5, 'Part Number', 0, 0, 'L');
-        $this->fpdf->SetXY(55, 36.5);
-        $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
-        $this->fpdf->SetXY(135, 36.5);
-        $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
-        $this->fpdf->SetXY(150, 36.5);
-        $this->fpdf->Cell(29, 5, 'Lokasi Barang', 0, 0, 'L');
 
-        $this->fpdf->SetXY(3, 92);
+        $this->fpdf->SetXY(3, 91.5);
         // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
-        $this->fpdf->Cell(29, 5, $RSHeader->TQUO_PROJECT_LOCATION, 0, 0, 'L');
+        $this->fpdf->Cell(29, 5, "Lokasi : {$RSHeader->TQUO_PROJECT_LOCATION}", 0, 0, 'L');
+        $this->fpdf->SetXY(170, 91.5);
+        $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
+        $this->fpdf->SetFont('Arial', 'B', 10);
+        // $this->fpdf->SetXY(3, 100);
+        // $this->fpdf->Cell(29, 5, "Terbilang : {$this->numberToSentence($RSHeader->TSLODETA_ITMQT * $RSHeader->TSLODETA_PRC)}", 0, 0, 'L');
 
         $this->fpdf->SetFont('Arial', '', 7);
-        $this->fpdf->SetXY(3, 107);
+        $this->fpdf->SetXY(3, 100);
         $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50% (forklift)', 0, 0, 'L');
-        $this->fpdf->SetXY(3, 110);
+        $this->fpdf->SetXY(3, 103);
         $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
 
         $this->fpdf->SetFont('Arial', '', 9);
-        $this->fpdf->SetXY(10, 115);
-        $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
-        $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
-        $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
-        $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
-        $this->fpdf->SetXY(9, 138);
-        $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-        $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-        $this->fpdf->Cell(50, 2, '(                       )', 0, 0, 'L');
-        $this->fpdf->Cell(5, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
+        $this->fpdf->SetXY(15, 110);
+        if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+            $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
+            $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');    
+            $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
+            $this->fpdf->SetXY(13, 130);
+            $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
+        } else {
+            $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
+            $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');    
+            $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
+            $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
+            $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
+            $this->fpdf->SetXY(13, 130);
+            $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(42, 2, '(                   )', 0, 0, 'L');
+            $this->fpdf->Cell(40, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
+        }
+
+        $this->fpdf->SetXY(5, 140);
+        $this->fpdf->Cell(45, 5, 'Putih : Penyewa', 0, 0, 'L');
+        $this->fpdf->Cell(45, 5, 'Merah : Supir / Operator', 0, 0, 'L');
+        $this->fpdf->Cell(45, 5, 'Kuning : Penyewa', 0, 0, 'L');
+        $this->fpdf->Cell(40, 5, 'Hijau : Lap. Harian', 0, 0, 'L');
+        $this->fpdf->Cell(45, 5, 'Biru : Arsip', 0, 0, 'L');
         $pdfFile = $this->fpdf->Output("", "S");
 
         return base64_encode($pdfFile);

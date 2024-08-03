@@ -332,8 +332,7 @@
         </div>
     </div>
 
-    <div class="row" style="font-size: 12px; position: absolute;
-            bottom: 10em; left: 10em">
+    <div class="row" style="font-size: 12px;padding-top: 5em; left: 10em">
         <div class="col5">
             Hormat Kami
         </div>

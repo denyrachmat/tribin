@@ -89,11 +89,11 @@ trait LocationTraits
         }
     }
     // Test
-    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = [], $conn = null)
+    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $userHead = [], $conn = null)
     {
         $bc = '';
-        logger(empty($user) ? 'Kosong $usernya' : 'Gak kosong kok');
-        logger(json_encode([$user]));
+        logger(empty($userHead) ? 'Kosong $userHeadnya' : 'Gak kosong kok');
+        logger(json_encode([$userHead]));
         $cekLatestBarcode = T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)
             ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
             ->first();
@@ -114,7 +114,7 @@ trait LocationTraits
 
         if (!empty($frWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => $user['branch'],
+                'CITRN_BRANCH' => $userHead['branch'],
                 'CITRN_LOCCD' => $frWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -123,7 +123,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty * -1,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => $user['nick_name'],
+                'created_by' => $userHead['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -131,7 +131,7 @@ trait LocationTraits
 
         if (!empty($toWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => $user['branch'],
+                'CITRN_BRANCH' => $userHead['branch'],
                 'CITRN_LOCCD' => $toWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -140,7 +140,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => $user['nick_name'],
+                'created_by' => $userHead['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -154,9 +154,9 @@ trait LocationTraits
             'item_code' => $item,
             'quantity' => $qty,
             'unit_price' => $price,
-            'created_by' => $user['nick_name'],
+            'created_by' => $userHead['nick_name'],
             'created_at' => date('Y-m-d H:i:s'),
-            'branch' => $user['branch'],
+            'branch' => $userHead['branch'],
             'po_number' => ''
         ]);
 

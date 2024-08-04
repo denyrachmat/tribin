@@ -21,6 +21,7 @@ class stockInventoryQueue implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, LocationTraits;
 
     private $date, $id, $isUpdateItem, $conn, $row, $user;
+    protected $dedicatedConnection;
 
     public function __construct($date, $id, $isUpdateItem, $conn, $row, $user)
     {
@@ -29,6 +30,7 @@ class stockInventoryQueue implements ShouldQueue
         $this->id = $id;
         $this->isUpdateItem = $isUpdateItem;
         $this->conn = $conn;
+        $this->dedicatedConnection = $conn;
         $this->row = $row;
         $this->user = $user;
     }

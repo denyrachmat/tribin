@@ -14,14 +14,6 @@ use App\Models\T_RCV_HEAD;
 
 trait LocationTraits
 {
-    protected $dedicatedConnection;
-
-    public function __construct()
-    {
-        date_default_timezone_set('Asia/Jakarta');
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
-    }
-
     function transferLoc(Request $request)
     {
         # data quotation detail item

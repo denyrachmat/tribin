@@ -3454,7 +3454,5 @@
     "/index.html": "/index.html",
     "/index.php": "/index.php",
     "/mix-manifest.json": "/mix-manifest.json",
-    "/robots.txt": "/robots.txt",
-    "/storage/dir_sign.jpg": "/storage/dir_sign.jpg",
-    "/storage/mkt_sign.jpg": "/storage/mkt_sign.jpg"
+    "/robots.txt": "/robots.txt"
 }

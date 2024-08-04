@@ -37,7 +37,13 @@ class stockInventoryQueue implements ShouldQueue
      */
     public function handle(): void
     {
-
+        logger([
+            $this->date,
+            $this->id,
+            $this->isUpdateItem,
+            $this->conn,
+            $this->row,
+        ]);
         $cekItem = M_ITM::on($this->conn)
             ->where('MITM_ITMCD', $this->row[0])
             ->first();

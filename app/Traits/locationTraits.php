@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Traits;
 
 use App\Models\C_ITRN;
@@ -87,8 +88,8 @@ trait LocationTraits
             ];
         }
     }
-// Test
-    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '')
+    // Test
+    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = null)
     {
         $bc = '';
         $cekLatestBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
@@ -111,7 +112,7 @@ trait LocationTraits
 
         if (!empty($frWH)) {
             C_ITRN::on($this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => Auth::user()->branch,
+                'CITRN_BRANCH' => empty($user) ? Auth::user()->branch : $user->branch,
                 'CITRN_LOCCD' => $frWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -120,7 +121,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty * -1,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => Auth::user()->nick_name,
+                'created_by' => empty($user) ? Auth::user()->nick_name : $user->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -128,7 +129,7 @@ trait LocationTraits
 
         if (!empty($toWH)) {
             C_ITRN::on($this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => Auth::user()->branch,
+                'CITRN_BRANCH' => empty($user) ? Auth::user()->branch : $user->branch,
                 'CITRN_LOCCD' => $toWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -137,7 +138,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => Auth::user()->nick_name,
+                'created_by' => empty($user) ? Auth::user()->nick_name : $user->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -146,14 +147,14 @@ trait LocationTraits
         $createDet = T_RCV_DETAIL::on($this->dedicatedConnection)->updateOrCreate([
             'id_header' => $idHeader,
             'item_code' => $item,
-        ],[
+        ], [
             'id_header' => $idHeader,
             'item_code' => $item,
             'quantity' => $qty,
             'unit_price' => $price,
-            'created_by' => Auth::user()->nick_name,
+            'created_by' => empty($user) ? Auth::user()->nick_name : $user->nick_name,
             'created_at' => date('Y-m-d H:i:s'),
-            'branch' => Auth::user()->branch,
+            'branch' => empty($user) ? Auth::user()->branch : $user->branch,
             'po_number' => ''
         ]);
 
@@ -161,7 +162,7 @@ trait LocationTraits
         T_RCV_BC_DETAIL::on($this->dedicatedConnection)->updateOrCreate([
             'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
             'TRCVBC_BCCD' => empty($cekStock) ? $bc : $cekStock->id_reff,
-        ],[
+        ], [
             'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
             'TRCVBC_BCQT' => $qty,
             'TRCVBC_DETID' => $createDet->id

@@ -20,9 +20,9 @@ class stockInventoryQueue implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, LocationTraits;
 
-    private $date, $id, $isUpdateItem, $conn, $row;
+    private $date, $id, $isUpdateItem, $conn, $row, $user;
 
-    public function __construct($date, $id, $isUpdateItem, $conn, $row)
+    public function __construct($date, $id, $isUpdateItem, $conn, $row, $user)
     {
         date_default_timezone_set('Asia/Jakarta');
         $this->date = $date;
@@ -30,6 +30,7 @@ class stockInventoryQueue implements ShouldQueue
         $this->isUpdateItem = $isUpdateItem;
         $this->conn = $conn;
         $this->row = $row;
+        $this->user = $user;
     }
 
     /**
@@ -43,6 +44,7 @@ class stockInventoryQueue implements ShouldQueue
             $this->isUpdateItem,
             $this->conn,
             $this->row,
+            $this->user
         ]);
         $cekItem = M_ITM::on($this->conn)
             ->where('MITM_ITMCD', $this->row[0])
@@ -56,7 +58,7 @@ class stockInventoryQueue implements ShouldQueue
                     'MITM_ITMCD' => $this->row[0],
                     'MITM_ITMNM' => $this->row[1],
                     'MITM_STKUOM' => 'UNIT',
-                    'MITM_BRANCH' => Auth::user()->branch
+                    'MITM_BRANCH' => $this->user->branch
                 ]);
             }
 
@@ -77,7 +79,8 @@ class stockInventoryQueue implements ShouldQueue
                         $this->row[3], //fr wh
                         'ADJ-OUT', // fr loc
                         '', //to wh
-                        '' // to loc
+                        '', // to loc
+                        $this->user
                     );
                 } elseif ($cekStock->CITRN_ITMQT < $this->row[2]) {
                     $this->createBarcode(
@@ -89,7 +92,8 @@ class stockInventoryQueue implements ShouldQueue
                         '', //fr wh
                         '', // fr loc
                         $this->row[3], //to wh
-                        'ADJ-INC' // to loc
+                        'ADJ-INC', // to loc
+                        $this->user
                     );
                 }
             } else {
@@ -102,7 +106,8 @@ class stockInventoryQueue implements ShouldQueue
                     '', //fr wh
                     '', // fr loc
                     $this->row[3], //to wh
-                    'SA' // to loc
+                    'SA', // to loc
+                    $this->user
                 );
             }
         } else {
@@ -124,7 +129,8 @@ class stockInventoryQueue implements ShouldQueue
                             $this->row[2], //fr wh
                             'ADJ-OUT', // fr loc
                             '', //to wh
-                            '' // to loc
+                            '', // to loc
+                            $this->user
                         );
                     } elseif ($cekStock->CITRN_ITMQT < $this->row[1]) {
                         $this->createBarcode(
@@ -136,7 +142,8 @@ class stockInventoryQueue implements ShouldQueue
                             '', //fr wh
                             '', // fr loc
                             $this->row[2], //to wh
-                            'ADJ-INC' // to loc
+                            'ADJ-INC', // to loc
+                            $this->user
                         );
                     }
                 } else {
@@ -149,7 +156,8 @@ class stockInventoryQueue implements ShouldQueue
                         '', //fr wh
                         '', // fr loc
                         $this->row[2], //to wh
-                        'SA' // to loc
+                        'SA', // to loc
+                        $this->user
                     );
                 }
             }

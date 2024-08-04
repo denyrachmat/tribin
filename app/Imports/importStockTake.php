@@ -38,7 +38,14 @@ class importStockTake implements ToModel, WithStartRow
     public function model(array $row)
     {
         ini_set("memory_limit", "3G");
-        stockInventoryQueue::dispatch($this->date, $this->id, $this->isUpdateItem, $this->dedicatedConnection, $row)->onQueue('stockTake');
+        stockInventoryQueue::dispatch(
+            $this->date,
+            $this->id,
+            $this->isUpdateItem,
+            $this->dedicatedConnection,
+            $row,
+            Auth::user()->branch
+        )->onQueue('stockTake');
         // $cekItem = M_ITM::on($this->dedicatedConnection)
         //     ->where('MITM_ITMCD', $row[0])
         //     ->first();

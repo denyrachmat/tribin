@@ -142,7 +142,6 @@ class ItemController extends Controller
         $columnMap = [
             DB::raw('MITM_ITMNM'),
             DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNMREAL"),
-            // 'MITM_SPEC',
             'LATEST_PRC',
             'STOCK'
         ];

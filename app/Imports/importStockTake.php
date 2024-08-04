@@ -44,7 +44,7 @@ class importStockTake implements ToModel, WithStartRow
             $this->isUpdateItem,
             $this->dedicatedConnection,
             $row,
-            Auth::user()->branch
+            Auth::user()
         )->onQueue('stockTake');
         // $cekItem = M_ITM::on($this->dedicatedConnection)
         //     ->where('MITM_ITMCD', $row[0])

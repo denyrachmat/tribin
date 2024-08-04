@@ -89,10 +89,10 @@ trait LocationTraits
         }
     }
     // Test
-    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = null)
+    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = null, $conn = null)
     {
         $bc = '';
-        $cekLatestBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+        $cekLatestBarcode = T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)
             ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
             ->first();
 
@@ -102,16 +102,16 @@ trait LocationTraits
             $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
         }
 
-        $header = T_RCV_HEAD::on($this->dedicatedConnection)->where('id', $idHeader)->first();
+        $header = T_RCV_HEAD::on(!empty($conn) ? $conn : $this->dedicatedConnection)->where('id', $idHeader)->first();
 
-        $cekStock = DB::connection($this->dedicatedConnection)
+        $cekStock = DB::connection(!empty($conn) ? $conn : $this->dedicatedConnection)
             ->table('V_STOCK_CHECK')
             ->where('CITRN_ITMCD', $item)
             ->where('CITRN_DOCNO', $header->TRCV_DOCNO)
             ->first();
 
         if (!empty($frWH)) {
-            C_ITRN::on($this->dedicatedConnection)->create([
+            C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
                 'CITRN_BRANCH' => empty($user) ? Auth::user()->branch : $user['branch'],
                 'CITRN_LOCCD' => $frWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
@@ -128,7 +128,7 @@ trait LocationTraits
         }
 
         if (!empty($toWH)) {
-            C_ITRN::on($this->dedicatedConnection)->create([
+            C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
                 'CITRN_BRANCH' => empty($user) ? Auth::user()->branch : $user['branch'],
                 'CITRN_LOCCD' => $toWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
@@ -144,7 +144,7 @@ trait LocationTraits
             ]);
         }
 
-        $createDet = T_RCV_DETAIL::on($this->dedicatedConnection)->updateOrCreate([
+        $createDet = T_RCV_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)->updateOrCreate([
             'id_header' => $idHeader,
             'item_code' => $item,
         ], [
@@ -159,7 +159,7 @@ trait LocationTraits
         ]);
 
         // Save to be incoming barcode
-        T_RCV_BC_DETAIL::on($this->dedicatedConnection)->updateOrCreate([
+        T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)->updateOrCreate([
             'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
             'TRCVBC_BCCD' => empty($cekStock) ? $bc : $cekStock->id_reff,
         ], [

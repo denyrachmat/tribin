@@ -80,7 +80,8 @@ class stockInventoryQueue implements ShouldQueue
                         'ADJ-OUT', // fr loc
                         '', //to wh
                         '', // to loc
-                        $this->user
+                        $this->user,
+                        $this->conn
                     );
                 } elseif ($cekStock->CITRN_ITMQT < $this->row[2]) {
                     $this->createBarcode(
@@ -93,7 +94,8 @@ class stockInventoryQueue implements ShouldQueue
                         '', // fr loc
                         $this->row[3], //to wh
                         'ADJ-INC', // to loc
-                        $this->user
+                        $this->user,
+                        $this->conn
                     );
                 }
             } else {
@@ -107,7 +109,8 @@ class stockInventoryQueue implements ShouldQueue
                     '', // fr loc
                     $this->row[3], //to wh
                     'SA', // to loc
-                    $this->user
+                    $this->user,
+                    $this->conn
                 );
             }
         } else {
@@ -130,7 +133,8 @@ class stockInventoryQueue implements ShouldQueue
                             'ADJ-OUT', // fr loc
                             '', //to wh
                             '', // to loc
-                            $this->user
+                            $this->user,
+                            $this->conn
                         );
                     } elseif ($cekStock->CITRN_ITMQT < $this->row[1]) {
                         $this->createBarcode(
@@ -143,7 +147,8 @@ class stockInventoryQueue implements ShouldQueue
                             '', // fr loc
                             $this->row[2], //to wh
                             'ADJ-INC', // to loc
-                            $this->user
+                            $this->user,
+                            $this->conn
                         );
                     }
                 } else {
@@ -157,7 +162,8 @@ class stockInventoryQueue implements ShouldQueue
                         '', // fr loc
                         $this->row[2], //to wh
                         'SA', // to loc
-                        $this->user
+                        $this->user,
+                        $this->conn
                     );
                 }
             }

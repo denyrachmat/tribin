@@ -92,6 +92,7 @@ trait LocationTraits
     function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = [], $conn = null)
     {
         $bc = '';
+        logger(empty($user) ? 'Kosong $usernya' : 'Gak kosong kok');
         logger(json_encode([$user]));
         $cekLatestBarcode = T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)
             ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])

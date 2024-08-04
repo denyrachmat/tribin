@@ -52,7 +52,7 @@ class stockInventoryQueue implements ShouldQueue
                     'MITM_ITMCD' => $this->row[0],
                     'MITM_ITMNM' => $this->row[1],
                     'MITM_STKUOM' => 'UNIT',
-                    'MITM_BRANCH' => $this->user->branch
+                    'MITM_BRANCH' => $this->user['branch']
                 ]);
             }
 

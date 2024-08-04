@@ -99,6 +99,8 @@ class importStockTake implements ToModel, WithStartRow
                     'SA' // to loc
                 );
             }
+
+            return collect($row);
         } else {
             if (!empty($cekItem)) {
                 $cekStock = DB::connection($this->dedicatedConnection)
@@ -147,7 +149,8 @@ class importStockTake implements ToModel, WithStartRow
                     );
                 }
             }
-            return 'failed';
+
+            return collect([]);
         }
     }
 }

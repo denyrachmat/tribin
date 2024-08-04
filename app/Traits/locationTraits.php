@@ -113,7 +113,7 @@ trait LocationTraits
 
         if (!empty($frWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => empty($user) ? Auth::user()->branch : $user['branch'],
+                'CITRN_BRANCH' => !empty(Auth::user()) ? Auth::user()->branch : $user['branch'],
                 'CITRN_LOCCD' => $frWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -122,7 +122,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty * -1,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => empty($user) ? Auth::user()->nick_name : $user['nick_name'],
+                'created_by' => !empty(Auth::user()) ? Auth::user()->nick_name : $user['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -130,7 +130,7 @@ trait LocationTraits
 
         if (!empty($toWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => empty($user) ? Auth::user()->branch : $user['branch'],
+                'CITRN_BRANCH' => !empty(Auth::user()) ? Auth::user()->branch : $user['branch'],
                 'CITRN_LOCCD' => $toWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -139,7 +139,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => empty($user) ? Auth::user()->nick_name : $user['nick_name'],
+                'created_by' => !empty(Auth::user()) ? Auth::user()->nick_name : $user['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);

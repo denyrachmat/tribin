@@ -385,7 +385,12 @@ class InventoryController extends Controller
     function uploadStockTake(Request $req)
     {
         ini_set('max_execution_time', '30000');
-        // $nama_file = $req->file->hashName();
+
+        $checkJobsExists = DB::table('jobs')->where('queue', 'stockTake')->first();
+        if (!empty($checkJobsExists)) {
+            return response()->json([["There is still exists upload batch not done yet, please wait until it's done, ". DB::table('jobs')->where('queue', 'stockTake')->count(). " Rows remaining"]], 406);
+        }
+
         $file = new File($req->file);
         $extNya = $req->file('file')->getClientOriginalExtension();
 

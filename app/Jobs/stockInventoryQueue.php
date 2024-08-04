@@ -42,7 +42,7 @@ class stockInventoryQueue implements ShouldQueue
             ->where('MITM_ITMCD', $this->row[0])
             ->first();
 
-        if ($this->isUpdateItem === true) {
+        if ($this->isUpdateItem == true) {
             if (empty($cekItem)) {
                 M_ITM::on($this->conn)->updateOrCreate([
                     'MITM_ITMCD' => $this->row[0]

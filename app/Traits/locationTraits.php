@@ -89,7 +89,7 @@ trait LocationTraits
         }
     }
     // Test
-    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = null, $conn = null)
+    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $user = [], $conn = null)
     {
         $bc = '';
         logger([$idHeader, $item, $date, $qty, $price, $frWH,$formout, $toWH, $forminc, $user, $conn]);

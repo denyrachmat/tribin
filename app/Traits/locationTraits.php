@@ -113,7 +113,7 @@ trait LocationTraits
 
         if (!empty($frWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => !empty($user) ? $user['branch'] : Auth::user()->branch,
+                'CITRN_BRANCH' => !empty($user) && count($user) > 0 ? $user['branch'] : Auth::user()->branch,
                 'CITRN_LOCCD' => $frWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -122,7 +122,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty * -1,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => empty($user) || !isset($user) ? Auth::user()->nick_name : $user['nick_name'],
+                'created_by' => !empty($user) && count($user) > 0 ? $user['nick_name'] : Auth::user()->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -130,7 +130,7 @@ trait LocationTraits
 
         if (!empty($toWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => !empty($user) ? $user['branch'] : Auth::user()->branch,
+                'CITRN_BRANCH' => !empty($user) && count($user) > 0 ? $user['branch'] : Auth::user()->branch,
                 'CITRN_LOCCD' => $toWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,
@@ -139,7 +139,7 @@ trait LocationTraits
                 'CITRN_ITMQT' => $qty,
                 'CITRN_PRCPER' => $price,
                 'CITRN_PRCAMT' => $price * $qty,
-                'created_by' => empty($user) || !isset($user) ? Auth::user()->nick_name : $user['nick_name'],
+                'created_by' => !empty($user) && count($user) > 0 ? $user['nick_name'] : Auth::user()->nick_name,
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
             ]);
@@ -153,9 +153,9 @@ trait LocationTraits
             'item_code' => $item,
             'quantity' => $qty,
             'unit_price' => $price,
-            'created_by' => empty($user) || !isset($user) ? Auth::user()->nick_name : $user['nick_name'],
+            'created_by' => !empty($user) && count($user) > 0 ? $user['nick_name'] : Auth::user()->nick_name,
             'created_at' => date('Y-m-d H:i:s'),
-            'branch' => !empty($user) ? $user['branch'] : Auth::user()->branch,
+            'branch' => !empty($user) && count($user) > 0 ? $user['branch'] : Auth::user()->branch,
             'po_number' => ''
         ]);
 

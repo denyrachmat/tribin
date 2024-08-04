@@ -96,6 +96,7 @@ trait LocationTraits
         logger(json_encode([$userHead]));
         $cekLatestBarcode = T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)
             ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
+            ->orderBy('id', 'desc')
             ->first();
 
         if (empty($cekLatestBarcode)) {
@@ -131,7 +132,7 @@ trait LocationTraits
 
         if (!empty($toWH)) {
             C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => $userHead['branchs'],
+                'CITRN_BRANCH' => $userHead['branch'],
                 'CITRN_LOCCD' => $toWH,
                 'CITRN_DOCNO' => $header->TRCV_DOCNO,
                 'CITRN_ISSUDT' => $date,

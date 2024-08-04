@@ -48,7 +48,7 @@ class stockInventoryQueue implements ShouldQueue
             if (empty($cekItem)) {
                 M_ITM::on($this->conn)->updateOrCreate([
                     'MITM_ITMCD' => $this->row[0]
-                ],[
+                ], [
                     'MITM_ITMCD' => $this->row[0],
                     'MITM_ITMNM' => $this->row[1],
                     'MITM_STKUOM' => 'UNIT',
@@ -62,84 +62,32 @@ class stockInventoryQueue implements ShouldQueue
                 ->where('CITRN_LOCCD', $this->row[3])
                 ->first();
 
-            if (!empty($cekStock)) {
-                if ($cekStock->CITRN_ITMQT > $this->row[2]) {
-                    $this->createBarcode(
-                        $this->id,
-                        $this->row[0],
-                        $this->date,
-                        $cekStock->CITRN_ITMQT - $this->row[2], //qty
-                        $this->row[4], //price
-                        $this->row[3], //fr wh
-                        'ADJ-OUT', // fr loc
-                        '', //to wh
-                        '', // to loc
-                        $this->user,
-                        $this->conn
-                    );
-                } elseif ($cekStock->CITRN_ITMQT < $this->row[2]) {
-                    $this->createBarcode(
-                        $this->id,
-                        $this->row[0],
-                        $this->date,
-                        $this->row[2] - $cekStock->CITRN_ITMQT, //qty
-                        $this->row[4], //price
-                        '', //fr wh
-                        '', // fr loc
-                        $this->row[3], //to wh
-                        'ADJ-INC', // to loc
-                        $this->user,
-                        $this->conn
-                    );
-                }
-            } else {
-                $this->createBarcode(
-                    $this->id,
-                    $this->row[0],
-                    $this->date,
-                    $this->row[2], //qty
-                    $this->row[4], //price
-                    '', //fr wh
-                    '', // fr loc
-                    $this->row[3], //to wh
-                    'SA', // to loc
-                    $this->user,
-                    $this->conn
-                );
-            }
-        } else {
-            if (!empty($cekItem)) {
-                $cekStock = DB::connection($this->conn)
-                    ->table('V_STOCK_CHECK')
-                    ->where('CITRN_ITMCD', $this->row[0])
-                    ->where('CITRN_LOCCD', $this->row[2])
-                    ->first();
-
+            if ($this->row[2] > 0) {
                 if (!empty($cekStock)) {
-                    if ($cekStock->CITRN_ITMQT > $this->row[1]) {
+                    if ($cekStock->CITRN_ITMQT > $this->row[2]) {
                         $this->createBarcode(
                             $this->id,
                             $this->row[0],
                             $this->date,
-                            $cekStock->CITRN_ITMQT - $this->row[1], //qty
-                            $this->row[3], //price
-                            $this->row[2], //fr wh
+                            $cekStock->CITRN_ITMQT - $this->row[2], //qty
+                            $this->row[4], //price
+                            $this->row[3], //fr wh
                             'ADJ-OUT', // fr loc
                             '', //to wh
                             '', // to loc
                             $this->user,
                             $this->conn
                         );
-                    } elseif ($cekStock->CITRN_ITMQT < $this->row[1]) {
+                    } elseif ($cekStock->CITRN_ITMQT < $this->row[2]) {
                         $this->createBarcode(
                             $this->id,
                             $this->row[0],
                             $this->date,
-                            $this->row[1] - $cekStock->CITRN_ITMQT, //qty
-                            $this->row[3], //price
+                            $this->row[2] - $cekStock->CITRN_ITMQT, //qty
+                            $this->row[4], //price
                             '', //fr wh
                             '', // fr loc
-                            $this->row[2], //to wh
+                            $this->row[3], //to wh
                             'ADJ-INC', // to loc
                             $this->user,
                             $this->conn
@@ -150,15 +98,71 @@ class stockInventoryQueue implements ShouldQueue
                         $this->id,
                         $this->row[0],
                         $this->date,
-                        $this->row[1], //qty
-                        $this->row[3], //price
+                        $this->row[2], //qty
+                        $this->row[4], //price
                         '', //fr wh
                         '', // fr loc
-                        $this->row[2], //to wh
+                        $this->row[3], //to wh
                         'SA', // to loc
                         $this->user,
                         $this->conn
                     );
+                }
+            }
+        } else {
+            if ($this->row[2] > 0) {
+                if (!empty($cekItem)) {
+                    $cekStock = DB::connection($this->conn)
+                        ->table('V_STOCK_CHECK')
+                        ->where('CITRN_ITMCD', $this->row[0])
+                        ->where('CITRN_LOCCD', $this->row[2])
+                        ->first();
+
+                    if (!empty($cekStock)) {
+                        if ($cekStock->CITRN_ITMQT > $this->row[1]) {
+                            $this->createBarcode(
+                                $this->id,
+                                $this->row[0],
+                                $this->date,
+                                $cekStock->CITRN_ITMQT - $this->row[1], //qty
+                                $this->row[3], //price
+                                $this->row[2], //fr wh
+                                'ADJ-OUT', // fr loc
+                                '', //to wh
+                                '', // to loc
+                                $this->user,
+                                $this->conn
+                            );
+                        } elseif ($cekStock->CITRN_ITMQT < $this->row[1]) {
+                            $this->createBarcode(
+                                $this->id,
+                                $this->row[0],
+                                $this->date,
+                                $this->row[1] - $cekStock->CITRN_ITMQT, //qty
+                                $this->row[3], //price
+                                '', //fr wh
+                                '', // fr loc
+                                $this->row[2], //to wh
+                                'ADJ-INC', // to loc
+                                $this->user,
+                                $this->conn
+                            );
+                        }
+                    } else {
+                        $this->createBarcode(
+                            $this->id,
+                            $this->row[0],
+                            $this->date,
+                            $this->row[1], //qty
+                            $this->row[3], //price
+                            '', //fr wh
+                            '', // fr loc
+                            $this->row[2], //to wh
+                            'SA', // to loc
+                            $this->user,
+                            $this->conn
+                        );
+                    }
                 }
             }
         }

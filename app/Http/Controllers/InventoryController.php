@@ -417,7 +417,7 @@ class InventoryController extends Controller
             $writer->save('/public/upload_stock_take/' . $nama_file);
         }
 
-        $importer = new importStockTake($req->date, $createdHeader->id);
+        $importer = new importStockTake($req->date, $createdHeader->id, $req->isRegItem);
 
         Excel::import($importer, public_path('/storage/upload_stock_take/' . $nama_file));
 

@@ -13,7 +13,7 @@
 
     <q-separator />
     <div class="row q-col-gutter-md q-pt-md">
-      <div class="col-12">
+      <div class="col-10">
         <q-input filled v-model="date" label="Eff Date" dense>
           <template v-slot:prepend>
             <q-icon name="event" class="cursor-pointer">
@@ -32,6 +32,13 @@
           </template>
         </q-input>
       </div>
+      <div class="col-2 text-right">
+        <q-checkbox
+          name="registerItem"
+          v-model="isRegisterItem"
+          label="Register New Item ?"
+        />
+      </div>
     </div>
     <div class="row q-col-gutter-md q-pt-md">
       <div class="col-12">
@@ -48,6 +55,7 @@
           :factory="factoryFn"
           :form-fields="
             (files) => [
+              { name: 'isRegItem', value : isRegisterItem},
               { name: 'file', value: files[0] },
               { name: 'date', value: date },
             ]
@@ -70,6 +78,7 @@ const $q = useQuasar();
 const date = ref("");
 const selected_file = ref(null);
 const check_if_document_upload = ref(false);
+const isRegisterItem = ref(false)
 
 const file_selected = (file) => {
   selected_file.value = file[0];
@@ -79,19 +88,16 @@ const file_selected = (file) => {
 const factoryFn = async (val) => {
   // dataLoading.value = true;
   console.log(val);
-  const processed = await new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     let fd = new FormData();
     fd.append("file", selected_file.value);
     fd.append("date", date.value);
+    fd.append("isRegItem", isRegisterItem.value);
 
     api_web.post("inventory/uploadStockTake", fd).then((resp) => {
       resolve(resp);
     });
   });
-
-  if (processed) {
-    return processed;
-  }
 };
 
 const failedUpload = (err, files) => {

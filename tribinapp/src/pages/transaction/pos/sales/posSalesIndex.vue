@@ -206,7 +206,9 @@ const getTotal = computed(() =>
 
 const getItem = async (val) => {
   loading.value = true;
-  page.value = page.value + 1;
+  if (listItems,value.length > 0) {
+    page.value = page.value + 1;
+  }
   await api_web
     .post("item/searchAPIStockAndPriceOnly", {
       searchValue: val,

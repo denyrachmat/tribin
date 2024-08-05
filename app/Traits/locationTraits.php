@@ -102,7 +102,7 @@ trait LocationTraits
         if (empty($cekLatestBarcode)) {
             $bc = 'BC' . date('Ymd') . '0001';
         } else {
-            $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
+            $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -4) + 1);
         }
 
         $header = T_RCV_HEAD::on(!empty($conn) ? $conn : $this->dedicatedConnection)->where('id', $idHeader)->first();

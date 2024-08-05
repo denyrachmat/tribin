@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanyGroup;
 use App\Models\M_Condition;
+use App\Models\M_COND_GROUP;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -33,10 +35,11 @@ class ConditionController extends Controller
 
     public function getData()
     {
-        return  M_Condition::on($this->dedicatedConnection)->get();
+        return M_Condition::on($this->dedicatedConnection)->get();
     }
 
-    public function getCompaniesDetail() : Array {
+    public function getCompaniesDetail(): array
+    {
         return [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
@@ -45,27 +48,27 @@ class ConditionController extends Controller
 
     public function getDataGroup()
     {
-        $group = M_Condition::on($this->dedicatedConnection)
-            ->select('MCONDITION_RPT_STAT')
-            ->whereNotNull('MCONDITION_RPT_STAT')
-            ->where('MCONDITION_RPT_STAT', '<>', '')
-            ->groupBy('MCONDITION_RPT_STAT')
-            ->get()
-            ->pluck('MCONDITION_RPT_STAT');
+        $group = M_COND_GROUP::on($this->dedicatedConnection)
+            ->join('M_CONDITIONS', 'M_CONDITIONS.id', '=', 'MCOND_ID')
+            ->get();
+        // $group = M_Condition::on($this->dedicatedConnection)
+        //     ->select('MCONDITION_RPT_STAT')
+        //     ->whereNotNull('MCONDITION_RPT_STAT')
+        //     ->where('MCONDITION_RPT_STAT', '<>', '')
+        //     ->groupBy('MCONDITION_RPT_STAT')
+        //     ->get()
+        //     ->pluck('MCONDITION_RPT_STAT');
 
         $data = [];
         foreach ($group as $key => $value) {
-            $data[] = [
-                'MCONDITION_RPT_STAT' => $value,
-                'group' => M_Condition::on($this->dedicatedConnection)->where('MCONDITION_RPT_STAT', $value)
-                ->orderBy('MCONDITION_ORDER_NUMBER')->get()
-            ];
+            $data[$value->MCOND_GRPNM]['MCONDITION_RPT_STAT'] = $value->MCOND_GRPNM;
+            $data[$value->MCOND_GRPNM]['group'][] = $value;
         }
 
         return [
             'status' => true,
             'message' => 'Data fetched !',
-            'data' => $data
+            'data' => array_values($data)
         ];
     }
 
@@ -75,7 +78,7 @@ class ConditionController extends Controller
         $RS = DB::connection($request->fromConnection)->table('M_CONDITIONS AS A')
             ->select('A.MCONDITION_DESCRIPTION', 'A.MCONDITION_ORDER_NUMBER', 'A.MCONDITION_BRANCH')
             ->leftJoin($currentDBName . '.M_CONDITIONS AS B', 'A.MCONDITION_DESCRIPTION', '=', 'B.MCONDITION_DESCRIPTION')
-            ->where('A.MCONDITION_BRANCH',  Auth::user()->branch)
+            ->where('A.MCONDITION_BRANCH', Auth::user()->branch)
             ->whereNull('B.MCONDITION_DESCRIPTION');
         $RSTosave = json_decode(json_encode($RS->get()), true);
         if (!empty($RSTosave)) {
@@ -155,21 +158,17 @@ class ConditionController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
-    public function assignGroup(Request $request){
-        M_Condition::on($this->dedicatedConnection)
-                ->where('MCONDITION_RPT_STAT', $request->MCONDITION_RPT_STAT)
-                ->update([
-                    'MCONDITION_RPT_STAT' => '',
-                    'MCONDITION_ORDER_NUMBER' => null
-                ]);
+    public function assignGroup(Request $request)
+    {
+        M_COND_GROUP::on($this->dedicatedConnection)
+            ->where('MCOND_GRPNM', $request->MCONDITION_RPT_STAT)
+            ->delete();
 
         foreach ($request->data as $key => $value) {
-            M_Condition::on($this->dedicatedConnection)
-                ->where('id', $value)
-                ->update([
-                    'MCONDITION_RPT_STAT' => $request->MCONDITION_RPT_STAT,
-                    'MCONDITION_ORDER_NUMBER' => $key + 1
-                ]);
+            M_COND_GROUP::on($this->dedicatedConnection)->create([
+                'MCOND_GRPNM' => $request->MCONDITION_RPT_STAT,
+                'MCOND_ID' => $value
+            ]);
         }
 
         return [
@@ -178,13 +177,11 @@ class ConditionController extends Controller
         ];
     }
 
-    public function deleteDataGroup($id) {
-        $affectedRow = M_Condition::on($this->dedicatedConnection)
-            ->where('MCONDITION_RPT_STAT', base64_decode($id))
-            ->update([
-                'MCONDITION_RPT_STAT' => '',
-                'MCONDITION_ORDER_NUMBER' => null,
-            ]);
+    public function deleteDataGroup($id)
+    {
+        $affectedRow = M_COND_GROUP::on($this->dedicatedConnection)
+            ->where('MCOND_GRPNM', base64_decode($id))
+            ->delete();
 
         return ['msg' => $affectedRow ? 'Data Deleted !!' : 'No changes'];
     }

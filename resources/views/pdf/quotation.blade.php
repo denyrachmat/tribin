@@ -268,7 +268,7 @@
                         <th class="tg-0lax" style="text-align:center">Item</td>
                         <th class="tg-0lax" style="text-align:center">Pemakaian</td>
                             @if(count($checkIsTruckCount) === 0)
-                        <th class="tg-0lax" style="text-align:center">Freq / Volt</td>
+                        <th class="tg-0lax" style="text-align:center">Keterangan</td>
                             @endif
                         <th class="tg-0lax" style="text-align:center">Qty</td>
                         <th class="tg-0lax" style="text-align:center">Harga Sewa</td>

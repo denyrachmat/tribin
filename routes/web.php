@@ -387,6 +387,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form', [PurchaseController::class, 'formOrder']);
             Route::post('', [PurchaseController::class, 'savePO']);
             Route::get('', [PurchaseController::class, 'searchPO']);
+            Route::put('{id}', [PurchaseController::class, 'update']);
             Route::post('searchApprovedPO', [PurchaseController::class, 'searchApprovedPO']);
             Route::get('document/{id}', [PurchaseController::class, 'loadPOById']);
             Route::get('approval-document/{id}', [PurchaseController::class, 'loadPOByIdApproval']);

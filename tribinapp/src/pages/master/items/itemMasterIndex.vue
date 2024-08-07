@@ -48,7 +48,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="getOutgoingData()"
+              @update:model-value="getItem()"
               debounce="1000"
             >
               <template v-slot:append>
@@ -157,7 +157,7 @@ onMounted(() => {
 })
 
 const getItem = async () => {
-    loading.value = true;
+  loading.value = true;
   await api_web
     .post(`item/searchAPITBL`, {
       searchBy: filterCol.value,

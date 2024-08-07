@@ -227,6 +227,7 @@ onMounted(() => {
 
   if (props.dataForUpdate) {
     itemData.value = props.dataForUpdate;
+    itemData.value.MITM_ITMNM = props.dataForUpdate.MITM_ITMNMREAL;
   }
 });
 

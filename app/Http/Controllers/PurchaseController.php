@@ -313,8 +313,10 @@ class PurchaseController extends Controller
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
             })
             ->with('det')
+            ->leftJoin('T_RCV_HEAD', 'TRCV_REFFNO', 'TPCHORD_PCHCD')
             ->where('TPCHORD_BRANCH', Auth::user()->branch)
-            ->whereNotNull('TPCHORD_APPRVDT');
+            ->whereNotNull('TPCHORD_APPRVDT')
+            ->whereNull('TRCV_REFFNO');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

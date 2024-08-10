@@ -156,21 +156,21 @@
                     <td>:</td>
                     <td>{{$MCUS_CUSNM}}</td>
                 </tr>
-                <!-- <tr>
+                <tr>
                     <td>Attn</td>
                     <td>:</td>
                     <td>{{$TQUO_ATTN}}</td>
-                </tr> -->
+                </tr>
                 <tr>
                     <td>Telp. / Fax</td>
                     <td>:</td>
                     <td>{{$MCUS_TELNO}}</td>
                 </tr>
-                <!-- <tr>
+                <tr>
                     <td>Subject</td>
                     <td>:</td>
                     <td>{{$TQUO_SBJCT}}</td>
-                </tr> -->
+                </tr>
                 <tr>
                     <td>Lokasi</td>
                     <td>:</td>

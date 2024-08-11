@@ -338,15 +338,15 @@
                     labelNotifAll.innerHTML = totalNotif === 0 ? '' : totalNotif
 
                     // Quotations Group
-                    createLiItem('linotif1', 'labelNotifApprovalQuotation', 'Quotation Approval', totalNotifQT, liHeadQuotation, liApprovalOnclick)
+                    // createLiItem('linotif1', 'labelNotifApprovalQuotation', 'Quotation Approval', totalNotifQT, liHeadQuotation, liApprovalOnclick)
                     createLiItem('linotif2', 'labelNotifApprovedQuotation', 'Quotation Recent Updates', totalNotifApprovedQT, liHeadQuotation, liApprovedQuotationOnclick)
 
                     // Purchase Request Group
-                    createLiItem('linotif3', 'labelNotifApprovalPurchaseRequest', 'Purchase Request Approval', totalNotifQTPurchaseRequest, liHeadPurchaseRequest, liApprovalPurchaseRequestOnclick)
+                    // createLiItem('linotif3', 'labelNotifApprovalPurchaseRequest', 'Purchase Request Approval', totalNotifQTPurchaseRequest, liHeadPurchaseRequest, liApprovalPurchaseRequestOnclick)
                     createLiItem('linotif4', 'labelNotifApprovedPurchaseRequest', 'Purchase Request Recent Updates', totalNotifApprovedQTPurchaseRequest, liHeadPurchaseRequest, liApprovedPurchaseRequestOnclick)
 
                     // Purchase Order Group
-                    createLiItem('linotif5', 'labelNotifApprovalPurchaseOrder', 'Purchase Order Approval', totalNotifQTPurchaseOrder, liHeadPurchaseOrder, liApprovalPurchaseOrderOnclick)
+                    // createLiItem('linotif5', 'labelNotifApprovalPurchaseOrder', 'Purchase Order Approval', totalNotifQTPurchaseOrder, liHeadPurchaseOrder, liApprovalPurchaseOrderOnclick)
 
                     // Sales Order Draft Group
                     createLiItem('linotif6', 'labelNotifApprovalSalesOrderDraft', 'Sales Order Draft Status', totalNotifQTSalesOrderDraft, liHeadSalesOrderDraft, liApprovalSalesOrderDraftOnclick)

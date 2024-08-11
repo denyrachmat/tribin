@@ -89,7 +89,7 @@
                 emit-value
                 map-options
                 :loading="loading"
-                :readonly="TDLVORDDETA_SLOCD == ''"
+                :readonly="TDLVORDDETA_SLOCD != ''"
               >
                 <template v-slot:after>
                   <q-btn
@@ -127,6 +127,10 @@
             <b>List Of Items</b>
           </legend>
 
+          <div class="q-pb-sm text-right">
+            <q-btn icon="add" dense outline @click="onAddItems()" color="primary"/>
+          </div>
+
           <q-list bordered dense>
             <template v-if="listItems.length > 0">
               <q-item
@@ -154,12 +158,32 @@
                 </q-item-section> -->
                 <q-item-section>
                   <q-item-label>
-                    <q-input
+                    <!-- <q-input
                       dense
                       label="Item Name"
                       filled
                       v-model="items.MITM_ITMNM"
-                      readonly
+                      :readonly="TDLVORDDETA_SLOCD != ''"
+                    /> -->
+                    <q-select
+                      dense
+                      filled
+                      label="Item Name"
+                      v-model="items.MITM_ITMNM"
+                      use-input
+                      input-debounce="500"
+                      :options="listItems"
+                      @filter="
+                        (val, update, abort) =>
+                          filterFn(val, update, abort, 'item')
+                      "
+                      behavior="dialog"
+                      option-label="MITM_ITMNMREAL"
+                      option-value="MITM_ITMNM"
+                      emit-value
+                      map-options
+                      :loading="loading"
+                      :readonly="TDLVORDDETA_SLOCD != ''"
                     />
                   </q-item-label>
                 </q-item-section>
@@ -187,7 +211,7 @@
             <q-item class="q-my-sm" clickable v-ripple v-else>
               <q-item-section>
                 <q-item-label>
-                  Choose sales order first to access item list
+                  Choose sales order first to access item list or Add by click + button above
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -244,6 +268,7 @@ const TDLVORDDETA_SLOCD = ref("");
 const MCUS_CUSNM = ref("");
 const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
+const listCustomers = ref([])
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -334,6 +359,14 @@ const onClickDeleteLines = (idx) => {
     listItems.value.splice(idx, 1);
   });
 };
+
+const onAddItems = () => {
+  listItems.value.push({
+    MITM_ITMNM: '',
+    BALQT: 0,
+    TSLODETA_PRC: 0,
+  })
+}
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

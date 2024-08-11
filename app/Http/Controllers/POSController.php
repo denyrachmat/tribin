@@ -1,11 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Traits\LocationTraits;
+use Validator;
 
 use Illuminate\Http\Request;
 
 class POSController extends Controller
 {
+    use LocationTraits;
     /**
      * Display a listing of the resource.
      */
@@ -27,7 +30,17 @@ class POSController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'TPOS_CUSTCD' => 'required',
+            'det.*.TPOSD_ITMCD' => 'required',
+            'det.*.TPOSD_QTY' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+
     }
 
     /**

@@ -32,7 +32,7 @@
                   </q-item-section>
 
                   <q-item-section>
-                    <q-item-label>{{ selItem.MITM_ITMNM }}</q-item-label>
+                    <q-item-label>{{ selItem.MITM_ITMNMREAL }}</q-item-label>
                     <q-item-label lines="1">
                       Rp {{ selItem.LATEST_PRC.toLocaleString() }} x
                       {{ selItem.sellQty.toLocaleString() }} =
@@ -104,6 +104,41 @@
             />
           </div>
         </div>
+        <div class="row bg-white">
+          <div class="col">
+            <q-select
+              dense
+              filled
+              label="Customer Choose"
+              v-model="TPOS_CUSTCD"
+              use-input
+              input-debounce="500"
+              :options="listCustomers"
+              @filter="
+                (val, update, abort) => filterFn(val, update, abort, 'cust')
+              "
+              behavior="dialog"
+              option-label="MCUS_CUSNM"
+              option-value="MCUS_CUSCD"
+              emit-value
+              map-options
+              :loading="loading"
+            >
+              <template v-slot:after>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  icon="person_add"
+                  @click="onAddCustClick()"
+                  color="cyan"
+                >
+                  <q-tooltip>Add new customer</q-tooltip>
+                </q-btn>
+              </template>
+            </q-select>
+          </div>
+        </div>
         <div
           class="row bg-white"
           style="height: 70vh; overflow: auto"
@@ -119,8 +154,7 @@
                 <q-card flat bordered>
                   <q-badge color="orange" floating>{{
                     (
-                      parseInt(item.STOCK) -
-                      getSellQty(item.MITM_ITMCD)
+                      parseInt(item.STOCK) - getSellQty(item.MITM_ITMNM)
                     ).toLocaleString()
                   }}</q-badge>
                   <div class="text-center">
@@ -129,7 +163,7 @@
                   <q-card-section>
                     <div class="row items-center">
                       <div class="col text-bold ellipsis">
-                        {{ item.MITM_ITMNM }}
+                        {{ item.MITM_ITMNMREAL }}
                       </div>
                     </div>
                   </q-card-section>
@@ -137,11 +171,7 @@
                     <q-item
                       clickable
                       @click="onAddItems(item, n)"
-                      :disable="
-                        item.STOCK -
-                        getSellQty(item.MITM_ITMCD) ===
-                        0
-                      "
+                      :disable="item.STOCK - getSellQty(item.MITM_ITMNM) === 0"
                     >
                       <q-item-section avatar>
                         <q-icon color="primary" name="add" />
@@ -184,7 +214,9 @@ import { api, api_web } from "boot/axios";
 
 const $q = useQuasar();
 
+const TPOS_CUSTCD = ref("")
 const listItems = ref([]);
+const listCustomers = ref([])
 const selectedItems = ref([]);
 const loading = ref(false);
 const page = ref(0);
@@ -193,6 +225,7 @@ const refreshIdx = ref(0);
 
 onMounted(() => {
   getItem("");
+  getCustomer("");
 });
 
 const getTotal = computed(() =>
@@ -206,26 +239,42 @@ const getTotal = computed(() =>
 
 const getItem = async (val) => {
   loading.value = true;
-  if (listItems,value.length > 0) {
+  if (listItems.value.length > 0) {
     page.value = page.value + 1;
   }
   await api_web
     .post("item/searchAPIStockAndPriceOnly", {
       searchValue: val,
-      page: page.value,
+      page: val ? page.value : 1,
     })
     .then((response) => {
       loading.value = false;
 
       response.data.data.data.map((valItem) => {
         let indexItm = selectedItems.value.findIndex(
-          (item) => item.MITM_ITMCD === valItem.MITM_ITMCD
+          (item) => item.MITM_ITMNM === valItem.MITM_ITMNM
         );
 
         if (indexItm === -1) {
           listItems.value.push(valItem);
         }
       });
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
+  loading.value = true;
+  await api_web
+    .post("customer/searchAPI", {
+      searchValue: val,
+      searchCol: cols
+    })
+    .then((response) => {
+      loading.value = false;
+      listCustomers.value = response.data.data;
     })
     .catch(() => {
       loading.value = false;
@@ -248,7 +297,7 @@ const onAddItems = (vals, idx) => {
     .onOk((data) => {
       refreshIdx.value = refreshIdx.value + 1;
       const findIndex = selectedItems.value.findIndex(
-        (item) => item.MITM_ITMCD === vals.MITM_ITMCD
+        (item) => item.MITM_ITMNM === vals.MITM_ITMNM
       );
 
       if (findIndex !== -1) {
@@ -308,13 +357,13 @@ const onDeleteSelItem = (idx) => {
 
 const getSellQty = (items) => {
   let indexItm = selectedItems.value.findIndex(
-    (item) => item.MITM_ITMCD === items
+    (item) => item.MITM_ITMNM === items
   );
 
   if (indexItm !== -1 && selectedItems.value[indexItm].sellQty) {
     return selectedItems.value[indexItm].sellQty;
   } else {
-    return 0
+    return 0;
   }
 };
 
@@ -336,7 +385,18 @@ const onSubmited = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    selectedItems.value = [];
+    await api_web
+      .post("pos", {
+        searchValue: val,
+        page: page.value,
+      })
+      .then((response) => {
+        loading.value = false;
+        selectedItems.value = [];
+      })
+      .catch(() => {
+        loading.value = false;
+      });
   });
 };
 </script>

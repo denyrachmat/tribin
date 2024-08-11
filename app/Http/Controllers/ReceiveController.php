@@ -360,7 +360,7 @@ class ReceiveController extends Controller
             DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CURCD ELSE MSUP_CURCD END AS MSUP_CURCD"),
             "TRCV_SUBMITTED_AT",
             DB::raw('SUM(quantity) AS TOT_RCV'),
-            DB::raw('SUM(quantity * unit_price) AS TOT_AMT'),
+            DB::raw('SUM(TRCVDET_TOTAMT) AS TOT_AMT'),
             DB::raw('CASE WHEN MSUP_SUPCD IS NULL THEN 2 ELSE 1 END AS RCV_STATE'),
             DB::raw('SUM(TRCVBC_BCQT) AS CONFIRMED_QTY')
         ])
@@ -370,8 +370,8 @@ class ReceiveController extends Controller
             ->leftJoin("M_CUS", function ($join) {
                 $join->on('TRCV_SUPCD', '=', 'MCUS_CUSCD')->on('TRCV_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->leftJoin('T_RCV_DETAIL', "T_RCV_HEAD.id", 'id_header')
-            ->leftJoin('T_RCV_BC_DETAIL', "TRCV_RCVCD", 'TRCVBC_DOCNO')
+            ->leftJoin(DB::raw('(SELECT T_RCV_DETAIL.*, (quantity * unit_price) AS TRCVDET_TOTAMT FROM T_RCV_DETAIL) T_RCV_DETAIL'), "T_RCV_HEAD.id", 'id_header')
+            ->leftJoin('T_RCV_BC_DETAIL', "TRCVBC_DETID", 'T_RCV_DETAIL.id')
             ->with([
                 'bc' => function($f) {
                     $f->select(

@@ -97,15 +97,15 @@
                       : "Delete this RO"
                   }}</q-tooltip>
                 </q-btn>
-                <!-- <q-btn
+                <q-btn
                   flat
                   color="indigo"
-                  icon="print"
-                  @click="onClickPrint(props.row.TSLO_SLOCD)"
+                  icon="autorenew"
+                  @click="onClickRenew(props.row.TSLO_SLOCD)"
                   dense
                 >
-                  <q-tooltip>Print this quotation</q-tooltip>
-                </q-btn> -->
+                  <q-tooltip>Renew Sales Order</q-tooltip>
+                </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.value }}
@@ -230,6 +230,10 @@ const onClickDelete = (val) => {
     });
   });
 };
+
+const onClickRenew = (val) => {
+
+}
 </script>
 <style lang="sass">
 .my-sticky-header-column-table

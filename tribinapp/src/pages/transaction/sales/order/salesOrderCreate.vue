@@ -413,6 +413,7 @@ const $q = useQuasar();
 
 const props = defineProps({
   sloHeader: String,
+  isRecreate: Boolean
 });
 
 const forms = ref({
@@ -633,6 +634,7 @@ const onSubmitData = () => {
       .post(`receive-order/saveAPI`, {
         ...forms.value,
         det: quotDetail.value,
+        isRecreate: props.isRecreate
       })
       .then((response) => {
         loading.value = false;

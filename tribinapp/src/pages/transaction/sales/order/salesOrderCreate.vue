@@ -39,6 +39,7 @@
                 mask="####-##-##"
                 fill-mask
                 hint="Mask: YYYY-MM-DD"
+                :disable="props.isRecreate"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
@@ -119,6 +120,7 @@
                 map-options
                 :loading="loading"
                 @update:model-value="onSelectQuotation"
+                :disable="props.isRecreate"
               >
               </q-select>
             </div>
@@ -129,6 +131,7 @@
                 filled
                 v-model="forms.TSLO_POCD"
                 :loading="loading"
+                :disable="props.isRecreate"
               />
             </div>
             <div class="col-12 col-sm-4">
@@ -625,7 +628,7 @@ const onClickDeleteLines = (idx) => {
 const onSubmitData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to save this RO ?`,
+    message: `Are you sure want ${props.isRecreate ? 'Re-create this SO' : 'to save this SO'} ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {

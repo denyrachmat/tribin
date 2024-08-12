@@ -419,6 +419,7 @@ class ReceiveController extends Controller
                             'id_reff'
                         )
                         ->having(DB::raw('quantity - COALESCE(SUM(TRCVBC_BCQT), 0)'), '>', 0)
+                        ->whereNull('T_RCV_DETAIL.deleted_at')
                         ->get();
                 }
             ])

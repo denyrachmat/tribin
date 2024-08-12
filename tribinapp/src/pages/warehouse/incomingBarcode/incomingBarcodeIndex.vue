@@ -72,11 +72,17 @@
                   flat
                   :color="'red'"
                   icon="delete"
-                  @click="onDelete(props.row.id)"
+                  @click="onDelete(props.row.TRCVBC_BCCD)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
+                  :disable="
+                    props.row.det.length === 0
+                  "
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Cancel Barcode'}}</q-tooltip>
+                  <q-tooltip>{{
+                    props.row.det.length === 0
+                      ? "All qty already confirmed"
+                      : "Cancel Barcode"
+                  }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -84,7 +90,9 @@
                   icon="print"
                   @click="onPrint(props.row)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
+                  :disable="
+                    props.row.det.length === 0
+                  "
                 >
                   <q-tooltip>Print Barcode</q-tooltip>
                 </q-btn>
@@ -104,7 +112,7 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
-const $q = useQuasar()
+const $q = useQuasar();
 
 const rows = ref([]);
 const cols = ref([
@@ -142,22 +150,22 @@ const cols = ref([
     field: "TRCVBC_BCQT",
     sortable: true,
     align: "right",
-    format: val => `${val.toLocaleString()}`,
+    format: (val) => `${val.toLocaleString()}`,
   },
-])
+]);
 
 const loading = ref(false);
-const filterCol = ref('')
-const filter = ref('')
+const filterCol = ref("");
+const filter = ref("");
 
 onMounted(() => {
-    getIncomingData()
-})
+  getIncomingData();
+});
 
 const getIncomingData = async () => {
-    loading.value = true;
+  loading.value = true;
   await api_web
-    .post(`receiveBarcode/searchAPI`, {
+    .post(`receiveBarcodes/searchAPI`, {
       searchBy: filterCol.value,
       searchValue: filter.value,
     })
@@ -168,7 +176,7 @@ const getIncomingData = async () => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const onPrint = (data) => {
   $q.dialog({
@@ -177,22 +185,39 @@ const onPrint = (data) => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-  loading.value = true;
-  await api_web
-    .post(`receiveBarcode/printBarcode`, {
-      data: [data]
-    })
-    .then((response) => {
-      loading.value = false;
-      let pdfWindow = window.open("");
-      pdfWindow.document.write(
-        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-          encodeURI(response.data) +
-          "'></iframe>"
-      );
-    })
-  })
-}
+    loading.value = true;
+    await api_web
+      .post(`receiveBarcodes/printBarcode`, {
+        data: [data],
+      })
+      .then((response) => {
+        loading.value = false;
+        let pdfWindow = window.open("");
+        pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+            encodeURI(response.data) +
+            "'></iframe>"
+        );
+      });
+  });
+};
+
+const onDelete = (id) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete this barcode ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .delete(`receiveBarcode/${id}`)
+      .then((response) => {
+        loading.value = false;
+        getIncomingData();
+      })
+  });
+};
 
 // const onClickNew = (data = []) => {
 //   $q.dialog({

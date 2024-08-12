@@ -78,7 +78,16 @@ class ReceiveBarcodeController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $cekDB = DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
+            ->where('id_reff', $id)
+            ->first();
+
+        if (!empty($cekDB)) {
+            T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_BCCD', $id)->delete();
+            C_ITRN::on($this->dedicatedConnection)->where('id_reff', $id)->delete();
+        }
+
+        return 'Delete Success';
     }
 
     function searchApi(Request $request)
@@ -107,7 +116,7 @@ class ReceiveBarcodeController extends Controller
             $RS->where($request->searchBy, 'like', '%{ $request->searchValue }%');
         }
 
-        return ['data' => $RS->get()];
+        return ['data' => $RS->orderBy('T_RCV_BC_DETAIL.created_at', 'desc')->get()];
     }
 
     public function printBarcode(Request $request) {

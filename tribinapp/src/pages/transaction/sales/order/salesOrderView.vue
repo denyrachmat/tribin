@@ -209,6 +209,7 @@ const onClickEdit = (val) => {
     component: salesOrderCreate,
     componentProps: {
       sloHeader: val,
+      isRecreate: false
     },
     // persistent: true,
   }).onOk(async (val) => {
@@ -232,7 +233,16 @@ const onClickDelete = (val) => {
 };
 
 const onClickRenew = (val) => {
-
+  $q.dialog({
+    component: salesOrderCreate,
+    componentProps: {
+      sloHeader: val,
+      isRecreate: true
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataRo();
+  });
 }
 </script>
 <style lang="sass">

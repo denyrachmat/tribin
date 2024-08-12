@@ -452,8 +452,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::delete('item/{id}', [ReceiveController::class, 'delete']);
         });
 
-        Route::prefix('receiveBarcode')->group(function () {
-            Route::resource('', ReceiveBarcodeController::class);
+        Route::resource('receiveBarcode', ReceiveBarcodeController::class);
+        Route::prefix('receiveBarcodes')->group(function () {
             Route::post('searchAPI', [ReceiveBarcodeController::class, 'searchAPI']);
             Route::post('printBarcode', [ReceiveBarcodeController::class, 'printBarcode']);
         });

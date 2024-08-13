@@ -263,7 +263,7 @@
                     (val, update, abort) => filterFn(val, update, abort, 'item')
                   "
                   behavior="dialog"
-                  option-label="MITM_ITMNMREAL"
+                  option-label="MITM_ITMNM"
                   option-value="MITM_ITMNM"
                   emit-value
                   map-options

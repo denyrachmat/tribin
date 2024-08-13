@@ -192,12 +192,10 @@ class ReceiveOrderController extends Controller
         if ($request->has('TSLO_SLOCD') && !empty($request->TSLO_SLOCD)) {
             if ($request->isRecreate) {
                 $cekSLOData = T_SLOHEAD::on($this->dedicatedConnection)->where('TSLO_SLOCD', 'like', $request->TSLO_SLOCD.'%')->orderBy('created_at', 'desc')->first();
-
-                if (str_contains($cekSLOData->TSLO_SLOCD, '-')) {
-                    # code...
-                }
+                $newDocumentCode =  $request->TSLO_SLOCD.(str_contains($cekSLOData->TSLO_SLOCD, '-') ? sprintf('%03d', (int) substr($cekSLOData->TSLO_SLOCD, -3) + 1) :  '-001');
+            } else {
+                $newDocumentCode =  $request->TSLO_SLOCD;
             }
-            $newDocumentCode = $request->isRecreate ? $request->TSLO_SLOCD : $request->TSLO_SLOCD;
         } else {
             if (!$LastLine) {
                 $LastLine = 1;
@@ -246,7 +244,7 @@ class ReceiveOrderController extends Controller
         ];
 
         T_SLOHEAD::on($this->dedicatedConnection)->updateOrCreate([
-            'TSLO_SLOCD' => $request->TSLO_SLOCD,
+            'TSLO_SLOCD' => $newDocumentCode,
             'TSLO_LINE' => $LastLine,
         ], $quotationHeader);
 

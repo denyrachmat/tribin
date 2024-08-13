@@ -99,7 +99,7 @@
                 </q-btn>
                 <q-btn
                   flat
-                  color="indigo"
+                  :color="props.row.TSLO_SLOCD.includes('-') ? 'grey' : 'indigo'"
                   icon="autorenew"
                   @click="onClickRenew(props.row.TSLO_SLOCD)"
                   dense

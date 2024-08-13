@@ -220,7 +220,7 @@ class InvoiceController extends Controller
         }
 
         $ppn = $total * 0.11;
-        
+
         $pdf = Pdf::loadView(
             'pdf.invoiceDlv',
             array_merge(
@@ -719,7 +719,7 @@ class InvoiceController extends Controller
 
         $this->fpdf->SetFont('Arial', '', 7);
         $this->fpdf->SetXY(3, 100);
-        $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50% (forklift)', 0, 0, 'L');
+        $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
         $this->fpdf->SetXY(3, 103);
         $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
 
@@ -727,7 +727,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(15, 110);
         if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
             $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
-            $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');    
+            $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
             $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
             $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
             $this->fpdf->SetXY(13, 130);
@@ -737,7 +737,7 @@ class InvoiceController extends Controller
             $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
         } else {
             $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');    
+            $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');
             $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
             $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
             $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');

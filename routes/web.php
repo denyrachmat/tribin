@@ -188,6 +188,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('', [ItemController::class, 'simpan']);
             Route::put('{id}', [ItemController::class, 'update']);
             Route::post('searchAPI', [ItemController::class, 'searchAPI']);
+            Route::post('searchAPINameOnly', [ItemController::class, 'searchAPINameOnly']);
             Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
             Route::post('searchAPIStockAndPriceOnly', [ItemController::class, 'searchAPIStockAndPriceOnly']);
             Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);

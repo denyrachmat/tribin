@@ -141,7 +141,7 @@ class ItemController extends Controller
     {
         $columnMap = [
             DB::raw('MITM_ITMNM'),
-            DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNMREAL"),
+            DB::raw("MITM_ITMNMREAL"),
             'LATEST_PRC',
             'STOCK'
         ];
@@ -153,6 +153,44 @@ class ItemController extends Controller
 
         if ($request->has('isITMCD') && $request->isITMCD == 1) {
             $RSHead->where('IS_ITMCD', 1);
+        }
+
+        if ($request->has('isForServ') && $request->isForServ == 1) {
+            $RSHead->where('MITM_ITMTYPE', 3);
+
+            if ($request->has('useCustomer') && !empty($request->useCustomer)) {
+                $RSHead->join('T_SRV_DET', 'MITM_ITMNM', 'TSRVD_ITMCD')
+                    ->leftJoin('T_SRV_HEAD', 'TSRVH_ID', 'T_SRV_HEAD.id')
+                    ->where('SRVH_CUSCD', $request->useCustomer);
+            }
+        }
+
+        if (!empty($request->searchValue)) {
+            $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->get();
+        } else {
+            $RS = (clone $RSHead)->get();
+        }
+
+        return ['data' => $RS];
+    }
+
+    function searchAPINameOnly(Request $request)
+    {
+        $columnMap = [
+            DB::raw('MITM_ITMNM'),
+            'LATEST_PRC',
+            'STOCK'
+        ];
+
+
+        $DataSet = DB::connection($this->dedicatedConnection);
+        $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
+            ->where('MITM_BRANCH', Auth::user()->branch);
+
+        if ($request->has('isITMCD') && $request->isITMCD == 1) {
+            $RSHead->where('IS_ITMCD', 1);
+        } else {
+            $RSHead->where('IS_ITMCD', 0);
         }
 
         if ($request->has('isForServ') && $request->isForServ == 1) {

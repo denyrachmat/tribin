@@ -172,13 +172,13 @@
                       v-model="items.MITM_ITMNM"
                       use-input
                       input-debounce="500"
-                      :options="listItems"
+                      :options="listItem"
                       @filter="
                         (val, update, abort) =>
                           filterFn(val, update, abort, 'item')
                       "
                       behavior="dialog"
-                      option-label="MITM_ITMNMREAL"
+                      option-label="MITM_ITMNM"
                       option-value="MITM_ITMNM"
                       emit-value
                       map-options
@@ -269,6 +269,7 @@ const MCUS_CUSNM = ref("");
 const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
 const listCustomers = ref([])
+const listItem = ref([])
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -367,6 +368,21 @@ const onAddItems = () => {
     TSLODETA_PRC: 0,
   })
 }
+
+const getItem = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("item/searchAPINameOnly", {
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listItem.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

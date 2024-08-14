@@ -412,7 +412,7 @@ class ReceiveOrderController extends Controller
                     'TSLODETA_SLOCD',
                     'TSLODETA_ITMCD',
                     'TSLODETA_ITMQT',
-                    'TSLODETA_USAGE_DESCRIPTION',
+                    DB::raw('CAST(TSLODETA_USAGE_DESCRIPTION AS UNSIGNED) TSLODETA_USAGE_DESCRIPTION'),
                     'TSLODETA_PRC',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',

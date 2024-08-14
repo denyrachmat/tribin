@@ -80,7 +80,7 @@ class InvoiceController extends Controller
         foreach ($request->payment as $key => $valuePays) {
             T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
                 'TDLVPAYDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
-                'TDLVPAYDETA_IDPAY' => $valuePays['id'],
+                'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
             ]);
         }
 

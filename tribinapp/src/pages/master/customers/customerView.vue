@@ -71,17 +71,23 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const $q = useQuasar()
 
+const props = defineProps({
+  CustType: Number,
+  Groups: String,
+  Curr: String,
+});
+
 const custData = ref({
   MCUS_CUSCD : '',
   MCUS_CUSNM : '',
-  MCUS_CURCD : 'IDR',
+  MCUS_CURCD : props.Curr ? props.Curr : 'IDR',
   MCUS_TAXREG: '-',
   MCUS_ADDR1 : '',
   MCUS_TELNO : '',
   MCUS_PIC_NAME : '-',
   MCUS_PIC_TELNO : '-',
-  MCUS_TYPE : 1,
-  MCUS_GROUP : 'SERVICE',
+  MCUS_TYPE : props.CustType ? props.CustType : 1,
+  MCUS_GROUP : props.Groups ? props.Groups : 'SERVICE',
   MCUS_EMAIL : ''
 })
 

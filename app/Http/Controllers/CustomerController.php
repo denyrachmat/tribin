@@ -158,6 +158,10 @@ class CustomerController extends Controller
         $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*')
             ->where('MCUS_BRANCH', Auth::user()->branch);
 
+        if ($request->has('type')) {
+            $RSTemp->whereIn('MCUS_TYPE', $request->type);
+        }
+
         if (!empty($request->searchValue)) {
             $RS = (clone $RSTemp)->where((
                 !empty($request->searchCol)

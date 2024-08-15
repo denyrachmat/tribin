@@ -216,7 +216,7 @@ class ItemController extends Controller
     {
         $columnMap = [
             DB::raw('MITM_ITMNM'),
-            DB::raw("CONCAT(MITM_ITMNM, ' (', MITM_ITMNMREAL, ')') as MITM_ITMNMREAL"),
+            DB::raw("MITM_ITMNMREAL"),
             // 'MITM_SPEC',
             'LATEST_PRC',
             'STOCK'
@@ -233,7 +233,7 @@ class ItemController extends Controller
         }
 
         if (!empty($request->searchValue)) {
-            $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->paginate(50, [], 'page', $request->page);
+            $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%')->paginate(50, [], 'page', $request->page);
         } else {
             $RS = (clone $RSHead)->paginate(50, [], 'page', $request->page);
         }

@@ -498,9 +498,8 @@ Route::group(['middleware' => 'cors'], function () {
                 Route::resource('', AccountingJournalController::class);
             });
         });
-        Route::prefix('pos')->group(function () {
-            Route::resource('', POSController::class);
-        });
+
+        Route::resource('pos', POSController::class);
 
         Route::prefix('payroll')->group(function () {
             // media related routes

@@ -47,6 +47,14 @@
               </q-btn>
               <q-btn
                 outline
+                color="orange"
+                icon="send"
+                @click="transferAllDataToCG()"
+              >
+                <q-tooltip>Transfer Data from This CG to Another CG</q-tooltip>
+              </q-btn>
+              <q-btn
+                outline
                 color="red"
                 icon="delete"
                 @click="deleteData"
@@ -291,6 +299,17 @@ const saveData = () => {
     }
   });
 };
+
+const transferAllDataToCG = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to transfer condition master ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+
+  })
+}
 </script>
 <style lang="sass">
 .my-sticky-header-table

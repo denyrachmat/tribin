@@ -78,12 +78,12 @@
             <q-separator />
             <div class="row" style="height: 10vh">
               <div class="col-sm-6 col-12 q-pa-sm">
-                <q-btn color="primary" class="full-width" @click="onSubmited()">
+                <q-btn color="primary" class="full-width" @click="onSubmited()" :loading="loading" :disable="!TPOS_CUSTCD">
                   Submit
                 </q-btn>
               </div>
               <div class="col-sm-6 col-12 q-pa-sm">
-                <q-btn color="red" class="full-width" @click="onCancelSales()">
+                <q-btn color="red" class="full-width" @click="onCancelSales()" :loading="loading">
                   Cancel
                 </q-btn>
               </div>
@@ -92,7 +92,7 @@
         </div>
       </div>
       <div class="col q-pa-xs q-gutter-sm">
-        <div class="row bg-white" style="height: 10vh; overflow: auto">
+        <div class="row bg-white">
           <div class="col">
             <q-input
               filled
@@ -140,8 +140,8 @@
           </div>
         </div>
         <div
-          class="row bg-white"
-          style="height: 70vh; overflow: auto"
+          class="row bg-white q-pa-sm"
+          style="height: 67vh; overflow: auto"
           :key="refreshIdx"
         >
           <div class="col">
@@ -211,12 +211,13 @@
 import { computed, onMounted, ref } from "vue";
 import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
+import customerView from "src/pages/master/customers/customerView.vue";
 
 const $q = useQuasar();
 
-const TPOS_CUSTCD = ref("")
+const TPOS_CUSTCD = ref("");
 const listItems = ref([]);
-const listCustomers = ref([])
+const listCustomers = ref([]);
 const selectedItems = ref([]);
 const loading = ref(false);
 const page = ref(0);
@@ -242,6 +243,7 @@ const getItem = async (val) => {
   if (listItems.value.length > 0) {
     page.value = page.value + 1;
   }
+
   await api_web
     .post("item/searchAPIStockAndPriceOnly", {
       searchValue: val,
@@ -249,28 +251,32 @@ const getItem = async (val) => {
     })
     .then((response) => {
       loading.value = false;
+      if (val) {
+        listItems.value = response.data.data.data;
+      } else {
+        response.data.data.data.map((valItem) => {
+          let indexItm = selectedItems.value.findIndex(
+            (item) => item.MITM_ITMNM === valItem.MITM_ITMNM
+          );
 
-      response.data.data.data.map((valItem) => {
-        let indexItm = selectedItems.value.findIndex(
-          (item) => item.MITM_ITMNM === valItem.MITM_ITMNM
-        );
-
-        if (indexItm === -1) {
-          listItems.value.push(valItem);
-        }
-      });
+          if (indexItm === -1) {
+            listItems.value.push(valItem);
+          }
+        });
+      }
     })
     .catch(() => {
       loading.value = false;
     });
 };
 
-const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
+const getCustomer = async (val, cols = "MCUS_CUSNM") => {
   loading.value = true;
   await api_web
     .post("customer/searchAPI", {
       searchValue: val,
-      searchCol: cols
+      searchCol: cols,
+      type: [1]
     })
     .then((response) => {
       loading.value = false;
@@ -318,13 +324,44 @@ const onAddItems = (vals, idx) => {
     });
 };
 
+const onAddCustClick = () => {
+  $q.dialog({
+    component: customerView,
+    componentProps: {
+      CustType: 1,
+      Groups: 'POS_CUST',
+      Curr: 'IDR',
+    }
+    // persistent: true,
+  }).onOk(async (val) => {
+    await getCustomer("");
+    TPOS_CUSTCD.value = val.MCUS_CUSCD;
+  });
+};
+
 const onLoad = async (index, done) => {
   await getItem("");
   done();
 };
 
 const onInputSearch = (val) => {
+  page.value = 0;
+  if (!val) {
+    listItems.value = []
+  }
   getItem(val);
+};
+
+const filterFn = (val, update, abort, fun) => {
+  update(async () => {
+    if (fun === "cust") {
+      await getCustomer(val);
+    }
+
+    if (fun === "item") {
+      await getItem(val);
+    }
+  });
 };
 
 const onEditSelItem = (idx) => {
@@ -387,8 +424,8 @@ const onSubmited = () => {
   }).onOk(async () => {
     await api_web
       .post("pos", {
-        searchValue: val,
-        page: page.value,
+        TPOS_CUSTCD: TPOS_CUSTCD.value,
+        det: listItems.value
       })
       .then((response) => {
         loading.value = false;

@@ -98,6 +98,7 @@
             label="Approve"
             :disable="dataHasil.length === 0"
             @click="onApprove()"
+            :loading="loading"
           />
           <q-btn
             color="red"
@@ -105,6 +106,7 @@
             label="Reject"
             :disable="dataHasil.length === 0"
             @click="onReject()"
+            :loading="loading"
           />
           <q-btn color="orange" flat label="cancel" @click="onDialogCancel" />
         </q-btn-group>

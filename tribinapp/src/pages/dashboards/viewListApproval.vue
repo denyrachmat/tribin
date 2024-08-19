@@ -25,6 +25,7 @@
           hide-header
           :pagination="{ rowsPerPage: 50 }"
           :rows-per-page-options="rowsPerPageOptions"
+          :key="keyRefresh"
         >
           <template v-slot:top-right>
             <q-input
@@ -91,7 +92,7 @@ const $q = useQuasar()
 const props = defineProps({
   listApprv: Array,
   typeAPI: String,
-  conn: String
+  conn: String,
 });
 
 const columns = ref([
@@ -102,6 +103,7 @@ const columns = ref([
   { name: "CREATED_AT", label: "Created Date", field: "CREATED_AT" },
 ]);
 const filter = ref("");
+const keyRefresh = ref(0)
 
 const getDateUntilNow = (dates, unit = 'days') => {
   const date1 = new Date();
@@ -126,6 +128,8 @@ const onClickPreview = (data, dataHeader) => {
       },
       // persistent: true,
     }).onOk(async (val) => {
+      keyRefresh.value = keyRefresh.value + 1
+      onDialogOK()
     });
   } else if (props.typeAPI == 'pr') {
     typeAPI = 'purchase-request-approval'
@@ -140,6 +144,8 @@ const onClickPreview = (data, dataHeader) => {
       },
       // persistent: true,
     }).onOk(async (val) => {
+      keyRefresh.value = keyRefresh.value + 1
+      onDialogOK()
     });
   } else if (props.typeAPI == 'po') {
     typeAPI = 'purchase-order/approval-document'
@@ -153,6 +159,8 @@ const onClickPreview = (data, dataHeader) => {
       },
       // persistent: true,
     }).onOk(async (val) => {
+      keyRefresh.value = keyRefresh.value + 1
+      onDialogOK()
     });
   }
 

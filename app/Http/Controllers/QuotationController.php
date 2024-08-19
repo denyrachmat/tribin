@@ -351,14 +351,15 @@ class QuotationController extends Controller
     {
         $documentNumber = base64_decode($request->id);
 
-        $RS = T_QUODETA::on($request->conn)->select(["id", "TQUODETA_ITMCD", "MITM_ITMNMREAL as MITM_ITMNM", "TQUODETA_USAGE_DESCRIPTION", "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
+        $RS = T_QUODETA::on($request->conn)->select(["T_QUODETA.id", "TQUODETA_ITMCD", "MITM_ITMNMREAL as MITM_ITMNM", DB::raw('CONCAT(MUSAGE_ALIAS, " (" ,MUSAGE_DESCRIPTION, ")") AS TQUODETA_USAGE_DESCRIPTION'), "TQUODETA_PRC", "TQUODETA_OPRPRC", "TQUODETA_MOBDEMOB", 'TQUODETA_ITMQT', 'TQUODETA_ELECTRICITY'])
             ->leftJoin("M_ITM_GRP", function ($join) {
                 $join->on("TQUODETA_ITMCD", "=", "MITM_ITMNM")
                     ->on('TQUODETA_BRANCH', '=', 'MITM_BRANCH');
             })
+            ->leftJoin('M_USAGE', 'M_USAGE.id', 'TQUODETA_USAGE')
             ->where('TQUODETA_QUOCD', $documentNumber)
             ->where('TQUODETA_BRANCH', Auth::user()->branch)
-            ->whereNull('deleted_at')->get();
+            ->whereNull('T_QUODETA.deleted_at')->get();
 
         $Conditions = T_QUOCOND::on($request->conn)->select(["id", "TQUOCOND_CONDI"])
             ->where('TQUOCOND_QUOCD', $documentNumber)

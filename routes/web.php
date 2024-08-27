@@ -88,6 +88,11 @@ Route::group(['middleware' => 'cors'], function () {
         Route::get('actionlogout', [LoginController::class, 'actionlogout'])->name('actionlogout');
 
         # Terkait Company Group
+        Route::prefix('companies')->group(function () {
+            Route::get('nowCG', [CompanyGroupController::class, 'getNowCG']);
+            Route::post('transferData', [CompanyGroupController::class, 'transferData']);
+        });
+
         Route::prefix('company')->group(function () {
             Route::get('form', [CompanyGroupController::class, 'index']);
             Route::get('management-form', [CompanyGroupController::class, 'form']);
@@ -98,6 +103,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('access/{id}', [CompanyGroupController::class, 'loadByNickName']);
             Route::post('access', [CompanyGroupController::class, 'saveAccess']);
             Route::delete('access/{id}', [CompanyGroupController::class, 'deleteAccess']);
+
         });
 
         # Terkait Company Group

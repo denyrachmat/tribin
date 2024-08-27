@@ -126,6 +126,7 @@ import { api, api_web } from "boot/axios";
 
 import assignConditionsView from "./assignConditionsView.vue";
 import positionAssignCondition from "./positionAssignCondition.vue";
+import exportDataView from "../exportData/exportDataView.vue";
 
 const columns = ref([
   {
@@ -302,13 +303,16 @@ const saveData = () => {
 
 const transferAllDataToCG = () => {
   $q.dialog({
-    title: "Confirmation",
-    message: `Are you sure want to transfer condition master ?`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-
-  })
+    component: exportDataView,
+    componentProps: {
+      table: [
+        'M_COND_GROUP',
+        'M_CONDITIONS'
+      ],
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+  });
 }
 </script>
 <style lang="sass">

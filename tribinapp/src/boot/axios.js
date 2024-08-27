@@ -65,7 +65,7 @@ api.interceptors.response.use(function (response) {
         } else {
           Notify.create({
             color: "negative",
-            message: "Undefined error!!",
+            // message: "Undefined error!!",
           });
         }
       }

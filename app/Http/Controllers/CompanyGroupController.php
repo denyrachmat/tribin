@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Schema;
 
 class CompanyGroupController extends Controller
 {
@@ -261,5 +262,32 @@ class CompanyGroupController extends Controller
             ->whereNull('deleted_at')
             ->get();
         return ['data' => $Accounts];
+    }
+
+    function getNowCG() {
+        return Crypt::decryptString($_COOKIE['CGID']);
+    }
+
+    function transferData(Request $request) {
+        $tableFrom = DB::connection($request->frCG)->table($request->table);
+        $tableTo = DB::connection($request->toCG)->table($request->table);
+
+        if (empty((clone $tableFrom)->first())) {
+            return response()->json([["Table {$request->table} data is empty on origin db !"]], 406);
+        }
+
+        if (!Schema::connection($request->toCG)->hasTable($request->table)) {
+            return response()->json([["Table {$request->table} not found on destination db !"]], 406);
+        }
+
+        (clone $tableTo)->truncate();
+
+        foreach (json_decode(json_encode((clone $tableFrom)->get()), true) as $key => $value) {
+            (clone $tableTo)->insert($value);
+        }
+
+        return [
+            'message' => 'Transfer success'
+        ];
     }
 }

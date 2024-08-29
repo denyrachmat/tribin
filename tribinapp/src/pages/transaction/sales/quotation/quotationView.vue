@@ -242,10 +242,26 @@ const onClickDelete = (val) => {
   });
 };
 
-const onClickPrint = (val) => {
-  window
-    .open(process.env.API_WEB + "PDF/quotation/" + btoa(val), "_blank")
-    .focus();
+const onClickPrint = async (val) => {
+  // window
+  //   .open(process.env.API_WEB + "PDF/quotation/" + btoa(val), "_blank")
+  //   .focus();
+
+  loading.value = true;
+  await api_web
+    .get(`PDF/quotation/${btoa(val)}`)
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("");
+      pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 </script>
 <style lang="sass">

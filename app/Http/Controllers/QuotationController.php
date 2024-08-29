@@ -1453,7 +1453,7 @@ class QuotationController extends Controller
             'paymentList' => $branchPaymentAccount
         ]);
 
-        return $pdf->stream('invoice.pdf');
+        return base64_encode($pdf->output());
     }
 
     // New Function

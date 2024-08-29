@@ -174,7 +174,7 @@
                 <tr>
                     <td>Lokasi</td>
                     <td>:</td>
-                    <td>{{$MCUS_ADDR1}}</td>
+                    <td>{{$subject->TQUO_PROJECT_LOCATION}}</td>
                 </tr>
             </table>
         </div>

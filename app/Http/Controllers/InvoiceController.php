@@ -201,10 +201,16 @@ class InvoiceController extends Controller
             ->where('BRANCH', Auth::user()->branch)
             ->first();
 
+        $Subject = T_QUOHEAD::on($this->dedicatedConnection)
+            ->where('TQUO_QUOCD', $request->TSLO_QUOCD)
+            ->where('TQUO_BRANCH', Auth::user()->branch)
+            ->first();
+
         $total = 0;
         $dlvDetParse = [];
         $cek = [];
         foreach ($request->dlvdet as $key => $value) {
+
             $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
                 return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
             }));
@@ -234,7 +240,8 @@ class InvoiceController extends Controller
                     'ppn' => $ppn,
                     'dlvDetNew' => $dlvDetParse,
                     'payment' => $request->payment,
-                    'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total)
+                    'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total),
+                    'subject' => $Subject
                 ],
                 $request->all()
             )

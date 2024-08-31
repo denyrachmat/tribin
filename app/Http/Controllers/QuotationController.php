@@ -1400,7 +1400,7 @@ class QuotationController extends Controller
             ->whereNull("deleted_at")
             ->where('TQUOCOND_BRANCH', Auth::user()->branch)
             ->get()->toArray();
-        $User = User::where('nick_name', $RSHeader->created_by)->select('name', 'phone')->first();
+        $User = User::where('nick_name', $RSHeader->created_by)->first();
 
         $checkItemTruck = array_filter($RSDetail, function ($f) {
             return str_contains($f['MITM_ITMNM'], 'MB-');

@@ -320,7 +320,23 @@ const onReject = () => {
   });
 };
 
-const printQuot = () => {
-  window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd) + '/' + btoa(props.conn), '_blank').focus();
+const printQuot = async () => {
+  // window.open(process.env.API_WEB + 'PDF/quotation/' + btoa(props.cd) + '/' + btoa(props.conn), '_blank').focus();
+
+  loading.value = true;
+  await api_web
+    .get(`PDF/quotation/${btoa(props.cd)}/${btoa(props.conn)}`)
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("");
+      pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 </script>

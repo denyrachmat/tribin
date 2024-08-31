@@ -225,7 +225,9 @@ const columnsItem = ref([
     label: "SUBTOTAL",
     sortable: true,
     field: (row) =>
-      parseInt(row.TQUODETA_PRC) + parseInt(row.TQUODETA_OPRPRC) + parseInt(row.TQUODETA_MOBDEMOB),
+      parseInt(row.TQUODETA_PRC) +
+      parseInt(row.TQUODETA_OPRPRC) +
+      parseInt(row.TQUODETA_MOBDEMOB),
     align: "left",
     format: (val) => val.toLocaleString(),
   },
@@ -267,21 +269,21 @@ const onApprove = () => {
     persistent: true,
   }).onOk(async (datas) => {
     loading.value = true;
-      await api_web
-        .put(`approve/quotations/${btoa(props.cd)}`,{
-          TQUO_BRANCH: props.dataHeader.TQUO_BRANCH,
-          conn: props.conn
-        })
-        .then((response) => {
-          loading.value = false;
-          getData();
+    await api_web
+      .put(`approve/quotations/${btoa(props.cd)}`, {
+        TQUO_BRANCH: props.dataHeader.TQUO_BRANCH,
+        conn: props.conn,
+      })
+      .then((response) => {
+        loading.value = false;
+        getData();
 
-          onDialogOK()
-        })
-        .catch((e) => {
-          loading.value = false;
-        });
-  })
+        onDialogOK();
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
 };
 
 const onReject = () => {
@@ -304,14 +306,16 @@ const onReject = () => {
     }).onOk(async (datas) => {
       loading.value = true;
       await api_web
-        .put(`revise/quotations/${btoa(props.cd)}`,{
+        .put(`revise/quotations/${btoa(props.cd)}`, {
           remark: datas,
           TQUO_BRANCH: props.dataHeader.TQUO_BRANCH,
-          conn: props.conn
+          conn: props.conn,
         })
         .then((response) => {
           loading.value = false;
           getData();
+
+          onDialogOK();
         })
         .catch((e) => {
           loading.value = false;

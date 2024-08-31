@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\M_COND_GROUP;
+use App\Models\M_Condition;
 use App\Models\M_USAGE;
 use App\Models\T_SLO_DRAFT_DETAIL;
 use App\Models\T_SLO_DRAFT_HEAD;
@@ -557,5 +559,13 @@ class ReceiveOrderController extends Controller
                 'TSLODETA_MOBDEMOB' => $request->TSLODETA_MOBDEMOB ? $request->TSLODETA_MOBDEMOB : 0,
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
+    }
+
+    public function marketingReport(Request $request) {
+        $dataGroupCondHead = M_COND_GROUP::on($request->has('conn') ? $request->conn : $this->dedicatedConnection);
+
+        if ($request->has('condGroup') && count($request->condGroup) > 0) {
+            $dataGroupCondHead->whereIn('MCOND_GRPNM', $request->condGroup);
+        }
     }
 }

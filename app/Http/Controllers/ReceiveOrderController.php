@@ -567,5 +567,12 @@ class ReceiveOrderController extends Controller
         if ($request->has('condGroup') && count($request->condGroup) > 0) {
             $dataGroupCondHead->whereIn('MCOND_GRPNM', $request->condGroup);
         }
+
+        $hasil = [];
+        foreach ($dataGroupCondHead->get() as $key => $value) {
+            $hasil[] = [];
+        }
+
+        return $dataGroupCondHead->get();
     }
 }

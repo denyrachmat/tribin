@@ -228,7 +228,7 @@
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
                                 <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
-                                <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} - {{$value['dataSLO']['MUSAGE_DESCRIPTION']}}</td>
+                                <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} - {{$value['dataSLO']['MUSAGE_DESCRIPTION']}} / {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_FR']))}} - {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_TO']))}} </td>
                                 <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
                                 <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'],0,".",",") }}</td>
                             </tr>

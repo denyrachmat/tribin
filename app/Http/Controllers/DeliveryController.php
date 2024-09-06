@@ -1837,7 +1837,7 @@ class DeliveryController extends Controller
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->whereNull('T_DLVORDDETA.deleted_at')
             ->where('MITM_ITMTYPE', '!=', '3')
-            ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
+            ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO')
             ->whereNull('CITRN_DOCNO');
 
         // $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')

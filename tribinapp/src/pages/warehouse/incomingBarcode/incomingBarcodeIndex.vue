@@ -5,9 +5,9 @@
         <span class="text-h4">Incoming Barcode</span>
       </div>
       <div class="col text-right">
-        <!-- <q-btn icon="add" color="blue" @click="onClickNew()">
-          <q-tooltip>Create New Incoming</q-tooltip>
-        </q-btn> -->
+        <q-btn icon="add" color="blue" @click="onClickNew()">
+          <q-tooltip>Create Barcode</q-tooltip>
+        </q-btn>
       </div>
     </div>
 
@@ -75,11 +75,11 @@
                   @click="onDelete(props.row.TRCVBC_BCCD)"
                   dense
                   :disable="
-                    props.row.det.length === 0
+                    props.row.det && props.row.det.length === 0
                   "
                 >
                   <q-tooltip>{{
-                    props.row.det.length === 0
+                    props.row.det && props.row.det.length === 0
                       ? "All qty already confirmed"
                       : "Cancel Barcode"
                   }}</q-tooltip>
@@ -91,7 +91,7 @@
                   @click="onPrint(props.row)"
                   dense
                   :disable="
-                    props.row.det.length === 0
+                    props.row.det && props.row.det.length === 0
                   "
                 >
                   <q-tooltip>Print Barcode</q-tooltip>
@@ -111,6 +111,8 @@
 import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
+
+import barcodeCreate from "./barcodeCreate.vue";
 
 const $q = useQuasar();
 
@@ -219,17 +221,17 @@ const onDelete = (id) => {
   });
 };
 
-// const onClickNew = (data = []) => {
-//   $q.dialog({
-//     component: incomingCreate,
-//     componentProps: {
-//       dataHeader: data,
-//     },
-//     // persistent: true,
-//   }).onOk(async (val) => {
-//     getOutgoingData();
-//   });
-// }
+const onClickNew = (data = []) => {
+  $q.dialog({
+    component: incomingCreate,
+    componentProps: {
+      dataHeader: data,
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    getOutgoingData();
+  });
+}
 
 // const onConfirmation = (data = []) => {
 //   $q.dialog({

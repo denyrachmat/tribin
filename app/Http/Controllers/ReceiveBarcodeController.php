@@ -125,4 +125,8 @@ class ReceiveBarcodeController extends Controller
 
         return base64_encode($pdf->stream('barcode.pdf'));
     }
+
+    public function getUnbarcodedItemStock(): array {
+        return [];
+    }
 }

@@ -318,7 +318,7 @@ class PurchaseController extends Controller
             ->whereNotNull('TPCHORD_APPRVDT')
             ->whereNull('TRCV_REFFNO');
 
-        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+        if (!empty($request->searchCol) && !empty($request->searchValue)) {
             $RS->where(DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )')"), 'like', '%' . $request->searchValue . '%');
         }
 

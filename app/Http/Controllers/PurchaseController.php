@@ -307,7 +307,7 @@ class PurchaseController extends Controller
 
     function searchApprovedPO(Request $request)
     {
-        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )') AS PO_CUSTDESC"), "TPCHORD_PCHCD", "TPCHORD_SUPCD", "MSUP_SUPNM", "TPCHORD_ISSUDT", "TPCHORD_DLVDT", "TPCHORD_REQCD"])
+        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )') AS PO_CUSTDESC"), "TPCHORD_PCHCD", "TPCHORD_SUPCD", "MSUP_SUPNM", "TPCHORD_ISSUDT", "TPCHORD_DLVDT", "TPCHORD_REQCD"])
             ->leftJoin("M_SUP", function ($join) {
                 $join->on("TPCHORD_SUPCD", "=", "MSUP_SUPCD")
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
@@ -319,7 +319,7 @@ class PurchaseController extends Controller
             ->whereNull('TRCV_REFFNO');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
-            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+            $RS->where(DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )')"), 'like', '%' . $request->searchValue . '%');
         }
 
         return ['data' => $RS->get()];

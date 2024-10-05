@@ -176,7 +176,7 @@ api_web.interceptors.response.use(function (response) {
     if (e.response.status == 500) {
       Notify.create({
         color: "negative",
-        message: "Something is wrong, please contact administrator",
+        message: "Connection problem, please try again later.",
       });
     }
   }

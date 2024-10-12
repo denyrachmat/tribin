@@ -273,7 +273,7 @@
               </div>
 
               <div class="col-4 col-md-1">
-                <q-input v-model="quot.TSLODETA_ITMQT" dense hint="Qty" outline/>
+                <q-input type="number" v-model="quot.TSLODETA_ITMQT" dense hint="Qty" outline/>
               </div>
 
               <div class="col-4 col-md-2" v-if="forms.TSLO_TYPE == 1">
@@ -300,7 +300,7 @@
               </div>
 
               <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-1' : 'col-4 col-md-3'}`">
-                <q-input v-model="quot.TSLODETA_PRC" dense hint="Price" outline/>
+                <q-input type="number" v-model="quot.TSLODETA_PRC" dense hint="Price" outline/>
               </div>
 
               <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-2' : 'col-6 col-md-2'}`">
@@ -452,8 +452,11 @@ onMounted(async () => {
   if (props.sloHeader && props.sloHeader !== "") {
     await getROData(props.sloHeader);
 
-    console.log(forms.value);
+    // console.log(forms.value);
+
+    // forms.value.TSLO_ISCON = parseInt()
     await getQuotation(forms.value.TSLO_QUOCD);
+    await onSelectQuotation(forms.value.TSLO_QUOCD)
   }
 });
 
@@ -557,6 +560,7 @@ const getROData = async (val) => {
       console.log(response.data.det);
       forms.value = response.data;
       forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE);
+      forms.value.TSLO_ISCON = parseInt(response.data.TSLO_ISCON);
 
       quotDetail.value = response.data.det;
     })

@@ -223,7 +223,7 @@ const onDelete = (id) => {
 
 const onClickNew = (data = []) => {
   $q.dialog({
-    component: incomingCreate,
+    component: barcodeCreate,
     componentProps: {
       dataHeader: data,
     },

@@ -199,6 +199,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('searchAPINameOnly', [ItemController::class, 'searchAPINameOnly']);
             Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
             Route::post('searchAPIStockAndPriceOnly', [ItemController::class, 'searchAPIStockAndPriceOnly']);
+            Route::post('searchItemDyn', [ItemController::class, 'searchItemDyn']);
+
             Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);
             Route::post('exportExcel', [ItemController::class, 'exportExcel']);
         });
@@ -447,7 +449,9 @@ Route::group(['middleware' => 'cors'], function () {
 
         # Terkait Receive
         Route::prefix('receive')->group(function () {
+
             Route::get('form', [ReceiveController::class, 'index']);
+            Route::get('formBarcodeCreate', [ReceiveController::class, 'formBarcodeCreate']);
             Route::get('form/{id}', [ReceiveController::class, 'loadById']);
             Route::put('form/{id}', [ReceiveController::class, 'update']);
             Route::post('form/{id}', [ReceiveController::class, 'submit']);
@@ -567,7 +571,7 @@ Route::group(['middleware' => 'cors'], function () {
             //payroll routes
             Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
             Route::post('getdata/payroll', [PayrollController::class, 'getData'])->name('payroll.getData');
-            Route::post('get-payroll-data',  [PayrollController::class, 'getDataTable'])->name('payroll.getDataTable');
+            Route::post('get-payroll-data', [PayrollController::class, 'getDataTable'])->name('payroll.getDataTable');
             Route::post('payroll/download-payroll', [PayrollController::class, 'payrollExportPDF'])->name('payroll.payrollExportPDF');
             Route::post('payroll/download-payslip', [PayrollController::class, 'payslipExportPDF'])->name('payroll.payslipExportPDF');
         });

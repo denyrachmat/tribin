@@ -72,7 +72,7 @@ class ItemController extends Controller
         $RS = DB::connection($request->fromConnection)->table('M_ITM AS A')
             ->select('A.*')
             ->leftJoin($currentDBName . '.M_ITM AS B', 'A.MITM_ITMCD', '=', 'B.MITM_ITMCD')
-            ->where('A.MITM_BRANCH',  Auth::user()->branch)
+            ->where('A.MITM_BRANCH', Auth::user()->branch)
             ->whereNull('B.MITM_ITMCD');
         $RSTosave = json_decode(json_encode($RS->get()), true);
         if (!empty($RSTosave)) {
@@ -106,7 +106,7 @@ class ItemController extends Controller
         $genItemCode = 'SRV-' . date('ym') . (empty($getLatestItemCode) ? '001' : sprintf('%03d', (int) substr($getLatestItemCode->MITM_ITMCD, -2) + 1));
         $hasil = M_ITM::on($this->dedicatedConnection)->updateOrCreate([
             'MITM_ITMCD' => empty($request->MITM_ITMCD) ? $genItemCode : $request->MITM_ITMCD,
-        ],[
+        ], [
             'MITM_ITMCD' => empty($request->MITM_ITMCD) ? $genItemCode : $request->MITM_ITMCD,
             'MITM_ITMNM' => $request->MITM_ITMNM,
             'MITM_STKUOM' => $request->MITM_STKUOM,
@@ -277,6 +277,26 @@ class ItemController extends Controller
         return ['data' => $RS];
     }
 
+    function searchItemDyn(Request $request)
+    {
+        $DataSet = DB::connection($this->dedicatedConnection);
+        $data = $DataSet->table('M_ITM_GRP')->select('*')
+            ->where('MITM_BRANCH', Auth::user()->branch);
+            // ->where('IS_ITMCD', 1);
+
+        if (
+            count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
+                return !empty($f['value']);
+            })) > 0
+        ) {
+            foreach ($request->filter as $key => $value) {
+                $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+            }
+        }
+
+        return $data->get()->toArray();
+    }
+
     function update(Request $request)
     {
         $affectedRow = M_ITM::on($this->dedicatedConnection)
@@ -320,7 +340,8 @@ class ItemController extends Controller
         }
     }
 
-    function getCategory(){
+    function getCategory()
+    {
         $data = M_ITM::on($this->dedicatedConnection)
             ->select('MITM_ITMCAT')
             ->groupBy('MITM_ITMCAT')
@@ -330,11 +351,15 @@ class ItemController extends Controller
         return $data;
     }
 
-    function exportExcel() {
-        return Excel::download(new itemMasterExport(
-            $this->dedicatedConnection
-        )
-        , 'itemMasterExport.xlsx');
+    function exportExcel()
+    {
+        return Excel::download(
+            new itemMasterExport(
+                $this->dedicatedConnection
+            )
+            ,
+            'itemMasterExport.xlsx'
+        );
     }
 
     function getLatestItemServiceCode()

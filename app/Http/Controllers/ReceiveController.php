@@ -30,6 +30,11 @@ class ReceiveController extends Controller
         return view('transaction.receive');
     }
 
+    function formBarcodeCreate()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'barcodeCreate']);
+    }
+
     function outstandingPO(Request $request)
     {
         $columnMap = [

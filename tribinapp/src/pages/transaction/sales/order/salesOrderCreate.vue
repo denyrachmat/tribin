@@ -454,6 +454,7 @@ onMounted(async () => {
 
     console.log(forms.value);
     await getQuotation(forms.value.TSLO_QUOCD);
+    await onSelectQuotation(btoa(forms.value.TSLO_QUOCD))
   }
 });
 

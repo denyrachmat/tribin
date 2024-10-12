@@ -452,7 +452,9 @@ onMounted(async () => {
   if (props.sloHeader && props.sloHeader !== "") {
     await getROData(props.sloHeader);
 
-    console.log(forms.value);
+    // console.log(forms.value);
+
+    // forms.value.TSLO_ISCON = parseInt()
     await getQuotation(forms.value.TSLO_QUOCD);
     await onSelectQuotation(forms.value.TSLO_QUOCD)
   }
@@ -558,6 +560,7 @@ const getROData = async (val) => {
       console.log(response.data.det);
       forms.value = response.data;
       forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE);
+      forms.value.TSLO_ISCON = parseInt(response.data.TSLO_ISCON);
 
       quotDetail.value = response.data.det;
     })

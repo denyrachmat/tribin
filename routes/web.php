@@ -83,6 +83,8 @@ Route::get('/version', function () {
     return app()->version();
 });
 
+Route::get('testPrint', [ReceiveOrderController::class, 'testPrint']);
+
 Route::group(['middleware' => 'cors'], function () {
     Route::middleware('auth')->group(function () {
         Route::get('actionlogout', [LoginController::class, 'actionlogout'])->name('actionlogout');
@@ -462,7 +464,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::resource('receiveBarcode', ReceiveBarcodeController::class);
         Route::prefix('receiveBarcodes')->group(function () {
             Route::post('searchAPI', [ReceiveBarcodeController::class, 'searchAPI']);
-            Route::post('printBarcode', [ReceiveBarcodeController::class, 'printBarcode']);
+            Route::post('printBarcode', [ReceiveBarcodeController::class, 'newPrintBarcode']);
         });
 
         Route::get('purchase-request-approval/{id}', [PurchaseController::class, 'loadByIdApproval']);

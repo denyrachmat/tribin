@@ -194,12 +194,12 @@ const onPrint = (data) => {
       })
       .then((response) => {
         loading.value = false;
-        let pdfWindow = window.open("");
-        pdfWindow.document.write(
-          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-            encodeURI(response.data) +
-            "'></iframe>"
-        );
+        // let pdfWindow = window.open("");
+        // pdfWindow.document.write(
+        //   "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+        //     encodeURI(response.data) +
+        //     "'></iframe>"
+        // );
       });
   });
 };

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
 
 class ReceiveOrderController extends Controller
 {
@@ -25,12 +26,95 @@ class ReceiveOrderController extends Controller
         date_default_timezone_set('Asia/Jakarta');
         $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
     }
+
+    public function testPrint()
+    {
+        $mid = '123123456';
+        $store_name = 'YOURMART';
+        $store_address = 'Mart Address';
+        $store_phone = '1234567890';
+        $store_email = 'yourmart@email.com';
+        $store_website = 'yourmart.com';
+        $tax_percentage = 10;
+        $transaction_id = 'TX123ABC456';
+        $currency = 'Rp';
+        $image_path = 'logo.png';
+
+        // Set items
+        $items = [
+            [
+                'name' => 'French Fries (tera)',
+                'qty' => 2,
+                'price' => 65000,
+            ],
+            [
+                'name' => 'Roasted Milk Tea (large)',
+                'qty' => 1,
+                'price' => 24000,
+            ],
+            [
+                'name' => 'Honey Lime (large)',
+                'qty' => 3,
+                'price' => 10000,
+            ],
+            [
+                'name' => 'Jasmine Tea (grande)',
+                'qty' => 3,
+                'price' => 8000,
+            ],
+        ];
+
+        // Init printer
+        $printer = new ReceiptPrinter;
+        $printer->init(
+            config('receiptprinter.connector_type'),
+            config('receiptprinter.connector_descriptor')
+        );
+
+        // Set store info
+        $printer->setStore($mid, $store_name, $store_address, $store_phone, $store_email, $store_website);
+
+        // Set currency
+        $printer->setCurrency($currency);
+
+        // Add items
+        foreach ($items as $item) {
+            $printer->addItem(
+                $item['name'],
+                $item['qty'],
+                $item['price']
+            );
+        }
+        // Set tax
+        $printer->setTax($tax_percentage);
+
+        // Calculate total
+        $printer->calculateSubTotal();
+        $printer->calculateGrandTotal();
+
+        // Set transaction ID
+        $printer->setTransactionID($transaction_id);
+
+        // Set logo
+        // Uncomment the line below if $image_path is defined
+        //$printer->setLogo($image_path);
+
+        // Set QR code
+        $printer->setQRcode([
+            'tid' => $transaction_id,
+        ]);
+
+        // Print receipt
+        $printer->printReceipt();
+    }
+
     public function index()
     {
         return view('tribinapp_layouts', ['routeApp' => 'so']);
         $Usages = M_USAGE::on($this->dedicatedConnection)->get();
         return view('transaction.receive_order', ['usages' => $Usages]);
     }
+
     public function save(Request $request)
     {
         $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -148,7 +232,9 @@ class ReceiveOrderController extends Controller
         }
 
         return [
-            'msg' => 'OK', 'doc' => $newDocumentCode, '$RSLast' => $LastLine,
+            'msg' => 'OK',
+            'doc' => $newDocumentCode,
+            '$RSLast' => $LastLine,
             'quotationHeader' => $quotationHeader,
             'quotationDetail' => $quotationDetail,
             'newPOCode' => $newPOCode,
@@ -193,8 +279,8 @@ class ReceiveOrderController extends Controller
 
         if ($request->has('TSLO_SLOCD') && !empty($request->TSLO_SLOCD)) {
             if ($request->isRecreate) {
-                $cekSLOData = T_SLOHEAD::on($this->dedicatedConnection)->where('TSLO_SLOCD', 'like', $request->TSLO_SLOCD.'%')->orderBy('created_at', 'desc')->first();
-                $newDocumentCode =  $request->TSLO_SLOCD.(str_contains($cekSLOData->TSLO_SLOCD, '-') ? '-'.sprintf('%03d', (int) substr($cekSLOData->TSLO_SLOCD, -3) + 1) :  '-001');
+                $cekSLOData = T_SLOHEAD::on($this->dedicatedConnection)->where('TSLO_SLOCD', 'like', $request->TSLO_SLOCD . '%')->orderBy('created_at', 'desc')->first();
+                $newDocumentCode =  $request->TSLO_SLOCD . (str_contains($cekSLOData->TSLO_SLOCD, '-') ? '-' . sprintf('%03d', (int) substr($cekSLOData->TSLO_SLOCD, -3) + 1) :  '-001');
             } else {
                 $newDocumentCode =  $request->TSLO_SLOCD;
             }
@@ -271,7 +357,9 @@ class ReceiveOrderController extends Controller
         }
 
         return [
-            'msg' => 'OK', 'doc' => $newDocumentCode, '$RSLast' => $LastLine,
+            'msg' => 'OK',
+            'doc' => $newDocumentCode,
+            '$RSLast' => $LastLine,
             'quotationHeader' => $quotationHeader,
             'quotationDetail' => $quotationDetail,
             'newPOCode' => $newPOCode,
@@ -287,8 +375,19 @@ class ReceiveOrderController extends Controller
         ];
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_ISSUDT", "TSLO_QUOCD", "TSLO_POCD",
-            "TSLO_ATTN", "TSLO_PLAN_DLVDT", "TSLO_ADDRESS_NAME", "TSLO_ADDRESS_DESCRIPTION", "TSLO_TYPE", "TSLO_SERVTRANS_COST", 'TSLO_MAP_URL',
+            "TSLO_SLOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_ISSUDT",
+            "TSLO_QUOCD",
+            "TSLO_POCD",
+            "TSLO_ATTN",
+            "TSLO_PLAN_DLVDT",
+            "TSLO_ADDRESS_NAME",
+            "TSLO_ADDRESS_DESCRIPTION",
+            "TSLO_TYPE",
+            "TSLO_SERVTRANS_COST",
+            'TSLO_MAP_URL',
             'TSLO_ISCON'
         ])
             ->leftJoin("M_CUS", function ($join) {
@@ -310,8 +409,19 @@ class ReceiveOrderController extends Controller
         ];
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_ISSUDT", "TSLO_QUOCD", "TSLO_POCD",
-            "TSLO_ATTN", "TSLO_PLAN_DLVDT", "TSLO_ADDRESS_NAME", "TSLO_ADDRESS_DESCRIPTION", DB::raw("CAST(TSLO_TYPE as UNSIGNED) as TSLO_TYPE"), "TSLO_SERVTRANS_COST", 'TSLO_MAP_URL',
+            "TSLO_SLOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_ISSUDT",
+            "TSLO_QUOCD",
+            "TSLO_POCD",
+            "TSLO_ATTN",
+            "TSLO_PLAN_DLVDT",
+            "TSLO_ADDRESS_NAME",
+            "TSLO_ADDRESS_DESCRIPTION",
+            DB::raw("CAST(TSLO_TYPE as UNSIGNED) as TSLO_TYPE"),
+            "TSLO_SERVTRANS_COST",
+            'TSLO_MAP_URL',
             DB::raw('CAST(TSLO_ISCON AS UNSIGNED) TSLO_ISCON'),
             'TSLO_APPRVDT'
         ])
@@ -357,8 +467,16 @@ class ReceiveOrderController extends Controller
     function loadById(Request $request)
     {
         $RS = T_SLODETA::on($this->dedicatedConnection)->select([
-            "id", "TSLODETA_ITMCD", "MITM_ITMNM", "TSLODETA_USAGE_DESCRIPTION", "TSLODETA_ITMQT", "TSLODETA_PRC", "TSLODETA_OPRPRC",
-            "TSLODETA_MOBDEMOB", 'TSLODETA_PERIOD_FR', 'TSLODETA_PERIOD_TO'
+            "id",
+            "TSLODETA_ITMCD",
+            "MITM_ITMNM",
+            "TSLODETA_USAGE_DESCRIPTION",
+            "TSLODETA_ITMQT",
+            "TSLODETA_PRC",
+            "TSLODETA_OPRPRC",
+            "TSLODETA_MOBDEMOB",
+            'TSLODETA_PERIOD_FR',
+            'TSLODETA_PERIOD_TO'
         ])
             ->leftJoin("M_ITM", function ($join) {
                 $join->on("TSLODETA_ITMCD", "=", "MITM_ITMCD")
@@ -446,7 +564,8 @@ class ReceiveOrderController extends Controller
             ->where('id', $request->id)
             ->where('TSLODETA_BRANCH', Auth::user()->branch)
             ->update([
-                'deleted_at' => date('Y-m-d H:i:s'), 'deleted_by' => Auth::user()->nick_name
+                'deleted_at' => date('Y-m-d H:i:s'),
+                'deleted_by' => Auth::user()->nick_name
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'could not be deleted', 'affectedRow' => $affectedRow];
     }
@@ -458,8 +577,10 @@ class ReceiveOrderController extends Controller
             ->where('TSLO_SLOCD', base64_decode($request->id))
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->update([
-                'TSLO_CUSCD' => $request->TSLO_CUSCD, 'TSLO_ATTN' => $request->TSLO_ATTN,
-                'TSLO_POCD' => $request->TSLO_POCD, 'TSLO_ISSUDT' => $request->TSLO_ISSUDT,
+                'TSLO_CUSCD' => $request->TSLO_CUSCD,
+                'TSLO_ATTN' => $request->TSLO_ATTN,
+                'TSLO_POCD' => $request->TSLO_POCD,
+                'TSLO_ISSUDT' => $request->TSLO_ISSUDT,
                 'TSLO_PLAN_DLVDT' => $request->TSLO_PLAN_DLVDT,
                 'TSLO_ADDRESS_NAME' => $request->TSLO_ADDRESS_NAME,
                 'TSLO_ADDRESS_DESCRIPTION' => $request->TSLO_ADDRESS_DESCRIPTION,
@@ -534,7 +655,8 @@ class ReceiveOrderController extends Controller
                 ->groupBy('TSLODRAFT_SLOCD')->get();
         }
         return [
-            'data' => $dataTobeUpproved, 'dataApproved' => $dataPurchaseRequestApproved
+            'data' => $dataTobeUpproved,
+            'dataApproved' => $dataPurchaseRequestApproved
         ];
     }
 
@@ -561,7 +683,8 @@ class ReceiveOrderController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
-    public function marketingReport(Request $request) {
+    public function marketingReport(Request $request)
+    {
         $dataGroupCondHead = M_COND_GROUP::on($request->has('conn') ? $request->conn : $this->dedicatedConnection);
 
         if ($request->has('condGroup') && count($request->condGroup) > 0) {

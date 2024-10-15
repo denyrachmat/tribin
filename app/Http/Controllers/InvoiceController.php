@@ -146,7 +146,9 @@ class InvoiceController extends Controller
                 },
                 'dlvacc',
                 'dlvsj',
-                'payment'
+                'payment' => function ($f) {
+                    $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
+                },
             ])
             ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
             ->join('M_CUS', function ($join) {

@@ -540,7 +540,8 @@ class DeliveryController extends Controller
                         ->leftJoin('T_SLODETA', function ($join) {
                             $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
                                 ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
-                                ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
+                                ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD')
+                                ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
                         })
                         ->groupBy(
                             'TDLVORDDETA_DLVCD',

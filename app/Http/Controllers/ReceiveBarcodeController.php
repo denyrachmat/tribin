@@ -134,7 +134,8 @@ class ReceiveBarcodeController extends Controller
     public function newPrintBarcode(Request $request)
     {
         $profile = CapabilityProfile::load("simple");
-        $connector = new WindowsPrintConnector(config('receiptprinter.connector_descriptor'));
+        // $connector = new WindowsPrintConnector(config('receiptprinter.connector_descriptor'));
+        $connector = new WindowsPrintConnector('ZPLRongtaPrint');
         $printer = new Printer($connector);
 
         // $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);

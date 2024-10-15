@@ -127,8 +127,23 @@
             <b>List Of Items</b>
           </legend>
 
-          <div class="q-pb-sm text-right">
-            <q-btn icon="add" dense outline @click="onAddItems()" color="primary"/>
+          <div class="row">
+            <div class="col">
+              <q-checkbox
+                v-model="splitInvoice"
+                label="Item Split Invoice ?"
+                color="teal"
+              />
+            </div>
+            <div class="colq-pb-sm text-right">
+              <q-btn
+                icon="add"
+                dense
+                outline
+                @click="onAddItems()"
+                color="primary"
+              />
+            </div>
           </div>
 
           <q-list bordered dense>
@@ -211,7 +226,8 @@
             <q-item class="q-my-sm" clickable v-ripple v-else>
               <q-item-section>
                 <q-item-label>
-                  Choose sales order first to access item list or Add by click + button above
+                  Choose sales order first to access item list or Add by click +
+                  button above
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -245,7 +261,7 @@ const props = defineProps({
 });
 
 onMounted(async () => {
-  await getCustomer(props.dataHeader.TDLVORD_CUSCD)
+  await getCustomer(props.dataHeader.TDLVORD_CUSCD);
   if (Object.values(props.dataHeader).length > 0) {
     console.log(props.dataHeader);
     TDLVORD_DLVCD.value = props.dataHeader.TDLVORD_DLVCD;
@@ -268,13 +284,14 @@ const TDLVORDDETA_SLOCD = ref("");
 const MCUS_CUSNM = ref("");
 const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
-const listCustomers = ref([])
-const listItem = ref([])
+const listCustomers = ref([]);
+const listItem = ref([]);
+const splitInvoice = ref(true);
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "cust") {
-      getCustomer(val)
+      getCustomer(val);
     }
 
     if (fun === "item") {
@@ -283,12 +300,12 @@ const filterFn = (val, update, abort, fun) => {
   });
 };
 
-const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
+const getCustomer = async (val, cols = "MCUS_CUSNM") => {
   loading.value = true;
   await api_web
     .post("customer/searchAPI", {
       searchValue: val,
-      searchCol: cols
+      searchCol: cols,
     })
     .then((response) => {
       loading.value = false;
@@ -302,28 +319,47 @@ const getCustomer = async (val, cols = 'MCUS_CUSNM') => {
 const onSubmitData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to save this outgoing ?`,
+    message: `Are you sure want to save this outgoing ? ${
+      splitInvoice.value
+        ? "Split invoice has been checked, this will splitting your item to different invoice."
+        : null
+    }`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    loading.value = true;
-    await api_web
-      .post(`delivery`, {
-        TDLVORD_DLVCD: TDLVORD_DLVCD.value,
-        TDLVORD_CUSCD: TDLVORD_CUSCD.value,
-        TDLVORD_ISSUDT: TDLVORD_ISSUDT.value,
-        TDLVORDDETA_SLOCD: TDLVORDDETA_SLOCD.value,
-        TDLVORD_REMARK: TDLVORD_REMARK.value,
-        SO_DET: listItems.value,
-      })
-      .then((response) => {
-        loading.value = false;
-        onDialogOK();
-      })
-      .catch((e) => {
-        loading.value = false;
-      });
+    if (splitInvoice.value) {
+      for (let index = 0; index < listItems.value.length; index++) {
+        await submitedForm([listItems.value[index]]);
+      }
+      onDialogOK();
+      // listItems.value.map(async (valDet) => {
+      //   await submitedForm([valDet]);
+      // });
+    } else {
+      await submitedForm();
+      onDialogOK();
+    }
   });
+};
+
+const submitedForm = async (det = []) => {
+  loading.value = true;
+  return await api_web
+    .post(`delivery`, {
+      TDLVORD_DLVCD: TDLVORD_DLVCD.value,
+      TDLVORD_CUSCD: TDLVORD_CUSCD.value,
+      TDLVORD_ISSUDT: TDLVORD_ISSUDT.value,
+      TDLVORDDETA_SLOCD: TDLVORDDETA_SLOCD.value,
+      TDLVORD_REMARK: TDLVORD_REMARK.value,
+      SO_DET: det.length > 0 ? det : listItems.value,
+      splitInvoice: splitInvoice.value,
+    })
+    .then((response) => {
+      loading.value = false;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 
 const onSearchSO = () => {
@@ -363,11 +399,11 @@ const onClickDeleteLines = (idx) => {
 
 const onAddItems = () => {
   listItems.value.push({
-    MITM_ITMNM: '',
+    MITM_ITMNM: "",
     BALQT: 0,
     TSLODETA_PRC: 0,
-  })
-}
+  });
+};
 
 const getItem = async (val) => {
   loading.value = true;

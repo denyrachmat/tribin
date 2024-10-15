@@ -1378,10 +1378,10 @@ class QuotationController extends Controller
             'MITM_ITMNM',
             // 'MITM_MODEL',
             DB::raw('CONCAT(MUSAGE_ALIAS, " ", MUSAGE_DESCRIPTION) AS TQUODETA_USAGE_DESCRIPTION'),
-            'TQUODETA_PRC',
+            DB::raw('SUM(TQUODETA_ITMQT * TQUODETA_PRC) AS TQUODETA_PRC'),
             'TQUODETA_OPRPRC',
             'TQUODETA_MOBDEMOB',
-            'TQUODETA_ITMQT',
+            DB::raw('SUM(TQUODETA_ITMQT) AS TQUODETA_ITMQT'),
             'MITM_STKUOM',
             'TQUODETA_ELECTRICITY'
         )
@@ -1393,7 +1393,17 @@ class QuotationController extends Controller
             ->whereNull("T_QUODETA.deleted_at")
             ->where("TQUODETA_QUOCD", $doc)
             ->where('TQUODETA_BRANCH', Auth::user()->branch)
-            ->get()->toArray();
+            ->groupBy(
+                'TQUODETA_ITMCD',
+                'MITM_ITMNM',
+                DB::raw('CONCAT(MUSAGE_ALIAS, " ", MUSAGE_DESCRIPTION)'),
+                'TQUODETA_OPRPRC',
+                'TQUODETA_MOBDEMOB',
+                'MITM_STKUOM',
+                'TQUODETA_ELECTRICITY'
+            )
+            ->get()
+            ->toArray();
 
         $RSCondition = T_QUOCOND::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TQUOCOND_CONDI')
             ->where('TQUOCOND_QUOCD', $doc)

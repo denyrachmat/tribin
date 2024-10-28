@@ -13,4 +13,8 @@ class M_COND_GROUP extends Model
         'MCOND_GRPNM',
         'MCOND_ID',
     ];
+
+    public function condDet() {
+        return $this->hasOne(M_Condition::class, 'id', 'MCOND_ID');
+    }
 }

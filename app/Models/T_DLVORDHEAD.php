@@ -10,24 +10,38 @@ class T_DLVORDHEAD extends Model
     use HasFactory;
     protected $table = 'T_DLVORDHEAD';
     protected $fillable = [
-        'TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'TDLVORD_CUSCD', 'TDLVORD_LINE',
-        'TDLVORD_ISSUDT', 'TDLVORD_REMARK', 'TDLVORD_INVCD', 'updated_by', 'TDLVORD_MEKANIK', 'TDLVORD_JALAN_COST',
-        'TDLVORD_VEHICLE_REGNUM','TDLVORD_REC_NO'
+        'TDLVORD_DLVCD',
+        'TDLVORD_BRANCH',
+        'TDLVORD_CUSCD',
+        'TDLVORD_LINE',
+        'TDLVORD_ISSUDT',
+        'TDLVORD_REMARK',
+        'TDLVORD_INVCD',
+        'updated_by',
+        'TDLVORD_MEKANIK',
+        'TDLVORD_JALAN_COST',
+        'TDLVORD_VEHICLE_REGNUM',
+        'TDLVORD_REC_NO',
+        'TDLVORD_CONDGRP'
     ];
 
-    public function dlvdet() {
+    public function dlvdet()
+    {
         return $this->hasMany(T_DLVORDDETA::class, 'TDLVORDDETA_DLVCD', 'TDLVORD_DLVCD');
     }
 
-    public function dlvacc() {
+    public function dlvacc()
+    {
         return $this->hasMany(T_DLVACCESSORY::class, 'TDLVACCESSORY_DLVCD', 'TDLVORD_DLVCD');
     }
 
-    public function dlvsj(){
+    public function dlvsj()
+    {
         return $this->hasOne(T_DLVSJDETA::class, 'TDLVSJDETA_DLVCD', 'TDLVORD_DLVCD');
     }
 
-    public function payment(){
+    public function payment()
+    {
         // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
         return $this->hasManyThrough(
             BranchPaymentAccount::class,
@@ -37,5 +51,10 @@ class T_DLVORDHEAD extends Model
             'TDLVORD_DLVCD',
             'TDLVPAYDETA_IDPAY',
         );
+    }
+
+    public function condition()
+    {
+        return $this->hasMany(M_COND_GROUP::class, 'MCOND_GRPNM', 'TDLVORD_CONDGRP');
     }
 }

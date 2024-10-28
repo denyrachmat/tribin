@@ -65,6 +65,10 @@ class InvoiceController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', $request->TDLVSJDETA_DLVCD)->update([
+            'TDLVORD_CONDGRP' => count($request->condition) > 0 ? $request->condition[0]['MCOND_GRPNM'] : ''
+        ]);
+
         T_DLVSJDETA::on($this->dedicatedConnection)->updateOrCreate([
             'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
         ], [
@@ -149,6 +153,9 @@ class InvoiceController extends Controller
                 'payment' => function ($f) {
                     $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
                 },
+                'condition' => function($f) {
+                    $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
+                }
             ])
             ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
             ->join('M_CUS', function ($join) {
@@ -644,7 +651,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(3, 30);
         $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: , kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
         $this->fpdf->SetXY(150, 30);
-        $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
+        // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
         $this->fpdf->Line(3, 35, 205, 35);
         $this->fpdf->Line(3, 36, 205, 36);
         $this->fpdf->Line(3, 42, 205, 42);

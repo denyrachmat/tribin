@@ -3,7 +3,7 @@
     <div class="row">
       <div class="col">
         <q-table
-          title="Invoice List"
+          title="Invoice Print"
           :rows="rows"
           :columns="columns"
           row-key="name"
@@ -140,7 +140,7 @@ onMounted(() => {
 const getConfirmedData = async () => {
   loading.value = true;
   await api_web
-    .post("invoices/search", {
+    .post("invoices/searchAPIForInvoice", {
       searchBy: filterCol.value,
       searchValue: filter.value,
     })

@@ -440,16 +440,6 @@ class ReceiveOrderController extends Controller
         return ['data' => $RS->get()];
     }
 
-    function searchAPIForInvoice(Request $request)
-    {
-        T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD",
-            "TSLO_CUSCD",
-            "MCUS_CUSNM",
-            "TSLO_ISSUDT",
-        ]);
-    }
-
     function searchDraft(Request $request)
     {
         $columnMap = [

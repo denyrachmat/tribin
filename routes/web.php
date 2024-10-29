@@ -269,6 +269,8 @@ Route::group(['middleware' => 'cors'], function () {
         Route::resource('invoice', InvoiceController::class);
         Route::prefix('invoices')->group(function () {
             Route::post('search', [InvoiceController::class, 'search']);
+            Route::post('searchAPIForInvoice', [InvoiceController::class, 'searchAPIForInvoice']);
+
             Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
             Route::get('printKwitansi/{doc}', [InvoiceController::class, 'printKwitansi']);
             Route::get('printSJ/{doc}', [InvoiceController::class, 'printSJ']);

@@ -153,7 +153,7 @@ class InvoiceController extends Controller
                 'payment' => function ($f) {
                     $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
                 },
-                'condition' => function($f) {
+                'condition' => function ($f) {
                     $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
                 }
             ])
@@ -783,5 +783,40 @@ class InvoiceController extends Controller
             ->first();
 
         return $cek;
+    }
+
+    function searchAPIForInvoice(Request $request)
+    {
+        $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
+            "TSLO_SLOCD",
+            "TSLO_QUOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_ISSUDT",
+        ])
+        ->join('M_CUS', function ($join) {
+            $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
+        })
+        ->groupBy(
+            "TSLO_SLOCD",
+            "TSLO_QUOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_ISSUDT",
+        );
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        $hasil = [];
+        foreach ($RS->get()->toArray() as $key => $value) {
+            $hasil[] = array_merge($value, [
+                'dlv' => T_DLVORDDETA::where('TDLVORDDETA_SLOCD', $value['TSLO_SLOCD'])->get()->toArray()
+            ]);
+        }
+
+        return ['data' => $hasil];
+        // return ['data' => $RS->get()->toArray()];
     }
 }

@@ -788,22 +788,25 @@ class InvoiceController extends Controller
     function searchAPIForInvoice(Request $request)
     {
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD",
+            // "TSLO_SLOCD",
             "TSLO_QUOCD",
             "TSLO_CUSCD",
             "MCUS_CUSNM",
             "TSLO_ISSUDT",
+            'TQUO_ATTN'
         ])
-        ->join('M_CUS', function ($join) {
-            $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
-        })
-        ->groupBy(
-            "TSLO_SLOCD",
-            "TSLO_QUOCD",
-            "TSLO_CUSCD",
-            "MCUS_CUSNM",
-            "TSLO_ISSUDT",
-        );
+            ->join('M_CUS', function ($join) {
+                $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftJoin('T_QUOHEAD', 'TQUO_QUOCD', 'TSLO_QUOCD')
+            ->groupBy(
+                // "TSLO_SLOCD",
+                "TSLO_QUOCD",
+                "TSLO_CUSCD",
+                "MCUS_CUSNM",
+                "TSLO_ISSUDT",
+                'TQUO_ATTN'
+            );
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -811,12 +814,103 @@ class InvoiceController extends Controller
 
         $hasil = [];
         foreach ($RS->get()->toArray() as $key => $value) {
-            $hasil[] = array_merge($value, [
-                'dlv' => T_DLVORDDETA::where('TDLVORDDETA_SLOCD', $value['TSLO_SLOCD'])->get()->toArray()
-            ]);
+            $salesOrd = T_SLOHEAD::on($this->dedicatedConnection)->where('TSLO_QUOCD', '=', $value['TSLO_QUOCD'])
+                ->get()
+                ->toArray();
+
+            $hasilSO = [];
+            foreach ($salesOrd as $key => $valueSO) {
+                $APISLO = $this->searchAPIBySLO($valueSO['TSLO_SLOCD']);
+                foreach ($APISLO as $keyDetSO => $valueDetSO) {
+                    $hasilSO[] = $valueDetSO;
+                }
+            }
+
+            if (count($hasilSO) > 0) {
+                $hasil[] = array_merge($value, [
+                    'dlv' => $hasilSO
+                ]);
+            }
         }
 
         return ['data' => $hasil];
         // return ['data' => $RS->get()->toArray()];
+    }
+
+    function searchAPIBySLO($sloCD)
+    {
+        $data = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->select(
+                DB::raw("CONCAT(TDLVORD_DLVCD, ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
+                'TDLVORD_INVCD',
+                'TDLVORD_DLVCD',
+                'TDLVORD_ISSUDT',
+                'TDLVORD_INVCD',
+                'TDLVORD_REC_NO',
+                'TDLVORDDETA_SLOCD',
+                'TDLVORD_CUSCD',
+                'MCUS_CUSNM',
+                'MCUS_TELNO',
+                'MCUS_PIC_TELNO',
+                'MCUS_ADDR1',
+                'TSLO_QUOCD',
+                'TSLO_POCD',
+                'TQUO_SBJCT',
+                'TQUO_ATTN'
+            )
+            ->with([
+                'dlvdet' => function ($f) {
+                    $f->join('M_ITM', 'TDLVORDDETA_ITMCD_ACT', 'MITM_ITMCD');
+                },
+                'dlvacc',
+                'dlvsj',
+                'payment' => function ($f) {
+                    $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
+                },
+                'condition' => function ($f) {
+                    $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
+                }
+            ])
+            ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
+            ->join('M_CUS', function ($join) {
+                $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftJoin('T_SLOHEAD', 'TSLO_SLOCD', 'TDLVORDDETA_SLOCD')
+            ->leftJoin('T_QUOHEAD', 'TQUO_QUOCD', 'TSLO_QUOCD')
+            ->where(DB::raw('RTRIM(TDLVORDDETA_ITMCD_ACT)'), '<>', '')
+            ->groupBy(
+                'TDLVORD_INVCD',
+                'TDLVORD_DLVCD',
+                'TDLVORD_ISSUDT',
+                'TDLVORD_INVCD',
+                'TDLVORD_REC_NO',
+                'TDLVORD_CUSCD',
+                'TDLVORDDETA_SLOCD',
+                'MCUS_CUSNM',
+                'MCUS_TELNO',
+                'MCUS_PIC_TELNO',
+                'MCUS_ADDR1',
+                'TSLO_QUOCD',
+                'TSLO_POCD',
+                'TQUO_SBJCT',
+                'TQUO_ATTN'
+            );
+
+        $data->where('TDLVORDDETA_SLOCD', '=', $sloCD);
+
+        $hasil = [];
+        foreach ($data->get()->toArray() as $key => $value) {
+            $hasil[] = array_merge(
+                $value,
+                [
+                    'sloDet' => T_SLODETA::on($this->dedicatedConnection)
+                        ->where('TSLODETA_SLOCD', $value['TDLVORDDETA_SLOCD'])
+                        ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
+                        ->get()
+                ]
+            );
+        }
+
+        return $hasil;
     }
 }

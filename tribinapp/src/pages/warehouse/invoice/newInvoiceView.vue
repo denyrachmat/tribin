@@ -63,7 +63,7 @@
                   :color="'red'"
                   icon="list"
                   dense
-                  @click="updateSuratJalan(props.row)"
+                  @click="updateSuratJalan(props.row.dlv[0])"
                 >
                   <q-tooltip>Update Surat Jalan</q-tooltip>
                 </q-btn>
@@ -72,7 +72,7 @@
                   color="green"
                   icon="print"
                   dense
-                  @click="printInvoice(props.row)"
+                  @click="printInvoice(props.row.dlv[0])"
                 >
                   <q-tooltip>Print Invoice</q-tooltip>
                 </q-btn>
@@ -81,17 +81,17 @@
                   color="indigo"
                   icon="print"
                   dense
-                  @click="printKwitansi(props.row.TDLVORD_DLVCD)"
+                  @click="printKwitansiAll(props.row.dlv)"
                 >
                   <q-tooltip>Print Receipt</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="!props.row.dlvsj ? 'grey' : 'orange'"
+                  :color="!props.row.dlv[0].dlvsj ? 'grey' : 'orange'"
                   icon="print"
                   dense
-                  @click="printSJ(props.row.TDLVORD_DLVCD)"
-                  :disable="!props.row.dlvsj"
+                  @click="printSJAll(props.row.dlv)"
+                  :disable="!props.row.dlv[0].dlvsj"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
@@ -125,6 +125,13 @@ const columns = ref([
     name: "MCUS_CUSNM",
     label: "Customer",
     field: "MCUS_CUSNM",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TQUO_ATTN",
+    label: "Attn.",
+    field: "TQUO_ATTN",
     sortable: true,
     align: "left",
   },
@@ -171,12 +178,20 @@ const printInvoice = async (val) => {
     });
 };
 
-const printKwitansi = async (val) => {
+const printKwitansiAll = (data) => {
   loading.value = true;
+  let element=[]
+  for (let index = 0; index < data.length; index++) {
+    element.push(printKwitansi(data[index].TDLVORD_DLVCD))
+  }
+  loading.value = false;
+}
+
+const printKwitansi = async (val) => {
   await api_web
     .get(`invoices/printKwitansi/${btoa(val)}`)
     .then((response) => {
-      loading.value = false;
+      // loading.value = false;
       let pdfWindow = window.open("");
       pdfWindow.document.write(
         "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
@@ -185,16 +200,24 @@ const printKwitansi = async (val) => {
       );
     })
     .catch((e) => {
-      loading.value = false;
     });
 };
+
+const printSJAll = (data) => {
+  loading.value = true;
+  let element=[]
+  for (let index = 0; index < data.length; index++) {
+    element.push(printSJ(data[index].TDLVORD_DLVCD))
+  }
+  loading.value = false;
+}
 
 const printSJ = async (val) => {
   loading.value = true;
   await api_web
     .get(`invoices/printSJ/${btoa(val)}`)
     .then((response) => {
-      loading.value = false;
+      // loading.value = false;
       let pdfWindow = window.open("");
       pdfWindow.document.write(
         "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
@@ -203,7 +226,7 @@ const printSJ = async (val) => {
       );
     })
     .catch((e) => {
-      loading.value = false;
+      // loading.value = false;
     });
   // $q.dialog({
   //   title: "Options",

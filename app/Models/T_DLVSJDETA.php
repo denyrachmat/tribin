@@ -16,9 +16,10 @@ class T_DLVSJDETA extends Model
         'TDLVSJDETA_CONDGRP',
         'TDLVSJDETA_STARTDT',
         'TDLVSJDETA_ENDDT',
+        'TDLVSJDETA_COND_GRP'
     ];
 
     public function condition() {
-        return $this->hasMany(M_Condition::class, 'TDLVSJDETA_CONDGRP', 'MCONDITION_RPT_STAT');
+        return $this->hasMany(M_Condition::class, 'MCONDITION_RPT_STAT', 'TDLVSJDETA_CONDGRP');
     }
 }

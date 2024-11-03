@@ -208,6 +208,7 @@ const props = defineProps({
   idDlv: String,
   dataSJDB: Array,
   payment: Array,
+  condition: Array
 });
 
 onMounted(() => {
@@ -216,6 +217,7 @@ onMounted(() => {
   if (props.dataSJDB) {
     dataSJ.value = props.dataSJDB;
     dataSJ.value.payment = props.payment
+    dataSJ.value.condition = props.condition
   }
 });
 

@@ -77,6 +77,7 @@ class InvoiceController extends Controller
             'TDLVSJDETA_CONDGRP' => $request->TDLVSJDETA_CONDGRP,
             'TDLVSJDETA_STARTDT' => $request->TDLVSJDETA_STARTDT,
             'TDLVSJDETA_ENDDT' => $request->TDLVSJDETA_ENDDT,
+            'TDLVSJDETA_COND_GRP' => $request->has('condition') && !empty($request->condition) ? $request->condition[0]['MCOND_GRPNM'] : ''
         ]);
 
         T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $request->TDLVPAYDETA_DLVCD)->delete();
@@ -142,7 +143,8 @@ class InvoiceController extends Controller
                 'TSLO_QUOCD',
                 'TSLO_POCD',
                 'TQUO_SBJCT',
-                'TQUO_ATTN'
+                'TQUO_ATTN',
+                'TDLVORD_CONDGRP'
             )
             ->with([
                 'dlvdet' => function ($f) {
@@ -155,6 +157,9 @@ class InvoiceController extends Controller
                 },
                 'condition' => function ($f) {
                     $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
+                },
+                'spk' => function ($f) {
+                    $f->where('CSPK_PIC_AS', 'DRIVER');
                 }
             ])
             ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
@@ -179,7 +184,8 @@ class InvoiceController extends Controller
                 'TSLO_QUOCD',
                 'TSLO_POCD',
                 'TQUO_SBJCT',
-                'TQUO_ATTN'
+                'TQUO_ATTN',
+                'TDLVORD_CONDGRP'
             );
 
         if (!empty($request->searchBy)) {
@@ -296,6 +302,7 @@ class InvoiceController extends Controller
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
+            ->with('condition')
             ->where("TDLVORD_DLVCD", $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->first();
@@ -505,7 +512,9 @@ class InvoiceController extends Controller
                 'TSLODETA_ITMQT',
                 'TDLVSJDETA_TYPE',
                 'TDLVSJDETA_STARTDT',
-                'TDLVSJDETA_ENDDT'
+                'TDLVSJDETA_ENDDT',
+                'TDLVORD_CONDGRP',
+                'TDLVORD_DLVCD'
             )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -517,7 +526,16 @@ class InvoiceController extends Controller
             ->leftJoin('T_DLVSJDETA', 'TDLVSJDETA_DLVCD', 'TDLVORD_DLVCD')
             ->where("TDLVORD_DLVCD", $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->with([
+                'condition' => function ($f) {
+                    $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
+                },
+                'spk' => function ($f) {
+                    $f->where('CSPK_PIC_AS', 'DRIVER');
+                }
+            ])
             ->groupBy(
+                'TDLVORD_DLVCD',
                 'TDLVORD_ISSUDT',
                 'MCUS_CUSNM',
                 'MCUS_ADDR1',
@@ -532,7 +550,8 @@ class InvoiceController extends Controller
                 'TSLODETA_ITMQT',
                 'TDLVSJDETA_TYPE',
                 'TDLVSJDETA_STARTDT',
-                'TDLVSJDETA_ENDDT'
+                'TDLVSJDETA_ENDDT',
+                'TDLVORD_CONDGRP'
             )
             ->first();
 
@@ -649,7 +668,7 @@ class InvoiceController extends Controller
 
         $this->fpdf->SetFont('Arial', '', 9);
         $this->fpdf->SetXY(3, 30);
-        $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: , kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
+        $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: '.(count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM : '').', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
         $this->fpdf->SetXY(150, 30);
         // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
         $this->fpdf->Line(3, 35, 205, 35);
@@ -734,19 +753,32 @@ class InvoiceController extends Controller
         // $this->fpdf->Cell(29, 5, "Terbilang : {$this->numberToSentence($RSHeader->TSLODETA_ITMQT * $RSHeader->TSLODETA_PRC)}", 0, 0, 'L');
 
         $this->fpdf->SetFont('Arial', '', 7);
-        $this->fpdf->SetXY(3, 100);
-        $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
-        $this->fpdf->SetXY(3, 103);
-        $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
+
+        if (count($RSHeader->condition) > 0) {
+            $startCond = 100;
+            foreach ($RSHeader->condition as $keyCond => $valueCond) {
+                $this->fpdf->SetXY(3, $startCond);
+                $this->fpdf->Cell(29, 5, "- ".$valueCond->MCONDITION_DESCRIPTION, 0, 0, 'L');
+
+                $startCond = $startCond + 3;
+            }
+        } else {
+            $this->fpdf->SetXY(3, 100);
+            $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
+            $this->fpdf->SetXY(3, 103);
+            $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
+
+            $startCond = 103;
+        }
 
         $this->fpdf->SetFont('Arial', '', 9);
-        $this->fpdf->SetXY(15, 110);
+        $this->fpdf->SetXY(15, $startCond + 3);
         if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
             $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
             $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
             $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
             $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
-            $this->fpdf->SetXY(13, 130);
+            $this->fpdf->SetXY(13, 135);
             $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
             $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
             $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
@@ -757,7 +789,7 @@ class InvoiceController extends Controller
             $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
             $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
             $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
-            $this->fpdf->SetXY(13, 130);
+            $this->fpdf->SetXY(13, 135);
             $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
             $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
             $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');

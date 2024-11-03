@@ -57,4 +57,8 @@ class T_DLVORDHEAD extends Model
     {
         return $this->hasMany(M_COND_GROUP::class, 'MCOND_GRPNM', 'TDLVORD_CONDGRP');
     }
+
+    public function spk() {
+        return $this->hasMany(C_SPK::class, 'CSPK_REFF_DOC', 'TDLVORD_DLVCD');
+    }
 }

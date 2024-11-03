@@ -66,8 +66,12 @@ class DeliveryController extends Controller
             ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD', 'TSLODETA_PRC');
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT",
-            DB::raw("SUM(SALESQT) SALESQT"), DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT", 'TSLODETA_PRC')
+            "TSLO_SLOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_PLAN_DLVDT",
+            DB::raw("SUM(SALESQT) SALESQT"),
+            DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT", 'TSLODETA_PRC')
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -106,8 +110,12 @@ class DeliveryController extends Controller
             ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD', 'TSLODETA_PRC');
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT",
-            DB::raw("SUM(SALESQT) SALESQT"), DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT")
+            "TSLO_SLOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_PLAN_DLVDT",
+            DB::raw("SUM(SALESQT) SALESQT"),
+            DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT")
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -144,8 +152,14 @@ class DeliveryController extends Controller
             ->groupBy('TSLODETA_SLOCD', 'TSLODETA_BRANCH', 'TSLODETA_ITMCD', 'TSLODETA_PRC');
 
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
-            "TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM",
-            DB::raw("SUM(SALESQT)-IFNULL(SUM(TTLDLVQT),0) BALQT"), 'TSLODETA_PRC'
+            "TSLO_SLOCD",
+            "TSLO_CUSCD",
+            "MCUS_CUSNM",
+            "TSLO_PLAN_DLVDT",
+            "TSLODETA_ITMCD",
+            "MITM_ITMNM",
+            DB::raw("SUM(SALESQT)-IFNULL(SUM(TTLDLVQT),0) BALQT"),
+            'TSLODETA_PRC'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -467,8 +481,13 @@ class DeliveryController extends Controller
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
         $RS = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
-            "TDLVORD_DLVCD", "TDLVORD_CUSCD", "TDLVORD_ISSUDT",
-            "MCUS_CUSNM", 'TDLVORDDETA_SLOCD', 'TDLVORD_REMARK', 'TDLVORD_INVCD'
+            "TDLVORD_DLVCD",
+            "TDLVORD_CUSCD",
+            "TDLVORD_ISSUDT",
+            "MCUS_CUSNM",
+            'TDLVORDDETA_SLOCD',
+            'TDLVORD_REMARK',
+            'TDLVORD_INVCD'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TDLVORD_CUSCD", "=", "MCUS_CUSCD")
@@ -497,8 +516,13 @@ class DeliveryController extends Controller
             ->groupBy('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
 
         $RSTemp = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
-            "TDLVORD_DLVCD", "TDLVORD_CUSCD", "TDLVORD_ISSUDT",
-            "MCUS_CUSNM", 'TDLVORDDETA_SLOCD', 'TDLVORD_REMARK', 'TDLVORD_INVCD'
+            "TDLVORD_DLVCD",
+            "TDLVORD_CUSCD",
+            "TDLVORD_ISSUDT",
+            "MCUS_CUSNM",
+            'TDLVORDDETA_SLOCD',
+            'TDLVORD_REMARK',
+            'TDLVORD_INVCD'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TDLVORD_CUSCD", "=", "MCUS_CUSCD")
@@ -1749,6 +1773,10 @@ class DeliveryController extends Controller
                 $ColumnFocusName = 'CSPK_GA_SPV_APPROVED_BY';
                 $ColumnFocusTime = 'CSPK_GA_SPV_APPROVED_AT';
                 break;
+            case 'root':
+                $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
+                $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
+                break;
         }
         # ubah data header
         $affectedRow = C_SPK::on($this->dedicatedConnection)
@@ -1911,10 +1939,10 @@ class DeliveryController extends Controller
             $hasilZero = [];
             foreach ($request->data as $rCheck) {
                 $cekStock = DB::connection($this->dedicatedConnection)->table('M_ITM_GRP')
-                ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
-                ->first();
+                    ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
+                    ->first();
 
-                if($cekStock->STOCK == 0) {
+                if ($cekStock->STOCK == 0) {
                     $hasilZero[] = $cekStock->STOCK;
                 }
             }
@@ -1934,13 +1962,13 @@ class DeliveryController extends Controller
                 ->whereNotNull('TDLVORD_REC_NO')
                 ->first();
 
-            $IDKwitansi = 'A-'. (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -7) + 1));
+            $IDKwitansi = 'A-' . (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -7) + 1));
 
             T_DLVORDHEAD::on($this->dedicatedConnection)
-            ->where('TDLVORD_DLVCD', $request->id)
-            ->update([
-                'TDLVORD_REC_NO' => $IDKwitansi
-            ]);
+                ->where('TDLVORD_DLVCD', $request->id)
+                ->update([
+                    'TDLVORD_REC_NO' => $IDKwitansi
+                ]);
 
             foreach ($request->data as $r) {
                 T_DLVORDDETA::on($this->dedicatedConnection)
@@ -2049,7 +2077,8 @@ class DeliveryController extends Controller
     {
         $affectedRow = T_DLVACCESSORY::on($this->dedicatedConnection)->where('id', $request->id)
             ->update([
-                'deleted_at' => date('Y-m-d H:i:s'), 'deleted_by' => Auth::user()->nick_name
+                'deleted_at' => date('Y-m-d H:i:s'),
+                'deleted_by' => Auth::user()->nick_name
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'could not be deleted', 'affectedRow' => $affectedRow];
     }

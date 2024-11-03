@@ -90,7 +90,7 @@
                   :color="!props.row.dlvsj ? 'grey' : 'orange'"
                   icon="print"
                   dense
-                  @click="printSJ(props.row.TDLVORD_DLVCD)"
+                  @click="onClickPrintSJ(props.row.spk, props.row.TDLVORD_DLVCD)"
                   :disable="!props.row.dlvsj"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
@@ -239,13 +239,29 @@ const printSJ = async (val) => {
   // });
 };
 
+const onClickPrintSJ = (spk, val) => {
+  if (!spk || spk.length === 0) {
+    $q.dialog({
+      title: "Confirmation",
+      message: `SPK Not updated yet, are you sure want to print Surat Jalan ?`,
+      cancel: true,
+      persistent: true,
+    }).onOk(async () => {
+      printSJ(val)
+    });
+  } else {
+    printSJ(val)
+  }
+};
+
 const updateSuratJalan = (val) => {
   $q.dialog({
     component: updateSJ,
     componentProps: {
       idDlv: val.TDLVORD_DLVCD,
       dataSJDB: val.dlvsj,
-      payment: val.payment
+      payment: val.payment,
+      condition: val.condition,
     },
     // persistent: true,
   }).onOk(async (val) => {

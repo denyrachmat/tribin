@@ -322,6 +322,8 @@ class QuotationController extends Controller
             'MCUS_CUSNM',
         ];
 
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+
         $RSTemp = $request->approval == '1'
             ? T_QUOHEAD::on($this->dedicatedConnection)
             ->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'MCUS_ADDR1', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT", DB::raw("CONCAT(TQUO_QUOCD, ' (', MCUS_CUSNM, ' - ', TQUO_PROJECT_LOCATION,')') as DESCSEL")])
@@ -333,6 +335,10 @@ class QuotationController extends Controller
             ->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT", DB::raw("CONCAT(TQUO_QUOCD, ' (', MCUS_CUSNM, ' - ', TQUO_PROJECT_LOCATION,')') as DESCSEL")])
             ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
             // ->whereNull("TQUO_APPRVDT");
+
+        if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
+            $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
+        }
 
         if ($request->has('osOnly') && $request->osOnly === true) {
             $RSTemp->whereNull("TQUO_APPRVDT");

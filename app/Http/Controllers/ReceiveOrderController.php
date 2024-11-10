@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\M_COND_GROUP;
 use App\Models\M_Condition;
+use App\Models\M_ITM;
 use App\Models\M_USAGE;
+use App\Models\T_DLVORDDETA;
 use App\Models\T_SLO_DRAFT_DETAIL;
 use App\Models\T_SLO_DRAFT_HEAD;
 use App\Models\T_SLODETA;
@@ -432,6 +434,7 @@ class ReceiveOrderController extends Controller
             ->with('dlv')
             // ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('TSLO_BRANCH', Auth::user()->branch)
+            ->where('T_SLOHEAD.created_by', Auth::user()->name)
             ->orderBy('TSLO_ISSUDT', 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
@@ -683,19 +686,30 @@ class ReceiveOrderController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
+    public function salesReportForm()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'salesReport']);
+    }
+
     public function marketingReport(Request $request)
     {
-        $dataGroupCondHead = M_COND_GROUP::on($request->has('conn') ? $request->conn : $this->dedicatedConnection);
-
-        if ($request->has('condGroup') && count($request->condGroup) > 0) {
-            $dataGroupCondHead->whereIn('MCOND_GRPNM', $request->condGroup);
-        }
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
         $hasil = [];
-        foreach ($dataGroupCondHead->get() as $key => $value) {
-            $hasil[] = [];
+        foreach ($request->itmCat as $key => $value) {
+            $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
+                ->join('T_SLODETA', 'TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD')
+                ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
+                ->where('MITM_ITMCAT', $value)
+                ->whereBetween('T_SLODETA.created_at', [$request->fdate, $request->ldate]);
+
+            if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
+                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
+            }
+
+            $hasil[$value] = $RSTemp->get();
         }
 
-        return $dataGroupCondHead->get();
+        return $hasil;
     }
 }

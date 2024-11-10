@@ -285,9 +285,11 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('', [ReceiveOrderController::class, 'search']);
             Route::post('searchAPI', [ReceiveOrderController::class, 'searchApi']);
             Route::put('{id}', [ReceiveOrderController::class, 'update']);
-            Route::get('{id}', [ReceiveOrderController::class, 'loadById']);
+            // Route::get('{id}', [ReceiveOrderController::class, 'loadById']);
             Route::get('getData/{id}', [ReceiveOrderController::class, 'getSLOByIDAPI']);
             Route::delete('itemsAPI/{id}', [ReceiveOrderController::class, 'deleteByID']);
+            Route::get('salesReportForm', [ReceiveOrderController::class, 'salesReportForm']);
+
             Route::post('marketingReport', [ReceiveOrderController::class, 'marketingReport']);
 
             Route::delete('items/{id}', [ReceiveOrderController::class, 'deleteItemById']);

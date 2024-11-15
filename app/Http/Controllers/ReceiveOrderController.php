@@ -411,6 +411,8 @@ class ReceiveOrderController extends Controller
             'TSLO_POCD',
         ];
 
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select([
             "TSLO_SLOCD",
             "TSLO_CUSCD",
@@ -435,12 +437,16 @@ class ReceiveOrderController extends Controller
             ->with('dlv')
             // ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('TSLO_BRANCH', Auth::user()->branch)
-            ->where('T_SLOHEAD.created_by', Auth::user()->name)
             ->orderBy('TSLO_ISSUDT', 'desc');
+
+        if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
+            $RS->where('T_QUOHEAD.created_by', Auth::user()->name);
+        }
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
+
         return ['data' => $RS->get()];
     }
 
@@ -741,7 +747,7 @@ class ReceiveOrderController extends Controller
 
         // return $hasil;
 
-        $pdf = Pdf::setPaper('A4','landscape')->loadView('pdf.salesReport', ['data' => $hasil, 'dateRange' => [$request->fdate, $request->ldate]]);
+        $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.salesReport', ['data' => $hasil, 'dateRange' => [$request->fdate, $request->ldate]]);
 
         return base64_encode($pdf->output());
     }

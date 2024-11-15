@@ -12,6 +12,7 @@ use App\Models\T_SLO_DRAFT_HEAD;
 use App\Models\T_SLODETA;
 use App\Models\T_SLOHEAD;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -698,10 +699,38 @@ class ReceiveOrderController extends Controller
         $hasil = [];
         foreach ($request->itmCat as $key => $value) {
             $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
+                ->select(
+                    'MITM_ITMCD',
+                    'MITM_ITMNM',
+                    'TQUO_PROJECT_LOCATION',
+                    'CSPK_PIC_AS',
+                    'CSPK_PIC_NAME',
+                    'MCUS_CUSNM',
+                    DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQT'),
+                    'name',
+                    'TSLODETA_PERIOD_FR',
+                    'TSLODETA_PERIOD_TO'
+                )
                 ->join('T_SLODETA', 'TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD')
+                ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
+                ->join('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
                 ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
+                ->join('M_CUS', 'MCUS_CUSCD', 'TSLO_CUSCD')
+                ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
+                ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
                 ->where('MITM_ITMCAT', $value)
-                ->whereBetween('T_SLODETA.created_at', [$request->fdate, $request->ldate]);
+                ->whereBetween('T_SLODETA.created_at', [$request->fdate, $request->ldate])
+                ->groupBy(
+                    'MITM_ITMCD',
+                    'MITM_ITMNM',
+                    'TQUO_PROJECT_LOCATION',
+                    'CSPK_PIC_AS',
+                    'CSPK_PIC_NAME',
+                    'MCUS_CUSNM',
+                    'name',
+                    'TSLODETA_PERIOD_FR',
+                    'TSLODETA_PERIOD_TO'
+                );
 
             if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
                 $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
@@ -710,6 +739,10 @@ class ReceiveOrderController extends Controller
             $hasil[$value] = $RSTemp->get();
         }
 
-        return $hasil;
+        // return $hasil;
+
+        $pdf = Pdf::setPaper('A4','landscape')->loadView('pdf.salesReport', ['data' => $hasil, 'dateRange' => [$request->fdate, $request->ldate]]);
+
+        return base64_encode($pdf->output());
     }
 }

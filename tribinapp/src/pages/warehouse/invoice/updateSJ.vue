@@ -58,7 +58,7 @@
           </div>
         </div>
 
-        <q-separator />
+        <!-- <q-separator />
 
         <div class="row q-pt-md">
           <div class="col">
@@ -177,7 +177,7 @@
               </template>
             </q-input>
           </div>
-        </div>
+        </div> -->
       </q-card-section>
 
       <q-card-section class="q-pa-sm">

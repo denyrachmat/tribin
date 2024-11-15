@@ -205,38 +205,6 @@ const printSJ = async (val) => {
     .catch((e) => {
       loading.value = false;
     });
-  // $q.dialog({
-  //   title: "Options",
-  //   message: "Choose type surat jalan",
-  //   options: {
-  //     type: "radio",
-  //     model: "general",
-  //     // inline: true
-  //     items: [
-  //       { label: "General", value: "general" },
-  //       { label: "Forklift", value: "forklift" },
-  //       { label: "Genset", value: "genset" },
-  //     ],
-  //   },
-  //   cancel: true,
-  //   persistent: true,
-  // }).onOk(async (data) => {
-  //   loading.value = true;
-  //   await api_web
-  //     .get(`invoices/printSJ/${btoa(val)}`)
-  //     .then((response) => {
-  //       loading.value = false;
-  //       let pdfWindow = window.open("");
-  //       pdfWindow.document.write(
-  //         "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-  //           encodeURI(response.data) +
-  //           "'></iframe>"
-  //       );
-  //     })
-  //     .catch((e) => {
-  //       loading.value = false;
-  //     });
-  // });
 };
 
 const onClickPrintSJ = (spk, val) => {

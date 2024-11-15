@@ -61,8 +61,20 @@
     </div>
     <div class="row q-pt-md">
       <div class="col text-right">
-        <q-btn color="green" label="Submit" @click="onClickSubmit()" :disable="itmCat.length === 0"/>
-        <q-btn flat color="orange" label="clear" @click="onClickClear()" />
+        <q-btn
+          color="green"
+          label="Submit"
+          @click="onClickSubmit()"
+          :loading="loading"
+          :disable="itmCat.length === 0"
+        />
+        <q-btn
+          flat
+          color="orange"
+          label="clear"
+          @click="onClickClear()"
+          :loading="loading"
+        />
       </div>
     </div>
   </div>
@@ -75,13 +87,13 @@ import { api, api_web } from "boot/axios";
 const $q = useQuasar();
 const dateFrom = ref("");
 const dateTo = ref("");
-const itmCat = ref([])
-const itmCatList = ref([])
+const itmCat = ref([]);
+const itmCatList = ref([]);
 const loading = ref(false);
 
 onMounted(() => {
-  getItemCat()
-})
+  getItemCat();
+});
 
 const onClickSubmit = () => {
   $q.dialog({
@@ -95,10 +107,16 @@ const onClickSubmit = () => {
       .post("receive-order/marketingReport", {
         fdate: dateFrom.value,
         ldate: dateTo.value,
-        itmCat: itmCat.value
+        itmCat: itmCat.value,
       })
       .then((response) => {
         loading.value = false;
+        let pdfWindow = window.open("");
+        pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+            encodeURI(response.data) +
+            "'></iframe>"
+        );
       })
       .catch((e) => {
         loading.value = false;
@@ -124,7 +142,7 @@ const getItemCat = async () => {
   await api_web
     .get("item/getCategory")
     .then((response) => {
-      console.log(response)
+      console.log(response);
       loading.value = false;
       itmCatList.value = response.data;
     })

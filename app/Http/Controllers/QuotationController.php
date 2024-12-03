@@ -322,6 +322,8 @@ class QuotationController extends Controller
             'MCUS_CUSNM',
         ];
 
+        // return Auth::user();
+
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
         $RSTemp = $request->approval == '1'
@@ -337,7 +339,7 @@ class QuotationController extends Controller
             // ->whereNull("TQUO_APPRVDT");
 
         if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
-            $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
+            $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->email);
         }
 
         if ($request->has('osOnly') && $request->osOnly === true) {

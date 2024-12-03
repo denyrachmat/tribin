@@ -225,7 +225,7 @@ class ItemController extends Controller
         $DataSet = DB::connection($this->dedicatedConnection);
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch)
-            ->where('LATEST_PRC', '>', 0)
+            // ->where('LATEST_PRC', '>', 0)
             ->where('STOCK', '>', 0);
 
         if ($request->has('isITMCD') && $request->isITMCD == 1) {

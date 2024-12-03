@@ -111,7 +111,7 @@
         <tr>
             <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_ITMCD']}}</td>
             <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_ITMNM']}}</td>
-            <td class="tg-0lax" style="text-align: left;"></td>
+            <td class="tg-0lax" style="text-align: left;">{{$valueDet['TDLVORDDETA_DLVCD']}}</td>
             <td class="tg-0lax" style="text-align: left;">{{$valueDet['TQUO_PROJECT_LOCATION']}}</td>
             <td class="tg-0lax" style="text-align: left;">{{$valueDet['CSPK_PIC_AS'] == 'DRIVER' ? $valueDet['CSPK_PIC_NAME'] : ''}}</td>
             <td class="tg-0lax" style="text-align: left;">{{$valueDet['CSPK_PIC_AS'] == 'OPERATOR' ? $valueDet['CSPK_PIC_NAME'] : ''}}</td>

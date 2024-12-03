@@ -715,7 +715,8 @@ class ReceiveOrderController extends Controller
                     DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQT'),
                     'name',
                     'TSLODETA_PERIOD_FR',
-                    'TSLODETA_PERIOD_TO'
+                    'TSLODETA_PERIOD_TO',
+                    'TDLVORDDETA_DLVCD'
                 )
                 ->join('T_SLODETA', 'TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD')
                 ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
@@ -735,7 +736,8 @@ class ReceiveOrderController extends Controller
                     'MCUS_CUSNM',
                     'name',
                     'TSLODETA_PERIOD_FR',
-                    'TSLODETA_PERIOD_TO'
+                    'TSLODETA_PERIOD_TO',
+                    'TDLVORDDETA_DLVCD'
                 );
 
             if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {

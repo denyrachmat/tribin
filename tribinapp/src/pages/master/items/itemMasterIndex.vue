@@ -229,9 +229,11 @@ const onDelete = (data) => {
       .get(`item/deleteItem/${data}`)
       .then((datas) => {
         loading.value = false;
+        getItem()
       }).catch((e) => {
         console.log(e)
         loading.value = false;
+        getItem()
       })
     })
 }

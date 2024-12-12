@@ -369,7 +369,7 @@ class ItemController extends Controller
     function deleteItem($id)
     {
         $affectedRow = M_ITM::on($this->dedicatedConnection)
-            ->where('MITM_ITMCD', base64_decode($id))
+            ->where('MITM_ITMCD', $id)
             ->delete();
 
         return ['msg' => $affectedRow ? 'Item Deleted !!' : 'No changes'];

@@ -57,8 +57,8 @@ class InvoiceController extends Controller
             'TDLVSJDETA_DLVCD' => 'required',
             'TDLVSJDETA_TYPE' => 'required',
             'TDLVSJDETA_CONDGRP' => 'required',
-            'TDLVSJDETA_STARTDT' => 'required|date',
-            'TDLVSJDETA_ENDDT' => 'required|date',
+            // 'TDLVSJDETA_STARTDT' => 'required|date',
+            // 'TDLVSJDETA_ENDDT' => 'required|date',
         ]);
 
         if ($validator->fails()) {

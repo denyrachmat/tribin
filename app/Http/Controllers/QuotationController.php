@@ -339,7 +339,7 @@ class QuotationController extends Controller
             // ->whereNull("TQUO_APPRVDT");
 
         if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
-            $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->email);
+            $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
         }
 
         if ($request->has('osOnly') && $request->osOnly === true) {

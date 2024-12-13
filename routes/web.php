@@ -202,6 +202,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('searchItemDyn', [ItemController::class, 'searchItemDyn']);
 
             Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);
+            Route::get('deleteItem/{id}', [ItemController::class, 'deleteItem']);
             Route::post('exportExcel', [ItemController::class, 'exportExcel']);
         });
 

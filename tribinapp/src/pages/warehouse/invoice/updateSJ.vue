@@ -242,9 +242,7 @@ const loading = ref(false);
 const stateSubmit = () => {
   return !dataSJ.value.TDLVSJDETA_DLVCD ||
   !dataSJ.value.TDLVSJDETA_TYPE ||
-  !dataSJ.value.TDLVSJDETA_CONDGRP ||
-  !dataSJ.value.TDLVSJDETA_STARTDT ||
-  !dataSJ.value.TDLVSJDETA_ENDDT ? true : false;
+  !dataSJ.value.TDLVSJDETA_CONDGRP ? true : false;
 };
 
 const onClickConditions = () => {

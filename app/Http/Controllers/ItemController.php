@@ -284,6 +284,7 @@ class ItemController extends Controller
         $DataSet = DB::connection($this->dedicatedConnection);
         $data = $DataSet->table('M_ITM_GRP')->select('*')
             ->where('MITM_BRANCH', Auth::user()->branch);
+        // ->where('IS_ITMCD', 1);
 
         if (
             count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
@@ -364,5 +365,17 @@ class ItemController extends Controller
         );
     }
 
-    function getLatestItemServiceCode() {}
+    function getLatestItemServiceCode()
+    {
+    }
+
+    function deleteItem($id)
+    {
+        $affectedRow = M_ITM::on($this->dedicatedConnection)
+            ->where('MITM_ITMCD', $id)
+            ->delete();
+
+        return ['msg' => $affectedRow ? 'Item Deleted !!' : 'No changes'];
+
+    }
 }

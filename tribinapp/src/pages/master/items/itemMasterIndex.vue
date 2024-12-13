@@ -84,7 +84,7 @@
                   flat
                   :color="'red'"
                   icon="delete"
-                  @click="onDelete(props.row.id)"
+                  @click="onDelete(props.row.MITM_ITMCD)"
                   dense
                 >
                   <q-tooltip>Delete Data</q-tooltip>
@@ -218,6 +218,23 @@ const onExportData = () => {
 }
 
 const onDelete = (data) => {
-
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to delete this item ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .get(`item/deleteItem/${data}`)
+      .then((datas) => {
+        loading.value = false;
+        getItem()
+      }).catch((e) => {
+        console.log(e)
+        loading.value = false;
+        getItem()
+      })
+    })
 }
 </script>

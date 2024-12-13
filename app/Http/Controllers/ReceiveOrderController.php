@@ -440,7 +440,7 @@ class ReceiveOrderController extends Controller
             ->orderBy('TSLO_ISSUDT', 'desc');
 
         if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
-            $RS->where('T_QUOHEAD.created_by', Auth::user()->name);
+            $RS->where('T_SLOHEAD.created_by', Auth::user()->nick_name);
         }
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
@@ -471,6 +471,7 @@ class ReceiveOrderController extends Controller
             ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('TSLODRAFT_BRANCH', Auth::user()->branch)
             ->get();
+
         return ['data' => $RS];
     }
 

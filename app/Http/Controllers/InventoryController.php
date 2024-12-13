@@ -302,6 +302,10 @@ class InventoryController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'transferLoc']);
     }
 
+    function transferLoc(Request $request) {
+
+    }
+
     function saveTransferLocDraft(Request $request)
     {
         $validator = Validator::make($request->all(), [

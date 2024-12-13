@@ -5,9 +5,8 @@
         <span class="text-h4">Transfer Location</span>
       </div>
       <div class="col text-right">
-        <!-- <q-btn icon="add" color="blue" @click="onClickNew([])">
-          <q-tooltip>Create New Delivery</q-tooltip>
-        </q-btn> -->
+        <q-radio v-model="transferType" val="loc" label="Location" />
+        <q-radio v-model="transferType" val="cg" label="CG" />
       </div>
     </div>
 
@@ -30,7 +29,7 @@
           :options="listItems"
           @filter="(val, update, abort) => filterFn(val, update, abort, 'item')"
           behavior="dialog"
-          option-label="MITM_ITMNM"
+          option-label="MITM_ITMNMREAL"
           option-value="MITM_ITMCD"
           emit-value
           map-options
@@ -39,7 +38,7 @@
         </q-select>
       </div>
     </div>
-    <div class="row q-col-gutter-md q-pt-md">
+    <div class="row q-col-gutter-md q-pt-md" v-if="transferType === 'loc'">
       <div class="col-12 col-sm-6">
         <q-select
           dense
@@ -78,6 +77,37 @@
       </div>
     </div>
 
+    <div class="row q-col-gutter-md q-pt-md" v-else>
+      <div class="col-6">
+        <q-select
+          standout
+          v-model="CGFROM"
+          :options="listCG"
+          label="From Source"
+          option-value="connection"
+          option-label="name"
+          readonly
+          emit-value
+          map-options
+          dense
+        />
+      </div>
+      <div class="col-6">
+
+        <q-select
+          standout
+          v-model="CGTO"
+          :options="listCG"
+          label="To Source"
+          option-value="connection"
+          option-label="name"
+          emit-value
+          map-options
+          dense
+        />
+      </div>
+    </div>
+
     <div class="row q-col-gutter-md q-pt-md">
       <div class="col-12">
         <q-input label="Qty" dense filled v-model="QTY" />
@@ -101,15 +131,21 @@ const $q = useQuasar();
 const DOC = ref("");
 const LOCFROM = ref("");
 const LOCTO = ref("");
+const CGFROM = ref("");
+const CGTO = ref("");
 const ITMCD = ref("");
-const QTY = ref(0)
-const loading = ref(false)
+const QTY = ref(0);
+const loading = ref(false);
+const transferType = ref("loc");
 
-const listItems = ref([])
-const listLoc = ref([])
+const listItems = ref([]);
+const listCG = ref([]);
+const listLoc = ref([]);
 onMounted(async () => {
   await getLocation("");
-  await getItem("");
+  await getItem([]);
+  await getCG();
+  await getNowCG()
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -119,10 +155,14 @@ const filterFn = (val, update, abort, fun) => {
     }
 
     if (fun === "item") {
-      await getItem(val);
+      await getItem([{
+        cols: 'MITM_ITMNM',
+        param: '=',
+        value: val
+      }]);
     }
-  })
-}
+  });
+};
 
 const getLocation = async (val, cols = "MSUP_SUPNM") => {
   loading.value = true;
@@ -140,15 +180,49 @@ const getLocation = async (val, cols = "MSUP_SUPNM") => {
     });
 };
 
-const getItem = async (val) => {
+const getCG = async () => {
   loading.value = true;
   await api_web
-    .post("item/searchAPITBL", {
-      searchValue: val,
+    .get(`company`)
+    .then((response) => {
+      loading.value = false;
+      listCG.value = response.data.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const getNowCG = async () => {
+  loading.value = true;
+  await api_web
+    .get(`companies/nowCG`)
+    .then((response) => {
+      loading.value = false;
+      CGFROM.value = response.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const getItem = async (col = []) => {
+  loading.value = true;
+  await api_web
+  .post("item/searchItemDyn", {
+      filter: [{
+        cols: 'IS_ITMCD',
+        param: '=',
+        value: 1
+      },{
+        cols: 'STOCK',
+        param: '>',
+        value: 0
+      }, ...col],
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = response.data.data;
+      listItems.value = response.data;
     })
     .catch(() => {
       loading.value = false;
@@ -158,16 +232,19 @@ const getItem = async (val) => {
 const onSaveData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to transfer from ${LOCFROM.value} to ${LOCTO.value} ?`,
+    message: `Are you sure want to transfer from ${(transferType.value == 'loc' ? LOCFROM.value : CGFROM.value)} to ${transferType.value == 'loc' ? LOCTO.value : CGTO.value} ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
     loading.value = true;
     await api_web
       .post(`inventory/transferLoc`, {
+        TRFTYPE: transferType.value,
         DOC: DOC.value,
         LOCFROM: LOCFROM.value,
         LOCTO: LOCTO.value,
+        CGFROM: CGFROM.value,
+        CGTO: CGTO.value,
         ITMCD: ITMCD.value,
         QTY: QTY.value,
       })
@@ -184,14 +261,14 @@ const onSaveData = () => {
       .catch((err) => {
         loading.value = false;
       });
-  })
-}
+  });
+};
 
 const onClearData = () => {
-  DOC.value = ''
-  LOCFROM.value = ''
-  LOCTO.value = ''
-  ITMCD.value = ''
-  QTY.value = 0
-}
+  DOC.value = "";
+  LOCFROM.value = "";
+  LOCTO.value = "";
+  ITMCD.value = "";
+  QTY.value = 0;
+};
 </script>

@@ -225,7 +225,7 @@ class ItemController extends Controller
         $DataSet = DB::connection($this->dedicatedConnection);
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch)
-            // ->where('LATEST_PRC', '>', 0)
+            ->where('LATEST_PRC', '>', 0)
             ->where('STOCK', '>', 0);
 
         if ($request->has('isITMCD') && $request->isITMCD == 1) {
@@ -233,12 +233,14 @@ class ItemController extends Controller
         }
 
         if (!empty($request->searchValue)) {
-            $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%')->paginate(50, [], 'page', $request->page);
-        } else {
-            $RS = (clone $RSHead)->paginate(50, [], 'page', $request->page);
+            $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%');
         }
 
-        return ['data' => $RS];
+        if ($request->has('dataOnly') && $request->dataOnly == 1) {
+            return ['data' => $RS];
+        }
+
+        return ['data' => $RS->paginate(50, [], 'page', $request->page)];
     }
 
     function searchAPITBL(Request $request)
@@ -282,7 +284,6 @@ class ItemController extends Controller
         $DataSet = DB::connection($this->dedicatedConnection);
         $data = $DataSet->table('M_ITM_GRP')->select('*')
             ->where('MITM_BRANCH', Auth::user()->branch);
-            // ->where('IS_ITMCD', 1);
 
         if (
             count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
@@ -290,7 +291,9 @@ class ItemController extends Controller
             })) > 0
         ) {
             foreach ($request->filter as $key => $value) {
-                $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                if (isset($value['value']) && $value['value'] !== "") {
+                    $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                }
             }
         }
 
@@ -356,13 +359,10 @@ class ItemController extends Controller
         return Excel::download(
             new itemMasterExport(
                 $this->dedicatedConnection
-            )
-            ,
+            ),
             'itemMasterExport.xlsx'
         );
     }
 
-    function getLatestItemServiceCode()
-    {
-    }
+    function getLatestItemServiceCode() {}
 }

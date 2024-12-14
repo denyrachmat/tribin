@@ -34,6 +34,7 @@
           emit-value
           map-options
           :loading="loading"
+          @update:model-value="(value) => onChooseItem(value)"
         >
         </q-select>
       </div>
@@ -271,4 +272,8 @@ const onClearData = () => {
   ITMCD.value = "";
   QTY.value = 0;
 };
+
+const onChooseItem = (data) => {
+  console.log(data)
+}
 </script>

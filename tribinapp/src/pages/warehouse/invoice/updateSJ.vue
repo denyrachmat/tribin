@@ -240,6 +240,7 @@ const groupCond = ref([]);
 const loading = ref(false);
 
 const stateSubmit = () => {
+  console.log(dataSJ.value)
   return !dataSJ.value.TDLVSJDETA_DLVCD ||
   !dataSJ.value.TDLVSJDETA_TYPE ||
   !dataSJ.value.TDLVSJDETA_CONDGRP ? true : false;

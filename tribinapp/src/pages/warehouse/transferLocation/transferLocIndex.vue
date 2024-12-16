@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <div class="row q-col-gutter-md q-pt-md">
+    <!-- <div class="row q-col-gutter-md q-pt-md">
       <div class="col-12">
         <q-select
           dense
@@ -35,10 +35,11 @@
           map-options
           :loading="loading"
           @update:model-value="(value) => onChooseItem(value)"
+          multiple
         >
         </q-select>
       </div>
-    </div>
+    </div> -->
     <div class="row q-col-gutter-md q-pt-md" v-if="transferType === 'loc'">
       <div class="col-12 col-sm-6">
         <q-select
@@ -94,7 +95,6 @@
         />
       </div>
       <div class="col-6">
-
         <q-select
           standout
           v-model="CGTO"
@@ -109,11 +109,49 @@
       </div>
     </div>
 
-    <div class="row q-col-gutter-md q-pt-md">
-      <div class="col-12">
-        <q-input label="Qty" dense filled v-model="QTY" />
-      </div>
-    </div>
+    <q-separator spaced />
+
+    <q-table
+      title="Item Master List"
+      :rows="listItems"
+      :columns="cols"
+      row-key="MITM_ITMNM"
+      :loading="loading"
+      dense
+      :pagination="{
+        rowsPerPage: 20,
+      }"
+      class="my-sticky-header-column-table"
+      v-model:selected="ITMCD"
+      selection="multiple"
+    >
+      <template v-slot:top-right>
+        <q-select
+          outlined
+          v-model="filterCol"
+          :options="cols"
+          label="Search Columns"
+          option-value="name"
+          option-label="label"
+          emit-value
+          dense
+          map-options
+        />
+        <q-input
+          borderless
+          dense
+          v-model="filter"
+          placeholder="Search"
+          outlined
+          @update:model-value="getItem()"
+          debounce="1000"
+        >
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </template>
+    </q-table>
 
     <div class="row q-col-gutter-md q-pt-md">
       <div class="col-12">
@@ -127,6 +165,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api, api_web } from "boot/axios";
+import transferConfirmation from "./transferConfirmation.vue";
 
 const $q = useQuasar();
 const DOC = ref("");
@@ -134,19 +173,54 @@ const LOCFROM = ref("");
 const LOCTO = ref("");
 const CGFROM = ref("");
 const CGTO = ref("");
-const ITMCD = ref("");
+const ITMCD = ref([]);
 const QTY = ref(0);
 const loading = ref(false);
 const transferType = ref("loc");
+const filterCol = ref('')
+const filter = ref('')
 
 const listItems = ref([]);
 const listCG = ref([]);
 const listLoc = ref([]);
+
+const cols = ref([
+  {
+    name: "MITM_ITMNM",
+    align: "left",
+    label: "Item Code",
+    field: "MITM_ITMNM",
+    sortable: true,
+  },
+  {
+    name: "MITM_ITMNMREAL",
+    align: "left",
+    label: "Item Name",
+    field: "MITM_ITMNMREAL",
+    sortable: true,
+  },
+  {
+    name: "MITM_STKUOM",
+    align: "left",
+    label: "Item Unit",
+    field: "MITM_STKUOM",
+    sortable: true,
+  },
+  {
+    name: "STOCK",
+    align: "left",
+    label: "Stock",
+    field: "STOCK",
+    sortable: true,
+  },
+]);
+
+const rows = ref([])
 onMounted(async () => {
   await getLocation("");
   await getItem([]);
   await getCG();
-  await getNowCG()
+  await getNowCG();
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -156,11 +230,13 @@ const filterFn = (val, update, abort, fun) => {
     }
 
     if (fun === "item") {
-      await getItem([{
-        cols: 'MITM_ITMNM',
-        param: '=',
-        value: val
-      }]);
+      await getItem([
+        {
+          cols: filterCol.value,
+          param: "like",
+          value: filter.value,
+        },
+      ]);
     }
   });
 };
@@ -210,19 +286,24 @@ const getNowCG = async () => {
 const getItem = async (col = []) => {
   loading.value = true;
   await api_web
-  .post("item/searchItemDyn", {
-      filter: [{
-        cols: 'IS_ITMCD',
-        param: '=',
-        value: 1
-      },{
-        cols: 'STOCK',
-        param: '>',
-        value: 0
-      }, ...col],
+    .post("item/searchItemDyn", {
+      filter: [
+        {
+          cols: "IS_ITMCD",
+          param: "=",
+          value: 1,
+        },
+        {
+          cols: "STOCK",
+          param: ">",
+          value: 0,
+        },
+        ...col,
+      ],
     })
     .then((response) => {
       loading.value = false;
+      listItems.value = response.data;
       listItems.value = response.data;
     })
     .catch(() => {
@@ -232,36 +313,22 @@ const getItem = async (col = []) => {
 
 const onSaveData = () => {
   $q.dialog({
-    title: "Confirmation",
-    message: `Are you sure want to transfer from ${(transferType.value == 'loc' ? LOCFROM.value : CGFROM.value)} to ${transferType.value == 'loc' ? LOCTO.value : CGTO.value} ?`,
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    loading.value = true;
-    await api_web
-      .post(`inventory/transferLoc`, {
+    component: transferConfirmation,
+    componentProps: {
+      datas: {
         TRFTYPE: transferType.value,
         DOC: DOC.value,
-        LOCFROM: LOCFROM.value,
-        LOCTO: LOCTO.value,
+        LOCFROM: transferType.value == "loc" ? LOCFROM.value : 'WH1',
+        LOCTO: transferType.value == "loc" ? LOCTO.value : 'WH1',
         CGFROM: CGFROM.value,
-        CGTO: CGTO.value,
+        CGTO: transferType.value == "loc" ? CGFROM.value : CGTO.value,
         ITMCD: ITMCD.value,
-        QTY: QTY.value,
-      })
-      .then((response) => {
-        loading.value = false;
-
-        $q.notify({
-          color: "green",
-          message: `${response.data.msg}`,
-        });
-
-        onDialogOK();
-      })
-      .catch((err) => {
-        loading.value = false;
-      });
+      }
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    getItem();
+    onClearData()
   });
 };
 
@@ -269,11 +336,10 @@ const onClearData = () => {
   DOC.value = "";
   LOCFROM.value = "";
   LOCTO.value = "";
-  ITMCD.value = "";
-  QTY.value = 0;
+  ITMCD.value = [];
 };
 
 const onChooseItem = (data) => {
-  console.log(data)
-}
+  QTY.value = data.STOCK;
+};
 </script>

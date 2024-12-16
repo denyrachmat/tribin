@@ -16,6 +16,7 @@ use App\Traits\LocationTraits;
 use Illuminate\Http\File;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Imports\importStockTake;
+use App\Models\M_ITM;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\T_RCV_HEAD;
 
@@ -302,8 +303,112 @@ class InventoryController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'transferLoc']);
     }
 
-    function transferLoc(Request $request) {
+    function transferLoc(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'DOC' => 'required',
+            'ITMCD' => 'required',
+            'TRFTYPE' => 'required',
+            'QTY' => 'required',
+        ]);
 
+        $cek = [];
+        foreach ($request->ITMCD as $key => $value) {
+            // Cek Item Master
+            $itemFrom = M_ITM::on($request->CGFROM)->where('MITM_ITMCD', $value['MITM_ITMNM'])->first();
+            $itemDest = M_ITM::on($request->CGTO)->where('MITM_ITMCD', $value['MITM_ITMNM'])->first();
+
+            if (empty($itemDest)) {
+                $itemDest = M_ITM::on($request->CGTO)->create([
+                    'MITM_ITMCD' => $value['MITM_ITMNM'],
+                    'MITM_BRANCH' => $value['MITM_BRANCH'],
+                    'MITM_ITMCAT' => $value['MITM_ITMCAT'],
+                    'MITM_ITMNM' => $itemFrom->MITM_ITMNM,
+                    'MITM_ITMTYPE' => $value['MITM_ITMTYPE'],
+                    'MITM_STKUOM' => $value['MITM_STKUOM'],
+                    'MITM_MODEL' => $itemFrom->MITM_MODEL ?? '-'
+                ]);
+            }
+            $getStock = DB::connection($request->CGFROM)->table('V_STOCK_CHECK')
+                ->where('CITRN_ITMCD', $value['MITM_ITMNM'])
+                ->orderBy('id_reff')
+                ->get();
+
+            $getStock = $getStock->map(function ($user) {
+                return (array) $user;
+            })->toArray();
+
+            $StockNow = (int)$value['QTY'];
+            foreach ($getStock as $keyStock => $valueStock) {
+                if ($StockNow <= $valueStock['CITRN_ITMQT']) {
+                    // Issue
+                    $cek[] = C_ITRN::on($request->CGFROM)->create([
+                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
+                        'CITRN_LOCCD' => $request->LOCFROM,
+                        'CITRN_DOCNO' => $request->DOC,
+                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                        'CITRN_FORM' => 'TRF-OUT',
+                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMQT' => $StockNow * -1,
+                        'CITRN_PRCPER' => $value['LATEST_PRC'],
+                        'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
+                        'id_reff' => $valueStock['id_reff'],
+                        'created_by' => Auth::user()->nick_name,
+                    ]);
+
+                    // Receive
+                    $cek[] = C_ITRN::on($request->CGTO)->create([
+                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
+                        'CITRN_LOCCD' => $request->LOCTO,
+                        'CITRN_DOCNO' => $request->DOC,
+                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                        'CITRN_FORM' => 'TRF-INC',
+                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMQT' => $StockNow,
+                        'CITRN_PRCPER' => $value['LATEST_PRC'],
+                        'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
+                        'id_reff' => $valueStock['id_reff'],
+                        'created_by' => Auth::user()->nick_name,
+                    ]);
+
+                    break;
+                } else {
+                    $StockNow = $request->QTY - $valueStock['CITRN_ITMQT'];
+
+                    // Issue
+                    $cek[] = C_ITRN::on($request->CGFROM)->create([
+                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
+                        'CITRN_LOCCD' => 'WH1',
+                        'CITRN_DOCNO' => $request->DOC,
+                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                        'CITRN_FORM' => 'TRF-OUT',
+                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMQT' => $valueStock['CITRN_ITMQT'] * -1,
+                        'CITRN_PRCPER' => $value['LATEST_PRC'],
+                        'CITRN_PRCAMT' => $valueStock['CITRN_ITMQT'] * $value['LATEST_PRC'],
+                        'id_reff' => $valueStock['id_reff'],
+                        'created_by' => Auth::user()->nick_name,
+                    ]);
+
+                    // Receive
+                    $cek[] = C_ITRN::on($request->CGTO)->create([
+                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
+                        'CITRN_LOCCD' => 'WH1',
+                        'CITRN_DOCNO' => $request->DOC,
+                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                        'CITRN_FORM' => 'TRF-INC',
+                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMQT' => $valueStock['CITRN_ITMQT'],
+                        'CITRN_PRCPER' => $value['LATEST_PRC'],
+                        'CITRN_PRCAMT' => $valueStock['CITRN_ITMQT'] * $value['LATEST_PRC'],
+                        'id_reff' => $valueStock['id_reff'],
+                        'created_by' => Auth::user()->nick_name,
+                    ]);
+                }
+            }
+        }
+
+        return ['msg' => 'OK', 'DATA' => $cek];
     }
 
     function saveTransferLocDraft(Request $request)
@@ -392,7 +497,7 @@ class InventoryController extends Controller
 
         $checkJobsExists = DB::table('jobs')->where('queue', 'stockTake')->first();
         if (!empty($checkJobsExists)) {
-            return response()->json([["There is still exists upload batch not done yet, please wait until it's done, ". DB::table('jobs')->where('queue', 'stockTake')->count(). " Rows remaining"]], 406);
+            return response()->json([["There is still exists upload batch not done yet, please wait until it's done, " . DB::table('jobs')->where('queue', 'stockTake')->count() . " Rows remaining"]], 406);
         }
 
         $file = new File($req->file);
@@ -406,14 +511,14 @@ class InventoryController extends Controller
         $req->file->storeAs('/public/upload_stock_take/', $nama_file);
         $createdHeader = T_RCV_HEAD::on($this->dedicatedConnection)
             ->updateOrCreate([
-                'TRCV_DOCNO' => "STK-".date('Ymd'),
-            ],[
+                'TRCV_DOCNO' => "STK-" . date('Ymd'),
+            ], [
                 'TRCV_BRANCH' => Auth::user()->branch,
-                'TRCV_RCVCD' => "STK-".date('Ymd'),
+                'TRCV_RCVCD' => "STK-" . date('Ymd'),
                 'TRCV_ISSUDT' => $req->date,
                 'TRCV_SUBMITTED_AT' => date('Y-m-d'),
                 'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
-                'TRCV_DOCNO' => "STK-".date('Ymd'),
+                'TRCV_DOCNO' => "STK-" . date('Ymd'),
                 'TRCV_SUPCD' => '',
                 'created_by' => Auth::user()->nick_name,
             ]);

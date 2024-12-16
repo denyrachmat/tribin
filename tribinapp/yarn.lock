@@ -2349,6 +2349,11 @@ queue-microtask@^1.2.2:
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
+qz-tray@^2.2.4:
+  version "2.2.4"
+  resolved "https://registry.yarnpkg.com/qz-tray/-/qz-tray-2.2.4.tgz#14f2e5eb14656dfc3da71fa20d1517906466427c"
+  integrity sha512-5beEVkqewsuB//B0p+1guP7w45VU6kILazYa+VePHy5k0U2EzmE8JnZ/06pspgVgeeKIJDKb/Uu4Cu6tGi1cIw==
+
 randombytes@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.1.0.tgz#df6f84372f0270dc65cdf6291349ab7a473d4f2a"
@@ -2831,6 +2836,11 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
+
+v-money3@^3.24.1:
+  version "3.24.1"
+  resolved "https://registry.yarnpkg.com/v-money3/-/v-money3-3.24.1.tgz#4996d233fe1c3202f7f52e27abe89df8be4d898e"
+  integrity sha512-nGnxS06jkNsVzkuMQJ/0we6PSA4HO7jH1B7NeCF3Tv7Xm61poEUW7D1fdXXWR0IWLWneMSsCt3d4YQo6fTeBZA==
 
 vary@~1.1.2:
   version "1.1.2"

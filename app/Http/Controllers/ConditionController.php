@@ -53,20 +53,13 @@ class ConditionController extends Controller
 
         if ($type !== 'undefined') {
             if ($type == 'inv') {
-                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'like', 'INVOICE_COND%')->get();
+                $group = (clone $grouping)->where('MCOND_GRPNM', 'like', 'INVOICE_COND - %')->get();
             } else {
-                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'not like', 'INVOICE_COND - %')->get();
+                $group = (clone $grouping)->where('MCOND_GRPNM', 'not like', 'INVOICE_COND - %')->get();
             }
         } else {
             $group = (clone $grouping)->get();
         }
-        // $group = M_Condition::on($this->dedicatedConnection)
-        //     ->select('MCONDITION_RPT_STAT')
-        //     ->whereNotNull('MCONDITION_RPT_STAT')
-        //     ->where('MCONDITION_RPT_STAT', '<>', '')
-        //     ->groupBy('MCONDITION_RPT_STAT')
-        //     ->get()
-        //     ->pluck('MCONDITION_RPT_STAT');
 
         $data = [];
         foreach ($group as $key => $value) {

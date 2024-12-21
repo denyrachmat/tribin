@@ -53,9 +53,9 @@ class ConditionController extends Controller
 
         if ($type !== 'undefined') {
             if ($type == 'inv') {
-                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'like', 'INVOICE_COND - %')->get();
+                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'like', 'INVOICE_COND - %');
             } else {
-                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'not like', 'INVOICE_COND - %')->get();
+                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'not like', 'INVOICE_COND - %');
             }
         } else {
             $group = (clone $grouping)->get();

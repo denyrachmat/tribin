@@ -727,7 +727,7 @@ class ReceiveOrderController extends Controller
                 ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
                 ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
                 ->where('MITM_ITMCAT', $value)
-                ->whereBetween('T_SLODETA.created_at', [$request->fdate. " 00:00:00", $request->ldate. '. " 23:59:59"'])
+                ->whereBetween('T_SLODETA.created_at', [$request->fdate. " 00:00:00", $request->ldate. " 23:59:59"])
                 ->groupBy(
                     'MITM_ITMCD',
                     'MITM_ITMNM',

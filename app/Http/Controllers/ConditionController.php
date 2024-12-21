@@ -46,11 +46,20 @@ class ConditionController extends Controller
         ];
     }
 
-    public function getDataGroup()
+    public function getDataGroup($type = 'quo')
     {
-        $group = M_COND_GROUP::on($this->dedicatedConnection)
-            ->join('M_CONDITIONS', 'M_CONDITIONS.id', '=', 'MCOND_ID')
-            ->get();
+        $grouping = M_COND_GROUP::on($this->dedicatedConnection)
+            ->join('M_CONDITIONS', 'M_CONDITIONS.id', '=', 'MCOND_ID');
+
+        if ($type !== 'undefined') {
+            if ($type === 'inv') {
+                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'like', 'INVOICE_COND - %');
+            } else {
+                $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'not like', 'INVOICE_COND - %')->get();
+            }
+        } else {
+            $group = (clone $grouping)->get();
+        }
         // $group = M_Condition::on($this->dedicatedConnection)
         //     ->select('MCONDITION_RPT_STAT')
         //     ->whereNotNull('MCONDITION_RPT_STAT')
@@ -160,13 +169,19 @@ class ConditionController extends Controller
 
     public function assignGroup(Request $request)
     {
+        $groupName = $request->MCONDITION_RPT_STAT;
+
+        if ($request->type == 'inv') {
+            $groupName = 'INVOICE_COND - ' . $request->MCONDITION_RPT_STAT;
+        }
+
         M_COND_GROUP::on($this->dedicatedConnection)
-            ->where('MCOND_GRPNM', $request->MCONDITION_RPT_STAT)
+            ->where('MCOND_GRPNM', $groupName)
             ->delete();
 
         foreach ($request->data as $key => $value) {
             M_COND_GROUP::on($this->dedicatedConnection)->create([
-                'MCOND_GRPNM' => $request->MCONDITION_RPT_STAT,
+                'MCOND_GRPNM' => $groupName,
                 'MCOND_ID' => $value
             ]);
         }

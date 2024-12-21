@@ -40,6 +40,10 @@ import { ref, onMounted, computed } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api } from "boot/axios";
 
+const props = defineProps({
+  typeGroup: String,
+});
+
 const columns = ref([
   {
     name: "MCONDITION_RPT_STAT",
@@ -67,7 +71,7 @@ onMounted(() => {
 
 const getData = async () => {
   loading.value = true
-  const data = await api.get("/master/conditions/getdataGroup").then((response) => {
+  const data = await api.get(`/master/conditions/getdataGroup/${props.typeGroup}`).then((response) => {
     loading.value = false
     console.log(response);
     rows.value = response.data.data;

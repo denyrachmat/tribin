@@ -575,9 +575,9 @@ const onClearLines = () => {
 const onClickConditions = () => {
   $q.dialog({
     component: assignConditionsView,
-    // componentProps: {
-    //   datas: data.data,
-    // },
+    componentProps: {
+      typeGroup: 'quo'
+    },
     // persistent: true,
   }).onOk(async (val) => {
     quotationGroupConditions.value = val.MCONDITION_RPT_STAT;
@@ -589,7 +589,7 @@ const onClickViewListConditions = () => {
   $q.dialog({
     component: viewAssignedCond,
     componentProps: {
-      listCond: quotationConditions.value,
+      listCond: quotationConditions.value
     },
     // persistent: true,
   }).onOk(async (val) => {});

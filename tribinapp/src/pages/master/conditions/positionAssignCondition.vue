@@ -89,6 +89,7 @@ const $q = useQuasar();
 
 const props = defineProps({
   groups: String,
+  typeGroup: String,
   listCond: Array,
 });
 
@@ -133,6 +134,7 @@ const onSubmitData = () => {
     await api
       .post(`/master/conditions/assignGroup`, {
         data: postingData,
+        type: props.typeGroup,
         MCONDITION_RPT_STAT: props.groups,
       })
       .then(async (response) => {

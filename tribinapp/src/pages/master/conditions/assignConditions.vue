@@ -65,6 +65,26 @@
             </q-btn-group>
           </div>
         </div>
+
+        <div class="row q-pt-md">
+          <div class="col">
+            <q-btn-toggle
+              v-model="condType"
+              spread
+              class="my-custom-toggle"
+              no-caps
+              rounded
+              unelevated
+              toggle-color="primary"
+              color="white"
+              text-color="primary"
+              :options="[
+                { label: 'Quotation', value: 'quo' },
+                { label: 'Invoice', value: 'inv' },
+              ]"
+            />
+          </div>
+        </div>
         <div class="row q-pt-md">
           <div class="col" style="max-height: 80vh; overflow: auto">
             <q-list bordered>
@@ -155,7 +175,7 @@ const selected = ref([]);
 const groupName = ref("");
 const mode = ref("new");
 const loading = ref(false);
-
+const condType = ref('quo')
 const $q = useQuasar();
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -214,7 +234,15 @@ const onOpenCondition = () => {
     component: assignConditionsView,
     // persistent: true,
   }).onOk(async (val) => {
-    groupName.value = val.MCONDITION_RPT_STAT;
+    if (val.MCONDITION_RPT_STAT.includes('INVOICE_COND - ')) {
+      condType.value = 'inv'
+    } else {
+      condType.value = 'quo'
+    }
+
+    const groupNameTemp = val.MCONDITION_RPT_STAT.replaceAll(`INVOICE_COND - `, '');
+    groupName.value = groupNameTemp
+
     selected.value = val.group.map((valmap) => valmap.id);
     mode.value = "edit";
   });
@@ -225,7 +253,8 @@ const onOKClick = () => {
     component: positionAssignCondition,
     componentProps: {
       groups: groupName.value,
-      listCond: rows.value.filter(fil => selected.value.includes(fil.id)),
+      typeGroup: condType.value,
+      listCond: rows.value.filter((fil) => selected.value.includes(fil.id)),
     },
     // persistent: true,
   }).onOk(async (val) => {
@@ -305,15 +334,11 @@ const transferAllDataToCG = () => {
   $q.dialog({
     component: exportDataView,
     componentProps: {
-      table: [
-        'M_COND_GROUP',
-        'M_CONDITIONS'
-      ],
+      table: ["M_COND_GROUP", "M_CONDITIONS"],
     },
     // persistent: true,
-  }).onOk(async (val) => {
-  });
-}
+  }).onOk(async (val) => {});
+};
 </script>
 <style lang="sass">
 .my-sticky-header-table

@@ -46,7 +46,7 @@ import { useQuasar, useDialogPluginComponent } from "quasar";
 import {api} from 'boot/axios'
 
 const props = defineProps({
-  listCond: Array,
+  listCond: Array
 });
 
 const $q = useQuasar()

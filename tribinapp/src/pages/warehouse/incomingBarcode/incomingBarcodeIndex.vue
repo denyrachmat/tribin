@@ -86,7 +86,7 @@
                   flat
                   :color="'indigo'"
                   icon="print"
-                  @click="onPrint(props.row)"
+                  @click="onPrint([props.row])"
                   dense
                   :disable="props.row.det && props.row.det.length === 0"
                 >
@@ -178,27 +178,13 @@ const getIncomingData = async () => {
 };
 
 const onPrint = (data) => {
+  console.log(data);
   $q.dialog({
     title: "Confirmation",
     message: `Are you sure want to print this barcode ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    // loading.value = true;
-    // await api_web
-    //   .post(`receiveBarcodes/printBarcode`, {
-    //     data: [data],
-    //   })
-    //   .then((response) => {
-    //     loading.value = false;
-    //     // let pdfWindow = window.open("");
-    //     // pdfWindow.document.write(
-    //     //   "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-    //     //     encodeURI(response.data) +
-    //     //     "'></iframe>"
-    //     // );
-    //   });
-
     if (qz.websocket.isActive()) {
       qz.websocket.disconnect();
     } else {
@@ -219,11 +205,11 @@ const onPrint = (data) => {
         const getSavedPrinter = localStorage.getItem("printerLabel");
 
         if (getSavedPrinter) {
-          printLabel(getSavedPrinter);
+          printLabel(getSavedPrinter, data);
         } else {
           $q.dialog({
             title: "Options",
-            message: "Choose printer SATO:",
+            message: "Choose printer Label:",
             options: {
               type: "radio",
               model: "",
@@ -232,7 +218,7 @@ const onPrint = (data) => {
             },
             cancel: true,
             persistent: true,
-          }).onOk((data) => {
+          }).onOk((datas, data) => {
             $q.dialog({
               title: "Confirmation",
               message:
@@ -240,10 +226,10 @@ const onPrint = (data) => {
               cancel: true,
             })
               .onOk(() => {
-                localStorage.setItem("printerLabel", data);
+                localStorage.setItem("printerLabel", datas, data);
               })
               .onDismiss(() => {
-                printLabel(data);
+                printLabel(datas, data);
               });
           });
         }
@@ -252,85 +238,49 @@ const onPrint = (data) => {
   });
 };
 
-const printLabel = async (data) => {
+const printLabel = async (data, listData) => {
   return qz.printers.find(data).then(async (printer) => {
     let config = qz.configs.create(printer);
 
     let zpl = [];
-    listData.value.map((valHeader) => {
-      if (valHeader.det) {
-        valHeader.det.map((val) => {
-          for (let index = 0; index < val.TOTAL_PRINT; index++) {
-            localStorage.setItem("printerLabel", data);
-            if (printer.includes("305")) {
-              zpl.push(`
-                  ^XA
+    listData.map((valHeader) => {
+      if (valHeader) {
+        localStorage.setItem("printerLabel", data);
+        // const commands = [
+        //   '\x1B\x40',                        // Initialize Printer
+        //   '\x1DH\x14',                    // Set barcode height (~20 dots)
+        //   '\x1DW\x01',                    // Set narrow barcode width
+        //   '\x1BK\x49',                    // CODE128 Barcode command
+        //   '\x0A',                         // Newline
+        //   valHeader.TRCVBC_BCCD,          // Barcode Data
+        //   '\x0A',                         // Newline after barcode
+        //   '\x1B!\x00',                    // Normal font style
+        //   'True-Ally Barcode',            // First line of text
+        //   '\x0A\x1B!\x01',                // Newline + Bold style
+        //   'labels and stickers.',         // Second line of text
+        //   '\x0A\x0A'                      // Spacing for label
+        // ];
 
-                  ^FX Top section with logo, name and address.
-                  ^MUd,305,600
-                  ^CFA,30
-                  ^FO50,30^A0N,30,30^FDItem Code : ${val.PGIT_ITMCD.trim()}^FS
-                  ^FO50,80^A0N,30,30^FDQty : ${parseInt(
-                    val.SPQ_QTY
-                  ).toLocaleString("en")}^FS
-                  ^FO50,150^A0N,35,35^FD(3N1) ${val.PGIT_ITMCD.trim()}^FS
-                  ^FO50,190^BY 2 ^BC,60,N,N,N,A^FD3N1 ${val.PGIT_ITMCD.trim()}^FS
+        const commands = [
+          '\x1B\x40',        // Initialize the printer (ESC @)
+          '\x1B\x61\x01',    // Center align text (ESC a 1)
+          `${valHeader.TRCVBC_BCCD}\n`, // Text to print
+          '\x1B\x61\x00',    // Left align text (ESC a 0)
+          '--------------------------------\n',
+          '\x1D\x6B\x49',    // Command to print Code 128 barcode (GS k 73)
+          '\x0A',            // Barcode height (in dots)
+          valHeader.TRCVBC_BCCD,       // The barcode data (e.g., "1234567890")
+          '\x1D\x56\x00',    // Cut the paper (GS V 0)
+        ];
 
-                  ^FO50,270^A0N,35,35^FD(3N2) ${parseInt(
-                    val.SPQ_QTY
-                  )} ${date.formatDate(
-                val.PGRN_RCVDT,
-                "DDMMYY"
-              )} ${val.PGITSHP_SHPREFNO.trim()}^FS
-                  ^FO50,310^BQN,2,4^FH^FDQA,3N2 ${parseInt(
-                    val.SPQ_QTY
-                  )} ${date.formatDate(
-                val.PGRN_RCVDT,
-                "DDMMYY"
-              )} ${val.PGITSHP_SHPREFNO.trim()}^FS^CFA,15
-
-                  ^FO50,460^A0N,35,35^FD(1P) ${val.MITM_SPTNO.trim()}^FS
-                  ^FO50,500^BY 2 ^BC,60,N,N,N,A^FD1P${val.MITM_SPTNO.trim()}^FS
-
-                  ^XZ
-                `);
-            } else {
-              zpl.push(`
-                  ^XA
-                  ^FX Top section with logo, name and address.
-                  ^CFA,30
-                  ^FO25,30^A0N,25,25^FDItem Code : ${val.PGIT_ITMCD.trim()}^FS
-                  ^FO25,60^A0N,25,25^FDQty : ${parseInt(
-                    val.SPQ_QTY
-                  ).toLocaleString("en")}^FS
-                  ^FO25,115^A0N,25,25^FD(3N1) ${val.PGIT_ITMCD.trim()}^FS
-                  ^FO25,140^BY 1 ^BC,40,N,N,N,A^FD3N1 ${val.PGIT_ITMCD.trim()}^FS
-
-                  ^FO25,190^A0N,25,25^FD(3N2) ${parseInt(
-                    val.SPQ_QTY
-                  )} ${date.formatDate(
-                val.PGRN_RCVDT,
-                "DDMMYY"
-              )} ${val.PGITSHP_SHPREFNO.trim()}^FS
-                  ^FO25,210^BQN,2,3^FH^FDQA,3N2 ${parseInt(
-                    val.SPQ_QTY
-                  )} ${date.formatDate(
-                val.PGRN_RCVDT,
-                "DDMMYY"
-              )} ${val.PGITSHP_SHPREFNO.trim()}^FS^CFA,15
-
-                  ^FO25,320^A0N,25,25^FD(1P) ${val.MITM_SPTNO.trim()}^FS
-                  ^FO25,350^BY 1 ^BC,40,N,N,N,A^FD1P${val.MITM_SPTNO.trim()}^FS
-
-                  ^XZ
-                `);
-            }
-          }
-        });
+        for (let index = 0; index < commands.length; index++) {
+          const element = commands[index];
+          zpl.push(element)
+        }
       }
     });
 
-    qz.print(config, [zpl])
+    qz.print(config, zpl)
       .then(function () {
         $q.notify({
           message: "Printed successfully !!",
@@ -342,8 +292,6 @@ const printLabel = async (data) => {
         for (let index = 0; index < zpl.length; index++) {}
 
         qz.websocket.disconnect();
-
-        onDialogOK();
       })
       .catch((e) => {
         console.log(e);

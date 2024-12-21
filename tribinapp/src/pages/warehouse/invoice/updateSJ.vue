@@ -249,9 +249,9 @@ const stateSubmit = () => {
 const onClickConditions = () => {
   $q.dialog({
     component: assignConditionsView,
-    // componentProps: {
-    //   datas: data.data,
-    // },
+    componentProps: {
+      typeGroup: 'inv'
+    },
     // persistent: true,
   }).onOk(async (val) => {
     dataSJ.value.TDLVSJDETA_CONDGRP = val.MCONDITION_RPT_STAT;
@@ -264,6 +264,7 @@ const onClickViewListConditions = () => {
     component: viewAssignedCond,
     componentProps: {
       listCond: dataSJ.value.condition,
+      typeGroup: 'inv'
     },
     // persistent: true,
   }).onOk(async (val) => {});

@@ -70,33 +70,63 @@
               <q-td auto-width>
                 <q-btn
                   flat
-                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'orange'"
+                  :color="
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? 'grey'
+                      : 'orange'
+                  "
                   icon="edit"
                   @click="onClickNew(props.row)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
+                  :disable="
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                  "
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Edit Data'}}</q-tooltip>
+                  <q-tooltip>{{
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? "All qty already confirmed"
+                      : "Edit Data"
+                  }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'red'"
+                  :color="
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? 'grey'
+                      : 'red'
+                  "
                   icon="delete"
                   @click="onDelete(props.row.id)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
+                  :disable="
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                  "
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Delete Data'}}</q-tooltip>
+                  <q-tooltip>{{
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? "All qty already confirmed"
+                      : "Delete Data"
+                  }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'indigo'"
+                  :color="
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? 'grey'
+                      : 'indigo'
+                  "
                   icon="check"
                   @click="onConfirmation(props.row)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
+                  :disable="
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                  "
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Confirm Data'}}</q-tooltip>
+                  <q-tooltip>{{
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? "All qty already confirmed"
+                      : "Confirm Data"
+                  }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -106,7 +136,11 @@
                   dense
                   :disable="props.row.bc.length == 0"
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Confirm Data'}}</q-tooltip>
+                  <q-tooltip>{{
+                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
+                      ? "All qty already confirmed"
+                      : "Confirm Data"
+                  }}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -123,11 +157,12 @@
 import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
+import qz from "qz-tray";
 
 import incomingCreate from "./incomingCreate.vue";
-import incomingConfirmDet from "./incomingConfirmDet.vue"
+import incomingConfirmDet from "./incomingConfirmDet.vue";
 
-const $q = useQuasar()
+const $q = useQuasar();
 
 const rows = ref([]);
 const cols = ref([
@@ -151,7 +186,7 @@ const cols = ref([
     field: "TOT_RCV",
     sortable: true,
     align: "left",
-    format: val => `${val.toLocaleString()}`,
+    format: (val) => `${val.toLocaleString()}`,
   },
   {
     name: "MSUP_CURCD",
@@ -166,20 +201,20 @@ const cols = ref([
     field: "TOT_AMT",
     sortable: true,
     align: "left",
-    format: val => `${val.toLocaleString()}`,
+    format: (val) => `${val.toLocaleString()}`,
   },
-])
+]);
 
 const loading = ref(false);
-const filterCol = ref('')
-const filter = ref('')
+const filterCol = ref("");
+const filter = ref("");
 
 onMounted(() => {
-    getIncomingData()
-})
+  getIncomingData();
+});
 
 const getIncomingData = async () => {
-    loading.value = true;
+  loading.value = true;
   await api_web
     .post(`receive/searchAPI`, {
       searchBy: filterCol.value,
@@ -192,7 +227,7 @@ const getIncomingData = async () => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const onClickNew = (data = []) => {
   $q.dialog({
@@ -204,7 +239,7 @@ const onClickNew = (data = []) => {
   }).onOk(async (val) => {
     getIncomingData();
   });
-}
+};
 
 const onConfirmation = (data = []) => {
   $q.dialog({
@@ -216,11 +251,9 @@ const onConfirmation = (data = []) => {
   }).onOk(async (val) => {
     getIncomingData();
   });
-}
+};
 
-const onDelete = (data) => {
-
-}
+const onDelete = (data) => {};
 
 const onPrintBarcode = (data) => {
   $q.dialog({
@@ -229,20 +262,108 @@ const onPrintBarcode = (data) => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-  loading.value = true;
-  await api_web
-    .post(`receiveBarcodes/printBarcode`, {
-      data: data
-    })
-    .then((response) => {
-      loading.value = false;
-      // let pdfWindow = window.open("");
-      // pdfWindow.document.write(
-      //   "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
-      //     encodeURI(response.data) +
-      //     "'></iframe>"
-      // );
-    })
-  })
-}
+    loading.value = true;
+    if (qz.websocket.isActive()) {
+      qz.websocket.disconnect();
+    } else {
+      console.log("WebSocket connection is not active.");
+    }
+
+    console.log(data)
+
+    qz.websocket.connect().then(async function () {
+      return qz.printers.find().then((dataPrinter) => {
+        console.log(dataPrinter);
+        let listPrinter = [];
+        for (let index = 0; index < dataPrinter.length; index++) {
+          listPrinter.push({
+            label: dataPrinter[index],
+            value: dataPrinter[index],
+          });
+        }
+
+        const getSavedPrinter = localStorage.getItem("printerLabel");
+
+        if (getSavedPrinter) {
+          printLabel(getSavedPrinter, response);
+          loading.value = false;
+        } else {
+          $q.dialog({
+            title: "Options",
+            message: "Choose printer Label:",
+            options: {
+              type: "radio",
+              model: "",
+              // inline: true
+              items: listPrinter,
+            },
+            cancel: true,
+            persistent: true,
+          }).onOk((datas) => {
+            $q.dialog({
+              title: "Confirmation",
+              message:
+                "Do you want save this printer ? next time printing will using this printer, won't be notified again.",
+              cancel: true,
+            })
+              .onOk(() => {
+                localStorage.setItem("printerLabel", datas, data);
+              })
+              .onDismiss(() => {
+                printLabel(datas, data);
+              });
+          });
+
+          loading.value = false;
+        }
+      });
+    });
+  });
+};
+
+const printLabel = async (data, listData) => {
+  return qz.printers.find(data).then(async (printer) => {
+    let config = qz.configs.create(printer);
+
+    let zpl = [];
+    listData.map((valHeader) => {
+      if (valHeader) {
+        localStorage.setItem("printerLabel", data);
+        const commands = [
+          '\x1B\x40',        // Initialize the printer (ESC @)
+          '\x1B\x61\x01',    // Center align text (ESC a 1)
+          'Product Barcode\n', // Text to print
+          '\x1B\x61\x00',    // Left align text (ESC a 0)
+          '--------------------------------\n',
+          '\x1D\x6B\x49',    // Command to print Code 128 barcode (GS k 73)
+          '\x0A',            // Barcode height (in dots)
+          valHeader.TRCVBC_BCCD,       // The barcode data (e.g., "1234567890")
+          '\x1D\x56\x00',    // Cut the paper (GS V 0)
+        ];
+
+        for (let index = 0; index < commands.length; index++) {
+          const element = commands[index];
+          zpl.push(element)
+        }
+      }
+    });
+
+    qz.print(config, [zpl])
+      .then(function () {
+        $q.notify({
+          message: "Printed successfully !!",
+          color: "green",
+          timeout: 5000,
+          onDismiss: () => {},
+        });
+
+        for (let index = 0; index < zpl.length; index++) {}
+
+        qz.websocket.disconnect();
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  });
+};
 </script>

@@ -52,7 +52,7 @@ class ConditionController extends Controller
             ->join('M_CONDITIONS', 'M_CONDITIONS.id', '=', 'MCOND_ID');
 
         if ($type !== 'undefined') {
-            if ($type === 'inv') {
+            if ($type == 'inv') {
                 $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'like', 'INVOICE_COND - %');
             } else {
                 $group = (clone $grouping)->where('MCONDITION_RPT_STAT', 'not like', 'INVOICE_COND - %')->get();

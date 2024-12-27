@@ -77,7 +77,8 @@ class InvoiceController extends Controller
             'TDLVSJDETA_CONDGRP' => $request->TDLVSJDETA_CONDGRP,
             'TDLVSJDETA_STARTDT' => $request->TDLVSJDETA_STARTDT,
             'TDLVSJDETA_ENDDT' => $request->TDLVSJDETA_ENDDT,
-            'TDLVSJDETA_COND_GRP' => $request->has('condition') && !empty($request->condition) ? $request->condition[0]['MCOND_GRPNM'] : ''
+            'TDLVSJDETA_COND_GRP' => $request->has('condition') && !empty($request->condition) ? $request->condition[0]['MCOND_GRPNM'] : '',
+            'TDLVSJDETA_ISSPLITSJ' => $request->TDLVSJDETA_ISSPLITSJ
         ]);
 
         T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $request->TDLVPAYDETA_DLVCD)->delete();
@@ -186,7 +187,8 @@ class InvoiceController extends Controller
                 'TQUO_SBJCT',
                 'TQUO_ATTN',
                 'TDLVORD_CONDGRP'
-            );
+            )
+            ->orderBy('T_DLVORDHEAD.created_at', 'desc');
 
         if (!empty($request->searchBy)) {
             $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -532,7 +534,8 @@ class InvoiceController extends Controller
                 },
                 'spk' => function ($f) {
                     $f->where('CSPK_PIC_AS', 'DRIVER');
-                }
+                },
+                'dlvsj'
             ])
             ->groupBy(
                 'TDLVORD_DLVCD',
@@ -609,6 +612,7 @@ class InvoiceController extends Controller
         }
 
         $totalHargaSewa = 0;
+        $totalQty = 0;
         foreach ($RSDetail as $r) {
             $Usage = T_SLODETA::on($this->dedicatedConnection)->select(
                 'TSLODETA_USAGE_DESCRIPTION',
@@ -627,6 +631,8 @@ class InvoiceController extends Controller
             $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             $totalHargaSewa += $HargaSewa;
             $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
+
+            $totalQty += $r->TDLVORDDETA_ITMQT;
         }
         if (in_array($this->dedicatedConnection, ['connect_jos_retail', 'connect_jos_service'])) {
             $PPNAmount = 0;
@@ -637,172 +643,184 @@ class InvoiceController extends Controller
         $subjek = ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT))));
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
-        $this->fpdf->AddPage("L", 'A5');
-        $this->fpdf->SetAutoPageBreak(true, 0);
-        $this->fpdf->SetFont('Arial', 'B', 12);
-        $this->fpdf->SetXY(3, 5);
-        $this->fpdf->Cell(45, 5, $Company->name, 0, 0, 'L');
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(3, 10);
-        $this->fpdf->MultiCell(70, 4, $Company->address . ' Telp.' . $Company->phone, 0, 'L');
+        $perulangan = 1;
 
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->SetXY(150, 5);
-        $this->fpdf->Cell(45, 5, $Branch->MBRANCH_NM . ', ' . $DOIssuDate, 0, 0, 'L');
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->SetXY(150, 10);
-        $this->fpdf->MultiCell(55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM, 0, 'L');
-        $this->fpdf->SetXY(150, 15);
-        $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
-        $this->fpdf->SetXY(150, 20);
-        $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_REFF_MKT, 0, 'L');
-        $this->fpdf->SetXY(150, 30);
-        $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_TELNO, 0, 'L');
+        if ($RSHeader->dlvsj->TDLVSJDETA_ISSPLITSJ == 1) {
+            $perulangan = $totalQty;
+        }
 
-        $this->fpdf->SetFont('Arial', 'U', 10);
-        $this->fpdf->SetXY(90, 15);
-        $this->fpdf->Cell(29, 5, 'SURAT JALAN', 0, 0, 'C');
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(90, 20);
-        $this->fpdf->Cell(29, 5, 'NO : ' . $doc, 0, 0, 'C');
+        for ($i = 0; $i < $perulangan; $i++) {
 
-        $this->fpdf->SetFont('Arial', '', 9);
-        $this->fpdf->SetXY(3, 30);
-        $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: '.(count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM : '').', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
-        $this->fpdf->SetXY(150, 30);
-        // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
-        $this->fpdf->Line(3, 35, 205, 35);
-        $this->fpdf->Line(3, 36, 205, 36);
-        $this->fpdf->Line(3, 42, 205, 42);
-        $this->fpdf->Line(3, 43, 205, 43);
+            $this->fpdf->AddPage("L", 'A5');
+            $this->fpdf->SetAutoPageBreak(true, 0);
+            $this->fpdf->SetFont('Arial', 'B', 12);
+            $this->fpdf->SetXY(3, 5);
+            $this->fpdf->Cell(45, 5, $Company->name, 0, 0, 'L');
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(3, 10);
+            $this->fpdf->MultiCell(70, 4, $Company->address . ' Telp.' . $Company->phone, 0, 'L');
 
-        // Isi Header
-        $this->fpdf->SetXY(3, 36.5);
-        $this->fpdf->Cell(29, 5, 'No', 0, 0, 'L');
-        $this->fpdf->SetXY(15, 36.5);
-        $this->fpdf->Cell(29, 5, 'Part Number', 0, 0, 'L');
-        $this->fpdf->SetXY(45, 36.5);
-        $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
-        $this->fpdf->SetXY(100, 36.5);
-        $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
-        $this->fpdf->SetXY(120, 36.5);
-        $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
-        $this->fpdf->SetXY(145, 36.5);
-        $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
-        $this->fpdf->SetXY(170, 36.5);
-        $this->fpdf->Cell(29, 5, 'Keterangan', 0, 0, 'L');
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->SetXY(150, 5);
+            $this->fpdf->Cell(45, 5, $Branch->MBRANCH_NM . ', ' . $DOIssuDate, 0, 0, 'L');
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->SetXY(150, 10);
+            $this->fpdf->MultiCell(55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM, 0, 'L');
+            $this->fpdf->SetXY(150, 15);
+            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
+            $this->fpdf->SetXY(150, 20);
+            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_REFF_MKT, 0, 'L');
+            $this->fpdf->SetXY(150, 30);
+            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_TELNO, 0, 'L');
 
-        # body
-        $nomor = 1;
-        $Y = 45;
-        foreach ($RSDetail as $r) {
-            if ($Y > 85) {
-                $this->fpdf->AddPage();
+            $this->fpdf->SetFont('Arial', 'U', 10);
+            $this->fpdf->SetXY(90, 15);
+            $this->fpdf->Cell(29, 5, 'SURAT JALAN', 0, 0, 'C');
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(90, 20);
+            $this->fpdf->Cell(29, 5, 'NO : ' . $doc, 0, 0, 'C');
 
-                $Y = 45;
+            $this->fpdf->SetFont('Arial', '', 9);
+            $this->fpdf->SetXY(3, 30);
+            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM : '') . ', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
+            $this->fpdf->SetXY(150, 30);
+            // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
+            $this->fpdf->Line(3, 35, 205, 35);
+            $this->fpdf->Line(3, 36, 205, 36);
+            $this->fpdf->Line(3, 42, 205, 42);
+            $this->fpdf->Line(3, 43, 205, 43);
+
+            // Isi Header
+            $this->fpdf->SetXY(3, 36.5);
+            $this->fpdf->Cell(29, 5, 'No', 0, 0, 'L');
+            $this->fpdf->SetXY(15, 36.5);
+            $this->fpdf->Cell(29, 5, 'Part Number', 0, 0, 'L');
+            $this->fpdf->SetXY(45, 36.5);
+            $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
+            $this->fpdf->SetXY(100, 36.5);
+            $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
+            $this->fpdf->SetXY(120, 36.5);
+            $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
+            $this->fpdf->SetXY(145, 36.5);
+            $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
+            $this->fpdf->SetXY(170, 36.5);
+            $this->fpdf->Cell(29, 5, 'Keterangan', 0, 0, 'L');
+
+            # body
+            $nomor = 1;
+            $Y = 45;
+            foreach ($RSDetail as $r) {
+                if ($Y > 85) {
+                    $this->fpdf->AddPage();
+
+                    $Y = 45;
+                }
+
+                $qtyNya = $RSHeader->dlvsj->TDLVSJDETA_ISSPLITSJ == 1 ? 1 : $r->TDLVORDDETA_ITMQT;
+
+                $this->fpdf->SetXY(3, $Y);
+                $this->fpdf->Cell(29, 5, $nomor++, 0, 0, 'L');
+                $this->fpdf->SetXY(15, $Y);
+                $this->fpdf->Cell(29, 5, $r->TDLVORDDETA_ITMCD_ACT, 0, 0, 'L');
+                $this->fpdf->SetXY(45, $Y);
+                $this->fpdf->Cell(29, 5, $r->MITM_ITMNM, 0, 0, 'L');
+                $this->fpdf->SetXY(100, $Y);
+                $this->fpdf->Cell(29, 5, "{$qtyNya} {$r->MITM_STKUOM}", 0, 0, 'L');
+                $this->fpdf->SetXY(120, $Y);
+                $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
+                $this->fpdf->SetXY(145, $Y);
+                $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
+                if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+                    $this->fpdf->SetXY(170, $Y);
+                    $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
+                    $this->fpdf->SetXY(170, $Y + 5);
+                    $this->fpdf->Cell(29, 5, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 0, 'L');
+                } else {
+                    $this->fpdf->SetXY(170, $Y);
+                    $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
+                    $Y += 5;
+                    $this->fpdf->SetXY(170, $Y);
+                    $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
+                    $Y += 5;
+                    $this->fpdf->SetXY(170, $Y);
+                    $this->fpdf->Cell(29, 5, 'Solar :', 0, 0, 'L');
+                }
+
+                if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+                    $Y += 10;
+                } else {
+                    $Y += 15;
+                }
             }
 
-            $this->fpdf->SetXY(3, $Y);
-            $this->fpdf->Cell(29, 5, $nomor++, 0, 0, 'L');
-            $this->fpdf->SetXY(15, $Y);
-            $this->fpdf->Cell(29, 5, $r->TDLVORDDETA_ITMCD_ACT, 0, 0, 'L');
-            $this->fpdf->SetXY(45, $Y);
-            $this->fpdf->Cell(29, 5, $r->MITM_ITMNM, 0, 0, 'L');
-            $this->fpdf->SetXY(100, $Y);
-            $this->fpdf->Cell(29, 5, "{$r->TDLVORDDETA_ITMQT} {$r->MITM_STKUOM}", 0, 0, 'L');
-            $this->fpdf->SetXY(120, $Y);
-            $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
-            $this->fpdf->SetXY(145, $Y);
-            $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
-            if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
-                $this->fpdf->SetXY(170, $Y);
-                $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
-                $this->fpdf->SetXY(170, $Y + 5);
-                $this->fpdf->Cell(29, 5, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 0, 'L');
+            # baris bawah
+            $this->fpdf->Line(3, 90, 205, 90);
+            $this->fpdf->Line(3, 91, 205, 91);
+            $this->fpdf->Line(3, 97, 205, 97);
+            $this->fpdf->Line(3, 98, 205, 98);
+
+            $this->fpdf->SetXY(3, 91.5);
+            // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
+            $this->fpdf->Cell(29, 5, "Lokasi : {$RSHeader->TQUO_PROJECT_LOCATION}", 0, 0, 'L');
+            $this->fpdf->SetXY(170, 91.5);
+            $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            // $this->fpdf->SetXY(3, 100);
+            // $this->fpdf->Cell(29, 5, "Terbilang : {$this->numberToSentence($RSHeader->TSLODETA_ITMQT * $RSHeader->TSLODETA_PRC)}", 0, 0, 'L');
+
+            $this->fpdf->SetFont('Arial', '', 7);
+
+            if (count($RSHeader->condition) > 0) {
+                $startCond = 100;
+                foreach ($RSHeader->condition as $keyCond => $valueCond) {
+                    $this->fpdf->SetXY(3, $startCond);
+                    $this->fpdf->Cell(29, 5, "- " . $valueCond->MCONDITION_DESCRIPTION, 0, 0, 'L');
+
+                    $startCond = $startCond + 3;
+                }
             } else {
-                $this->fpdf->SetXY(170, $Y);
-                $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
-                $Y += 5;
-                $this->fpdf->SetXY(170, $Y);
-                $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
-                $Y += 5;
-                $this->fpdf->SetXY(170, $Y);
-                $this->fpdf->Cell(29, 5, 'Solar :', 0, 0, 'L');
+                $this->fpdf->SetXY(3, 100);
+                $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
+                $this->fpdf->SetXY(3, 103);
+                $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
+
+                $startCond = 103;
             }
 
-            if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
-                $Y += 10;
+            $this->fpdf->SetFont('Arial', '', 9);
+            $this->fpdf->SetXY(15, $startCond + 3);
+            if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
+                $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
+                $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
+                $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
+                $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
+                $this->fpdf->SetXY(13, 135);
+                $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
             } else {
-                $Y += 15;
+                $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
+                $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');
+                $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
+                $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
+                $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
+                $this->fpdf->SetXY(13, 135);
+                $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(42, 2, '(                   )', 0, 0, 'L');
+                $this->fpdf->Cell(40, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
             }
+
+            $this->fpdf->SetXY(5, 140);
+            $this->fpdf->Cell(45, 5, 'Putih : Penyewa', 0, 0, 'L');
+            $this->fpdf->Cell(45, 5, 'Merah : Supir / Operator', 0, 0, 'L');
+            $this->fpdf->Cell(45, 5, 'Kuning : Penyewa', 0, 0, 'L');
+            $this->fpdf->Cell(40, 5, 'Hijau : Lap. Harian', 0, 0, 'L');
+            $this->fpdf->Cell(45, 5, 'Biru : Arsip', 0, 0, 'L');
         }
 
-        # baris bawah
-        $this->fpdf->Line(3, 90, 205, 90);
-        $this->fpdf->Line(3, 91, 205, 91);
-        $this->fpdf->Line(3, 97, 205, 97);
-        $this->fpdf->Line(3, 98, 205, 98);
-
-        $this->fpdf->SetXY(3, 91.5);
-        // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
-        $this->fpdf->Cell(29, 5, "Lokasi : {$RSHeader->TQUO_PROJECT_LOCATION}", 0, 0, 'L');
-        $this->fpdf->SetXY(170, 91.5);
-        $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        // $this->fpdf->SetXY(3, 100);
-        // $this->fpdf->Cell(29, 5, "Terbilang : {$this->numberToSentence($RSHeader->TSLODETA_ITMQT * $RSHeader->TSLODETA_PRC)}", 0, 0, 'L');
-
-        $this->fpdf->SetFont('Arial', '', 7);
-
-        if (count($RSHeader->condition) > 0) {
-            $startCond = 100;
-            foreach ($RSHeader->condition as $keyCond => $valueCond) {
-                $this->fpdf->SetXY(3, $startCond);
-                $this->fpdf->Cell(29, 5, "- ".$valueCond->MCONDITION_DESCRIPTION, 0, 0, 'L');
-
-                $startCond = $startCond + 3;
-            }
-        } else {
-            $this->fpdf->SetXY(3, 100);
-            $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
-            $this->fpdf->SetXY(3, 103);
-            $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
-
-            $startCond = 103;
-        }
-
-        $this->fpdf->SetFont('Arial', '', 9);
-        $this->fpdf->SetXY(15, $startCond + 3);
-        if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
-            $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
-            $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
-            $this->fpdf->SetXY(13, 135);
-            $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
-        } else {
-            $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
-            $this->fpdf->SetXY(13, 135);
-            $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(42, 2, '(                   )', 0, 0, 'L');
-            $this->fpdf->Cell(40, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
-        }
-
-        $this->fpdf->SetXY(5, 140);
-        $this->fpdf->Cell(45, 5, 'Putih : Penyewa', 0, 0, 'L');
-        $this->fpdf->Cell(45, 5, 'Merah : Supir / Operator', 0, 0, 'L');
-        $this->fpdf->Cell(45, 5, 'Kuning : Penyewa', 0, 0, 'L');
-        $this->fpdf->Cell(40, 5, 'Hijau : Lap. Harian', 0, 0, 'L');
-        $this->fpdf->Cell(45, 5, 'Biru : Arsip', 0, 0, 'L');
         $pdfFile = $this->fpdf->Output("", "S");
 
         return base64_encode($pdfFile);

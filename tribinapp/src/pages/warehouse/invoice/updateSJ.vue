@@ -20,6 +20,7 @@
               :options="options"
               type="radio"
               v-model="dataSJ.TDLVSJDETA_TYPE"
+              @update:model-value="(value) => onSelectGroup(value)"
             />
           </div>
           <div class="col text-right">
@@ -35,13 +36,13 @@
               }}</q-badge>
             </q-btn>
 
-            <q-btn
+            <!-- <q-btn
               color="blue"
               label="Assign Conditions"
               @click="onClickConditions"
               :loading="loading"
             >
-            </q-btn>
+            </q-btn> -->
 
             <q-btn
               icon="visibility"
@@ -58,9 +59,14 @@
           </div>
         </div>
 
-        <!-- <q-separator />
-
+        <q-separator />
         <div class="row q-pt-md">
+          <div class="col">
+            <q-checkbox v-model="dataSJ.TDLVSJDETA_ISSPLITSJ" label="Split SJ ?" :true-value="1" :false-value="0"/>
+          </div>
+        </div>
+
+        <!-- <div class="row q-pt-md">
           <div class="col">
             <q-input
               filled
@@ -213,6 +219,7 @@ const props = defineProps({
 
 onMounted(() => {
   dataSJ.value.TDLVSJDETA_DLVCD = props.idDlv
+  getDataCondition()
 
   if (props.dataSJDB) {
     dataSJ.value = props.dataSJDB;
@@ -233,6 +240,7 @@ const dataSJ = ref({
   TDLVSJDETA_CONDGRP: "",
   TDLVSJDETA_STARTDT: "",
   TDLVSJDETA_ENDDT: "",
+  TDLVSJDETA_ISSPLITSJ: 0,
   condition: [],
   payment: []
 });
@@ -314,6 +322,29 @@ const onClickChooseBankAcc = () => {
     dataSJ.value.payment = payment;
   });
 };
+
+const getDataCondition = async () => {
+  loading.value = true
+  const data = await api.get(`/master/conditions/getdataGroup/inv`).then((response) => {
+    loading.value = false
+    console.log(response);
+    options.value = [];
+    response.data.data.map(val => {
+      let wordSplit = val.MCONDITION_RPT_STAT.split(" - ");
+      options.value.push({ label: wordSplit[1], value: val.MCONDITION_RPT_STAT, data: val })
+    })
+  }).catch((e) => {
+    loading.value = false
+  });
+};
+
+const onSelectGroup = (val) => {
+  let getDataIDX = options.value.findIndex(el => el.value === val)
+
+  dataSJ.value.condition = options.value[getDataIDX].data.group
+  dataSJ.value.TDLVSJDETA_CONDGRP = options.value[getDataIDX].value
+  console.log(getDataIDX)
+}
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

@@ -335,7 +335,7 @@ const printLabel = async (data, listData) => {
           'Product Barcode\n', // Text to print
           '\x1B\x61\x00',    // Left align text (ESC a 0)
           '--------------------------------\n',
-          '\x1D\x6B\x49',    // Command to print Code 128 barcode (GS k 73)
+          '\x1D\x6B\x6d',    // Command to print Code 128 barcode (GS k 73)
           '\x0A',            // Barcode height (in dots)
           valHeader.TRCVBC_BCCD,       // The barcode data (e.g., "1234567890")
           '\x1D\x56\x00',    // Cut the paper (GS V 0)

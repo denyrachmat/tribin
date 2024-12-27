@@ -533,7 +533,8 @@ class DeliveryController extends Controller
                     ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->where('TDLVORDDETA_ITMCD_ACT', '');
+            ->where('TDLVORDDETA_ITMCD_ACT', '')
+            ->orderBy('T_DLVORDHEAD.created_at', 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -1867,7 +1868,8 @@ class DeliveryController extends Controller
             ->whereNull('T_DLVORDDETA.deleted_at')
             ->where('MITM_ITMTYPE', '!=', '3')
             ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
-            ->whereNull('CITRN_DOCNO');
+            ->whereNull('CITRN_DOCNO')
+            ->orderBy('T_DLVORDHEAD.created_at', 'desc');
 
         // $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
         //     ->leftJoinSub($ITRN, 'V2', function ($join) {

@@ -310,6 +310,16 @@
                         />
                       </q-item-label>
                     </q-item-section>
+                    <q-item-section>
+                      <q-item-label>
+                        <q-input
+                          dense
+                          label="Qty"
+                          filled
+                          v-model="items.qty"
+                        />
+                      </q-item-label>
+                    </q-item-section>
                     <q-item-section v-if="quotationType === 1">
                       <q-item-label>
                         <q-input
@@ -478,6 +488,7 @@ const getItem = async (val) => {
   await api_web
     .post("item/searchAPI", {
       searchValue: val,
+      IS_ITMCD: 0
     })
     .then((response) => {
       loading.value = false;

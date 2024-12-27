@@ -153,6 +153,8 @@ class ItemController extends Controller
 
         if ($request->has('isITMCD') && $request->isITMCD == 1) {
             $RSHead->where('IS_ITMCD', 1);
+        } else {
+            $RSHead->where('IS_ITMCD', 0);
         }
 
         if ($request->has('isForServ') && $request->isForServ == 1) {

@@ -1386,7 +1386,7 @@ class QuotationController extends Controller
             'MITM_ITMNM',
             // 'MITM_MODEL',
             DB::raw('CONCAT(MUSAGE_ALIAS, " ", MUSAGE_DESCRIPTION) AS TQUODETA_USAGE_DESCRIPTION'),
-            DB::raw('SUM(TQUODETA_ITMQT * TQUODETA_PRC) AS TQUODETA_PRC'),
+            DB::raw('SUM(TQUODETA_PRC) AS TQUODETA_PRC'),
             'TQUODETA_OPRPRC',
             'TQUODETA_MOBDEMOB',
             DB::raw('SUM(TQUODETA_ITMQT) AS TQUODETA_ITMQT'),

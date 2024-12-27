@@ -135,7 +135,7 @@
                 color="teal"
               />
             </div>
-            <div class="colq-pb-sm text-right">
+            <!-- <div class="colq-pb-sm text-right">
               <q-btn
                 icon="add"
                 dense
@@ -143,7 +143,7 @@
                 @click="onAddItems()"
                 color="primary"
               />
-            </div>
+            </div> -->
           </div>
 
           <q-list bordered dense>

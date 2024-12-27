@@ -120,7 +120,7 @@
                 map-options
                 :loading="loading"
                 @update:model-value="onSelectQuotation"
-                :disable="props.isRecreate"
+                :disable="props.isRecreate || forms.TSLO_QUOCD !== ''"
               >
               </q-select>
             </div>
@@ -456,7 +456,7 @@ onMounted(async () => {
 
     // forms.value.TSLO_ISCON = parseInt()
     await getQuotation(forms.value.TSLO_QUOCD);
-    await onSelectQuotation(forms.value.TSLO_QUOCD)
+    // await onSelectQuotation(forms.value.TSLO_QUOCD)
   }
 });
 
@@ -575,7 +575,6 @@ const onSelectQuotation = async (val) => {
   await api
     .get(`transaction/quotation/view/${btoa(val)}`)
     .then(async (response) => {
-      loading.value = false;
 
       await getUsage();
       await getItem();
@@ -591,6 +590,7 @@ const onSelectQuotation = async (val) => {
       );
 
       quotDetail.value = [];
+      console.log(response.data.data.det)
       response.data.data.det.map((valMap) => {
         quotDetail.value.push({
           TSLODETA_ITMCD: valMap.TQUODETA_ITMCD,
@@ -601,6 +601,7 @@ const onSelectQuotation = async (val) => {
           TSLODETA_PERIOD_TO: valMap.TQUODETA_PERIOD_TO,
         });
       });
+      loading.value = false;
     })
     .catch((e) => {
       loading.value = false;

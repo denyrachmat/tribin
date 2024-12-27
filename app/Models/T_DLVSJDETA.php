@@ -16,7 +16,8 @@ class T_DLVSJDETA extends Model
         'TDLVSJDETA_CONDGRP',
         'TDLVSJDETA_STARTDT',
         'TDLVSJDETA_ENDDT',
-        'TDLVSJDETA_COND_GRP'
+        'TDLVSJDETA_COND_GRP',
+        'TDLVSJDETA_ISSPLITSJ'
     ];
 
     public function condition() {

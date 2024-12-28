@@ -66,7 +66,6 @@
           label="Submit"
           @click="onClickSubmit()"
           :loading="loading"
-          :disable="itmCat.length === 0"
         />
         <q-btn
           flat

@@ -704,7 +704,14 @@ class ReceiveOrderController extends Controller
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
         $hasil = [];
-        foreach ($request->itmCat as $key => $value) {
+        $listCat = [];
+        if (count($request->itmCat) > 0) {
+            $listCat = $request->itmCat;
+        } else {
+            $listCat = M_ITM::on($this->dedicatedConnection)->select('MITM_ITMCAT')->groupBy('MITM_ITMCAT')->get()->pluck('MITM_ITMCAT');
+        }
+
+        foreach ($listCat as $key => $value) {
             $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
                 ->select(
                     'MITM_ITMCD',

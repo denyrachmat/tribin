@@ -134,7 +134,7 @@ class DeliveryController extends Controller
         }
 
         $RS->where('TSLO_BRANCH', Auth::user()->branch)
-            ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
+            // ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
             ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
 
         return ['data' => $RS->get()];

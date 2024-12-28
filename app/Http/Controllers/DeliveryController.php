@@ -177,7 +177,7 @@ class DeliveryController extends Controller
             })
             ->where('TSLO_SLOCD', base64_decode($id))
             ->where('TSLO_BRANCH', Auth::user()->branch)
-            ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
+            // ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
             ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM", 'TSLODETA_PRC');
         return ['data' => $RS->get()];
     }

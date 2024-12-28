@@ -225,6 +225,7 @@ onMounted(() => {
     dataSJ.value = props.dataSJDB;
     dataSJ.value.payment = props.payment
     dataSJ.value.condition = props.condition
+    dataSJ.value.TDLVSJDETA_ISSPLITSJ = parseInt(props.dataSJDB.TDLVSJDETA_ISSPLITSJ)
   }
 });
 

@@ -135,6 +135,15 @@
                 color="teal"
               />
             </div>
+            <div class="col">
+              <q-checkbox
+                v-model="splitSJ"
+                label="Split SJ ?"
+                color="teal"
+                :disable="!TDLVORDDETA_SLOCD"
+                @update:model-value="(value) => onChangeSplitSJ(value)"
+              />
+            </div>
             <!-- <div class="colq-pb-sm text-right">
               <q-btn
                 icon="add"
@@ -235,14 +244,25 @@
         </fieldset>
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn
-          label="OK"
-          color="primary"
-          @click="onSubmitData()"
-          :loading="loading"
-        />
-        <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
+      <q-card-actions>
+        <div class="row">
+          <div class="col text-right">
+            <q-btn
+              label="OK"
+              color="primary"
+              @click="onSubmitData()"
+              :loading="loading"
+              :disable="
+                splitSJ
+                  ? props.dataHeader.SUMDETQT < getSumAllDetail
+                    ? true
+                    : false
+                  : false
+              "
+            />
+            <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
+          </div>
+        </div>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -253,6 +273,7 @@ import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import salesOrderChoose from "./salesOrderChoose.vue";
+import { data } from "autoprefixer";
 
 const $q = useQuasar();
 
@@ -286,7 +307,12 @@ const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
 const listCustomers = ref([]);
 const listItem = ref([]);
-const splitInvoice = ref(true);
+const splitInvoice = ref(false);
+const splitSJ = ref(false);
+
+const getSumAllDetail = computed(() =>
+  listItems.value.reduce((acc, val) => acc + parseInt(val.BALQT), 0)
+);
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -332,9 +358,6 @@ const onSubmitData = () => {
         await submitedForm([listItems.value[index]]);
       }
       onDialogOK();
-      // listItems.value.map(async (valDet) => {
-      //   await submitedForm([valDet]);
-      // });
     } else {
       await submitedForm();
       onDialogOK();
@@ -353,6 +376,7 @@ const submitedForm = async (det = []) => {
       TDLVORD_REMARK: TDLVORD_REMARK.value,
       SO_DET: det.length > 0 ? det : listItems.value,
       splitInvoice: splitInvoice.value,
+      splitSJ: splitSJ.value,
     })
     .then((response) => {
       loading.value = false;
@@ -418,6 +442,24 @@ const getItem = async (val) => {
     .catch(() => {
       loading.value = false;
     });
+};
+
+const onChangeSplitSJ = (state) => {
+  if (state) {
+    const listItemCheck = [...listItems.value];
+
+    listItems.value = [];
+    listItemCheck.map((valMap) => {
+      for (let index = 0; index < valMap.BALQT; index++) {
+        listItems.value.push({
+          ...valMap,
+          BALQT: 1,
+        });
+      }
+    });
+
+    console.log(listItemCheck);
+  }
 };
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =

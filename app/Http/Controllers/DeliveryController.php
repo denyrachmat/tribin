@@ -319,7 +319,8 @@ class DeliveryController extends Controller
             'TDLVORD_ISSUDT' => $request->TDLVORD_ISSUDT,
             'TDLVORD_REMARK' => $request->TDLVORD_REMARK,
             'TDLVORD_INVCD' => $newInvoiceCode,
-            'TDLVORD_BRANCH' => Auth::user()->branch
+            'TDLVORD_BRANCH' => Auth::user()->branch,
+            'TDLVOR_ISSPLITSJ' => $request->splitSJ
         ];
 
         # data quotation detail item
@@ -349,24 +350,6 @@ class DeliveryController extends Controller
                 'TDLVORDDETA_ITMCD_ACT' => isset($valueSODet['TDLVORDDETA_ITMCD_ACT']) && !empty($valueSODet['TDLVORDDETA_ITMCD_ACT']) ? $valueSODet['TDLVORDDETA_ITMCD_ACT'] : ''
             ]);
         }
-
-        // $countDetail = count($request->TDLVORDDETA_ITMCD);
-        // $quotationDetail = [];
-        // for ($i = 0; $i < $countDetail; $i++) {
-        //     $quotationDetail[] = [
-        //         'TDLVORDDETA_DLVCD' => $newQuotationCode,
-        //         'TDLVORDDETA_ITMCD' => $request->TDLVORDDETA_ITMCD[$i],
-        //         'TDLVORDDETA_ITMQT' => $request->TDLVORDDETA_ITMQT[$i],
-        //         'TDLVORDDETA_PRC' => $request->TDLVORDDETA_PRC[$i],
-        //         'created_by' => Auth::user()->nick_name,
-        //         'created_at' => date('Y-m-d H:i:s'),
-        //         'TDLVORDDETA_BRANCH' => Auth::user()->branch,
-        //         'TDLVORDDETA_SLOCD' => $request->TDLVORDDETA_SLOCD[$i]
-        //     ];
-        // }
-        // if (!empty($quotationDetail)) {
-        //     T_DLVORDDETA::on($this->dedicatedConnection)->insert($quotationDetail);
-        // }
 
         return [
             'msg' => 'OK',
@@ -510,6 +493,7 @@ class DeliveryController extends Controller
                 'TDLVORDDETA_ITMCD_ACT',
                 'TDLVORDDETA_DLVCD',
                 'TDLVORDDETA_BRANCH',
+                DB::raw('SUM(TDLVORDDETA_ITMQT) TDLVORDDETA_ITMQT'),
                 DB::raw('MAX(TDLVORDDETA_SLOCD) TDLVORDDETA_SLOCD')
             )
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
@@ -522,7 +506,8 @@ class DeliveryController extends Controller
             "MCUS_CUSNM",
             'TDLVORDDETA_SLOCD',
             'TDLVORD_REMARK',
-            'TDLVORD_INVCD'
+            'TDLVORD_INVCD',
+            DB::raw('SUM(TDLVORDDETA_ITMQT) AS SUMDETQT')
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TDLVORD_CUSCD", "=", "MCUS_CUSCD")
@@ -534,7 +519,16 @@ class DeliveryController extends Controller
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->where('TDLVORDDETA_ITMCD_ACT', '')
-            ->orderBy('T_DLVORDHEAD.created_at', 'desc');
+            ->orderBy('T_DLVORDHEAD.created_at', 'desc')
+            ->groupBy(
+                "TDLVORD_DLVCD",
+                "TDLVORD_CUSCD",
+                "TDLVORD_ISSUDT",
+                "MCUS_CUSNM",
+                'TDLVORDDETA_SLOCD',
+                'TDLVORD_REMARK',
+                'TDLVORD_INVCD',
+            );
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -548,11 +542,13 @@ class DeliveryController extends Controller
                 [
                     'listItems' => T_DLVORDDETA::on($this->dedicatedConnection)
                         ->select(
+                            DB::raw('T_DLVORDDETA.id as id'),
                             'TDLVORDDETA_DLVCD',
                             'TDLVORDDETA_BRANCH',
                             'TDLVORDDETA_SLOCD',
                             DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
                             'MITM_ITMNM',
+                            DB::raw('TDLVORDDETA_ITMQT as ORIQT'),
                             DB::raw('TDLVORDDETA_ITMQT as BALQT'),
                             DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
                         )
@@ -569,6 +565,7 @@ class DeliveryController extends Controller
                                 ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
                         })
                         ->groupBy(
+                            DB::raw('T_DLVORDDETA.id'),
                             'TDLVORDDETA_DLVCD',
                             'TDLVORDDETA_BRANCH',
                             'TDLVORDDETA_SLOCD',

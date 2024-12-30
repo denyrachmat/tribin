@@ -22,7 +22,8 @@ class T_DLVORDHEAD extends Model
         'TDLVORD_JALAN_COST',
         'TDLVORD_VEHICLE_REGNUM',
         'TDLVORD_REC_NO',
-        'TDLVORD_CONDGRP'
+        'TDLVORD_CONDGRP',
+        'TDLVOR_ISSPLITSJ'
     ];
 
     public function dlvdet()

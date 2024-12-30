@@ -110,8 +110,15 @@ const rows = ref([]);
 const columns = ref([
   {
     name: "TDLVORD_DLVCD",
-    label: "Delivery ID",
+    label: "Delivery Order",
     field: "TDLVORD_DLVCD",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TDLVORD_INVCD",
+    label: "Invoice No",
+    field: "TDLVORD_INVCD",
     sortable: true,
     align: "left",
   },

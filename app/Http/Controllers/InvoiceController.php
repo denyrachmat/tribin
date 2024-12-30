@@ -516,7 +516,8 @@ class InvoiceController extends Controller
                 'TDLVSJDETA_STARTDT',
                 'TDLVSJDETA_ENDDT',
                 'TDLVORD_CONDGRP',
-                'TDLVORD_DLVCD'
+                'TDLVORD_DLVCD',
+                'TDLVOR_ISSPLITSJ'
             )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -554,7 +555,8 @@ class InvoiceController extends Controller
                 'TDLVSJDETA_TYPE',
                 'TDLVSJDETA_STARTDT',
                 'TDLVSJDETA_ENDDT',
-                'TDLVORD_CONDGRP'
+                'TDLVORD_CONDGRP',
+                'TDLVOR_ISSPLITSJ'
             )
             ->first();
 
@@ -645,8 +647,8 @@ class InvoiceController extends Controller
 
         $perulangan = 1;
 
-        if ($RSHeader->dlvsj->TDLVSJDETA_ISSPLITSJ == 1) {
-            $perulangan = $totalQty;
+        if ($RSHeader->TDLVOR_ISSPLITSJ == 1) {
+            $perulangan = count($RSDetail);
         }
 
         for ($i = 0; $i < $perulangan; $i++) {
@@ -682,7 +684,11 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(3, 30);
-            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM : '') . ', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
+            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami kirimkan barang-barang di bawah ini :' : ''), 0, 0, 'L');
+            if (count($RSHeader->spk) === 0) {
+                $this->fpdf->SetXY(70, 30);
+                $this->fpdf->Cell(29, 5, ', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
+            }
             $this->fpdf->SetXY(150, 30);
             // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
             $this->fpdf->Line(3, 35, 205, 35);
@@ -709,11 +715,20 @@ class InvoiceController extends Controller
             # body
             $nomor = 1;
             $Y = 45;
-            foreach ($RSDetail as $r) {
-                if ($Y > 85) {
-                    $this->fpdf->AddPage();
 
-                    $Y = 45;
+            $listDetail = $RSDetail;
+
+            // Jika split SJ
+            if ($RSHeader->TDLVOR_ISSPLITSJ == 1) {
+                $listDetail = [$RSDetail[$i]];
+            }
+
+            foreach ($listDetail as $r) {
+                if ($Y > 130) {
+                    $this->fpdf->AddPage("L", 'A5');
+                    $this->fpdf->SetAutoPageBreak(true, 0);
+
+                    $Y = 10;
                 }
 
                 $qtyNya = $RSHeader->dlvsj->TDLVSJDETA_ISSPLITSJ == 1 ? 1 : $r->TDLVORDDETA_ITMQT;
@@ -730,7 +745,7 @@ class InvoiceController extends Controller
                 $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
                 $this->fpdf->SetXY(145, $Y);
                 $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
-                if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+                if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
                     $this->fpdf->SetXY(170, $Y + 5);
@@ -749,7 +764,7 @@ class InvoiceController extends Controller
                 if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
                     $Y += 10;
                 } else {
-                    $Y += 15;
+                    $Y += 10;
                 }
             }
 

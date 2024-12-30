@@ -59,12 +59,12 @@
           </div>
         </div>
 
-        <q-separator />
+        <!-- <q-separator />
         <div class="row q-pt-md">
           <div class="col">
             <q-checkbox v-model="dataSJ.TDLVSJDETA_ISSPLITSJ" label="Split SJ ?" :true-value="1" :false-value="0"/>
           </div>
-        </div>
+        </div> -->
 
         <!-- <div class="row q-pt-md">
           <div class="col">

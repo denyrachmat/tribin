@@ -122,12 +122,20 @@ const columns = ref([
     align: "left",
   },
   {
+    name: "TDLVORD_INVCD",
+    label: "Invoice No",
+    field: "TDLVORD_INVCD",
+    sortable: true,
+    align: "left",
+  },
+  {
     name: "MCUS_CUSNM",
     label: "Customer",
     field: "MCUS_CUSNM",
     sortable: true,
     align: "left",
   },
+  // TDLVORD_INVCD
 ]);
 const loading = ref(false);
 const filterCol = ref("");

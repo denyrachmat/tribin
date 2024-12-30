@@ -142,6 +142,8 @@
                 color="teal"
                 :disable="!TDLVORDDETA_SLOCD"
                 @update:model-value="(value) => onChangeSplitSJ(value)"
+                :true-value="1"
+                :false-value="0"
               />
             </div>
             <!-- <div class="colq-pb-sm text-right">
@@ -293,6 +295,8 @@ onMounted(async () => {
     MCUS_CUSNM.value = props.dataHeader.MCUS_CUSNM;
     TDLVORD_REMARK.value = props.dataHeader.TDLVORD_REMARK;
     listItems.value = props.dataHeader.listItems;
+    listItemBackUp.value = props.dataHeader.listItems;
+    splitSJ.value = parseInt(props.dataHeader.TDLVOR_ISSPLITSJ)
   }
 });
 
@@ -307,8 +311,9 @@ const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
 const listCustomers = ref([]);
 const listItem = ref([]);
+const listItemBackUp = ref([]);
 const splitInvoice = ref(false);
-const splitSJ = ref(false);
+const splitSJ = ref(0);
 
 const getSumAllDetail = computed(() =>
   listItems.value.reduce((acc, val) => acc + parseInt(val.BALQT), 0)
@@ -404,6 +409,7 @@ const getListItemCode = async (val) => {
     .then((response) => {
       loading.value = false;
       listItems.value = response.data.data;
+      listItemBackUp.value = response.data.data;
     })
     .catch((e) => {
       loading.value = false;
@@ -457,8 +463,8 @@ const onChangeSplitSJ = (state) => {
         });
       }
     });
-
-    console.log(listItemCheck);
+  } else {
+    listItems.value = [...listItemBackUp.value];
   }
 };
 

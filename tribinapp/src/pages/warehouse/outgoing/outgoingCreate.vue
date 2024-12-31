@@ -304,10 +304,13 @@
             />
             <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
           </div>
+          <div class="col" v-for="(sums, idx) in getSumAllDetail" :key="idx">
+            <q-chip outline color="orange" text-color="white" icon-right="star">
+              Stock item {{ sums.item }} only: <b>{{ sums.tot }}</b>, total updated Qty is : <b>{{ sums.totList }}</b>, please correct the qty to make it tally with stock.
+            </q-chip>
+          </div>
         </div>
       </q-card-actions>
-
-      {{ getSumAllDetail }}
     </q-card>
   </q-dialog>
 </template>
@@ -361,20 +364,30 @@ const listInvoice = ref([]);
 
 const getSumAllDetail = computed(() => {
   let hasilLess = [];
-  for (let index = 0; index < listItemBackUp.value.length; index++) {
-    const valMap = listItemBackUp.value[index];
+  const itemsMap = new Map();
 
-    const totalItem = listItemBackUp.value
-      .filter((fil) => fil.TSLODETA_ITMCD == valMap.TSLODETA_ITMCD)
+  listItemBackUp.value.forEach((item) => {
+    const totalItem = itemsMap.get(item.TSLODETA_ITMCD) || 0;
+    itemsMap.set(item.TSLODETA_ITMCD, totalItem + parseInt(item.BALQT));
+  });
+
+  console.log(itemsMap);
+
+  listItemBackUp.value.forEach((item) => {
+    const totalItem = itemsMap.get(item.TSLODETA_ITMCD);
+    const totalItemOnList = listItems.value
+      .filter((fil) => fil.TSLODETA_ITMCD == item.TSLODETA_ITMCD)
       .reduce((acc, val) => acc + parseInt(val.BALQT), 0);
-    console.log(totalItem)
-    if (totalItem > 0) {
+
+    if (totalItem < totalItemOnList) {
       hasilLess.push({
-        item: valMap.TSLODETA_ITMCD,
-        status: valMap.BALQT < totalItem,
+        item: item.TSLODETA_ITMCD,
+        status: item.BALQT < totalItem,
+        tot: totalItem,
+        totList: totalItemOnList,
       });
     }
-  }
+  });
 
   return hasilLess;
 });

@@ -122,11 +122,13 @@ class DeliveryController extends Controller
                     ->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->joinSub($SalesDetail, 'V1', function ($join) {
-                $join->on('TSLO_SLOCD', '=', 'TSLODETA_SLOCD')->on('TSLO_BRANCH', '=', 'TSLODETA_BRANCH');
+                $join->on('TSLO_SLOCD', '=', 'TSLODETA_SLOCD')
+                    ->on('TSLO_BRANCH', '=', 'TSLODETA_BRANCH');
             })
             ->leftJoinSub($RSDelivery, 'V2', function ($join) {
-                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
-                    ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
+                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+                    ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH');
+                    // ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             });
 
         if (!empty($request->searchBy)) {
@@ -134,8 +136,9 @@ class DeliveryController extends Controller
         }
 
         $RS->where('TSLO_BRANCH', Auth::user()->branch)
-            ->whereRaw("SALESQT>IFNULL(TTLDLVQT,0)")
-            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT");
+            ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
+            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT")
+            ->orderBy('TSLO_PLAN_DLVDT', 'desc');
 
         return ['data' => $RS->get()];
     }
@@ -158,8 +161,7 @@ class DeliveryController extends Controller
             "TSLO_PLAN_DLVDT",
             "TSLODETA_ITMCD",
             "MITM_ITMNM",
-            DB::raw("SUM(SALESQT)-IFNULL(SUM(TTLDLVQT),0) BALQT"),
-            'TSLODETA_PRC'
+            DB::raw("SUM(SALESQT) - IFNULL(SUM(TTLDLVQT),0) BALQT")
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -177,8 +179,8 @@ class DeliveryController extends Controller
             })
             ->where('TSLO_SLOCD', base64_decode($id))
             ->where('TSLO_BRANCH', Auth::user()->branch)
-            ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
-            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM", 'TSLODETA_PRC');
+            // ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
+            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM");
         return ['data' => $RS->get()];
     }
 
@@ -2005,13 +2007,13 @@ class DeliveryController extends Controller
                 C_ITRN::on($this->dedicatedConnection)->updateorcreate([
                     'CITRN_BRANCH' => Auth::user()->branch,
                     'CITRN_LOCCD' => 'WH1',
-                    'CITRN_DOCNO' => $request->id,
+                    'CITRN_DOCNO' => $r['TDLVORDDETA_DLVCD'],
                     'CITRN_FORM' => 'OUT-SHP',
                     'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
                 ], [
                     'CITRN_BRANCH' => Auth::user()->branch,
                     'CITRN_LOCCD' => 'WH1',
-                    'CITRN_DOCNO' => $request->id,
+                    'CITRN_DOCNO' => $r['TDLVORDDETA_DLVCD'],
                     'CITRN_ISSUDT' => date('Y-m-d'),
                     'CITRN_FORM' => 'OUT-SHP',
                     'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],

@@ -65,29 +65,41 @@ class InvoiceController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', $request->TDLVSJDETA_DLVCD)->update([
-            'TDLVORD_CONDGRP' => count($request->condition) > 0 ? $request->condition[0]['MCOND_GRPNM'] : ''
-        ]);
+        // T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', 'LIKE', $request->TDLVSJDETA_DLVCD . '%')->update([
+        //     'TDLVORD_CONDGRP' => count($request->condition) > 0 ? $request->condition[0]['MCOND_GRPNM'] : ''
+        // ]);
 
-        T_DLVSJDETA::on($this->dedicatedConnection)->updateOrCreate([
-            'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
-        ], [
-            'TDLVSJDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
-            'TDLVSJDETA_TYPE' => $request->TDLVSJDETA_TYPE,
-            'TDLVSJDETA_CONDGRP' => $request->TDLVSJDETA_CONDGRP,
-            'TDLVSJDETA_STARTDT' => $request->TDLVSJDETA_STARTDT,
-            'TDLVSJDETA_ENDDT' => $request->TDLVSJDETA_ENDDT,
-            'TDLVSJDETA_COND_GRP' => $request->has('condition') && !empty($request->condition) ? $request->condition[0]['MCOND_GRPNM'] : '',
-            'TDLVSJDETA_ISSPLITSJ' => $request->TDLVSJDETA_ISSPLITSJ
-        ]);
+        $updatedRecordsHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->where('TDLVORD_DLVCD', 'LIKE', $request->TDLVSJDETA_DLVCD . '%')
+            ->tap(function ($query) use ($request) {
+                $query->update([
+                    'TDLVORD_CONDGRP' => count($request->condition) > 0 ? $request->condition[0]['MCOND_GRPNM'] : ''
+                ]);
+            })
+            ->get();
 
-        T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $request->TDLVPAYDETA_DLVCD)->delete();
+        foreach ($updatedRecordsHeader as $key => $valueHead) {
 
-        foreach ($request->payment as $key => $valuePays) {
-            T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
-                'TDLVPAYDETA_DLVCD' => $request->TDLVSJDETA_DLVCD,
-                'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
+            T_DLVSJDETA::on($this->dedicatedConnection)->updateOrCreate([
+                'TDLVSJDETA_DLVCD' => $valueHead->TDLVORD_DLVCD,
+            ], [
+                'TDLVSJDETA_DLVCD' => $valueHead->TDLVORD_DLVCD,
+                'TDLVSJDETA_TYPE' => $request->TDLVSJDETA_TYPE,
+                'TDLVSJDETA_CONDGRP' => $request->TDLVSJDETA_CONDGRP,
+                'TDLVSJDETA_STARTDT' => $request->TDLVSJDETA_STARTDT,
+                'TDLVSJDETA_ENDDT' => $request->TDLVSJDETA_ENDDT,
+                'TDLVSJDETA_COND_GRP' => $request->has('condition') && !empty($request->condition) ? $request->condition[0]['MCOND_GRPNM'] : '',
+                'TDLVSJDETA_ISSPLITSJ' => $request->TDLVSJDETA_ISSPLITSJ
             ]);
+
+            T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $valueHead->TDLVORD_DLVCD)->delete();
+
+            foreach ($request->payment as $key => $valuePays) {
+                T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
+                    'TDLVPAYDETA_DLVCD' => $valueHead->TDLVORD_DLVCD,
+                    'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
+                ]);
+            }
         }
 
         return ['msg' => 'SJ Detail Saved !'];
@@ -129,9 +141,9 @@ class InvoiceController extends Controller
     {
         $data = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->select(
-                DB::raw("CONCAT(TDLVORD_DLVCD, ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
+                DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
                 'TDLVORD_INVCD',
-                'TDLVORD_DLVCD',
+                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"),
                 'TDLVORD_ISSUDT',
                 'TDLVORD_INVCD',
                 'TDLVORD_REC_NO',
@@ -148,11 +160,7 @@ class InvoiceController extends Controller
                 'TDLVORD_CONDGRP'
             )
             ->with([
-                'dlvdet' => function ($f) {
-                    $f->join('M_ITM', 'TDLVORDDETA_ITMCD_ACT', 'MITM_ITMCD');
-                },
                 'dlvacc',
-                'dlvsj',
                 'payment' => function ($f) {
                     $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
                 },
@@ -163,7 +171,7 @@ class InvoiceController extends Controller
                     $f->where('CSPK_PIC_AS', 'DRIVER');
                 }
             ])
-            ->join('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
+            ->join('T_DLVORDDETA', DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
             ->join('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
@@ -171,8 +179,9 @@ class InvoiceController extends Controller
             ->leftJoin('T_QUOHEAD', 'TQUO_QUOCD', 'TSLO_QUOCD')
             ->where(DB::raw('RTRIM(TDLVORDDETA_ITMCD_ACT)'), '<>', '')
             ->groupBy(
-                'TDLVORD_INVCD',
-                'TDLVORD_DLVCD',
+                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
+                DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"),
+                DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')')"),
                 'TDLVORD_ISSUDT',
                 'TDLVORD_INVCD',
                 'TDLVORD_REC_NO',
@@ -195,7 +204,48 @@ class InvoiceController extends Controller
         }
 
         $hasil = [];
-        foreach ($data->get()->toArray() as $key => $value) {
+        $listData = $data->get()->map(function ($dlv) {
+            $dlv->dlvsj = T_DLVSJDETA::on($this->dedicatedConnection)->where(DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)->first();
+            $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL'
+            )->groupBy(
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL'
+            )
+                ->leftJoin("M_ITM_GRP", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
+                })
+                ->leftJoin("M_ITM", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
+                })
+                ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+                    $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+                        ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+                })
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)
+                ->get();
+
+            return $dlv;
+        })->toArray();
+
+        foreach ($listData as $key => $value) {
             $hasil[] = array_merge(
                 $value,
                 [
@@ -305,7 +355,7 @@ class InvoiceController extends Controller
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->with('condition')
-            ->where("TDLVORD_DLVCD", $doc)
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->first();
 
@@ -323,7 +373,7 @@ class InvoiceController extends Controller
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->where('TDLVORDDETA_DLVCD', $doc)
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->get();
 
@@ -516,18 +566,18 @@ class InvoiceController extends Controller
                 'TDLVSJDETA_STARTDT',
                 'TDLVSJDETA_ENDDT',
                 'TDLVORD_CONDGRP',
-                'TDLVORD_DLVCD',
+                DB::raw("TDLVORD_DLVCD"),
                 'TDLVOR_ISSPLITSJ'
             )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->leftJoin('T_DLVORDDETA', 'TDLVORD_DLVCD', 'TDLVORDDETA_DLVCD')
+            ->leftJoin('T_DLVORDDETA', DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
             ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
             ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
-            ->leftJoin('T_DLVSJDETA', 'TDLVSJDETA_DLVCD', 'TDLVORD_DLVCD')
-            ->where("TDLVORD_DLVCD", $doc)
+            ->leftJoin('T_DLVSJDETA', DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"))
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->with([
                 'condition' => function ($f) {
@@ -540,6 +590,7 @@ class InvoiceController extends Controller
             ])
             ->groupBy(
                 'TDLVORD_DLVCD',
+                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
                 'TDLVORD_ISSUDT',
                 'MCUS_CUSNM',
                 'MCUS_ADDR1',
@@ -562,6 +613,7 @@ class InvoiceController extends Controller
 
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'TDLVORDDETA_ITMCD',
+            'TDLVORDDETA_DLVCD',
             'TDLVORDDETA_ITMCD_ACT',
             'TDLVORDDETA_ITMQT',
             'MITM_ITMNM',
@@ -576,7 +628,7 @@ class InvoiceController extends Controller
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->where('TDLVORDDETA_DLVCD', $doc)
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)->get();
 
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
@@ -646,12 +698,15 @@ class InvoiceController extends Controller
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
         $perulangan = 1;
-
+        $getDO = $doc;
         if ($RSHeader->TDLVOR_ISSPLITSJ == 1) {
             $perulangan = count($RSDetail);
         }
 
         for ($i = 0; $i < $perulangan; $i++) {
+            if ($RSHeader->TDLVOR_ISSPLITSJ == 1) {
+                $getDO = $RSDetail[$i]->TDLVORDDETA_DLVCD;
+            }
 
             $this->fpdf->AddPage("L", 'A5');
             $this->fpdf->SetAutoPageBreak(true, 0);
@@ -680,7 +735,7 @@ class InvoiceController extends Controller
             $this->fpdf->Cell(29, 5, 'SURAT JALAN', 0, 0, 'C');
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(90, 20);
-            $this->fpdf->Cell(29, 5, 'NO : ' . $doc, 0, 0, 'C');
+            $this->fpdf->Cell(29, 5, 'NO : ' . $getDO, 0, 0, 'C');
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(3, 30);
@@ -731,7 +786,7 @@ class InvoiceController extends Controller
                     $Y = 10;
                 }
 
-                $qtyNya = $RSHeader->dlvsj->TDLVSJDETA_ISSPLITSJ == 1 ? 1 : $r->TDLVORDDETA_ITMQT;
+                $qtyNya = $r->TDLVORDDETA_ITMQT;
 
                 $this->fpdf->SetXY(3, $Y);
                 $this->fpdf->Cell(29, 5, $nomor++, 0, 0, 'L');

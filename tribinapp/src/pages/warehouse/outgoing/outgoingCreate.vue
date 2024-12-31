@@ -64,11 +64,33 @@
                 label="Sales Order"
                 dense
                 readonly
+                v-if="typeOutgoing === 1"
               >
                 <template v-slot:append>
                   <q-btn round dense flat icon="search" @click="onSearchSO" />
                 </template>
               </q-input>
+              <q-select
+                v-else
+                dense
+                filled
+                label="DO Choose"
+                v-model="TDLVORDDETA_SLOCD"
+                use-input
+                input-debounce="500"
+                :options="listInvoice"
+                @filter="
+                  (val, update, abort) =>
+                    filterFn(val, update, abort, 'invoice')
+                "
+                behavior="dialog"
+                option-label="LABEL"
+                option-value="TDLVORD_DLVCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :readonly="TDLVORDDETA_SLOCD != ''"
+              ></q-select>
             </div>
             <div class="col q-pl-md">
               <!-- <q-input v-model="MCUS_CUSNM" label="Customer" dense readonly /> -->
@@ -115,6 +137,24 @@
           </div>
         </fieldset>
 
+        <div class="row q-py-md">
+          <div class="col">
+            <q-btn-toggle
+              v-model="typeOutgoing"
+              spread
+              no-caps
+              toggle-color="purple"
+              color="white"
+              text-color="black"
+              :options="[
+                { label: 'From SO', value: 1 },
+                { label: 'Send Following DO', value: 2 },
+              ]"
+              @update:model-value="(val) => clearForm()"
+            />
+          </div>
+        </div>
+
         <fieldset
           style="
             border: 1px black solid;
@@ -146,7 +186,7 @@
                 :false-value="0"
               />
             </div>
-            <!-- <div class="colq-pb-sm text-right">
+            <div class="colq-pb-sm text-right" v-if="typeOutgoing == 2">
               <q-btn
                 icon="add"
                 dense
@@ -154,7 +194,7 @@
                 @click="onAddItems()"
                 color="primary"
               />
-            </div> -->
+            </div>
           </div>
 
           <q-list bordered dense>
@@ -215,16 +255,22 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    <q-input dense label="Qty" filled v-model="items.BALQT" />
+                    <q-input
+                      dense
+                      label="Qty"
+                      filled
+                      v-model="items.BALQT"
+                      :readonly="!splitSJ"
+                    />
                   </q-item-label>
                 </q-item-section>
-                <q-item-section>
+                <!-- <q-item-section>
                   <q-item-label>
                     Rp. {{ items.TSLODETA_PRC.toLocaleString() }}
                   </q-item-label>
                   <q-item-label caption> Price </q-item-label>
-                </q-item-section>
-                <q-item-section side>
+                </q-item-section> -->
+                <q-item-section side v-if="splitSJ == 1">
                   <q-btn
                     icon="delete"
                     color="red"
@@ -254,18 +300,14 @@
               color="primary"
               @click="onSubmitData()"
               :loading="loading"
-              :disable="
-                splitSJ
-                  ? props.dataHeader.SUMDETQT < getSumAllDetail
-                    ? true
-                    : false
-                  : false
-              "
+              :disable="getSumAllDetail.length > 0"
             />
             <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
           </div>
         </div>
       </q-card-actions>
+
+      {{ getSumAllDetail }}
     </q-card>
   </q-dialog>
 </template>
@@ -296,7 +338,7 @@ onMounted(async () => {
     TDLVORD_REMARK.value = props.dataHeader.TDLVORD_REMARK;
     listItems.value = props.dataHeader.listItems;
     listItemBackUp.value = props.dataHeader.listItems;
-    splitSJ.value = parseInt(props.dataHeader.TDLVOR_ISSPLITSJ)
+    splitSJ.value = parseInt(props.dataHeader.TDLVOR_ISSPLITSJ);
   }
 });
 
@@ -314,10 +356,42 @@ const listItem = ref([]);
 const listItemBackUp = ref([]);
 const splitInvoice = ref(false);
 const splitSJ = ref(0);
+const typeOutgoing = ref(1);
+const listInvoice = ref([]);
 
-const getSumAllDetail = computed(() =>
-  listItems.value.reduce((acc, val) => acc + parseInt(val.BALQT), 0)
-);
+const getSumAllDetail = computed(() => {
+  let hasilLess = [];
+  for (let index = 0; index < listItemBackUp.value.length; index++) {
+    const valMap = listItemBackUp.value[index];
+
+    const totalItem = listItemBackUp.value
+      .filter((fil) => fil.TSLODETA_ITMCD == valMap.TSLODETA_ITMCD)
+      .reduce((acc, val) => acc + parseInt(val.BALQT), 0);
+    console.log(totalItem)
+    if (totalItem > 0) {
+      hasilLess.push({
+        item: valMap.TSLODETA_ITMCD,
+        status: valMap.BALQT < totalItem,
+      });
+    }
+  }
+
+  return hasilLess;
+});
+
+const clearForm = () => {
+  TDLVORD_DLVCD.value = "";
+  TDLVORD_INVCD.value = "";
+  TDLVORD_CUSCD.value = "";
+  TDLVORD_ISSUDT.value = "";
+  TDLVORDDETA_SLOCD.value = "";
+  MCUS_CUSNM.value = "";
+  TDLVORD_REMARK.value = "";
+  listItems.value = [];
+  listItemBackUp.value = [];
+  splitInvoice.value = false;
+  splitSJ.value = 0;
+};
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -327,6 +401,10 @@ const filterFn = (val, update, abort, fun) => {
 
     if (fun === "item") {
       await getItem(val);
+    }
+
+    if (fun === "invoice") {
+      await getInvoice(val);
     }
   });
 };
@@ -343,6 +421,22 @@ const getCustomer = async (val, cols = "MCUS_CUSNM") => {
       listCustomers.value = response.data.data;
     })
     .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getInvoice = async (val, cols = "TDLVORD_DLVCD") => {
+  loading.value = true;
+  await api_web
+    .post("invoices/search", {
+      searchBy: cols,
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listInvoice.value = response.data.data;
+    })
+    .catch((e) => {
       loading.value = false;
     });
 };

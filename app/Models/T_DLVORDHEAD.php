@@ -23,7 +23,8 @@ class T_DLVORDHEAD extends Model
         'TDLVORD_VEHICLE_REGNUM',
         'TDLVORD_REC_NO',
         'TDLVORD_CONDGRP',
-        'TDLVOR_ISSPLITSJ'
+        'TDLVOR_ISSPLITSJ',
+        'TDLVORD_TYPE'
     ];
 
     public function dlvdet()

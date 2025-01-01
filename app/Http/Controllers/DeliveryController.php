@@ -115,7 +115,8 @@ class DeliveryController extends Controller
             "MCUS_CUSNM",
             "TSLO_PLAN_DLVDT",
             DB::raw("SUM(SALESQT) SALESQT"),
-            DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT")
+            DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT"),
+            'TSLODETA_PRC'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -128,7 +129,7 @@ class DeliveryController extends Controller
             ->leftJoinSub($RSDelivery, 'V2', function ($join) {
                 $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
                     ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH');
-                    // ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
+                // ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             });
 
         if (!empty($request->searchBy)) {
@@ -137,7 +138,13 @@ class DeliveryController extends Controller
 
         $RS->where('TSLO_BRANCH', Auth::user()->branch)
             ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
-            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT")
+            ->groupBy(
+                "TSLO_SLOCD",
+                "TSLO_CUSCD",
+                "MCUS_CUSNM",
+                "TSLO_PLAN_DLVDT",
+                'TSLODETA_PRC'
+            )
             ->orderBy('TSLO_PLAN_DLVDT', 'desc');
 
         return ['data' => $RS->get()];
@@ -161,7 +168,8 @@ class DeliveryController extends Controller
             "TSLO_PLAN_DLVDT",
             "TSLODETA_ITMCD",
             "MITM_ITMNM",
-            DB::raw("SUM(SALESQT) - IFNULL(SUM(TTLDLVQT),0) BALQT")
+            DB::raw("SUM(SALESQT) - IFNULL(SUM(TTLDLVQT),0) BALQT"),
+            'TSLODETA_PRC'
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -180,7 +188,7 @@ class DeliveryController extends Controller
             ->where('TSLO_SLOCD', base64_decode($id))
             ->where('TSLO_BRANCH', Auth::user()->branch)
             // ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
-            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM");
+            ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM", 'TSLODETA_PRC');
         return ['data' => $RS->get()];
     }
 
@@ -294,18 +302,42 @@ class DeliveryController extends Controller
 
         $LastLine = empty($checkLine) ? 0 : $checkLine->TDLVORD_LINE;
 
-        if (empty($request->TDLVORD_INVCD)) {
+        // return (empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 1) || (!empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 2);
+        if ((empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 1) || (!empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 2)) {
             $quotationHeader = [];
             $newQuotationCode = '';
             $newInvoiceCode = '';
-            if (empty($LastLine)) {
-                $LastLine = 1;
-                $newQuotationCode = 'SP-' . date('y') . '-0001';
-                $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+
+            if ($request->typeOutgoing === 2) {
+                // $getLatestDOData = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', 'like', $request->TDLVORD_DLVCD.'%')->orderBy('TDLVORD_DLVCD', 'desc')->first()->TDLVORD_DLVCD;
+                // $getLatestDO = explode('/', $getLatestDOData);
+                // if (count($getLatestDO) > 1) {
+                //     $newQuotationCode = $getLatestDO[0] . '/' . ((int)$getLatestDO[1] + 1);
+                //     $newInvoiceCode = $request->TDLVORD_INVCD;
+                // } else {
+                //     $newQuotationCode = $getLatestDO[0] . '/1';
+                //     $newInvoiceCode = $request->TDLVORD_INVCD;
+                // }
+
+                if (empty($LastLine)) {
+                    $LastLine = 1;
+                    $newQuotationCode = 'SP-' . date('y') . '-0001';
+                    $newInvoiceCode = $request->TDLVORD_INVCD;
+                } else {
+                    $LastLine++;
+                    $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
+                    $newInvoiceCode = $request->TDLVORD_INVCD;
+                }
             } else {
-                $LastLine++;
-                $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
-                $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                if (empty($LastLine)) {
+                    $LastLine = 1;
+                    $newQuotationCode = 'SP-' . date('y') . '-0001';
+                    $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                } else {
+                    $LastLine++;
+                    $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
+                    $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                }
             }
         } else {
             $newQuotationCode = $request->TDLVORD_DLVCD;
@@ -322,7 +354,8 @@ class DeliveryController extends Controller
             'TDLVORD_REMARK' => $request->TDLVORD_REMARK,
             'TDLVORD_INVCD' => $newInvoiceCode,
             'TDLVORD_BRANCH' => Auth::user()->branch,
-            'TDLVOR_ISSPLITSJ' => $request->splitSJ
+            'TDLVOR_ISSPLITSJ' => $request->splitSJ,
+            'TDLVORD_TYPE' => $request->typeOutgoing
         ];
 
         # data quotation detail item
@@ -359,6 +392,12 @@ class DeliveryController extends Controller
 
         foreach ($dataDLVHead as $keyHeader => $valueHeader) {
             foreach ($valueHeader['DET'] as $keySODet => $valueSODet) {
+                $sloCD = isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : '';
+                $getDataSLO = T_SLODETA::on($this->dedicatedConnection)
+                    ->where('TSLODETA_SLOCD', $sloCD)
+                    ->where('TSLODETA_ITMCD', $valueSODet['TSLODETA_ITMCD'])
+                    ->first();
+
                 T_DLVORDDETA::on($this->dedicatedConnection)->insert([
                     'TDLVORDDETA_DLVCD' => $valueHeader['HEAD']->TDLVORD_DLVCD,
                     'TDLVORDDETA_ITMCD' => $valueSODet['TSLODETA_ITMCD'],
@@ -382,8 +421,8 @@ class DeliveryController extends Controller
 
     public function delete($id)
     {
-        $det = T_DLVORDDETA::on($this->dedicatedConnection)->where('TDLVORDDETA_DLVCD', base64_decode($id))->delete();
-        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', base64_decode($id))->delete();
+        $det = T_DLVORDDETA::on($this->dedicatedConnection)->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($id))->delete();
+        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($id))->delete();
 
         return [
             'msg' => 'OK',
@@ -524,7 +563,7 @@ class DeliveryController extends Controller
         $RSTemp = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
             DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"),
             "TDLVORD_CUSCD",
-            "TDLVORD_ISSUDT",
+            DB::raw("MAX(TDLVORD_ISSUDT) AS TDLVORD_ISSUDT"),
             "MCUS_CUSNM",
             'TDLVORDDETA_SLOCD',
             'TDLVORD_REMARK',
@@ -538,16 +577,15 @@ class DeliveryController extends Controller
             })
             ->leftJoinSub($RSSub, 'V1', function ($join) {
                 $join->on(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), '=', DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
-                    ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
+                    ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                    ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->where(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"), '=', NULL)
             ->orderBy('T_DLVORDHEAD.created_at', 'desc')
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
-                DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"),
+                'TDLVORDDETA_ITMCD_ACT',
                 "TDLVORD_CUSCD",
-                "TDLVORD_ISSUDT",
                 "MCUS_CUSNM",
                 'TDLVORDDETA_SLOCD',
                 'TDLVORD_REMARK',
@@ -560,6 +598,8 @@ class DeliveryController extends Controller
         }
 
         $hasil = [];
+
+        // return $RSTemp->get()->toArray();
 
         foreach ($RSTemp->get()->toArray() as $keySODet => $valueSODet) {
             $hasil[] = array_merge(
@@ -579,6 +619,7 @@ class DeliveryController extends Controller
                         )
                         ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
                         ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $valueSODet['TDLVORD_DLVCD'])
+                        ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
                         ->leftJoin("M_ITM_GRP", function ($join) {
                             $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                                 ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -1381,8 +1422,8 @@ class DeliveryController extends Controller
 
             if (
                 T_PCHORDHEAD::on($this->dedicatedConnection)
-                    ->where('TPCHORD_BRANCH', Auth::user()->branch)
-                    ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
+                ->where('TPCHORD_BRANCH', Auth::user()->branch)
+                ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
             ) {
                 return true;
             }
@@ -1854,7 +1895,8 @@ class DeliveryController extends Controller
         $Data = T_DLVORDHEAD::on($this->dedicatedConnection)
             ->select(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
             ->leftJoin('T_DLVORDDETA', function ($join) {
-                $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
+                $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
             })
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -1879,22 +1921,22 @@ class DeliveryController extends Controller
 
         return ['data' => $Data->get()->map(function ($dlv) {
             $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
-                    'T_DLVORDDETA.id',
-                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                    'MITM_ITMNM',
-                    'MITM_ITMNMREAL'
-                )->groupBy(
-                        'T_DLVORDDETA.id',
-                        'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                        'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                        'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                        'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                        'MITM_ITMNM',
-                        'MITM_ITMNMREAL'
-                    )
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'MITM_ITMNM',
+                'MITM_ITMNMREAL'
+            )->groupBy(
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'MITM_ITMNM',
+                'MITM_ITMNMREAL'
+            )
                 ->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                         ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -1904,6 +1946,7 @@ class DeliveryController extends Controller
                         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
                 })
                 ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)
+                ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
                 ->get();
 
             return $dlv;

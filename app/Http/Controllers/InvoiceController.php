@@ -144,7 +144,7 @@ class InvoiceController extends Controller
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
                 'TDLVORD_INVCD',
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"),
-                'TDLVORD_ISSUDT',
+                DB::raw('max(TDLVORD_ISSUDT) as TDLVORD_ISSUDT'),
                 'TDLVORD_INVCD',
                 'TDLVORD_REC_NO',
                 'TDLVORDDETA_SLOCD',
@@ -157,7 +157,10 @@ class InvoiceController extends Controller
                 'TSLO_POCD',
                 'TQUO_SBJCT',
                 'TQUO_ATTN',
-                'TDLVORD_CONDGRP'
+                'TDLVORD_CONDGRP',
+                'TDLVORD_REMARK',
+                'TDLVOR_ISSPLITSJ',
+                'TDLVORD_TYPE',
             )
             ->with([
                 'dlvacc',
@@ -182,7 +185,6 @@ class InvoiceController extends Controller
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
                 DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"),
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')')"),
-                'TDLVORD_ISSUDT',
                 'TDLVORD_INVCD',
                 'TDLVORD_REC_NO',
                 'TDLVORD_CUSCD',
@@ -195,7 +197,10 @@ class InvoiceController extends Controller
                 'TSLO_POCD',
                 'TQUO_SBJCT',
                 'TQUO_ATTN',
-                'TDLVORD_CONDGRP'
+                'TDLVORD_CONDGRP',
+                'TDLVORD_REMARK',
+                'TDLVOR_ISSPLITSJ',
+                'TDLVORD_TYPE',
             )
             ->orderBy('T_DLVORDHEAD.created_at', 'desc');
 
@@ -212,6 +217,7 @@ class InvoiceController extends Controller
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD',
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
                 'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
                 'M_ITM_GRP.MITM_ITMNM',
                 'M_ITM_GRP.MITM_ITMNMREAL',
                 'M_ITM.MITM_BRAND',
@@ -222,6 +228,7 @@ class InvoiceController extends Controller
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD',
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
                 'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
                 'M_ITM_GRP.MITM_ITMNM',
                 'M_ITM_GRP.MITM_ITMNMREAL',
                 'M_ITM.MITM_BRAND',
@@ -277,18 +284,34 @@ class InvoiceController extends Controller
         $dlvDetParse = [];
         $cek = [];
         foreach ($request->dlvdet as $key => $value) {
+            if ($request->TDLVORD_TYPE === 1) {
+                $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
+                    return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'] && $f['TSLODETA_PRC'] == $value['TDLVORDDETA_PRC'];
+                }));
+            } else {
+                // $getSLOByItem = $request->sloDet;
+                $getSLOByItemX = json_decode(json_encode($this->search(new Request([
+                    'searchBy' => 'TDLVORD_INVCD',
+                    'searchValue' => $request->TDLVORD_INVCD
+                ]))['data']), true);
 
-            $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
-                return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
-            }));
-
+                $getSLOByItemxx = $getSLOByItemX[count($getSLOByItemX) - 1];
+                $getSLOByItem = array_values(array_filter($getSLOByItemxx['sloDet'], function ($f) use ($value) {
+                    return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
+                }));
+            }
+            // return $getSLOByItem;
             $cek[] = $getSLOByItem;
             // return $getSLOByItem[0];
             if (count($getSLOByItem) > 0) {
-                $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
+                if ($request->TDLVORD_TYPE === 1) {
+                    $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
+                } else {
+                    $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
+                }
+
                 $total += $getTotalPrice;
                 $dlvDetParse[] = array_merge($value, ['dataSLO' => $getSLOByItem[0], 'totPRCSLO' => $getTotalPrice]);
-                // return array_merge($value, $getSLOByItem[0]);
             }
         }
 

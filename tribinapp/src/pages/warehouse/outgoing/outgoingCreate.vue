@@ -90,6 +90,7 @@
                 map-options
                 :loading="loading"
                 :readonly="TDLVORDDETA_SLOCD != ''"
+                @update:model-value="(value) => onChooseDO(value)"
               ></q-select>
             </div>
             <div class="col q-pl-md">
@@ -151,6 +152,7 @@
                 { label: 'Send Following DO', value: 2 },
               ]"
               @update:model-value="(val) => clearForm()"
+              :disable="TDLVORD_DLVCD != ''"
             />
           </div>
         </div>
@@ -193,6 +195,7 @@
                 outline
                 @click="onAddItems()"
                 color="primary"
+                :disable="!TDLVORDDETA_SLOCD"
               />
             </div>
           </div>
@@ -235,7 +238,7 @@
                       dense
                       filled
                       label="Item Name"
-                      v-model="items.MITM_ITMNM"
+                      v-model="items.TSLODETA_ITMCD"
                       use-input
                       input-debounce="500"
                       :options="listItem"
@@ -249,7 +252,10 @@
                       emit-value
                       map-options
                       :loading="loading"
-                      :readonly="TDLVORDDETA_SLOCD != ''"
+                      :readonly="TDLVORDDETA_SLOCD != '' && typeOutgoing == 1"
+                      v-on:update:model-value="
+                        (value) => onChangeItem(idx, value)
+                      "
                     />
                   </q-item-label>
                 </q-item-section>
@@ -264,12 +270,21 @@
                     />
                   </q-item-label>
                 </q-item-section>
-                <!-- <q-item-section>
+                <q-item-section>
                   <q-item-label>
-                    Rp. {{ items.TSLODETA_PRC.toLocaleString() }}
+                    <q-input
+                      dense
+                      label="Rp"
+                      filled
+                      v-model="items.TSLODETA_PRC"
+                      v-if="typeOutgoing == 2"
+                    />
+                    <span v-else>
+                      Rp. {{ items.TSLODETA_PRC.toLocaleString() }}
+                    </span>
                   </q-item-label>
                   <q-item-label caption> Price </q-item-label>
-                </q-item-section> -->
+                </q-item-section>
                 <q-item-section side v-if="splitSJ == 1">
                   <q-btn
                     icon="delete"
@@ -294,7 +309,7 @@
 
       <q-card-actions>
         <div class="row">
-          <div class="col text-right">
+          <div :class="getSumAllDetail.length > 0 ? 'col-4' : 'col'">
             <q-btn
               label="OK"
               color="primary"
@@ -305,8 +320,12 @@
             <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
           </div>
           <div class="col" v-for="(sums, idx) in getSumAllDetail" :key="idx">
-            <q-chip outline color="orange" text-color="white" icon-right="star">
-              Stock item {{ sums.item }} only: <b>{{ sums.tot }}</b>, total updated Qty is : <b>{{ sums.totList }}</b>, please correct the qty to make it tally with stock.
+            <q-chip outline color="red" text-color="white" icon="warning">
+              Stock item&nbsp;<b>{{ sums.item }}</b
+              >&nbsp;with price Rp &nbsp;<b>{{ sums.prc }}</b
+              >&nbsp; only:&nbsp;<b>{{ sums.tot }}</b
+              >, total updated Qty is :&nbsp;<b>{{ sums.totList }}</b
+              >.
             </q-chip>
           </div>
         </div>
@@ -367,21 +386,30 @@ const getSumAllDetail = computed(() => {
   const itemsMap = new Map();
 
   listItemBackUp.value.forEach((item) => {
-    const totalItem = itemsMap.get(item.TSLODETA_ITMCD) || 0;
-    itemsMap.set(item.TSLODETA_ITMCD, totalItem + parseInt(item.BALQT));
+    const totalItem =
+      itemsMap.get(item.TSLODETA_ITMCD + item.TSLODETA_PRC) || 0;
+    itemsMap.set(
+      item.TSLODETA_ITMCD + item.TSLODETA_PRC,
+      totalItem + parseInt(item.BALQT)
+    );
   });
 
   console.log(itemsMap);
 
   listItemBackUp.value.forEach((item) => {
-    const totalItem = itemsMap.get(item.TSLODETA_ITMCD);
+    const totalItem = itemsMap.get(item.TSLODETA_ITMCD + item.TSLODETA_PRC);
     const totalItemOnList = listItems.value
-      .filter((fil) => fil.TSLODETA_ITMCD == item.TSLODETA_ITMCD)
+      .filter(
+        (fil) =>
+          fil.TSLODETA_ITMCD + fil.TSLODETA_PRC ==
+          item.TSLODETA_ITMCD + item.TSLODETA_PRC
+      )
       .reduce((acc, val) => acc + parseInt(val.BALQT), 0);
 
     if (totalItem < totalItemOnList) {
       hasilLess.push({
         item: item.TSLODETA_ITMCD,
+        prc: item.TSLODETA_PRC,
         status: item.BALQT < totalItem,
         tot: totalItem,
         totList: totalItemOnList,
@@ -485,10 +513,12 @@ const submitedForm = async (det = []) => {
       TDLVORD_CUSCD: TDLVORD_CUSCD.value,
       TDLVORD_ISSUDT: TDLVORD_ISSUDT.value,
       TDLVORDDETA_SLOCD: TDLVORDDETA_SLOCD.value,
+      TDLVORD_INVCD: TDLVORD_INVCD.value,
       TDLVORD_REMARK: TDLVORD_REMARK.value,
       SO_DET: det.length > 0 ? det : listItems.value,
       splitInvoice: splitInvoice.value,
       splitSJ: splitSJ.value,
+      typeOutgoing: typeOutgoing.value,
     })
     .then((response) => {
       loading.value = false;
@@ -575,6 +605,59 @@ const onChangeSplitSJ = (state) => {
   }
 };
 
+const onChooseDO = (val) => {
+  const getDataDO = listInvoice.value.filter((fil) => fil.TDLVORD_DLVCD == val);
+
+  if (getDataDO.length > 0) {
+    const dataDO = getDataDO[0];
+    TDLVORDDETA_SLOCD.value = dataDO.TDLVORDDETA_SLOCD;
+    MCUS_CUSNM.value = dataDO.MCUS_CUSNM;
+    TDLVORD_CUSCD.value = dataDO.TDLVORD_CUSCD;
+    TDLVORD_ISSUDT.value = dataDO.TDLVORD_ISSUDT;
+    TDLVORD_REMARK.value = dataDO.TDLVORD_REMARK;
+    TDLVORD_INVCD.value = dataDO.TDLVORD_INVCD;
+    TDLVORD_DLVCD.value = dataDO.TDLVORD_DLVCD;
+    splitSJ.value = dataDO.TDLVOR_ISSPLITSJ;
+    // typeOutgoing.value = dataDO.TDLVORD_TYPE
+
+    // listItems.value = []
+    // dataDO.dlvdet.map(valMap => {
+    //   listItems.value.push({
+    //     ...valMap,
+    //     BALQT: valMap.TDLVORDDETA_ITMQT,
+    //     TSLODETA_PRC: valMap.TDLVORDDETA_PRC
+    //   })
+    // })
+    // getListItemCode(dataDO.TDLVORDDETA_SLOCD);
+  } else {
+    $q.notify({
+      color: "red",
+      message: "Cannot found the data DO.",
+    });
+  }
+  console.log(getDataDO);
+};
+
+const onChangeItem = (idx, value) => {
+  const getDataItem = listItem.value.filter((fil) => fil.MITM_ITMNM == value);
+
+  if (getDataItem.length > 0) {
+    const dataItem = getDataItem[0];
+    listItems.value[idx].TSLODETA_PRC = dataItem.LATEST_PRC;
+  } else {
+    $q.notify({
+      color: "red",
+      message: "Cannot found the data Items.",
+    });
+  }
+};
+
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 </script>
+<style>
+.wrap-text {
+  white-space: normal;
+  word-wrap: break-word;
+}
+</style>

@@ -712,7 +712,7 @@ class DeliveryController extends Controller
             break;
         }
         if (substr($_COOKIE['JOS_PRINT_FORM'], 0, 1) == '1') {
-            $this->fpdf->AddPage("L", 'A5');
+            $this->fpdf->AddPage("P", 'A5');
             $this->fpdf->SetAutoPageBreak(true, 0);
             $this->fpdf->SetFont('Arial', 'B', 12);
             $this->fpdf->SetXY(3, 5);

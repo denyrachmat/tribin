@@ -752,7 +752,11 @@ class ReceiveOrderController extends Controller
                 $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
             }
 
-            $hasil[$value] = $RSTemp->get();
+            $cekTotalData = $RSTemp->get();
+
+            if (count($cekTotalData) > 0) {
+                $hasil[$value] = $cekTotalData;
+            }
         }
 
         // return $hasil;

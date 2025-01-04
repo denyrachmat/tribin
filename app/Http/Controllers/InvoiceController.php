@@ -731,7 +731,7 @@ class InvoiceController extends Controller
                 $getDO = $RSDetail[$i]->TDLVORDDETA_DLVCD;
             }
 
-            $this->fpdf->AddPage("P", 'A5');
+            $this->fpdf->AddPage("L", 'A5');
             $this->fpdf->SetAutoPageBreak(true, 0);
             $this->fpdf->SetFont('Arial', 'B', 12);
             $this->fpdf->SetXY(3, 5);

@@ -140,12 +140,11 @@ class ItemController extends Controller
     function searchAPI(Request $request)
     {
         $columnMap = [
-            DB::raw('M_ITM_GRP.MITM_ITMNM as MITM_ITMNM'),
-            DB::raw("M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL"),
+            'M_ITM_GRP.MITM_ITMNM as MITM_ITMNM',
+            'M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL',
             'LATEST_PRC',
             'STOCK'
         ];
-
 
         $DataSet = DB::connection($this->dedicatedConnection);
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
@@ -161,17 +160,17 @@ class ItemController extends Controller
             $RSHead->where('MITM_ITMTYPE', 3);
 
             if ($request->has('useCustomer') && !empty($request->useCustomer)) {
-                $RSHead->join('T_SRV_DET', DB::raw('M_ITM_GRP.MITM_ITMNM'), 'TSRVD_ITMCD')
-                    ->leftJoin('T_SRV_HEAD', 'TSRVH_ID', 'T_SRV_HEAD.id')
-                    ->where('SRVH_CUSCD', $request->useCustomer);
+                $RSHead->join('T_SRV_DET', 'M_ITM_GRP.MITM_ITMNM', '=', 'T_SRV_DET.TSRVD_ITMCD')
+                    ->leftJoin('T_SRV_HEAD', 'T_SRV_DET.TSRVH_ID', '=', 'T_SRV_HEAD.id')
+                    ->where('T_SRV_HEAD.SRVH_CUSCD', $request->useCustomer);
             }
         }
 
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)
-                ->where( function ($wh) use ($request){
-                    $wh->where(DB::raw('M_ITM_GRP.MITM_ITMNM'), 'like', "'%{$request->searchValue}%'")
-                    ->orWhere(DB::raw('M_ITM_GRP.MITM_ITMNMREAL'), 'like', "'%{$request->searchValue}%'");
+                ->where(function ($wh) use ($request) {
+                    $wh->where('M_ITM_GRP.MITM_ITMNM', 'like', "%{$request->searchValue}%")
+                       ->orWhere('M_ITM_GRP.MITM_ITMNMREAL', 'like', "%{$request->searchValue}%");
                 })
                 ->get();
         } else {

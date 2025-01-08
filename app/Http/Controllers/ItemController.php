@@ -169,8 +169,7 @@ class ItemController extends Controller
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)
                 ->where(function ($wh) use ($request) {
-                    $wh->where('M_ITM_GRP.MITM_ITMNM', 'like', "%{$request->searchValue}%")
-                       ->orWhere('M_ITM_GRP.MITM_ITMNMREAL', 'like', "%{$request->searchValue}%");
+                    $wh->where('M_ITM_GRP.MITM_ITMNMREAL', 'like', "%{$request->searchValue}%");
                 })
                 ->get();
         } else {

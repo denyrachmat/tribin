@@ -140,8 +140,8 @@ class ItemController extends Controller
     function searchAPI(Request $request)
     {
         $columnMap = [
-            DB::raw('M_ITM_GRP.MITM_ITMNM'),
-            DB::raw("M_ITM_GRP.MITM_ITMNMREAL"),
+            DB::raw('M_ITM_GRP.MITM_ITMNM as MITM_ITMNM'),
+            DB::raw("M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL"),
             'LATEST_PRC',
             'STOCK'
         ];

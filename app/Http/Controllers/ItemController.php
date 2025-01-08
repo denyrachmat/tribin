@@ -161,7 +161,7 @@ class ItemController extends Controller
             $RSHead->where('MITM_ITMTYPE', 3);
 
             if ($request->has('useCustomer') && !empty($request->useCustomer)) {
-                $RSHead->join('T_SRV_DET', 'MITM_ITMNM', 'TSRVD_ITMCD')
+                $RSHead->join('T_SRV_DET', DB::raw('M_ITM_GRP.MITM_ITMNM'), 'TSRVD_ITMCD')
                     ->leftJoin('T_SRV_HEAD', 'TSRVH_ID', 'T_SRV_HEAD.id')
                     ->where('SRVH_CUSCD', $request->useCustomer);
             }

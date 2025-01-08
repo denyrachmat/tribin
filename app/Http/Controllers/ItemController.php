@@ -169,8 +169,10 @@ class ItemController extends Controller
 
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)
-                ->where(DB::raw('M_ITM_GRP.MITM_ITMNM'), 'like', "'%{$request->searchValue}%'")
-                ->orWhere(DB::raw('M_ITM_GRP.MITM_ITMNMREAL'), 'like', "'%{$request->searchValue}%'")
+                ->where( function ($wh) use ($request){
+                    $wh->where(DB::raw('M_ITM_GRP.MITM_ITMNM'), 'like', "'%{$request->searchValue}%'")
+                    ->orWhere(DB::raw('M_ITM_GRP.MITM_ITMNMREAL'), 'like', "'%{$request->searchValue}%'");
+                })
                 ->get();
         } else {
             $RS = (clone $RSHead)->get();

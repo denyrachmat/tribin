@@ -562,7 +562,13 @@ const getROData = async (val) => {
       forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE);
       forms.value.TSLO_ISCON = parseInt(response.data.TSLO_ISCON);
 
-      quotDetail.value = response.data.det;
+      quotDetail.value = []
+      response.data.det.map(valDet => {
+        quotDetail.value.push({
+          ...valDet,
+          TSLODETA_USAGE_DESCRIPTION: parseInt(valDet.TSLODETA_USAGE_DESCRIPTION)
+        })
+      })
     })
     .catch(() => {
       loading.value = false;
@@ -612,7 +618,7 @@ const onAddItemLine = () => {
   quotDetail.value.push({
     TSLODETA_ITMCD: "",
     TSLODETA_ITMQT: 0,
-    TSLODETA_USAGE_DESCRIPTION: "",
+    TSLODETA_USAGE_DESCRIPTION: 0,
     TSLODETA_PRC: 0,
     TSLODETA_PERIOD_FR: "",
     TSLODETA_PERIOD_TO: "",

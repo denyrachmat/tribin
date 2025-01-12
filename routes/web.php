@@ -160,8 +160,11 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('import', [CoaController::class, 'importFromAnotherCompany']);
             Route::get('', [CoaController::class, 'search']);
             Route::post('searchAPI', [CoaController::class, 'searchAPI']);
+            Route::post('searchAPISingle', [CoaController::class, 'searchAPISingle']);
+            Route::post('searchAPIGroup', [CoaController::class, 'searchAPIGroup']);
             Route::post('', [CoaController::class, 'simpan']);
             Route::put('{id}', [CoaController::class, 'update']);
+            Route::delete('{id}', [CoaController::class, 'delete']);
         });
 
         # Terkait Chart of Account Master
@@ -510,9 +513,11 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('searchAPI', [AccountingIFController::class, 'searchAPI']);
             Route::get('submitClosing/{date}', [AccountingIFController::class, 'submitClosing']);
 
+            Route::resource('journals', AccountingJournalController::class);
+
             Route::prefix('journal')->group(function () {
+                Route::get('', [AccountingJournalController::class, 'index']);
                 Route::post('searchAPI', [AccountingJournalController::class, 'searchAPI']);
-                Route::resource('', AccountingJournalController::class);
             });
         });
 

@@ -15,4 +15,12 @@ class M_COA_MAP extends Model
         'MCOAM_DB_COACD',
         'MCOAM_DESC',
     ];
+
+    public function getcoadebit() {
+        return $this->hasOne(M_COA::class, 'MCOA_COACD', 'MCOAM_DB_COACD');
+    }
+
+    public function getcoacredit() {
+        return $this->hasOne(M_COA::class, 'MCOA_COACD', 'MCOAM_CR_COACD');
+    }
 }

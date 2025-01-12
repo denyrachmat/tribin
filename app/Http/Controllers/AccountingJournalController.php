@@ -86,6 +86,68 @@ class AccountingJournalController extends Controller
         return ['data' => $hasil];
     }
 
+    public function searchAPIGroup(Request $request): array
+    {
+        $data = T_GLHIST::on($this->dedicatedConnection)
+            ->from('T_GLHIST as a')
+            ->select(
+                'a.GLHIST_DOC',
+                'a.GLHIST_CURR',
+                'a.GLHIST_EFFDT',
+                DB::raw('MAX(MCOA_TYPE) AS MCOA_TYPE'),
+                DB::raw("COALESCE((
+                    SELECT SUM(b.GLHIST_AMT)
+                    FROM T_GLHIST b
+                    WHERE b.GLHIST_DOCTYPE = 'INC-JRN'
+                    AND b.GLHIST_DOC = a.GLHIST_DOC
+                ), 0) as GLHIST_AMT_DB"),
+                DB::raw("COALESCE((
+                    SELECT SUM(b.GLHIST_AMT) * -1
+                    FROM T_GLHIST b
+                    WHERE b.GLHIST_DOCTYPE = 'OUT-JRN'
+                    AND b.GLHIST_DOC = a.GLHIST_DOC
+                ), 0) as GLHIST_AMT_CR"),
+            )
+            ->where('GLHIST_DOCTYPE', 'like', '%JRN')
+            ->leftjoin('M_COA', 'GLHIST_ACC', 'MCOA_COACD')
+            ->groupBy(
+                'GLHIST_DOC',
+                'GLHIST_CURR',
+                'GLHIST_EFFDT'
+            );
+
+        if (!empty($request->searchValue)) {
+            $data = (clone $data)->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        $hasil = [];
+        foreach ($data->get()->toArray() as $key => $value) {
+            $det = T_GLHIST::on($this->dedicatedConnection)
+                ->select(
+                    'GLHIST_ACC',
+                    'GLHIST_DOC',
+                    DB::raw("CASE WHEN MCOA_TYPE = 'INC'
+                    THEN GLHIST_AMT
+                    ELSE GLHIST_AMT * -1
+                END AS GLHIST_AMT"),
+                    'GLHIST_DESC',
+                    'GLHIST_EFFDT',
+                    'GLHIST_CURR',
+                    'MCOA_TYPE',
+                )
+                ->join('M_COA', 'GLHIST_ACC', 'MCOA_COACD')
+                ->where('GLHIST_DOC', $value['GLHIST_DOC'])
+                ->get()
+                ->toArray();
+
+            $hasil[] = array_merge($value, [
+                'det' => $det
+            ]);
+        }
+
+        return ['data' => $hasil];
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -180,19 +242,19 @@ class AccountingJournalController extends Controller
         foreach ($request->det as $key => $value) {
             M_COA::on($this->dedicatedConnection)->where('MCOA_COACD', $value['GLHIST_ACC'])
                 ->update([
-                    'MCOA_TYPE' => $request->MCOA_TYPE,
+                    'MCOA_TYPE' => $value['MCOA_TYPE'],
                     'MCOA_CURR' => $value['GLHIST_CURR']
                 ]);
 
             $insertedData = T_GLHIST::on(($this->dedicatedConnection))->create([
                 'GLHIST_ACC' => $value['GLHIST_ACC'],
-                'GLHIST_AMT' => $request->MCOA_TYPE === 'INC' ? $value['GLHIST_AMT'] : $value['GLHIST_AMT'] * -1,
+                'GLHIST_AMT' => $value['MCOA_TYPE'] === 'INC' ? $value['GLHIST_AMT'] : $value['GLHIST_AMT'] * -1,
                 'GLHIST_CURR' => $value['GLHIST_CURR'],
                 'GLHIST_DESC' => $value['GLHIST_DESC'],
                 'GLHIST_DOC' => $request->GLHIST_DOC,
                 'GLHIST_EFFDT' => $request->GLHIST_EFFDT,
                 'GLHIST_CRDT' => date('Y-m-d'),
-                'GLHIST_DOCTYPE' => $request->MCOA_TYPE . '-JRN',
+                'GLHIST_DOCTYPE' => $value['MCOA_TYPE'] . '-JRN',
                 'GLHIST_ITMCD' => ''
             ]);
         }

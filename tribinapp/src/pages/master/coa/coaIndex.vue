@@ -82,7 +82,7 @@
                   flat
                   :color="'red'"
                   icon="delete"
-                  @click="onDeleteJournal(props.row.GLHIST_DOC)"
+                  @click="onDeleteJournal(props.row.MCOA_COACD)"
                   dense
                 >
                   <q-tooltip>Journal Delete</q-tooltip>
@@ -173,15 +173,16 @@ const dataCoa = async () => {
 const onDeleteJournal = (doc) => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to delete this journal doc ?`,
+    message: `Are you sure want to delete this COA ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
     api_web
-      .delete(`acc/journal/${btoa(doc)}`)
+      .delete(`coa/${btoa(doc)}`)
       .then((response) => {
         loading.value = false;
-        rows.value = response.data.data;
+        dataCoa();
+        // rows.value = response.data.data;
       })
       .catch((e) => {
         loading.value = false;

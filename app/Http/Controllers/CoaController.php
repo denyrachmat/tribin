@@ -118,13 +118,110 @@ class CoaController extends Controller
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {
             $RS = (clone $RS)->where($request->searchCol, 'like', (string)$request->searchValue . '%');
+
+            if ($request->searchCol == 'MCOA_COACD') {
+                $RS->orWhere('MCOA_COANM', 'like', (string)$request->searchValue . '%');
+            }
+        }
+
+        return ['data' => $RS->get()->toArray()];
+
+        $hasil = [];
+        foreach ($RS->get()->toArray() as $key => $value) {
+            $dataMap = M_COA_MAP::on($this->dedicatedConnection)->where('MCOAM_H_COACD', $value['MCOA_COACD'])->get();
+
+            if (count($dataMap) === 0) {
+                $hasil[] = array_merge($value, [
+                    'det' => $dataMap
+                ]);
+            }
+        }
+
+        return ['data' => $hasil];
+    }
+
+    function searchAPISingle(Request $request)
+    {
+        // $columnMap = [
+        //     'MCOA_COACD',
+        //     'MCOA_COANM',
+        // ];
+        $RS = M_COA::on($this->dedicatedConnection)
+            ->select(
+                'MCOA_COACD',
+                'MCOA_COANM',
+                DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM_COMB"),
+                'MCOA_TYPE',
+                'MCOA_CURR',
+                DB::raw("CASE WHEN (SELECT COUNT(*) FROM M_COA_MAP WHERE MCOAM_H_COACD = MCOA_COACD) > 0
+                    THEN 'COMPLETE'
+                    ELSE 'PARTIAL'
+                END AS MAP_PARAM
+                ")
+            )->doesnthave('map');
+
+        if (!empty($request->searchCol) && !empty($request->searchValue)) {
+            $RS = (clone $RS)->where($request->searchCol, 'like', (string)$request->searchValue . '%');
+
+            if ($request->searchCol == 'MCOA_COACD') {
+                $RS->orWhere('MCOA_COANM', 'like', (string)$request->searchValue . '%');
+            }
+        }
+
+
+        return ['data' => $RS->get()->toArray()];
+
+        $hasil = [];
+        foreach ($RS->get()->toArray() as $key => $value) {
+            $dataMap = M_COA_MAP::on($this->dedicatedConnection)->where('MCOAM_H_COACD', $value['MCOA_COACD'])->get();
+
+            if (count($dataMap) === 0) {
+                $hasil[] = array_merge($value, [
+                    'det' => $dataMap
+                ]);
+            }
+        }
+
+        return ['data' => $hasil];
+    }
+
+    function searchAPIGroup(Request $request)
+    {
+        $RS = M_COA::on($this->dedicatedConnection)
+            ->select(
+                'MCOA_COACD',
+                'MCOA_COANM',
+                DB::raw("CONCAT(MCOA_COANM, ' - ', MCOA_COACD) AS MCOA_COANM_COMB"),
+                'MCOA_TYPE',
+                'MCOA_CURR',
+                DB::raw("CASE WHEN (SELECT COUNT(*) FROM M_COA_MAP WHERE MCOAM_H_COACD = MCOA_COACD) > 0
+                    THEN 'COMPLETE'
+                    ELSE 'PARTIAL'
+                END AS MAP_PARAM
+                ")
+            )->whereHas('map');
+
+        if (!empty($request->searchCol) && !empty($request->searchValue)) {
+            $RS = (clone $RS)->where($request->searchCol, 'like', (string)$request->searchValue . '%');
+
+            if ($request->searchCol == 'MCOA_COACD') {
+                $RS->orWhere('MCOA_COANM', 'like', (string)$request->searchValue . '%');
+            }
         }
 
         $hasil = [];
         foreach ($RS->get()->toArray() as $key => $value) {
-            $hasil[] = array_merge($value, [
-                'det' => M_COA_MAP::on($this->dedicatedConnection)->where('MCOAM_H_COACD', $value['MCOA_COACD'])->get()
-            ]);
+            $dataMap = M_COA_MAP::on($this->dedicatedConnection)
+                ->where('MCOAM_H_COACD', $value['MCOA_COACD'])
+                ->with('getcoacredit')
+                ->with('getcoadebit')
+                ->get();
+
+            if (count($dataMap) > 0) {
+                $hasil[] = array_merge($value, [
+                    'det' => $dataMap
+                ]);
+            }
         }
 
         return ['data' => $hasil];
@@ -138,6 +235,19 @@ class CoaController extends Controller
             ->update([
                 'MCOA_COANM' => $request->MCOA_COANM
             ]);
+        return ['msg' => $affectedRow ? 'OK' : 'No changes'];
+    }
+
+    function delete($id)
+    {
+        M_COA_MAP::on($this->dedicatedConnection)
+            ->where('MCOAM_H_COACD', base64_decode($id))
+            ->delete();
+
+        $affectedRow = M_COA::on($this->dedicatedConnection)
+            ->where('MCOA_COACD', base64_decode($id))
+            ->delete();
+
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 }

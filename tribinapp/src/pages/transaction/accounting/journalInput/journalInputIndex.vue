@@ -171,7 +171,7 @@ const onDeleteJournal = (doc) => {
     persistent: true,
   }).onOk(async () => {
     api_web
-      .delete(`acc/journal/${btoa(doc)}`)
+      .delete(`acc/journals/${btoa(doc)}`)
       .then((response) => {
         loading.value = false;
         rows.value = response.data.data;

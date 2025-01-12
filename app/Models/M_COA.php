@@ -17,4 +17,8 @@ class M_COA extends Model
         'MCOA_TYPE',
         'MCOA_CURR'
     ];
+
+    public function map() {
+        return $this->hasMany(M_COA_MAP::class, 'MCOAM_H_COACD', 'MCOA_COACD');
+    }
 }

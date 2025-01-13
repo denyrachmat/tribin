@@ -8,7 +8,7 @@
   >
     <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
-        <div class="text-h6">Closing Period</div>
+        <div class="text-h6">Input Journal</div>
       </q-card-section>
 
       <q-card-section class="q-pa-sm">
@@ -84,6 +84,45 @@
 
         <fieldset
           style="border: 1px black solid; border-radius: 10px; max-height: 80vh"
+          v-if="forms.GRP_ACC !== ''"
+        >
+          <legend style="margin-left: 1em; padding: 0.2em 0.8em">
+            <b>Input Amount</b>
+          </legend>
+
+          <div class="row q-col-gutter-sm q-pt-sm">
+            <div class="col-6 col-sm-12 text-left">
+              <q-input
+                v-model="forms.GRP_CURR"
+                filled
+                label="Currency"
+                dense
+                @update:model-value="(value) => fillCurr(value)"
+              />
+            </div>
+            <div class="col-6 col-sm-12 text-left">
+              <q-input
+                v-model="forms.GRP_QTY"
+                filled
+                label="Amount"
+                dense
+                @update:model-value="(value) => fillQty(value)"
+              />
+            </div>
+            <div class="col-6 col-sm-12 text-right">
+              <q-input
+                v-model="forms.GRP_DESC"
+                filled
+                label="Description"
+                dense
+                @update:model-value="(value) => fillDesc(value)"
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset
+          style="border: 1px black solid; border-radius: 10px; max-height: 80vh"
         >
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>Detail</b>
@@ -94,7 +133,13 @@
               <span class="text-h4 text-bold">Total : {{ totalJournal }}</span>
             </div>
             <div class="col-6 col-sm-12 text-right">
-              <q-btn flat color="primary" icon="add" @click="onAddItemLine" :disable="forms.GRP_ACC !== ''"/>
+              <q-btn
+                flat
+                color="primary"
+                icon="add"
+                @click="onAddItemLine"
+                :disable="forms.GRP_ACC !== ''"
+              />
               <q-btn icon="delete" color="red" @click="onDeleteAll"></q-btn>
             </div>
           </div>
@@ -103,88 +148,103 @@
             v-if="formsDet.length > 0"
             style="max-height: 80vh; overflow: auto"
           >
-            <div
-              class="row q-col-gutter-sm q-pt-sm"
-              v-for="(form, idx) in formsDet"
-              :key="idx"
-            >
-              <div class="col-12 col-sm-3">
-                <q-btn-toggle
-                  v-model="form.MCOA_TYPE"
-                  spread
-                  class="my-custom-toggle"
-                  no-caps
-                  rounded
-                  unelevated
-                  color="white"
-                  text-color="primary"
-                  :options="[
-                    { label: 'Income', value: 'INC', toggleColor: 'blue' },
-                    { label: 'Expense', value: 'OUT', toggleColor: 'orange' },
-                  ]"
-                  :disable="forms.GRP_ACC !== ''"
-                />
+            <template v-for="(form, idx) in formsDet">
+              <div
+                class="row q-col-gutter-sm q-pt-sm"
+                :key="idx"
+                v-if="form.GLHIST_DESC !== 'BEGIN_STOCK'"
+              >
+                <div class="col-12 col-sm-3">
+                  <q-btn-toggle
+                    v-model="form.MCOA_TYPE"
+                    spread
+                    class="my-custom-toggle"
+                    no-caps
+                    rounded
+                    unelevated
+                    color="white"
+                    text-color="primary"
+                    :options="[
+                      { label: 'Income', value: 'INC', toggleColor: 'blue' },
+                      { label: 'Expense', value: 'OUT', toggleColor: 'orange' },
+                    ]"
+                    :disable="
+                      forms.GRP_ACC !== '' || form.GLHIST_DESC == 'BEGIN_AMOUNT'
+                    "
+                  />
+                </div>
+                <div class="col-12 col-sm-2">
+                  <q-select
+                    filled
+                    label="Account Code"
+                    v-model="form.GLHIST_ACC"
+                    use-input
+                    input-debounce="500"
+                    :options="listCOA"
+                    @filter="
+                      (val, update, abort) =>
+                        filterFn(val, update, abort, 'coa')
+                    "
+                    behavior="dialog"
+                    option-label="MCOA_COANM_COMB"
+                    option-value="MCOA_COACD"
+                    emit-value
+                    map-options
+                    :loading="loading"
+                    dense
+                    @update:model-value="(value) => onChooseCOA(value, idx)"
+                    :readonly="
+                      forms.GRP_ACC !== '' || form.GLHIST_DESC == 'BEGIN_AMOUNT'
+                    "
+                  >
+                  </q-select>
+                </div>
+                <div class="col-12 col-sm-2">
+                  <q-input
+                    filled
+                    label="Valuta"
+                    v-model="form.GLHIST_CURR"
+                    dense
+                    :readonly="
+                      forms.GRP_ACC !== '' || form.GLHIST_DESC == 'BEGIN_AMOUNT'
+                    "
+                  />
+                </div>
+                <div class="col-12 col-sm-2">
+                  <q-input
+                    filled
+                    label="Description"
+                    v-model="form.GLHIST_DESC"
+                    dense
+                    :readonly="
+                      forms.GRP_ACC !== '' || form.GLHIST_DESC == 'BEGIN_AMOUNT'
+                    "
+                  />
+                </div>
+                <div class="col-12 col-sm-2">
+                  <q-input
+                    filled
+                    label="Amount"
+                    v-model="form.GLHIST_AMT"
+                    dense
+                    :readonly="
+                      forms.GRP_ACC !== '' || form.GLHIST_DESC == 'BEGIN_AMOUNT'
+                    "
+                  />
+                </div>
+                <div class="col-12 col-sm-1">
+                  <q-btn
+                    icon="delete"
+                    @click="onClickDeleteLines(idx)"
+                    flat
+                    :color="forms.GRP_ACC !== '' ? 'grey' : red"
+                    :readonly="
+                      forms.GRP_ACC !== '' || form.GLHIST_DESC == 'BEGIN_AMOUNT'
+                    "
+                  />
+                </div>
               </div>
-              <div class="col-12 col-sm-2">
-                <q-select
-                  filled
-                  label="Account Code"
-                  v-model="form.GLHIST_ACC"
-                  use-input
-                  input-debounce="500"
-                  :options="listCOA"
-                  @filter="
-                    (val, update, abort) => filterFn(val, update, abort, 'coa')
-                  "
-                  behavior="dialog"
-                  option-label="MCOA_COANM_COMB"
-                  option-value="MCOA_COACD"
-                  emit-value
-                  map-options
-                  :loading="loading"
-                  dense
-                  @update:model-value="(value) => onChooseCOA(value, idx)"
-                  :readonly="forms.GRP_ACC !== ''"
-                >
-                </q-select>
-              </div>
-              <div class="col-12 col-sm-2">
-                <q-input
-                  filled
-                  label="Valuta"
-                  v-model="form.GLHIST_CURR"
-                  dense
-                  :readonly="forms.GRP_ACC !== ''"
-                />
-              </div>
-              <div class="col-12 col-sm-2">
-                <q-input
-                  filled
-                  label="Description"
-                  v-model="form.GLHIST_DESC"
-                  dense
-                  :readonly="forms.GRP_ACC !== ''"
-                />
-              </div>
-              <div class="col-12 col-sm-2">
-                <q-input
-                  filled
-                  label="Amount"
-                  v-model="form.GLHIST_AMT"
-                  dense
-                  :readonly="forms.GRP_ACC !== ''"
-                />
-              </div>
-              <div class="col-12 col-sm-1">
-                <q-btn
-                  icon="delete"
-                  @click="onClickDeleteLines(idx)"
-                  flat
-                  :color="forms.GRP_ACC !== '' ? 'grey' : red"
-                  :readonly="forms.GRP_ACC !== ''"
-                />
-              </div>
-            </div>
+            </template>
           </div>
           <template v-else>
             <div class="row q-col-gutter-sm q-pt-sm">
@@ -219,6 +279,9 @@ const $q = useQuasar();
 
 const forms = ref({
   GRP_ACC: "",
+  GRP_CURR: "",
+  GRP_QTY: 0,
+  GRP_DESC: "",
   GLHIST_DOC: "",
   GLHIST_EFFDT: "",
   MCOA_TYPE: "INC",
@@ -244,16 +307,22 @@ onMounted(async () => {
 });
 
 const totalJournal = computed(() =>
-  parseInt(
-    formsDet.value.reduce(
-      (sum, item) =>
-        item.MCOA_TYPE === "INC"
-          ? sum + parseInt(item.GLHIST_AMT)
-          : sum - parseInt(item.GLHIST_AMT),
-      0
-    )
-  ).toLocaleString()
+  formsDet.value.length > 0
+    ? parseInt(
+        formsDet.value.reduce((sum, item, idx) => {
+          console.log(formsDet.value[0].GLHIST_ACC);
+          if (item.GLHIST_ACC == formsDet.value[0].GLHIST_ACC) {
+            return item.MCOA_TYPE === "INC"
+              ? sum + parseInt(item.GLHIST_AMT)
+              : sum - parseInt(item.GLHIST_AMT);
+          } else {
+            return sum;
+          }
+        }, 0)
+      ).toLocaleString()
+    : 0
 );
+
 const stateSubmit = computed(
   () =>
     !forms.value.GLHIST_DOC ||
@@ -327,7 +396,7 @@ const onDeleteAll = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    forms.value.GRP_ACC = ''
+    forms.value.GRP_ACC = "";
     formsDet.value = [];
   });
 };
@@ -344,10 +413,25 @@ const onClickDeleteLines = (idx) => {
   });
 };
 
-const onChooseCOA = (value, idx) => {
+const onChooseCOA = async (value, idx) => {
   let cekExists = listCOA.value.filter((fil) => fil.MCOA_COACD === value);
 
   if (cekExists.length > 0) {
+    if (idx === 0) {
+      const dataStock = await getStockCOA(value);
+      if (dataStock) {
+        formsDet.value = [
+          {
+            MCOA_TYPE: "INC",
+            GLHIST_ACC: value,
+            GLHIST_CURR: cekExists[0].MCOA_CURR,
+            GLHIST_DESC: "BEGIN_AMOUNT",
+            GLHIST_AMT: dataStock.GLHIST_AMT,
+          },
+          ...formsDet.value,
+        ];
+      }
+    }
     formsDet.value[idx].GLHIST_CURR = cekExists[0].MCOA_CURR;
     formsDet.value[idx].MCOA_TYPE =
       cekExists[0].MCOA_TYPE && cekExists[0].MCOA_TYPE !== ""
@@ -362,12 +446,12 @@ const onChooseCOAGRP = (value) => {
   if (cekExists.length > 0) {
     formsDet.value = [];
 
-    cekExists[0].det.map((valMap) => {
+    cekExists[0].det.map(async (valMap, idx) => {
       formsDet.value.push(
         {
           MCOA_TYPE: "OUT",
           GLHIST_ACC: valMap.MCOAM_CR_COACD,
-          GLHIST_CURR: valMap.getcoadebit.MCOA_CURR,
+          GLHIST_CURR: valMap.getcoacredit.MCOA_CURR,
           GLHIST_DESC: "",
           GLHIST_AMT: 0,
         },
@@ -379,6 +463,23 @@ const onChooseCOAGRP = (value) => {
           GLHIST_AMT: 0,
         }
       );
+
+      if (idx === 0) {
+        const dataStock = await getStockCOA(valMap.MCOAM_CR_COACD);
+
+        if (dataStock) {
+          formsDet.value = [
+            {
+              MCOA_TYPE: "INC",
+              GLHIST_ACC: valMap.MCOAM_CR_COACD,
+              GLHIST_CURR: valMap.getcoacredit.MCOA_CURR,
+              GLHIST_DESC: "BEGIN_AMOUNT",
+              GLHIST_AMT: dataStock.GLHIST_AMT,
+            },
+            ...formsDet.value,
+          ];
+        }
+      }
     });
   }
 };
@@ -400,7 +501,9 @@ const onSubmitData = () => {
         }`,
         {
           ...forms.value,
-          det: formsDet.value,
+          det: formsDet.value.filter(
+            (fil) => fil.GLHIST_DESC !== "BEGIN_AMOUNT"
+          ),
         }
       )
       .then((response) => {
@@ -415,6 +518,48 @@ const onSubmitData = () => {
       .catch((e) => {
         loading.value = false;
       });
+  });
+};
+
+const getStockCOA = async (coa) => {
+  loading.value = true;
+  return await api_web
+    .get(`acc/journal/getStockCOA/${btoa(coa)}`)
+    .then((response) => {
+      loading.value = false;
+      return response.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const fillCurr = (val) => {
+  // MCOA_TYPE
+  // GLHIST_ACC
+  // GLHIST_CURR
+  // GLHIST_DESC
+  // GLHIST_AMT
+
+  formsDet.value.map((valmap, idx) => {
+    if (idx > 0) {
+      formsDet.value[idx].GLHIST_CURR = val;
+    }
+  });
+};
+
+const fillQty = (val) => {
+  formsDet.value.map((valmap, idx) => {
+    if (idx > 0) {
+      formsDet.value[idx].GLHIST_AMT = val;
+    }
+  });
+};
+const fillDesc = (val) => {
+  formsDet.value.map((valmap, idx) => {
+    if (idx > 0) {
+      formsDet.value[idx].GLHIST_DESC = val;
+    }
   });
 };
 

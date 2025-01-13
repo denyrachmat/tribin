@@ -280,4 +280,13 @@ class AccountingJournalController extends Controller
             'data' => $delete
         ];
     }
+
+    public function getStockByCOA($coa) {
+        $data = DB::connection($this->dedicatedConnection)
+            ->table('V_TOTAL_GL_BY_ACC')
+            ->where('GLHIST_ACC', base64_decode($coa))
+            ->first();
+
+        return $data;
+    }
 }

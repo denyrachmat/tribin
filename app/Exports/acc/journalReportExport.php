@@ -53,16 +53,16 @@ class journalReportExport implements FromCollection, WithHeadings, WithEvents
     */
     public function collection()
     {
-        $data = DB::connection($this->conn)->select("call RPT_ACCT_JOURNAL('".$this->fdate."', '".$this->ldate."')");
+        $data = DB::connection($this->conn)->select("call RPT_ACCT_GL('', '', '".$this->fdate."', '".$this->ldate."', 0, 1)");
         $hasil = [];
         foreach ($data as $key => $value) {
             $hasil[] = [
-                'ACC' => $value->ACC,
-                'ACCDESC' => $value->ACCDESC,
-                'EFFDT' => $value->EFFDT,
-                'CURR' => $value->CURR,
-                'DBAMNT' => $value->DBAMNT == 0 ? '0' : $value->DBAMNT,
-                'CRAMNT' => $value->CRAMNT == 0 ? '0' : $value->CRAMNT,
+                'ACC' => $value->MCOA_COACD,
+                'ACCDESC' => $value->MCOA_COANM,
+                'EFFDT' => $value->GLHIST_EFFDT,
+                'CURR' => $value->MCOA_CURR,
+                'DBAMNT' => $value->DEBET == 0 ? '0' : $value->DEBET,
+                'CRAMNT' => $value->CREDIT == 0 ? '0' : $value->CREDIT,
             ];
         }
 

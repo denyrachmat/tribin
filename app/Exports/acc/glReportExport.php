@@ -40,33 +40,46 @@ class glReportExport implements FromCollection, WithHeadings, WithEvents
                 date('d M Y')
             ],
             [
-                'Date',
                 'Acc Code',
                 'Acc Code Desc',
+                'Date',
                 'Document Code',
+                'Desc',
                 'Currency',
                 'Debit',
-                'Credit'
+                'Credit',
+                'Total'
             ]
         ];
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
-        $data = DB::connection($this->conn)->select("call RPT_ACCT_GL('".$this->facc."', '".$this->lacc."', '".$this->fdate."', '".$this->ldate."')");
+        $data = DB::connection($this->conn)->select("call RPT_ACCT_GL('" . $this->facc . "', '" . $this->lacc . "', '" . $this->fdate . "', '" . $this->ldate . "', 1, 0)");
         $hasil = [];
         foreach ($data as $key => $value) {
             $hasil[] = [
-                'EFFDT' => $value->EFFDT,
-                'ACC' => $key === 0 || $value->ACC !== $data[$key - 1]->ACC ? $value->ACC : '',
-                'ACCDESC' => ($key === 0 || $value->ACC !== $data[$key - 1]->ACC) || str_contains($value->ACCDESC, 'Total') ? $value->ACCDESC : '',
-                'DOCCD' => $value->DOCCD,
-                'CURR' => $value->CURR,
-                'DBAMNT' => $value->DBAMNT == 0 ? '0' : $value->DBAMNT,
-                'CRAMNT' => $value->CRAMNT == 0 ? '0' : $value->CRAMNT,
+                'ACC' => $key === 0 || $value->MCOA_COACD !== $data[$key - 1]->MCOA_COACD
+                    ? $value->MCOA_COACD
+                    : (
+                        $value->GLHIST_DESC === 'END-BAL'
+                        ? 'Total'
+                        : ''
+                    ),
+                'ACCDESC' => ($key === 0 || $value->MCOA_COACD !== $data[$key - 1]->MCOA_COACD) || str_contains($value->MCOA_COANM, 'Total') ? $value->MCOA_COANM : '',
+                'EFFDT' => $value->GLHIST_DESC === 'BGN-BAL' || $value->GLHIST_DESC === 'END-BAL' ? '' : $value->GLHIST_EFFDT,
+                'DOCCD' => $value->GLHIST_DOC,
+                'DESC' => $value->GLHIST_DESC === 'BGN-BAL' ? 'Beginning Balance'
+                    : (
+                        $value->GLHIST_DESC === 'END-BAL' ? 'End Balance' : $value->GLHIST_DESC
+                    ),
+                'CURR' => $value->MCOA_CURR,
+                'DBAMNT' => $value->DEBET == 0 ? '0' : $value->DEBET,
+                'CRAMNT' => $value->CREDIT == 0 ? '0' : $value->CREDIT,
+                'TOTAL' => $value->TOTAL == 0 ? '0' : $value->TOTAL,
             ];
         }
 
@@ -84,22 +97,24 @@ class glReportExport implements FromCollection, WithHeadings, WithEvents
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
                     ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
 
-                $event->sheet->getStyle('A1:'.$highestColumn.'4')->applyFromArray([
+                $event->sheet->getStyle('A1:' . $highestColumn . '4')->applyFromArray([
                     'font' => [
                         'size' => '12',
                         'bold' => true
                     ]
                 ]);
 
-                $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
-                $event->sheet->getDelegate()->mergeCells('A2:'.$highestColumn.'2');
-                $event->sheet->getDelegate()->mergeCells('A3:'.$highestColumn.'3');
+                $event->sheet->getDelegate()->mergeCells('A1:' . $highestColumn . '1');
+                $event->sheet->getDelegate()->mergeCells('A2:' . $highestColumn . '2');
+                $event->sheet->getDelegate()->mergeCells('A3:' . $highestColumn . '3');
 
-                $event->sheet->getStyle('A')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
-                $event->sheet->getStyle('F')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+                $event->sheet->getStyle('C')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_XLSX15);
                 $event->sheet->getStyle('G')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+                $event->sheet->getStyle('H')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+                $event->sheet->getStyle('I')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
 
-                $event->sheet->getStyle('A4:'.$highestColumn.$highestRow)->applyFromArray([
+                $event->sheet->getStyle('A4:' . $highestColumn . $highestRow)->applyFromArray(
+                    [
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -108,13 +123,11 @@ class glReportExport implements FromCollection, WithHeadings, WithEvents
                     ]
                 );
 
-                foreach(range('A', $highestColumn) as $columnID) {
-                    $event->sheet->getColumnDimension($columnID)->setAutoSize(true) ;
+                foreach (range('A', $highestColumn) as $columnID) {
+                    $event->sheet->getColumnDimension($columnID)->setAutoSize(true);
                 }
 
-                // $event->sheet->getDelegate()->mergeCells('A1:'.$highestColumn.'1');
-
-                $event->sheet->getStyle('A1:'.$highestColumn.'3')->getAlignment()->setHorizontal('center');
+                $event->sheet->getStyle('A1:' . $highestColumn . '3')->getAlignment()->setHorizontal('center');
             }
         ];
     }

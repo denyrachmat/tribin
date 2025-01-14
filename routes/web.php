@@ -518,6 +518,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::prefix('journal')->group(function () {
                 Route::get('', [AccountingJournalController::class, 'index']);
                 Route::post('searchAPI', [AccountingJournalController::class, 'searchAPI']);
+                Route::get('getStockCOA/{id}', [AccountingJournalController::class, 'getStockByCOA']);
             });
         });
 

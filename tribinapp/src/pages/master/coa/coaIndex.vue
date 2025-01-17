@@ -8,6 +8,9 @@
         <q-btn icon="add" color="blue" @click="onAddCOA()">
           <q-tooltip>Create New COA</q-tooltip>
         </q-btn>
+        <q-btn icon="add" color="indigo" @click="onClickGroup()" flat>
+          <q-tooltip>Grouping COA</q-tooltip>
+        </q-btn>
       </div>
     </div>
 
@@ -104,6 +107,7 @@ import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
 import coaCreate from "./coaCreate.vue";
+import coaGroupCreate from "./coaGroupCreate.vue";
 
 const $q = useQuasar();
 
@@ -200,6 +204,16 @@ const onAddCOA = (data = null) => {
   }).onOk(async (val) => {
     dataCoa();
   });
+}
+
+const onClickGroup = () => {
+  $q.dialog({
+    component: coaGroupCreate,
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataCoa();
+  });
+
 }
 
 </script>

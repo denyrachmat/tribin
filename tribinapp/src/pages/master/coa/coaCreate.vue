@@ -8,7 +8,7 @@
   >
     <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
-        <div class="text-h6">Closing Period</div>
+        <div class="text-h6">COA Create</div>
       </q-card-section>
 
       <q-card-section class="q-pa-sm">

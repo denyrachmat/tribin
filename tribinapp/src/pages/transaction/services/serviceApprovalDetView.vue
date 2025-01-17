@@ -172,6 +172,7 @@ const onClickViewDetail = (data) => {
     componentProps: {
       mode: "view",
       dataItem: data,
+      header: data.header
     },
     // persistent: true,
   }).onOk(async (res) => {});

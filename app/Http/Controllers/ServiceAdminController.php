@@ -202,6 +202,7 @@ class ServiceAdminController extends Controller
         $postToDelivery = [];
         if ($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1 && $dataHead->SRVH_ISINT == 1) {
             $createReq = new Request([
+                'TDLVORD_DLVCD' => $dataHead->SRVH_DOCNO,
                 'TDLVORD_CUSCD' => $dataHead->SRVH_CUSCD,
                 'TDLVORD_ISSUDT' => $dataHead->SRVH_ISSDT,
                 'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
@@ -297,6 +298,7 @@ class ServiceAdminController extends Controller
                 'T_SRV_HEAD.created_at',
                 'TSRVD_FLGSTS',
                 'TQUO_QUOCD',
+                'SRVH_ISINT',
                 DB::raw("CONCAT(T_SRV_HEAD.SRVH_DOCNO, ' - ', MCUS_CUSNM) AS LBLDATA"),
                 DB::raw("SUM(TSRVF_PRC) AS TOTFIX")
             )
@@ -315,7 +317,8 @@ class ServiceAdminController extends Controller
                 'MCUS_PIC_TELNO',
                 'T_SRV_HEAD.created_at',
                 'TSRVD_FLGSTS',
-                'TQUO_QUOCD'
+                'TQUO_QUOCD',
+                'SRVH_ISINT'
             )
             ->orderBy('created_at', 'desc');
 
@@ -336,7 +339,7 @@ class ServiceAdminController extends Controller
                     'listFixDet' => function ($j) {
                         $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
                         $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
-                        $j->where('TSRVF_ISCONF', 1);
+                        // $j->where('TSRVF_ISCONF', 1);
                     }
                 ])
                 ->where('TSRVH_ID', $value['id'])
@@ -401,7 +404,6 @@ class ServiceAdminController extends Controller
             'data' => $data['data'],
             'total' => $total,
             'isPPN' => $getCompGroups->flg_ppn,
-            'total' => $total,
             'ppn' => ($total * 0.11),
             // 'terbilang' => $this->numberToSentence($total + ($total * 0.11)),
             'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + ($total * 0.11) : $total),
@@ -448,8 +450,13 @@ class ServiceAdminController extends Controller
     {
         $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->first();
         $unapproveService = T_SRV_DET::on($this->dedicatedConnection)
+            ->select(
+                'T_SRV_DET.*',
+                DB::raw('T_SRV_HEAD.SRVH_ISINT as SRVH_ISINT'),
+            )
             ->where('TSRVH_ID', $head->id)
-            ->with('listFixDet')
+            ->with('listFixDet', 'header')
+            ->join('T_SRV_HEAD', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
             ->get()
             ->toArray();
 

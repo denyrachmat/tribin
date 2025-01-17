@@ -25,4 +25,8 @@ class T_SRV_DET extends Model
     public function listFixDet() {
         return $this->hasMany(T_SRV_FIXDET::class, 'TSRVD_ID', 'id');
     }
+
+    public function header() {
+        return $this->belongsTo(T_SRV_HEAD::class, 'TSRVH_ID', 'id');
+    }
 }

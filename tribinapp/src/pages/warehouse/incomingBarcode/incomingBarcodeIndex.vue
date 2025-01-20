@@ -177,8 +177,8 @@ const getIncomingData = async () => {
     });
 };
 
-const onPrint = (data) => {
-  console.log(data);
+const onPrint = (datanya) => {
+  console.log(datanya);
   $q.dialog({
     title: "Confirmation",
     message: `Are you sure want to print this barcode ?`,
@@ -205,7 +205,7 @@ const onPrint = (data) => {
         const getSavedPrinter = localStorage.getItem("printerLabel");
 
         if (getSavedPrinter) {
-          printLabel(getSavedPrinter, data);
+          printLabel(getSavedPrinter, datanya);
         } else {
           $q.dialog({
             title: "Options",
@@ -226,10 +226,10 @@ const onPrint = (data) => {
               cancel: true,
             })
               .onOk(() => {
-                localStorage.setItem("printerLabel", datas, data);
+                localStorage.setItem("printerLabel", datas, datanya);
               })
               .onDismiss(() => {
-                printLabel(datas, data);
+                printLabel(datas, datanya);
               });
           });
         }
@@ -239,6 +239,7 @@ const onPrint = (data) => {
 };
 
 const printLabel = async (data, listData) => {
+  console.log(listData)
   return qz.printers.find(data).then(async (printer) => {
     let config = qz.configs.create(printer);
 
@@ -267,7 +268,8 @@ const printLabel = async (data, listData) => {
           `${valHeader.TRCVBC_BCCD}\n`, // Text to print
           '\x1B\x61\x00',    // Left align text (ESC a 0)
           '--------------------------------\n',
-          '\x1D\x6B\x49',    // Command to print Code 128 barcode (GS k 73)
+          // '\x1D\x6B\x49',    // Command to print Code 128 barcode (GS k 73)
+          '\x1d\x68\x28',
           '\x0A',            // Barcode height (in dots)
           valHeader.TRCVBC_BCCD,       // The barcode data (e.g., "1234567890")
           '\x1D\x56\x00',    // Cut the paper (GS V 0)

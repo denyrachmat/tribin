@@ -39,9 +39,12 @@ class CustomerController extends Controller
                 $join->on('A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'));
             })
             ->where('A.MCUS_BRANCH',  Auth::user()->branch)
-            ->where('A.MCUS_CUSCD', 'COLLATE', 'utf8mb4_unicode_ci') // Apply COLLATE to A.MCUS_CUSCD in the WHERE clause
+            // ->where('A.MCUS_CUSCD', 'COLLATE', 'utf8mb4_unicode_ci') // Apply COLLATE to A.MCUS_CUSCD in the WHERE clause
             ->whereNull('B.MCUS_CUSCD');
+
         $RSTosave = json_decode(json_encode($RS->get()), true);
+
+        // return (clone $RS)->get();
         if (!empty($RSTosave)) {
             M_CUS::on($this->dedicatedConnection)->insert($RSTosave);
             return ['message' => 'Done, ' . count($RSTosave) . ' imported'];

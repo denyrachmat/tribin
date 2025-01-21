@@ -116,7 +116,7 @@ class DeliveryController extends Controller
             "TSLO_PLAN_DLVDT",
             DB::raw("SUM(SALESQT) SALESQT"),
             DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT"),
-            'TSLODETA_PRC'
+            DB::raw("SUM(SALESQT * TSLODETA_PRC) TSLODETA_PRC")
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -143,7 +143,7 @@ class DeliveryController extends Controller
                 "TSLO_CUSCD",
                 "MCUS_CUSNM",
                 "TSLO_PLAN_DLVDT",
-                'TSLODETA_PRC'
+                // 'TSLODETA_PRC'
             )
             ->orderBy('TSLO_PLAN_DLVDT', 'desc');
 

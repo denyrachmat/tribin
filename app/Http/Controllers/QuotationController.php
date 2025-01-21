@@ -1410,6 +1410,7 @@ class QuotationController extends Controller
                 'MITM_STKUOM',
                 'TQUODETA_ELECTRICITY'
             )
+            ->orderBy('T_QUODETA.id')
             ->get()
             ->toArray();
 

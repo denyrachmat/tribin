@@ -34,12 +34,16 @@ class UsageController extends Controller
         $currentDBName = DB::connection($this->dedicatedConnection)->getDatabaseName();
         $RS = DB::connection($request->fromConnection)->table('M_USAGE AS A')
             ->select('A.*')
-            ->leftJoin($currentDBName . '.M_USAGE AS B', 'A.MUSAGE_CD', '=', 'B.MUSAGE_CD')
+            // ->leftJoin($currentDBName . '.M_USAGE AS B', 'A.MUSAGE_CD', '=', 'B.MUSAGE_CD')
+            ->leftJoin($currentDBName . '.M_USAGE as B', function ($join) {
+                $join->on('A.MUSAGE_CD', '=', DB::raw('B.MUSAGE_CD COLLATE utf8mb4_unicode_ci'));
+            })
             ->where('A.MUSAGE_BRANCH',  Auth::user()->branch)
             ->whereNull('B.MUSAGE_CD');
 
         $RSTosave = json_decode(json_encode($RS->get()), true);
 
+        return $RSTosave;
         if (!empty($RSTosave)) {
             M_USAGE::on($this->dedicatedConnection)->insert($RSTosave);
             return ['message' => 'Done, ' . count($RSTosave) . ' imported'];

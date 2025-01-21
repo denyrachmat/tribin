@@ -703,7 +703,7 @@ class ReceiveOrderController extends Controller
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
-        $hasil = [];
+        $hasilTemp = [];
         $listCat = [];
         if (count($request->itmCat) > 0) {
             $listCat = $request->itmCat;
@@ -714,6 +714,7 @@ class ReceiveOrderController extends Controller
         foreach ($listCat as $key => $value) {
             $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
                 ->select(
+                    'TSLO_SLOCD',
                     'MITM_ITMCD',
                     'MITM_ITMNM',
                     'TQUO_PROJECT_LOCATION',
@@ -736,6 +737,7 @@ class ReceiveOrderController extends Controller
                 ->where('MITM_ITMCAT', $value)
                 ->whereBetween('T_SLODETA.created_at', [$request->fdate. " 00:00:00", $request->ldate. " 23:59:59"])
                 ->groupBy(
+                    'TSLO_SLOCD',
                     'MITM_ITMCD',
                     'MITM_ITMNM',
                     'TQUO_PROJECT_LOCATION',
@@ -752,12 +754,24 @@ class ReceiveOrderController extends Controller
                 $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
             }
 
-            $cekTotalData = $RSTemp->get();
+            $cekTotalData = $RSTemp->get()->toArray();
 
             if (count($cekTotalData) > 0) {
-                $hasil[$value] = $cekTotalData;
+                $hasilTemp['BARU'][$value] = array_values(array_filter($cekTotalData, function($f) {
+                    if (!str_contains($f['TSLO_SLOCD'], '-')) {
+                        return $f;
+                    }
+                }));
+
+                $hasilTemp['PERPANJANGAN'][$value] = array_values(array_filter($cekTotalData, function($f) {
+                    if (str_contains($f['TSLO_SLOCD'], '-')) {
+                        return $f;
+                    }
+                }));
             }
         }
+
+        $hasil = $hasilTemp;
 
         // return $hasil;
 

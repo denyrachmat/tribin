@@ -1971,11 +1971,11 @@ class DeliveryController extends Controller
         })->toArray();
 
         return [
-            'data' => array_filter($hasil, function ($f) {
+            'data' => array_values(array_filter($hasil, function ($f) {
                 if (isset($f['dlvdet'])) {
                     return $f;
                 }
-            }),
+            })),
             'sql' => $Data->toSql()
         ];
     }

@@ -43,7 +43,7 @@ class UsageController extends Controller
 
         $RSTosave = json_decode(json_encode($RS->get()), true);
 
-        return $RSTosave;
+        // return $RSTosave;
         if (!empty($RSTosave)) {
             M_USAGE::on($this->dedicatedConnection)->insert($RSTosave);
             return ['message' => 'Done, ' . count($RSTosave) . ' imported'];

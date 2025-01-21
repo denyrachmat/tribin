@@ -34,7 +34,11 @@ class CustomerController extends Controller
         $currentDBName = DB::connection($this->dedicatedConnection)->getDatabaseName();
         $RS = DB::connection($request->fromConnection)->table('M_CUS AS A')
             ->select('A.*')
-            ->leftJoin(DB::raw($currentDBName . '.M_CUS AS B COLLATE utf8mb4_unicode_ci'), 'A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'))
+            // ->leftJoin(DB::raw($currentDBName . '.M_CUS AS B COLLATE utf8mb4_unicode_ci'), 'A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin(DB::raw($currentDBName . '.M_CUS AS B'), function ($join) {
+                $join->on('A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'))
+                     ->whereColumn('A.MCUS_CUSCD', 'COLLATE', 'utf8mb4_unicode_ci');
+            })
             ->where('A.MCUS_BRANCH',  Auth::user()->branch)
             ->whereNull('B.MCUS_CUSCD');
         $RSTosave = json_decode(json_encode($RS->get()), true);

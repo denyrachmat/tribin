@@ -721,13 +721,16 @@ class ReceiveOrderController extends Controller
                     'CSPK_PIC_AS',
                     'CSPK_PIC_NAME',
                     'MCUS_CUSNM',
-                    DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQT'),
+                    DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
                     'name',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'TDLVORDDETA_DLVCD'
                 )
-                ->join('T_SLODETA', 'TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD')
+                ->join('T_SLODETA', function($j) {
+                    $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
+                    $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
+                })
                 ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
                 ->join('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
                 ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')

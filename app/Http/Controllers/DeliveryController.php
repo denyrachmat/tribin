@@ -1982,56 +1982,6 @@ class DeliveryController extends Controller
 
     function confirmOutgoing(Request $request)
     {
-        // $totalEmptyItemActual = T_DLVORDDETA::on($this->dedicatedConnection)
-        //     ->whereNull('TDLVORDDETA_ITMCD_ACT')
-        //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-        //     ->where('TDLVORDDETA_DLVCD', $request->id)
-        //     ->count();
-
-        // if ($totalEmptyItemActual > 0) {
-        //     return response()->json([['Please input Actual item']], 406);
-        // }
-
-        // $Delivery = T_DLVORDHEAD::on($this->dedicatedConnection)
-        //     ->leftJoin('T_DLVORDDETA', function ($join) {
-        //         $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
-        //     })
-        //     ->leftJoin('M_CUS', function ($join) {
-        //         $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
-        //     })
-        //     ->leftJoin('M_ITM', function ($join) {
-        //         $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
-        //     })
-        //     ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
-        //     ->where('TDLVORD_BRANCH', Auth::user()->branch)
-        //     ->where('TDLVORD_DLVCD', $request->id)
-        //     ->whereNull('T_DLVORDDETA.deleted_at')
-        //     ->where('MITM_ITMTYPE', '!=', '3')
-        //     ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM');
-
-        // $ITRN = C_ITRN::on($this->dedicatedConnection)
-        //     ->select('CITRN_DOCNO', 'CITRN_BRANCH')
-        //     ->where('CITRN_BRANCH', Auth::user()->branch)
-        //     ->where('CITRN_DOCNO', $request->id)
-        //     ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
-
-        // $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
-        //     ->leftJoinSub($ITRN, 'V2', function ($join) {
-        //         $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
-        //     })
-        //     ->whereNull('CITRN_DOCNO')->get();
-
-        // Mau Cek Stock
-        // $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')->first();
-        // $cekSubmited = T_DLVORDHEAD::on($this->dedicatedConnection)
-        //     ->where('TDLVORD_DLVCD', $request->id)
-        //     ->where('TDLVORD_BRANCH', $request->TDLVORD_BRANCH)
-        //     ->first();
-
-        // if($cekSubmited-> $cekStock->STOCK){
-
-        // }
-
         if (count($request->data) > 0) {
             $hasilZero = [];
             foreach ($request->data as $rCheck) {
@@ -2062,7 +2012,7 @@ class DeliveryController extends Controller
             $IDKwitansi = 'A-' . (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -7) + 1));
 
             T_DLVORDHEAD::on($this->dedicatedConnection)
-                ->where('TDLVORD_DLVCD', $request->id)
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $request->id)
                 ->update([
                     'TDLVORD_REC_NO' => $IDKwitansi
                 ]);

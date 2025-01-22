@@ -373,7 +373,9 @@ class HomeController extends Controller
                     ->whereNull("TQUO_APPRVDT")
                     ->whereNull("TQUO_REJCTDT")
                     ->orderBy(DB::raw('max(T_QUOHEAD.created_at)'), 'desc')
-                    ->groupBy('TQUO_QUOCD', 'TQUO_BRANCH', 'TQUO_TYPE')->get()->toArray();
+                    ->groupBy('TQUO_QUOCD', 'TQUO_BRANCH', 'TQUO_TYPE')
+                    ->get()
+                    ->toArray();
 
                 // PR Detail
                 $RSDetail = DB::connection($value->connection)->table('T_PCHREQDETA')

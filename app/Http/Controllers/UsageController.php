@@ -45,7 +45,11 @@ class UsageController extends Controller
 
         // return $RSTosave;
         if (!empty($RSTosave)) {
-            M_USAGE::on($this->dedicatedConnection)->insert($RSTosave);
+            foreach ($RSTosave as $key => $value) {
+                M_USAGE::on($this->dedicatedConnection)->updateOrCreate([
+                    'id' => $value['id']
+                ],$value);
+            }
             return ['message' => 'Done, ' . count($RSTosave) . ' imported'];
         } else {
             return ['message' => 'no new data'];

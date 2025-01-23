@@ -726,6 +726,7 @@ class ReceiveOrderController extends Controller
                     'MCUS_CUSNM',
                     DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
                     'name',
+                    'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'TDLVORDDETA_DLVCD'
@@ -751,14 +752,17 @@ class ReceiveOrderController extends Controller
                     'CSPK_PIC_NAME',
                     'MCUS_CUSNM',
                     'name',
+                    'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'TDLVORDDETA_DLVCD'
                 );
 
             if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
-                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
+                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
             }
+
+            // return Auth::user();
 
             $cekTotalData = $RSTemp->get()->toArray();
 

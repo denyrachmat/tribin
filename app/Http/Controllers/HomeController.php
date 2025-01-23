@@ -276,6 +276,8 @@ class HomeController extends Controller
     {
         $data = $PurchaseRequest = $PurchaseOrder = $SPKData = [];
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+
+        // return $activeRole;
         if (in_array($activeRole['code'], ['accounting', 'director', 'manager', 'general_manager'])) {
 
             $Business = CompanyGroup::select('name', 'connection')->get();
@@ -346,7 +348,10 @@ class HomeController extends Controller
         $hasil = [];
         if (in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
 
-            $Business = CompanyGroup::select('name', 'connection')->get();
+            $Business = CompanyGroup::select('name', 'connection')
+                // ->where('connection', 'connect_jos_jatcv')
+                ->get();
+            // return $Business;
             foreach ($Business as $key => $value) {
                 // Quotation Data
                 $RSDetail = DB::connection($value->connection)->table('T_QUODETA')
@@ -376,6 +381,8 @@ class HomeController extends Controller
                     ->groupBy('TQUO_QUOCD', 'TQUO_BRANCH', 'TQUO_TYPE')
                     ->get()
                     ->toArray();
+
+                // return $dataTobeApproved;
 
                 // PR Detail
                 $RSDetail = DB::connection($value->connection)->table('T_PCHREQDETA')
@@ -408,6 +415,8 @@ class HomeController extends Controller
                         'MSUP_SUPNM'
                     )->get();
 
+                // return $dataPurchaseRequestTobeUpproved;
+
                 // PO Detail
                 $RSDetail = DB::connection($value->connection)->table('T_PCHORDDETA')
                     ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD")
@@ -433,11 +442,13 @@ class HomeController extends Controller
                     ->whereNull("TPCHORD_REJCTBY")
                     ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM', 'TPCHORD_BRANCH', 'TPCHORD_REQCD')->get();
 
+                    // return $dataPurchaseOrderTobeUpproved;
                 // SPK Detail
                 $SPK = C_SPK::on($value->connection)->select(DB::raw('CSPK_PIC_AS APP_SBJCT, CSPK_REFF_DOC APP_CD, CSPK_JOBDESK APP_SBJCT'))
                     ->whereNotNull('submitted_at')
                     ->whereNull('CSPK_GA_MGR_APPROVED_AT')->get();
 
+                    // return $SPK;
                 $hasil[] = [
                     'connection' => $value->connection,
                     'name' => $value->name,

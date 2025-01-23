@@ -703,7 +703,10 @@ class ReceiveOrderController extends Controller
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
-        $hasilTemp = [];
+        $hasilTemp = [
+            'BARU' => [],
+            'PERPANJANGAN' => []
+        ];
         $listCat = [];
         if (count($request->itmCat) > 0) {
             $listCat = $request->itmCat;

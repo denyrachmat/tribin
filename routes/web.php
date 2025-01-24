@@ -278,6 +278,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
             Route::get('printKwitansi/{doc}', [InvoiceController::class, 'printKwitansi']);
             Route::get('printSJ/{doc}', [InvoiceController::class, 'printSJ']);
+            Route::get('printGensetHarian/{doc}', [InvoiceController::class, 'printGensetHarian']);
+
             Route::get('cekInv', [InvoiceController::class, 'cekKwitansiNo']);
         });
 

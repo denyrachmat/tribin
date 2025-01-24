@@ -69,6 +69,16 @@
                 </q-btn>
                 <q-btn
                   flat
+                  :color="!props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset') ? 'grey' : 'purple'"
+                  icon="print"
+                  dense
+                  @click="printDailyGenset(props.row.TDLVORD_DLVCD)"
+                  :disable="!props.row.dlvsj || !props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset')"
+                >
+                  <q-tooltip>Print Form Genset Harian</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
                   color="green"
                   icon="print"
                   dense
@@ -90,7 +100,9 @@
                   :color="!props.row.dlvsj ? 'grey' : 'orange'"
                   icon="print"
                   dense
-                  @click="onClickPrintSJ(props.row.spk, props.row.TDLVORD_DLVCD)"
+                  @click="
+                    onClickPrintSJ(props.row.spk, props.row.TDLVORD_DLVCD)
+                  "
                   :disable="!props.row.dlvsj"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
@@ -118,6 +130,13 @@ const columns = ref([
     name: "TDLVORD_DLVCD",
     label: "DO Number",
     field: "TDLVORD_DLVCD",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TDLVORD_CONDGRP",
+    label: "Condition Code",
+    field: "TDLVORD_CONDGRP",
     sortable: true,
     align: "left",
   },
@@ -244,4 +263,22 @@ const updateSuratJalan = (val) => {
     getConfirmedData();
   });
 };
+
+const printDailyGenset = async (val) => {
+  loading.value = true;
+  await api_web
+    .get(`invoices/printGensetHarian/${btoa(val)}`)
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("");
+      pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+}
 </script>

@@ -103,8 +103,13 @@
                   icon="autorenew"
                   @click="onClickRenew(props.row.TSLO_SLOCD)"
                   dense
+                  :disable="props.row.TSLO_SLOCD.includes('-')"
                 >
-                  <q-tooltip>Renew Sales Order</q-tooltip>
+                  <q-tooltip>{{
+                    props.row.TSLO_SLOCD.includes('-')
+                    ? 'Cannot renew extended SO, please renew at main SO !!'
+                    : 'Renew Sales Order'
+                  }}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">

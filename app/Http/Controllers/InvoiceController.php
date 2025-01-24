@@ -223,17 +223,17 @@ class InvoiceController extends Controller
                 'M_ITM.MITM_BRAND',
                 'M_ITM.MITM_MODEL'
             )->groupBy(
-                'T_DLVORDDETA.id',
-                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                'T_DLVORDDETA.TDLVORDDETA_PRC',
-                'M_ITM_GRP.MITM_ITMNM',
-                'M_ITM_GRP.MITM_ITMNMREAL',
-                'M_ITM.MITM_BRAND',
-                'M_ITM.MITM_MODEL'
-            )
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'T_DLVORDDETA.TDLVORDDETA_PRC',
+                    'M_ITM_GRP.MITM_ITMNM',
+                    'M_ITM_GRP.MITM_ITMNMREAL',
+                    'M_ITM.MITM_BRAND',
+                    'M_ITM.MITM_MODEL'
+                )
                 ->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                         ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
@@ -912,6 +912,281 @@ class InvoiceController extends Controller
             $this->fpdf->Cell(45, 5, 'Kuning : Penyewa', 0, 0, 'L');
             $this->fpdf->Cell(40, 5, 'Hijau : Lap. Harian', 0, 0, 'L');
             $this->fpdf->Cell(45, 5, 'Biru : Arsip', 0, 0, 'L');
+        }
+
+        $pdfFile = $this->fpdf->Output("", "S");
+
+        return base64_encode($pdfFile);
+    }
+
+    public function printGensetHarian($doc)
+    {
+        $doc = base64_decode($doc);
+        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->select(
+                'TDLVORD_ISSUDT',
+                'MCUS_CUSNM',
+                'MCUS_ADDR1',
+                'TDLVORD_REMARK',
+                'MCUS_TELNO',
+                'TDLVORD_INVCD',
+                'TDLVORD_LINE',
+                'TQUO_PROJECT_LOCATION',
+                'TSLODETA_PERIOD_FR',
+                'TSLODETA_PERIOD_TO',
+                'TSLODETA_PRC',
+                'TSLODETA_ITMQT',
+                'TDLVSJDETA_TYPE',
+                'TDLVSJDETA_STARTDT',
+                'TDLVSJDETA_ENDDT',
+                'TDLVORD_CONDGRP',
+                DB::raw("TDLVORD_DLVCD"),
+                'TDLVOR_ISSPLITSJ'
+            )
+            ->leftJoin('M_CUS', function ($join) {
+                $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftJoin('T_DLVORDDETA', DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
+            ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
+            ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
+            ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
+            ->leftJoin('T_DLVSJDETA', DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"))
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $doc)
+            ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->with([
+                'condition' => function ($f) {
+                    $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
+                },
+                'spk' => function ($f) {
+                    $f->where('CSPK_PIC_AS', 'DRIVER');
+                },
+                'dlvsj'
+            ])
+            ->groupBy(
+                'TDLVORD_DLVCD',
+                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
+                'TDLVORD_ISSUDT',
+                'MCUS_CUSNM',
+                'MCUS_ADDR1',
+                'TDLVORD_REMARK',
+                'MCUS_TELNO',
+                'TDLVORD_INVCD',
+                'TDLVORD_LINE',
+                'TQUO_PROJECT_LOCATION',
+                'TSLODETA_PERIOD_FR',
+                'TSLODETA_PERIOD_TO',
+                'TSLODETA_PRC',
+                'TSLODETA_ITMQT',
+                'TDLVSJDETA_TYPE',
+                'TDLVSJDETA_STARTDT',
+                'TDLVSJDETA_ENDDT',
+                'TDLVORD_CONDGRP',
+                'TDLVOR_ISSPLITSJ'
+            )
+            ->first();
+
+        $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+            'TDLVORDDETA_ITMCD',
+            'TDLVORDDETA_DLVCD',
+            'TDLVORDDETA_ITMCD_ACT',
+            'TDLVORDDETA_ITMQT',
+            'MITM_ITMNM',
+            'MITM_STKUOM',
+            'T_DLVORDDETA.created_by',
+            'TDLVORDDETA_SLOCD',
+            'MITM_ITMNM',
+            'MITM_MODEL',
+            'MITM_BRAND',
+            'MITM_ITMCAT',
+            'TSLODETA_PERIOD_FR',
+            'TSLODETA_PERIOD_TO',
+            'name'
+        )
+            ->leftJoin('M_ITM', function ($join) {
+                $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
+                    ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->leftJoin('T_SLODETA', function ($join) {
+                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+                    ->on('TDLVORDDETA_ITMCD', '=', 'TSLODETA_ITMCD');
+            })
+            ->join(DB::raw('jatpower_tribin.users'), 'nick_name', 'T_SLODETA.created_by')
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->where('MITM_ITMCAT', 'GENSET')
+            ->get();
+
+        $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
+            'name',
+            'COMPANY_BRANCHES.address',
+            'COMPANY_BRANCHES.phone',
+            'invoice_letter_id'
+        )
+            ->where('connection', $this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->first();
+
+        $Branch = M_BRANCH::select('MBRANCH_NM')->where('MBRANCH_CD', Auth::user()->branch)->first();
+        $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
+
+        // return $RSHeader;
+        foreach ($RSDetail as $key => $valueDet) {
+            $this->fpdf->AddPage("L", 'A5');
+            $pageWidth = $this->fpdf->GetPageWidth() - 10;
+
+            $this->fpdf->SetAutoPageBreak(true, 0);
+            $this->fpdf->SetFont('Arial', 'B', 12);
+            $this->fpdf->Cell($pageWidth, 5, 'FORM OPERASI GENSET HARIAN', 0, 1, 'C');
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->Cell($pageWidth, 5, "No. SJ : {$doc}", 0, 1, 'C');
+
+            $getOperator = count($RSHeader->spk) > 0
+                ? array_values(array_filter($RSHeader->spk, function ($f) {
+                    return $f['CSPK_PIC_AS'] === 'OPERATOR';
+                }))[0]['CSPK_PIC_NAME']
+                : '-';
+
+            $getDriver = count($RSHeader->spk) > 0
+                ? array_values(array_filter($RSHeader->spk, function ($f) {
+                    return $f['CSPK_PIC_AS'] === 'OPERATOR';
+                }))[0]['CSPK_PIC_NAME']
+                : '-';
+
+            $getKordinator = count($RSHeader->spk) > 0
+                ? array_values(array_filter($RSHeader->spk, function ($f) {
+                    return $f['CSPK_PIC_AS'] === 'KOORDINATOR';
+                }))[0]['CSPK_PIC_NAME']
+                : '-';
+
+            $listHeader = [
+                [
+                    'left_label' => 'Nama Penyewa',
+                    'left_value' => $RSHeader->MCUS_CUSNM,
+                    'right_label' => 'Period Sewa',
+                    'right_value' => date('d M Y', strtotime($valueDet->TSLODETA_PERIOD_FR)) . " - " . date('d M Y', strtotime($valueDet->TSLODETA_PERIOD_TO))
+                ],
+                [
+                    'left_label' => 'No Telp.',
+                    'left_value' => $RSHeader->MCUS_TELNO,
+                    'right_label' => 'Nama Operator',
+                    'right_value' => $getOperator
+                ],
+                [
+                    'left_label' => 'Genset',
+                    'left_value' => $valueDet->MITM_ITMNM,
+                    'right_label' => 'Sales',
+                    'right_value' => $valueDet->name
+                ],
+                [
+                    'left_label' => 'Lokasi',
+                    'left_value' => $RSHeader->MCUS_ADDR1,
+                    'right_label' => 'Supir',
+                    'right_value' => $getDriver
+                ],
+                [
+                    'left_label' => '',
+                    'left_value' => '',
+                    'right_label' => 'Koor. Lap',
+                    'right_value' => $getKordinator
+                ],
+            ];
+
+            $Y = 25;
+            foreach ($listHeader as $keyListHead => $valueListHead) {
+                $this->fpdf->SetXY(3, $Y);
+                $this->fpdf->SetFont('Arial', '', 9);
+                $this->fpdf->Cell(10, 5, $valueListHead['left_label'], 0, 1, 'L');
+                $this->fpdf->SetXY(30, $Y);
+                $this->fpdf->Cell(10, 5, !empty($valueListHead['left_label']) ? ":" : "", 0, 1, 'L');
+                $this->fpdf->SetXY(35, $Y);
+                $this->fpdf->MultiCell(70, 5, $valueListHead['left_value'], 0, 'L');
+
+                $this->fpdf->SetXY(120, $Y);
+                $this->fpdf->Cell(10, 5, $valueListHead['right_label'], 0, 1, 'L');
+                $this->fpdf->SetXY(145, $Y);
+                $this->fpdf->Cell(10, 5, ":", 0, 1, 'L');
+                $this->fpdf->SetXY(150, $Y);
+                $this->fpdf->MultiCell(70, 5, $valueListHead['right_value'], 0, 'L');
+
+                $Y += 5;
+            }
+
+            $Y += 5;
+            $this->fpdf->SetXY(3, $Y);
+            $this->fpdf->SetFont('Arial', '', 9);
+
+            $listHeader = [
+                'Tanggal',
+                'Hour Awal',
+                'Hour Akhir',
+                'HM Pemakaian',
+                'AMP',
+                'Solar Awal',
+                'Solar Akhir',
+                'Keterangan',
+            ];
+
+            $W_Awal = 3;
+            $tinggiTable = 110;
+            foreach ($listHeader as $keylistHeader => $valuelistHeader) {
+                $this->fpdf->SetXY($W_Awal, $Y);
+                $this->fpdf->Cell(25, 5, $valuelistHeader, 1, 1, 'C');
+
+                // Tinggi Table 120
+                $this->fpdf->Line($W_Awal, $Y, $W_Awal, $tinggiTable);
+                $this->fpdf->Line($W_Awal, $tinggiTable, $W_Awal + 25, $tinggiTable);
+
+                $W_Awal += 25;
+            }
+
+            // Line kolom terakhir
+            $this->fpdf->Line($W_Awal, $Y, $W_Awal, $tinggiTable);
+
+            $Y = $tinggiTable + 5;
+
+            $listTTD = [
+                [
+                    'mark' => 'Marketing',
+                    'markVal' => '(                   )',
+                ],
+                [
+                    'mark' => 'Sopir',
+                    'markVal' => '(                   )',
+                ],
+                [
+                    'mark' => 'Operator',
+                    'markVal' => '(                   )',
+                ],
+                [
+                    'mark' => 'Adm. Stok',
+                    'markVal' => '(                   )',
+                ],
+                [
+                    'mark' => 'Penyewa',
+                    'markVal' => '(' . $RSHeader->MCUS_CUSNM . ')',
+                ],
+            ];
+
+            $startXTTD = 10;
+            $panjangTTD = 37;
+            foreach ($listTTD as $keylistTTD => $valuelistTTD) {
+                $this->fpdf->SetXY($startXTTD, $Y);
+                $this->fpdf->Cell($panjangTTD, 5, $valuelistTTD['mark'], 0, 1, 'C');
+
+
+                $this->fpdf->SetXY($startXTTD, $Y + 20);
+                $this->fpdf->Cell($panjangTTD, 5, $valuelistTTD['markVal'], 0, 1, 'C');
+                // $this->fpdf->SetXY($startXTTD * $keylistTTD + 1, $Y + 25);
+                // $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
+                $startXTTD += $panjangTTD;
+            }
+
+
+            $this->fpdf->SetXY(5, 140);
+            $this->fpdf->Cell(45, 5, 'Putih : Marketing', 0, 0, 'R');
+            $this->fpdf->Cell(45, 5, 'Merah : Operator', 0, 0, 'R');
+            $this->fpdf->Cell(45, 5, 'Kuning : Adm. Sparepart', 0, 0, 'R');
+            $this->fpdf->Cell(40, 5, 'Hijau : Penyewa', 0, 0, 'R');
         }
 
         $pdfFile = $this->fpdf->Output("", "S");

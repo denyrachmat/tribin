@@ -108,6 +108,7 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 import qz from "qz-tray";
+import { JSPM } from "jsprintmanager";
 
 import barcodeCreate from "./barcodeCreate.vue";
 
@@ -238,8 +239,63 @@ const onPrint = (datanya) => {
   });
 };
 
+const printBarcode = () => {
+  // Configure QZ Tray
+  qz.init({
+    logger: console,
+  });
+
+  // Define barcode data
+  const barcodeData = {
+    type: "EAN13", // Change barcode type as needed (e.g., 'CODE128', 'QR_CODE')
+    value: "1234567890123", // Replace with your actual barcode value
+  };
+
+  // Define label dimensions
+  const labelHeight = 20; // mm
+  const labelWidth = 40; // mm
+  const gapWidth = 2; // mm (adjust as needed)
+
+  // Calculate label dimensions in dots
+  const dotsPerMm = 8; // Assuming 8 dots per millimeter
+  const labelHeightDots = labelHeight * dotsPerMm;
+  const labelWidthDots = labelWidth * dotsPerMm;
+  const gapWidthDots = gapWidth * dotsPerMm;
+
+  // ESC/POS commands for label printing
+  const config = {
+    data: [
+      // Initialize printer
+      { type: "raw", data: "\x1B\x40" }, // Initialize
+
+      // Set print direction
+      { type: "raw", data: "\x1B\x7B\x01" }, // Select left margin
+
+      // Set absolute print position
+      { type: "raw", data: "\x1B\x44\x00" }, // Set horizontal position to 0
+
+      // Set barcode height
+      { type: "raw", data: "\x1D\x68" + String.fromCharCode(labelHeightDots) }, // Set barcode height in dots
+
+      // Print barcode
+      { type: "barcode", data: barcodeData },
+
+      // Print label separator (optional)
+      { type: "raw", data: "\x1B\x4A" + String.fromCharCode(gapWidthDots) }, // Set horizontal tab for gap
+
+      // Cut label
+      { type: "raw", data: "\x1D\x56\x41" }, // Full cut
+    ],
+  };
+
+  // Print the label
+  QZ.print(config).catch((err) => {
+    console.error("Error printing label:", err);
+  });
+};
+
 const printLabel = async (data, listData) => {
-  console.log(listData)
+  console.log(listData);
   return qz.printers.find(data).then(async (printer) => {
     let config = qz.configs.create(printer);
 
@@ -248,37 +304,74 @@ const printLabel = async (data, listData) => {
       if (valHeader) {
         localStorage.setItem("printerLabel", data);
         // const commands = [
-        //   '\x1B\x40',                        // Initialize Printer
-        //   '\x1DH\x14',                    // Set barcode height (~20 dots)
-        //   '\x1DW\x01',                    // Set narrow barcode width
-        //   '\x1BK\x49',                    // CODE128 Barcode command
-        //   '\x0A',                         // Newline
-        //   valHeader.TRCVBC_BCCD,          // Barcode Data
-        //   '\x0A',                         // Newline after barcode
-        //   '\x1B!\x00',                    // Normal font style
-        //   'True-Ally Barcode',            // First line of text
-        //   '\x0A\x1B!\x01',                // Newline + Bold style
-        //   'labels and stickers.',         // Second line of text
-        //   '\x0A\x0A'                      // Spacing for label
+        //   "\x1B\x40", // Initialize the printer (ESC @)
+        //   "\x1D\x54\x05",
+        //   `${valHeader.TRCVBC_BCCD}\n`, // Text to print
+        //   "\x1B\x61\x01", // Left align text (ESC a 0)
+        //   "---------------------\n",
+        //   "\x1D\x68\x32", // Command to print Code 128 barcode (GS k 73)
+        //   "\x0A", // Barcode height (in dots)
+        //   valHeader.TRCVBC_BCCD, // The barcode data (e.g., "1234567890")
+        //   "\x1B\x64\x05",
+        //   // '\x1D\x56\x00',    // Cut the paper (GS V 0)
         // ];
+        const barcodeData = valHeader.TRCVBC_BCCD;
 
+        const labelHeight = 20; // mm
+        const labelWidth = 40; // mm
+        const gapWidth = 2; // mm (adjust as needed)
+
+        // Calculate label dimensions in dots
+        const dotsPerMm = 8; // Assuming 8 dots per millimeter
+        const labelHeightDots = labelHeight * dotsPerMm;
+        const labelWidthDots = labelWidth * dotsPerMm;
+        const gapWidthDots = gapWidth * dotsPerMm;
+
+        // ESC/POS commands for label printing
         const commands = [
-          '\x1B\x40',        // Initialize the printer (ESC @)
-          '\x1B\x61\x01',    // Center align text (ESC a 1)
-          `${valHeader.TRCVBC_BCCD}\n`, // Text to print
-          '\x1B\x61\x00',    // Left align text (ESC a 0)
-          '--------------------------------\n',
-          // '\x1D\x6B\x49',    // Command to print Code 128 barcode (GS k 73)
-          '\x1d\x68\x28',
-          '\x0A',            // Barcode height (in dots)
-          valHeader.TRCVBC_BCCD,       // The barcode data (e.g., "1234567890")
-          '\x1D\x56\x00',    // Cut the paper (GS V 0)
+          // Initialize printer
+          { type: "raw", data: "\x1B\x40" }, // Initialize
+
+          // Set print direction
+          { type: "raw", data: "\x1B\x7B\x01" }, // Select left margin
+
+          // Set absolute print position
+          { type: "raw", data: "\x1B\x44\x00" }, // Set horizontal position to 0
+
+          // Set barcode height
+          {
+            type: "raw",
+            data: "\x1D\x68" + String.fromCharCode(labelHeightDots),
+          }, // Set barcode height in dots
+
+          // Set barcode width (optional)
+          {
+            type: "raw",
+            data: "\x1D\x77" + String.fromCharCode(labelWidthDots),
+          }, // Set barcode width in dots
+
+          // Print barcode (Code 128)
+          {
+            type: "raw",
+            data:
+              "\x1D\x6B\x49" +
+              String.fromCharCode(barcodeData.length) +
+              barcodeData,
+          }, // Code 128
+
+          // Print label separator (optional)
+          { type: "raw", data: "\x1B\x4A" + String.fromCharCode(gapWidthDots) }, // Set horizontal tab for gap
+
+          // Cut label
+          { type: "raw", data: "\x1D\x56\x41" }, // Full cut
         ];
 
-        for (let index = 0; index < commands.length; index++) {
-          const element = commands[index];
-          zpl.push(element)
-        }
+        console.log(commands);
+        zpl.push(commands);
+        // for (let index = 0; index < commands.length; index++) {
+        //   const element = commands[index];
+        //   zpl.push(element);
+        // }
       }
     });
 
@@ -299,6 +392,14 @@ const printLabel = async (data, listData) => {
         console.log(e);
       });
   });
+};
+
+const stringToHex = (str) => {
+  let hex = "";
+  for (let i = 0; i < str.length; i++) {
+    hex += str.charCodeAt(i).toString(16).padStart(2, "0") + " ";
+  }
+  return hex.trim();
 };
 
 const onDelete = (id) => {

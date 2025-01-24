@@ -1,0 +1,8 @@
+SIZE 100 mm, 50 mm         // Label size: 100mm width, 50mm height
+GAP 3 mm, 0 mm             // Gap size: 3mm
+DIRECTION 1                // Printing direction: Forward
+REFERENCE 0, 0             // Reference point for objects
+CLS                        // Clear the print buffer
+TEXT 50, 50, "3", 0, 1, 1, "Hello TSC"  // Print text "Hello TSC"
+BARCODE 50, 150, "128", 100, 1, 0, 2, 2, "123456" // Print barcode
+PRINT 1, 1                 // Print 1 copy

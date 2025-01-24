@@ -703,7 +703,10 @@ class ReceiveOrderController extends Controller
     {
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
-        $hasil = [];
+        $hasilTemp = [
+            'BARU' => [],
+            'PERPANJANGAN' => []
+        ];
         $listCat = [];
         if (count($request->itmCat) > 0) {
             $listCat = $request->itmCat;
@@ -714,19 +717,24 @@ class ReceiveOrderController extends Controller
         foreach ($listCat as $key => $value) {
             $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
                 ->select(
+                    'TSLO_SLOCD',
                     'MITM_ITMCD',
                     'MITM_ITMNM',
                     'TQUO_PROJECT_LOCATION',
                     'CSPK_PIC_AS',
                     'CSPK_PIC_NAME',
                     'MCUS_CUSNM',
-                    DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQT'),
+                    DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
                     'name',
+                    'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'TDLVORDDETA_DLVCD'
                 )
-                ->join('T_SLODETA', 'TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD')
+                ->join('T_SLODETA', function($j) {
+                    $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
+                    $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
+                })
                 ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
                 ->join('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
                 ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
@@ -736,6 +744,7 @@ class ReceiveOrderController extends Controller
                 ->where('MITM_ITMCAT', $value)
                 ->whereBetween('T_SLODETA.created_at', [$request->fdate. " 00:00:00", $request->ldate. " 23:59:59"])
                 ->groupBy(
+                    'TSLO_SLOCD',
                     'MITM_ITMCD',
                     'MITM_ITMNM',
                     'TQUO_PROJECT_LOCATION',
@@ -743,21 +752,36 @@ class ReceiveOrderController extends Controller
                     'CSPK_PIC_NAME',
                     'MCUS_CUSNM',
                     'name',
+                    'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'TDLVORDDETA_DLVCD'
                 );
 
             if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
-                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->name);
+                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
             }
 
-            $cekTotalData = $RSTemp->get();
+            // return Auth::user();
+
+            $cekTotalData = $RSTemp->get()->toArray();
 
             if (count($cekTotalData) > 0) {
-                $hasil[$value] = $cekTotalData;
+                $hasilTemp['BARU'][$value] = array_values(array_filter($cekTotalData, function($f) {
+                    if (!str_contains($f['TSLO_SLOCD'], '-')) {
+                        return $f;
+                    }
+                }));
+
+                $hasilTemp['PERPANJANGAN'][$value] = array_values(array_filter($cekTotalData, function($f) {
+                    if (str_contains($f['TSLO_SLOCD'], '-')) {
+                        return $f;
+                    }
+                }));
             }
         }
+
+        $hasil = $hasilTemp;
 
         // return $hasil;
 

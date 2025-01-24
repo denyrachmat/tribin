@@ -195,7 +195,17 @@ onMounted(async () => {
     forms.value.MCOA_COANM = props.header.MCOA_COANM;
     forms.value.MCOA_CURR = props.header.MCOA_CURR;
     forms.value.MCOA_TYPE = props.header.MCOA_TYPE;
-    formsDet.value = props.header.det;
+
+    if (props.header.map.length > 0) {
+      formsDet.value = []
+      props.header.map.map(val => {
+        formsDet.value.push({
+          MCOAM_CR_COACD: val.MCOAM_CR_COACD,
+          MCOAM_DB_COACD: val.MCOAM_DB_COACD,
+          MCOAM_DESC: val.MCOAM_DESC,
+        });
+      })
+    }
   }
 });
 

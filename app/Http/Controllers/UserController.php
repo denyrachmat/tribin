@@ -39,6 +39,7 @@ class UserController extends Controller
         if ($activeRole['code'] === 'root') {
             $this->RSRoles = Role::select('*')->get();
         }
+
         return view('user_management', ['RSRoles' => $this->RSRoles, 'Branches' => M_BRANCH::on($this->dedicatedConnection)->get()]);
     }
 

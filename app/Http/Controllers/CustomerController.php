@@ -34,10 +34,17 @@ class CustomerController extends Controller
         $currentDBName = DB::connection($this->dedicatedConnection)->getDatabaseName();
         $RS = DB::connection($request->fromConnection)->table('M_CUS AS A')
             ->select('A.*')
-            ->leftJoin($currentDBName . '.M_CUS AS B', 'A.MCUS_CUSCD', '=', 'B.MCUS_CUSCD')
+            // ->leftJoin(DB::raw($currentDBName . '.M_CUS AS B COLLATE utf8mb4_unicode_ci'), 'A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'))
+            ->leftJoin($currentDBName . '.M_CUS as B', function ($join) {
+                $join->on('A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'));
+            })
             ->where('A.MCUS_BRANCH',  Auth::user()->branch)
+            // ->where('A.MCUS_CUSCD', 'COLLATE', 'utf8mb4_unicode_ci') // Apply COLLATE to A.MCUS_CUSCD in the WHERE clause
             ->whereNull('B.MCUS_CUSCD');
+
         $RSTosave = json_decode(json_encode($RS->get()), true);
+
+        // return (clone $RS)->get();
         if (!empty($RSTosave)) {
             M_CUS::on($this->dedicatedConnection)->insert($RSTosave);
             return ['message' => 'Done, ' . count($RSTosave) . ' imported'];

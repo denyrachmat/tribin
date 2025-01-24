@@ -126,10 +126,10 @@ class CompanyGroupController extends Controller
 
         if (
             DB::table('COMPANY_GROUP_ACCESSES')
-            ->where('nick_name', $request->nick_name)
-            ->where('connection', $request->connection)
-            ->whereNull('deleted_at')
-            ->count() > 0
+                ->where('nick_name', $request->nick_name)
+                ->where('connection', $request->connection)
+                ->whereNull('deleted_at')
+                ->count() > 0
         ) {
             return response()->json(['message' => 'Already registered'], 406);
         }
@@ -157,10 +157,15 @@ class CompanyGroupController extends Controller
         } else {
             $this->dedicatedConnection = '-';
         }
+
         $SelectedCompany = COMPANY_BRANCH::on($this->dedicatedConnection)->select('*')
             ->where('connection', $this->dedicatedConnection)
             ->where('BRANCH', Auth::user()->branch)
             ->first();
+
+
+        // return view( 'tribinapp_layouts', ['routeApp' => 'company']);
+
         return view('master.company', ['SelectedCompany' => $SelectedCompany]);
     }
 
@@ -264,11 +269,13 @@ class CompanyGroupController extends Controller
         return ['data' => $Accounts];
     }
 
-    function getNowCG() {
+    function getNowCG()
+    {
         return Crypt::decryptString($_COOKIE['CGID']);
     }
 
-    function transferData(Request $request) {
+    function transferData(Request $request)
+    {
         $tableFrom = DB::connection($request->frCG)->table($request->table);
         $tableTo = DB::connection($request->toCG)->table($request->table);
 

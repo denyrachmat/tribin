@@ -116,7 +116,7 @@ class DeliveryController extends Controller
             "TSLO_PLAN_DLVDT",
             DB::raw("SUM(SALESQT) SALESQT"),
             DB::raw("IFNULL(SUM(TTLDLVQT),0) AS TTLDLVQT"),
-            'TSLODETA_PRC'
+            DB::raw("SUM(SALESQT * TSLODETA_PRC) TSLODETA_PRC")
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -143,7 +143,7 @@ class DeliveryController extends Controller
                 "TSLO_CUSCD",
                 "MCUS_CUSNM",
                 "TSLO_PLAN_DLVDT",
-                'TSLODETA_PRC'
+                // 'TSLODETA_PRC'
             )
             ->orderBy('TSLO_PLAN_DLVDT', 'desc');
 
@@ -384,10 +384,12 @@ class DeliveryController extends Controller
                 $idAutoIDX++;
             }
         } else {
-            $dataDLVHead = [[
-                'HEAD' => T_DLVORDHEAD::on($this->dedicatedConnection)->create($quotationHeader),
-                'DET' => $request->SO_DET
-            ]];
+            $dataDLVHead = [
+                [
+                    'HEAD' => T_DLVORDHEAD::on($this->dedicatedConnection)->create($quotationHeader),
+                    'DET' => $request->SO_DET
+                ]
+            ];
         }
 
         foreach ($dataDLVHead as $keyHeader => $valueHeader) {
@@ -602,49 +604,61 @@ class DeliveryController extends Controller
         // return $RSTemp->get()->toArray();
 
         foreach ($RSTemp->get()->toArray() as $keySODet => $valueSODet) {
-            $hasil[] = array_merge(
-                $valueSODet,
-                [
-                    'listItems' => T_DLVORDDETA::on($this->dedicatedConnection)
-                        ->select(
-                            DB::raw('T_DLVORDDETA.id as id'),
-                            DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1) as TDLVORDDETA_DLVCD"),
-                            'TDLVORDDETA_BRANCH',
-                            'TDLVORDDETA_SLOCD',
-                            DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
-                            'MITM_ITMNM',
-                            DB::raw('TDLVORDDETA_ITMQT as ORIQT'),
-                            DB::raw('TDLVORDDETA_ITMQT as BALQT'),
-                            DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
-                        )
-                        ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-                        ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $valueSODet['TDLVORD_DLVCD'])
-                        ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
-                        ->leftJoin("M_ITM_GRP", function ($join) {
-                            $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-                                ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
-                        })
-                        ->leftJoin('T_SLODETA', function ($join) {
-                            $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
-                                ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
-                                ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD')
-                                ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
-                        })
-                        ->groupBy(
-                            DB::raw('T_DLVORDDETA.id'),
-                            'TDLVORDDETA_DLVCD',
-                            'TDLVORDDETA_BRANCH',
-                            'TDLVORDDETA_SLOCD',
-                            'TDLVORDDETA_ITMCD',
-                            'MITM_ITMNM',
-                            'TDLVORDDETA_ITMQT',
-                            'TSLODETA_PRC',
-                            'TDLVORDDETA_PRC'
-                        )
-                        ->get()
-                        ->toArray()
-                ]
-            );
+            $itemDet = T_DLVORDDETA::on($this->dedicatedConnection)
+                ->select(
+                    DB::raw('T_DLVORDDETA.id as id'),
+                    DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1) as TDLVORDDETA_DLVCD"),
+                    'TDLVORDDETA_BRANCH',
+                    'TDLVORDDETA_SLOCD',
+                    DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
+                    'MITM_ITMNM',
+                    DB::raw('TDLVORDDETA_ITMQT as ORIQT'),
+                    DB::raw('TDLVORDDETA_ITMQT as BALQT'),
+                    DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
+                )
+                // ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $valueSODet['TDLVORD_DLVCD'])
+                // ->where(DB::raw("TDLVORDDETA_DLVCD"), $valueSODet['TDLVORD_DLVCD'])
+                ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
+                ->leftJoin("M_ITM_GRP", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+                })
+                ->leftJoin('T_SLODETA', function ($join) {
+                    $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+                        ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                        ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD')
+                        ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
+                })
+                ->groupBy(
+                    DB::raw('T_DLVORDDETA.id'),
+                    'TDLVORDDETA_DLVCD',
+                    'TDLVORDDETA_BRANCH',
+                    'TDLVORDDETA_SLOCD',
+                    'TDLVORDDETA_ITMCD',
+                    'MITM_ITMNM',
+                    'TDLVORDDETA_ITMQT',
+                    'TSLODETA_PRC',
+                    'TDLVORDDETA_PRC'
+                )
+                ->get()
+                ->toArray();
+
+            if (count($itemDet) > 0) {
+                $hasil[] = array_merge(
+                    $valueSODet,
+                    [
+                        'listItems' => $itemDet
+                    ]
+                );
+            }
+
+            // $hasil[] = array_merge(
+            //     $valueSODet,
+            //     [
+            //         'listItems' => $itemDet
+            //     ]
+            // );
         }
 
         return ['data' => $hasil];
@@ -1422,8 +1436,8 @@ class DeliveryController extends Controller
 
             if (
                 T_PCHORDHEAD::on($this->dedicatedConnection)
-                ->where('TPCHORD_BRANCH', Auth::user()->branch)
-                ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
+                    ->where('TPCHORD_BRANCH', Auth::user()->branch)
+                    ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
             ) {
                 return true;
             }
@@ -1896,7 +1910,7 @@ class DeliveryController extends Controller
             ->select(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
             ->leftJoin('T_DLVORDDETA', function ($join) {
                 $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH')
-                ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
+                    ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
             })
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -1910,17 +1924,17 @@ class DeliveryController extends Controller
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->whereNull('T_DLVORDDETA.deleted_at')
-            ->where('MITM_ITMTYPE', '!=', '3')
+            // ->where('MITM_ITMTYPE', '!=', '3')
             ->groupBy(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
-            ->whereNull('CITRN_DOCNO')
+            // ->whereNull('CITRN_DOCNO')
             ->orderBy('T_DLVORDHEAD.created_at', 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $Data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
-        return ['data' => $Data->get()->map(function ($dlv) {
-            $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+        $hasil = $Data->get()->map(function ($dlv) {
+            $getDet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
                 'T_DLVORDDETA.id',
                 'T_DLVORDDETA.TDLVORDDETA_DLVCD',
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD',
@@ -1929,14 +1943,14 @@ class DeliveryController extends Controller
                 'MITM_ITMNM',
                 'MITM_ITMNMREAL'
             )->groupBy(
-                'T_DLVORDDETA.id',
-                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                'MITM_ITMNM',
-                'MITM_ITMNMREAL'
-            )
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'MITM_ITMNM',
+                    'MITM_ITMNMREAL'
+                )
                 ->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                         ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -1949,62 +1963,25 @@ class DeliveryController extends Controller
                 ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
                 ->get();
 
+            if (count($getDet) > 0) {
+                $dlv->dlvdet = $getDet;
+            }
+
             return $dlv;
-        }), 'sql' => $Data->toSql()];
+        })->toArray();
+
+        return [
+            'data' => array_values(array_filter($hasil, function ($f) {
+                if (isset($f['dlvdet'])) {
+                    return $f;
+                }
+            })),
+            'sql' => $Data->toSql()
+        ];
     }
 
     function confirmOutgoing(Request $request)
     {
-        // $totalEmptyItemActual = T_DLVORDDETA::on($this->dedicatedConnection)
-        //     ->whereNull('TDLVORDDETA_ITMCD_ACT')
-        //     ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-        //     ->where('TDLVORDDETA_DLVCD', $request->id)
-        //     ->count();
-
-        // if ($totalEmptyItemActual > 0) {
-        //     return response()->json([['Please input Actual item']], 406);
-        // }
-
-        // $Delivery = T_DLVORDHEAD::on($this->dedicatedConnection)
-        //     ->leftJoin('T_DLVORDDETA', function ($join) {
-        //         $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH');
-        //     })
-        //     ->leftJoin('M_CUS', function ($join) {
-        //         $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
-        //     })
-        //     ->leftJoin('M_ITM', function ($join) {
-        //         $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD');
-        //     })
-        //     ->select('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM')
-        //     ->where('TDLVORD_BRANCH', Auth::user()->branch)
-        //     ->where('TDLVORD_DLVCD', $request->id)
-        //     ->whereNull('T_DLVORDDETA.deleted_at')
-        //     ->where('MITM_ITMTYPE', '!=', '3')
-        //     ->groupBy('TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'MCUS_CUSNM');
-
-        // $ITRN = C_ITRN::on($this->dedicatedConnection)
-        //     ->select('CITRN_DOCNO', 'CITRN_BRANCH')
-        //     ->where('CITRN_BRANCH', Auth::user()->branch)
-        //     ->where('CITRN_DOCNO', $request->id)
-        //     ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
-
-        // $Data = DB::connection($this->dedicatedConnection)->query()->fromSub($Delivery, 'V1')
-        //     ->leftJoinSub($ITRN, 'V2', function ($join) {
-        //         $join->on('TDLVORD_DLVCD', '=', 'CITRN_DOCNO')->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
-        //     })
-        //     ->whereNull('CITRN_DOCNO')->get();
-
-        // Mau Cek Stock
-        // $cekStock = DB::on($this->dedicatedConnection)->table('M_ITM_GRP')->first();
-        // $cekSubmited = T_DLVORDHEAD::on($this->dedicatedConnection)
-        //     ->where('TDLVORD_DLVCD', $request->id)
-        //     ->where('TDLVORD_BRANCH', $request->TDLVORD_BRANCH)
-        //     ->first();
-
-        // if($cekSubmited-> $cekStock->STOCK){
-
-        // }
-
         if (count($request->data) > 0) {
             $hasilZero = [];
             foreach ($request->data as $rCheck) {
@@ -2035,7 +2012,7 @@ class DeliveryController extends Controller
             $IDKwitansi = 'A-' . (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -7) + 1));
 
             T_DLVORDHEAD::on($this->dedicatedConnection)
-                ->where('TDLVORD_DLVCD', $request->id)
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $request->id)
                 ->update([
                     'TDLVORD_REC_NO' => $IDKwitansi
                 ]);

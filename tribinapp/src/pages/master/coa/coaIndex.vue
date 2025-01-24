@@ -8,9 +8,9 @@
         <q-btn icon="add" color="blue" @click="onAddCOA()">
           <q-tooltip>Create New COA</q-tooltip>
         </q-btn>
-        <q-btn icon="add" color="indigo" @click="onClickGroup()" flat>
+        <!-- <q-btn icon="add" color="indigo" @click="onClickGroup()" flat>
           <q-tooltip>Grouping COA</q-tooltip>
-        </q-btn>
+        </q-btn> -->
       </div>
     </div>
 

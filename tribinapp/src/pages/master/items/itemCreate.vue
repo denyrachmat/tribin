@@ -227,7 +227,15 @@ onMounted(() => {
 
   if (props.dataForUpdate) {
     itemData.value = props.dataForUpdate;
-    itemData.value.MITM_ITMNM = props.dataForUpdate.MITM_ITMNMREAL;
+
+    const regex = /\(([^)]+)\)/;
+    const match = props.dataForUpdate.MITM_ITMNMREAL.match(regex);
+
+    if (match) {
+      itemData.value.MITM_ITMNM = match[1];
+    } else {
+      itemData.value.MITM_ITMNM = props.dataForUpdate.MITM_ITMNMREAL;
+    }
   }
 });
 

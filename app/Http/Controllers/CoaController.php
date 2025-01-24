@@ -66,6 +66,8 @@ class CoaController extends Controller
         ],[
             'MCOA_COACD' => $request->MCOA_COACD,
             'MCOA_COANM' => $request->MCOA_COANM,
+            'MCOA_CURR' => $request->MCOA_CURR,
+            'MCOA_TYPE' => $request->MCOA_TYPE,
             'MCOA_BRANCH' => Auth::user()->branch
         ]);
 
@@ -114,7 +116,8 @@ class CoaController extends Controller
                     ELSE 'PARTIAL'
                 END AS MAP_PARAM
                 ")
-            );
+            )
+            ->with('map');
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {
             $RS = (clone $RS)->where($request->searchCol, 'like', (string)$request->searchValue . '%');

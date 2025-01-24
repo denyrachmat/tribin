@@ -145,6 +145,8 @@ const forms = ref({
 const loading = ref(false);
 const listCOA = ref([]);
 
+const formsDet = ref([])
+
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "coa") {

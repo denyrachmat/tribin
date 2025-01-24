@@ -69,11 +69,11 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="!props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset') ? 'grey' : 'purple'"
+                  :color="!props.row.TDLVORD_CONDGRP || !props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset') ? 'grey' : 'purple'"
                   icon="print"
                   dense
                   @click="printDailyGenset(props.row.TDLVORD_DLVCD)"
-                  :disable="!props.row.dlvsj || !props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset')"
+                  :disable="!props.row.dlvsj || !props.row.TDLVORD_CONDGRP || !props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset')"
                 >
                   <q-tooltip>Print Form Genset Harian</q-tooltip>
                 </q-btn>

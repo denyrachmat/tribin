@@ -164,7 +164,7 @@ class CompanyGroupController extends Controller
             ->first();
 
 
-        // return view( 'tribinapp_layouts', ['routeApp' => 'company']);
+        return view( 'tribinapp_layouts', ['routeApp' => 'company']);
 
         return view('master.company', ['SelectedCompany' => $SelectedCompany]);
     }

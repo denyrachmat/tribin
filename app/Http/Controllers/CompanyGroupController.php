@@ -150,6 +150,21 @@ class CompanyGroupController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
+    function formAPI() {
+        if (isset($_COOKIE['CGID'])) {
+            $this->dedicatedConnection = $_COOKIE['CGID'] === '-' ? '-' : Crypt::decryptString($_COOKIE['CGID']);
+        } else {
+            $this->dedicatedConnection = '-';
+        }
+
+        $SelectedCompany = COMPANY_BRANCH::on($this->dedicatedConnection)->select('*')
+            ->where('connection', $this->dedicatedConnection)
+            ->where('BRANCH', Auth::user()->branch)
+            ->first();
+
+        return $SelectedCompany;
+    }
+
     function form()
     {
         if (isset($_COOKIE['CGID'])) {

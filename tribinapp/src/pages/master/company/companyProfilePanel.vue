@@ -8,6 +8,7 @@
           label="Company Name"
           dense
           filled
+          :loading="loading"
         ></q-input>
       </div>
     </div>
@@ -19,6 +20,7 @@
           type="textarea"
           dense
           filled
+          :loading="loading"
         ></q-input>
       </div>
     </div>
@@ -29,6 +31,7 @@
           label="Telp"
           dense
           filled
+          :loading="loading"
         ></q-input>
       </div>
       <div class="col q-pl-sm">
@@ -37,6 +40,7 @@
           label="Fax"
           dense
           filled
+          :loading="loading"
         ></q-input>
       </div>
     </div>
@@ -47,12 +51,18 @@
           label="Letter Head"
           dense
           filled
+          :loading="loading"
         ></q-input>
       </div>
     </div>
     <div class="row q-pt-sm">
       <div class="col text-right">
-        <q-btn color="primary" label="save" @click="onClickSave()"></q-btn>
+        <q-btn
+          color="primary"
+          label="save"
+          @click="onClickSave()"
+          :loading="loading"
+        ></q-btn>
       </div>
     </div>
   </div>
@@ -63,17 +73,18 @@ import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
 const forms = ref({
+  id: "-",
   name: "",
   address: "",
   phone: "",
   fax: "",
-  letter_head: ""
+  letter_head: "",
 });
-const loading = ref(false)
+const loading = ref(false);
 
 onMounted(() => {
-  getProfileData()
-})
+  getProfileData();
+});
 
 const onClickSave = () => {
   $q.dialog({
@@ -83,8 +94,21 @@ const onClickSave = () => {
     persistent: true,
   }).onOk(async () => {
     loading.value = true;
-  })
-}
+    await api_web
+      .put(`company/management-form/${forms.value.id}`, {
+        ...forms.value
+      })
+      .then((response) => {
+        loading.value = false;
+
+        getProfileData()
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+    // management-form
+  });
+};
 
 const getProfileData = async () => {
   loading.value = true;
@@ -94,7 +118,7 @@ const getProfileData = async () => {
       loading.value = false;
       const datanya = response.data;
 
-      forms.value = datanya
+      forms.value = datanya;
     })
     .catch((e) => {
       loading.value = false;

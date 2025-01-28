@@ -108,7 +108,6 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 import qz from "qz-tray";
-import { JSPM } from "jsprintmanager";
 
 import barcodeCreate from "./barcodeCreate.vue";
 

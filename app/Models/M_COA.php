@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class M_COA extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'MCOA_COACD';
+    public $incrementing = false;
     protected $table = 'M_COA';
     protected $fillable = [
         'MCOA_COACD',

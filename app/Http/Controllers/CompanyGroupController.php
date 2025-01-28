@@ -7,6 +7,7 @@ use App\Models\COMPANY_BRANCH;
 use App\Models\CompanyGroup;
 use App\Models\CompanyGroupAccess;
 use App\Models\Role;
+use App\Models\M_COA;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -150,7 +151,8 @@ class CompanyGroupController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
-    function formAPI() {
+    function formAPI()
+    {
         if (isset($_COOKIE['CGID'])) {
             $this->dedicatedConnection = $_COOKIE['CGID'] === '-' ? '-' : Crypt::decryptString($_COOKIE['CGID']);
         } else {
@@ -179,7 +181,7 @@ class CompanyGroupController extends Controller
             ->first();
 
 
-        return view( 'tribinapp_layouts', ['routeApp' => 'company']);
+        return view('tribinapp_layouts', ['routeApp' => 'company']);
 
         return view('master.company', ['SelectedCompany' => $SelectedCompany]);
     }
@@ -242,7 +244,9 @@ class CompanyGroupController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        BranchPaymentAccount::on($this->dedicatedConnection)->create([
+        BranchPaymentAccount::on($this->dedicatedConnection)->updateOrCreate([
+            'id' => $request->id,
+        ], [
             'connection' => $this->dedicatedConnection,
             'BRANCH' => Auth::user()->branch,
             'bank_name' => $request->bank_name,
@@ -279,9 +283,41 @@ class CompanyGroupController extends Controller
         }
         $Accounts = BranchPaymentAccount::on($this->dedicatedConnection)
             ->where('BRANCH', Auth::user()->branch)
+            ->with('coa')
             ->whereNull('deleted_at')
             ->get();
+
         return ['data' => $Accounts];
+    }
+
+    function sendAccToCOA(Request $request)
+    {
+        if (isset($_COOKIE['CGID'])) {
+            $this->dedicatedConnection = $_COOKIE['CGID'] === '-' ? '-' : Crypt::decryptString($_COOKIE['CGID']);
+        } else {
+            $this->dedicatedConnection = '-';
+        }
+
+        $validator = Validator::make($request->all(), [
+            'bank_account_number' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        M_COA::on($this->dedicatedConnection)
+            ->updateOrCreate([
+                'MCOA_COACD' => $request->bank_account_number,
+            ], [
+                'MCOA_COACD' => $request->bank_account_number,
+                'MCOA_COANM' => $request->bank_name . '-' . $request->bank_account_name,
+                'MCOA_BRANCH' => Auth::user()->branch,
+                'MCOA_TYPE' => 'INC',
+                'MCOA_CURR' => 'IDR'
+            ]);
+
+        return ['msg' => 'Saved successfully'];
     }
 
     function getNowCG()

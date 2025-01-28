@@ -114,6 +114,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('form', [CompanyGroupController::class, 'savePaymentAccount']);
             Route::get('', [CompanyGroupController::class, 'getPaymentAccountCompanyBranch']);
             Route::delete('form/{id}', [CompanyGroupController::class, 'deletePaymentAccountCompanyBranch']);
+            Route::post('sendAccToCOA', [CompanyGroupController::class, 'sendAccToCOA']);
+            // sendAccToCOA
         });
 
         # Terkait Usage Master

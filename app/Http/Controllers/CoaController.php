@@ -72,9 +72,10 @@ class CoaController extends Controller
         ]);
 
         if($request->has('det') && count($request->det) > 0) {
+            M_COA_MAP::on($this->dedicatedConnection)->where('MCOAM_H_COACD', $request->MCOA_COACD)->delete();
             foreach ($request->det as $key => $value) {
                 M_COA_MAP::on($this->dedicatedConnection)->create([
-                    'MCOAM_H_COACD' => $value['MCOAM_H_COACD'],
+                    'MCOAM_H_COACD' => $request->MCOA_COACD,
                     'MCOAM_CR_COACD' => $value['MCOAM_CR_COACD'],
                     'MCOAM_DB_COACD' => $value['MCOAM_DB_COACD'],
                     'MCOAM_DESC' => $value['MCOAM_DESC'],

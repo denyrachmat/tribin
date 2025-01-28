@@ -98,6 +98,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::prefix('company')->group(function () {
             Route::get('form', [CompanyGroupController::class, 'index']);
             Route::get('management-form', [CompanyGroupController::class, 'form']);
+            Route::get('management-form-api', [CompanyGroupController::class, 'formAPI']);
             Route::put('management-form/{id}', [CompanyGroupController::class, 'updateBranch']);
             Route::get('', [CompanyGroupController::class, 'search']);
             Route::post('', [CompanyGroupController::class, 'save']);

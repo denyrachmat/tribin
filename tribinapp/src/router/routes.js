@@ -17,6 +17,7 @@ const routes = [
       { path: 'incoming', component: () => import('pages/warehouse/incoming/incomingIndex.vue') },
       { path: 'incomingBC', component: () => import('pages/warehouse/incomingBarcode/incomingBarcodeIndex.vue') },
       { path: 'barcodeCreate', component: () => import('pages/warehouse/incomingBarcode/barcodeCreate.vue') },
+      { path: 'barcodeTest', component: () => import('pages/warehouse/incomingBarcode/barcodeTest.vue') },
       { path: 'transferLoc', component: () => import('pages/warehouse/transferLocation/transferLocIndex.vue') },
       { path: 'transferRequest', component: () => import('pages/warehouse/transferRequest/transferRequestIndex.vue') },
       { path: 'stocktake', component: () => import('pages/warehouse/stockTake/stockTakeIndex.vue') },

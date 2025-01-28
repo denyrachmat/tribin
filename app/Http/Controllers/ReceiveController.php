@@ -32,7 +32,7 @@ class ReceiveController extends Controller
 
     function formBarcodeCreate()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'barcodeCreate']);
+        return view('tribinapp_layouts', ['routeApp' => 'barcodeTest']);
     }
 
     function outstandingPO(Request $request)

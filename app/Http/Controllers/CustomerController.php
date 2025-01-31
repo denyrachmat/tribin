@@ -23,6 +23,7 @@ class CustomerController extends Controller
 
     public function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'customer']);
         return view('master.customer', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()
@@ -138,7 +139,8 @@ class CustomerController extends Controller
             'MCUS_GENID' => $NewGENID,
         ]);
         return [
-            'msg' => 'OK', 'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
+            'msg' => 'OK',
+            'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
             'MCUS_KTP_FILE' => $KTPfileName,
             'MCUS_NPWP_FILE' => $NPWPfileName,
             'MCUS_NIB_FILE' => $NIBfileName,
@@ -174,12 +176,34 @@ class CustomerController extends Controller
                 !empty($request->searchCol)
                 ? $request->searchCol
                 : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
-            ->get();
+                ->get();
         } else {
             $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
         }
 
         return ['data' => $RS];
+    }
+
+    function searchAPIMaster(Request $request)
+    {
+        $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*')
+            ->where('MCUS_BRANCH', Auth::user()->branch);
+
+        if (isset($request->searchValue) && $request->searchValue !== "") {
+            $RSTemp->where($request->searchBy, 'LIKE', "%{$request->searchValue}%");
+        }
+
+        // if (!empty($request->searchValue)) {
+        //     $RS = (clone $RSTemp)->where((
+        //         !empty($request->searchCol)
+        //         ? $request->searchCol
+        //         : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
+        //         ->get();
+        // } else {
+        //     $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
+        // }
+
+        return ['data' => $RSTemp->get()];
     }
 
     function update(Request $request)
@@ -188,12 +212,18 @@ class CustomerController extends Controller
             ->where('MCUS_CUSCD', base64_decode($request->id))
             ->where('MCUS_BRANCH', Auth::user()->branch)
             ->update([
-                'MCUS_CUSNM' => $request->MCUS_CUSNM, 'MCUS_CURCD' => $request->MCUS_CURCD,
-                'MCUS_TAXREG' => $request->MCUS_TAXREG, 'MCUS_ADDR1' => $request->MCUS_ADDR1,
-                'MCUS_TELNO' => $request->MCUS_TELNO, 'MCUS_CGCON' => $request->MCUS_CGCON,
-                'MCUS_TYPE' => $request->MCUS_TYPE, 'MCUS_GROUP' => $request->MCUS_GROUP,
-                'MCUS_REFF_MKT' => $request->MCUS_REFF_MKT, 'MCUS_PIC_NAME' => $request->MCUS_PIC_NAME,
-                'MCUS_PIC_TELNO' => $request->MCUS_PIC_TELNO, 'MCUS_EMAIL' => $request->MCUS_EMAIL,
+                'MCUS_CUSNM' => $request->MCUS_CUSNM,
+                'MCUS_CURCD' => $request->MCUS_CURCD,
+                'MCUS_TAXREG' => $request->MCUS_TAXREG,
+                'MCUS_ADDR1' => $request->MCUS_ADDR1,
+                'MCUS_TELNO' => $request->MCUS_TELNO,
+                'MCUS_CGCON' => $request->MCUS_CGCON,
+                'MCUS_TYPE' => $request->MCUS_TYPE,
+                'MCUS_GROUP' => $request->MCUS_GROUP,
+                'MCUS_REFF_MKT' => $request->MCUS_REFF_MKT,
+                'MCUS_PIC_NAME' => $request->MCUS_PIC_NAME,
+                'MCUS_PIC_TELNO' => $request->MCUS_PIC_TELNO,
+                'MCUS_EMAIL' => $request->MCUS_EMAIL,
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }

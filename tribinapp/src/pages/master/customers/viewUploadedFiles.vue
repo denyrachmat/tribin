@@ -18,8 +18,8 @@
       <q-card-section class="q-pa-sm">
         <div class="row">
           <div class="col">
-            <q-img :src="`https://joss.jatpowerindo.co.id/customer/file/${props.fileName}`">
-              <div class="absolute-top text-center">Caption</div>
+            <q-img :src="`https://joss.jatpowerindo.co.id/customer/file/${props.fileName}`" style="height: 50%;">
+              <div class="absolute-top text-center">{{ props.fileName }}</div>
             </q-img>
           </div>
         </div>

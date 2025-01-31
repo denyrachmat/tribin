@@ -1165,7 +1165,7 @@ class DeliveryController extends Controller
 
     function numberToSentence($nilai)
     {
-        $nilai = abs($nilai);
+        $nilai = round(abs($nilai));
         $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
         $temp = "";
         if ($nilai < 12) {

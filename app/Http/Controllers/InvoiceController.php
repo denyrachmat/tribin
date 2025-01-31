@@ -223,17 +223,17 @@ class InvoiceController extends Controller
                 'M_ITM.MITM_BRAND',
                 'M_ITM.MITM_MODEL'
             )->groupBy(
-                    'T_DLVORDDETA.id',
-                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                    'T_DLVORDDETA.TDLVORDDETA_PRC',
-                    'M_ITM_GRP.MITM_ITMNM',
-                    'M_ITM_GRP.MITM_ITMNMREAL',
-                    'M_ITM.MITM_BRAND',
-                    'M_ITM.MITM_MODEL'
-                )
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL'
+            )
                 ->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                         ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
@@ -342,30 +342,32 @@ class InvoiceController extends Controller
 
     public function numberToSentence($nilai)
     {
-        $nilai = abs($nilai);
+        $nilai = round(abs($nilai));
         $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
         $temp = "";
+
         if ($nilai < 12) {
             $temp = " " . $huruf[$nilai];
         } else if ($nilai < 20) {
             $temp = $this->numberToSentence($nilai - 10) . " belas";
         } else if ($nilai < 100) {
-            $temp = $this->numberToSentence($nilai / 10) . " puluh" . $this->numberToSentence($nilai % 10);
+            $temp = $this->numberToSentence(floor($nilai / 10)) . " puluh" . $this->numberToSentence($nilai % 10);
         } else if ($nilai < 200) {
             $temp = " seratus" . $this->numberToSentence($nilai - 100);
         } else if ($nilai < 1000) {
-            $temp = $this->numberToSentence($nilai / 100) . " ratus" . $this->numberToSentence($nilai % 100);
+            $temp = $this->numberToSentence(floor($nilai / 100)) . " ratus" . $this->numberToSentence($nilai % 100);
         } else if ($nilai < 2000) {
             $temp = " seribu" . $this->numberToSentence($nilai - 1000);
         } else if ($nilai < 1000000) {
-            $temp = $this->numberToSentence($nilai / 1000) . " ribu" . $this->numberToSentence($nilai % 1000);
+            $temp = $this->numberToSentence(floor($nilai / 1000)) . " ribu" . $this->numberToSentence($nilai % 1000);
         } else if ($nilai < 1000000000) {
-            $temp = $this->numberToSentence($nilai / 1000000) . " juta" . $this->numberToSentence($nilai % 1000000);
+            $temp = $this->numberToSentence(floor($nilai / 1000000)) . " juta" . $this->numberToSentence($nilai % 1000000);
         } else if ($nilai < 1000000000000) {
-            $temp = $this->numberToSentence($nilai / 1000000000) . " milyar" . $this->numberToSentence(fmod($nilai, 1000000000));
+            $temp = $this->numberToSentence(floor($nilai / 1000000000)) . " milyar" . $this->numberToSentence($nilai % 1000000000);
         } else if ($nilai < 1000000000000000) {
-            $temp = $this->numberToSentence($nilai / 1000000000000) . " trilyun" . $this->numberToSentence(fmod($nilai, 1000000000000));
+            $temp = $this->numberToSentence(floor($nilai / 1000000000000)) . " trilyun" . $this->numberToSentence($nilai % 1000000000000);
         }
+
         return $temp;
     }
 

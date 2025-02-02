@@ -181,17 +181,7 @@ class CustomerController extends Controller
             $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get()->toArray();
         }
 
-        $hasil = [];
-        foreach ($RS as $key => $value) {
-            $hasil[] = array_merge(
-                $value,
-                [
-                    'users' => Auth::user()
-                ]
-            );
-        }
-
-        return ['data' => $hasil];
+        return ['data' => $RS];
     }
 
     function searchAPIMaster(Request $request)
@@ -201,6 +191,16 @@ class CustomerController extends Controller
 
         if (isset($request->searchValue) && $request->searchValue !== "") {
             $RSTemp->where($request->searchBy, 'LIKE', "%{$request->searchValue}%");
+        }
+
+        $hasil = [];
+        foreach ($RSTemp->get()->toArray() as $key => $value) {
+            $hasil[] = array_merge(
+                $value,
+                [
+                    'users' => Auth::user()
+                ]
+            );
         }
 
         // if (!empty($request->searchValue)) {
@@ -213,7 +213,7 @@ class CustomerController extends Controller
         //     $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
         // }
 
-        return ['data' => $RSTemp->get()];
+        return ['data' => $hasil];
     }
 
     function update(Request $request)

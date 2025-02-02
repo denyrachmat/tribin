@@ -257,13 +257,13 @@ class CustomerController extends Controller
 
         $doc = $checkData[(string)$cols];
 
-        if (File::exists(public_path('attachments/customer/' . $doc))) {
-            $file = response()->file(public_path('attachments/customer/' . $doc));
+        if (File::exists(public_path('attachment/customer/' . $doc))) {
+            $file = response()->file(public_path('attachment/customer/' . $doc));
             // Convert the image data to base64
             $base64Image = base64_encode($file);
 
             // Determine the MIME type of the image
-            $mimeType = mime_content_type(public_path('attachments/customer/' . $doc));
+            $mimeType = mime_content_type(public_path('attachment/customer/' . $doc));
 
             return "data:' . $mimeType . ';base64,' . $base64Image . '";
         } else {

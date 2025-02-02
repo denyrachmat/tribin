@@ -232,6 +232,17 @@ class CustomerController extends Controller
     {
         $doc = $request->id;
         if (File::exists(public_path('attachments/customer/' . $doc))) {
+            return response()->file(public_path('attachments/customer/' . $doc));
+        } else {
+            return response()->json(['message' => 'not found'], 404);
+        }
+    }
+
+    function newshowFile($id)
+    {
+        $doc = $id;
+
+        if (File::exists(public_path('attachments/customer/' . $doc))) {
             $file = response()->file(public_path('attachments/customer/' . $doc));
             // Convert the image data to base64
             $base64Image = base64_encode($file);

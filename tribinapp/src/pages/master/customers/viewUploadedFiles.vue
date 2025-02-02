@@ -21,7 +21,7 @@
       <q-card-section class="q-pa-sm">
         <div class="row">
           <div class="col text-center">
-            <q-img :src="`https://joss.jatpowerindo.co.id/customer/file/${props.fileName}`" style="height: 60%;width: 70%">
+            <q-img :src="`https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}`" style="height: 60%;width: 70%">
               <div class="absolute-bottom text-center">{{ props.fileName }}</div>
             </q-img>
           </div>

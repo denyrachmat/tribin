@@ -224,6 +224,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form', [CustomerController::class, 'index']);
             Route::post('import', [CustomerController::class, 'importFromAnotherCompany']);
             Route::get('file/{id}', [CustomerController::class, 'showFile']);
+            Route::get('fileNew/{id}', [CustomerController::class, 'newshowFile']);
             Route::get('', [CustomerController::class, 'search']);
             Route::post('searchAPI', [CustomerController::class, 'searchAPI']);
             Route::post('searchAPIMaster', [CustomerController::class, 'searchAPIMaster']);

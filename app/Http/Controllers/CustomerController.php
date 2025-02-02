@@ -282,12 +282,12 @@ class CustomerController extends Controller
 
         $req->file->storeAs('/public/attachment/customer/', $oriFileName . '.' . $extNya);
 
+        $updated[(string)$req->col_name] = $oriFileName;
+
         $affectedRow = M_CUS::on($this->dedicatedConnection)
             ->where('MCUS_CUSCD', base64_decode($req->id))
             ->where('MCUS_BRANCH', $req->branch)
-            ->update([
-                [$req->col_name] => $oriFileName
-            ]);
+            ->update($updated);
 
         return ['msg' => $affectedRow ? 'OK' : 'No changes', 'FixedFileName' => $oriFileName];
     }

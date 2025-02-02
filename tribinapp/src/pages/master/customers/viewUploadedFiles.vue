@@ -59,7 +59,7 @@ const props = defineProps({
 
 onMounted(async () => {
   if (props.id) {
-    linkImg.value = `https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}`;
+    linkImg.value = `https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}/${props.storeCols}`;
   }
 });
 

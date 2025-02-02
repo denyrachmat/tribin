@@ -248,9 +248,14 @@ class CustomerController extends Controller
         }
     }
 
-    function newshowFile($id)
+    function newshowFile($id, $cols)
     {
-        $doc = $id;
+        $checkData = M_CUS::on($this->dedicatedConnection)
+            ->where('MCUS_CUSCD', $id)
+            ->first()
+            ->toArray();
+
+        $doc = $checkData[(string)$cols];
 
         if (File::exists(public_path('attachments/customer/' . $doc))) {
             $file = response()->file(public_path('attachments/customer/' . $doc));

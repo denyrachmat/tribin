@@ -69,7 +69,7 @@ const onUpload = () => {
     componentProps: {
       url: props.url,
       label: props.label,
-      id: props.url,
+      id: props.id,
       storeCols: props.storeCols,
       valueCols: props.valueCols,
       users: props.users,

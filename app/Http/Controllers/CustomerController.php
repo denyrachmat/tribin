@@ -294,7 +294,7 @@ class CustomerController extends Controller
             ->where('MCUS_BRANCH', $req->branch)
             ->update($updated);
 
-        return ['msg' => $affectedRow, 'FixedFileName' => $oriFileName];
+        return ['msg' => $affectedRow, 'FixedFileName' => $oriFileName, 'update' => $updated];
     }
 
     function changeFile(Request $request)

@@ -285,7 +285,7 @@ class CustomerController extends Controller
         // return $nama_file;
         $oriFileName = $req->file('file')->getClientOriginalName();
 
-        $req->file->storeAs('/public/attachment/customer/', $oriFileName . '.' . $extNya);
+        $req->file->storeAs('/public/attachment/customer/', $oriFileName);
 
         $updated[(string)$req->col_name] = $oriFileName;
 

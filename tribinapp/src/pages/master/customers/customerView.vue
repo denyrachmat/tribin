@@ -237,6 +237,8 @@ const onClickPreviewFile = (fileName, id, labelForUpload, cols, users) => {
       users: users
     },
     // persistent: true,
-  }).onOk(async (val) => {});
+  }).onDismiss(async (val) => {
+
+  });
 };
 </script>

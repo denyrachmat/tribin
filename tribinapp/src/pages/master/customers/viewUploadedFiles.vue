@@ -13,7 +13,7 @@
             <div class="text-h6">View Uploaded Files</div>
           </div>
           <div class="col text-right">
-            <q-btn label="Upload File" color="blue" @click="onUpload"/>
+            <q-btn label="Upload File" color="blue" @click="onUpload" />
           </div>
         </div>
       </q-card-section>
@@ -21,8 +21,10 @@
       <q-card-section class="q-pa-sm">
         <div class="row">
           <div class="col text-center">
-            <q-img :src="`https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}`" style="height: 60%;width: 70%">
-              <div class="absolute-bottom text-center">{{ props.fileName }}</div>
+            <q-img :src="linkImg" style="height: 60%; width: 70%" :key="refresh">
+              <div class="absolute-bottom text-center">
+                {{ props.fileName }}
+              </div>
             </q-img>
           </div>
         </div>
@@ -42,6 +44,9 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const $q = useQuasar();
 
+const linkImg = ref("~assets/no-image.jpg");
+const refresh = ref(0)
+
 const props = defineProps({
   fileName: String,
   label: String,
@@ -49,7 +54,13 @@ const props = defineProps({
   id: String,
   storeCols: String,
   valueCols: String,
-  users: Object
+  users: Object,
+});
+
+onMounted(async () => {
+  if (props.id) {
+    linkImg.value = `https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}`;
+  }
 });
 
 const onUpload = () => {
@@ -61,9 +72,10 @@ const onUpload = () => {
       id: props.url,
       storeCols: props.storeCols,
       valueCols: props.valueCols,
-      users: props.users
-    }
-  }).onOk(async (val) => {});
-}
-
+      users: props.users,
+    },
+  }).onDismiss(async (val) => {
+    refresh.value = refresh.value + 1
+  });
+};
 </script>

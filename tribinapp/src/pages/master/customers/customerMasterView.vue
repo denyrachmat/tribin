@@ -178,7 +178,7 @@ const onClickNew = (data = null) => {
       headerData: data
     },
     // persistent: true,
-  }).onOk(async (val) => {
+  }).onDismiss(async (val) => {
     getCust();
   });
 }

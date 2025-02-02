@@ -50,7 +50,7 @@ defineEmits([
 
 const factoryFn = async (val) => {
   // dataLoading.value = true;
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  // const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   const processed = await new Promise((resolve, reject) => {
     resolve({
       url: props.url,

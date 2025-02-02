@@ -50,6 +50,7 @@ defineEmits([
 
 const factoryFn = async (val) => {
   // dataLoading.value = true;
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   const processed = await new Promise((resolve, reject) => {
     resolve({
       url: props.url,
@@ -57,6 +58,7 @@ const factoryFn = async (val) => {
       header: [
         { name: "Content-Type", value: "multipart/form-data" },
         { name: "Accept", value: "application/json, text/plain, */*" },
+        { name: "X-CSRF-TOKEN", value: csrfToken }, // Add CSRF token to headers
       ],
     });
     // dataLoading.value = false;

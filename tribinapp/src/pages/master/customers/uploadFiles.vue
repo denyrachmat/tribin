@@ -18,7 +18,7 @@
               { name: 'file', value: files[0] },
               { name: 'id', value: props.id },
               { name: 'col_name', value: props.storeCols },
-              { name: 'branch', value: props.users.branch },
+              { name: 'branch', value: props.users ? props.users.branch : '' },
             ]"
             @factory-failed ="(err, files) => failedUpload(err, files)"
           />

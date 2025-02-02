@@ -58,7 +58,7 @@ const factoryFn = async (val) => {
       header: [
         { name: "Content-Type", value: "multipart/form-data" },
         { name: "Accept", value: "application/json, text/plain, */*" },
-        { name: "X-CSRF-TOKEN", value: csrfToken }, // Add CSRF token to headers
+        // { name: "X-CSRF-TOKEN", value: csrfToken }, // Add CSRF token to headers
       ],
     });
     // dataLoading.value = false;

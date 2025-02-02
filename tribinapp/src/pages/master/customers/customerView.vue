@@ -229,7 +229,7 @@ const onClickPreviewFile = (fileName, id, labelForUpload, cols) => {
     componentProps: {
       fileName: fileName,
       label: labelForUpload,
-      url: `${process.env.API_WEB}customer/upload`,
+      url: `${process.env.API}customer/uploadAPI`,
       id: id,
       storeCols: cols,
       valueCols: fileName,

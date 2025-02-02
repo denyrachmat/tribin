@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccessRulesController;
 use App\Http\Controllers\API\OutgoingController;
 use App\Http\Controllers\ConditionController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ItemController;
@@ -42,6 +43,10 @@ Route::get('/logout', function (Request $request) {
 Route::group(['prefix' => 'master', 'middleware' => 'api'], function () {
     Route::prefix('item')->group(function () {
         Route::post('searchAPI', [ItemController::class, 'searchAPI']);
+    });
+
+    Route::prefix('customer')->group(function () {
+        Route::post('uploadAPI', [CustomerController::class, 'newshowFile']);
     });
 
     Route::group(['prefix' => 'conditions'], function () {

@@ -292,7 +292,7 @@ class CustomerController extends Controller
         $affectedRow = M_CUS::on($this->dedicatedConnection)
             ->where('MCUS_CUSCD', base64_decode($req->id))
             ->where('MCUS_BRANCH', $req->branch)
-            ->update([$updated]);
+            ->update($updated);
 
         return ['msg' => $affectedRow, 'FixedFileName' => $oriFileName];
     }

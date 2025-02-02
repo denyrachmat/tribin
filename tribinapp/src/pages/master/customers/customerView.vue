@@ -36,7 +36,8 @@
                     custData.MCUS_NPWP_FILE,
                     custData.MCUS_CUSCD,
                     'NPWP Upload',
-                    'MCUS_NPWP_FILE'
+                    'MCUS_NPWP_FILE',
+                    custData.users
                   )
                 "
                 :color="custData.MCUS_NPWP_FILE ? 'green' : 'grey'"
@@ -51,7 +52,8 @@
                     custData.MCUS_NIB_FILE,
                     custData.MCUS_CUSCD,
                     'NIB Upload',
-                    'MCUS_NIB_FILE'
+                    'MCUS_NIB_FILE',
+                    custData.users
                   )
                 "
                 :color="custData.MCUS_NIB_FILE ? 'orange' : 'grey'"
@@ -238,7 +240,7 @@ const onClickPreviewFile = (fileName, id, labelForUpload, cols, users) => {
     },
     // persistent: true,
   }).onDismiss(async (val) => {
-
+    onDismiss();
   });
 };
 </script>

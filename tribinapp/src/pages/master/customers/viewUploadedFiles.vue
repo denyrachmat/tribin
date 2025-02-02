@@ -76,6 +76,7 @@ const onUpload = () => {
     },
   }).onDismiss(async (val) => {
     refresh.value = refresh.value + 1
+    onDialogOK();
   });
 };
 </script>

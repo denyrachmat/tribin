@@ -265,7 +265,7 @@ class CustomerController extends Controller
             // Determine the MIME type of the image
             $mimeType = mime_content_type(public_path('storage/attachment/customer/' . $doc));
 
-            return "data:' . $mimeType . ';base64,' . $base64Image . '";
+            return 'data:' . $mimeType . ';base64,' . $base64Image;
         } else {
             return response()->json(['message' => 'not found'], 404);
         }

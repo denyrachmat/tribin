@@ -48,7 +48,8 @@ const props = defineProps({
   url: String,
   id: String,
   storeCols: String,
-  valueCols: String
+  valueCols: String,
+  users: Object
 });
 
 const onUpload = () => {
@@ -59,7 +60,8 @@ const onUpload = () => {
       label: props.label,
       id: props.url,
       storeCols: props.label,
-      valueCols: props.valueCols
+      valueCols: props.valueCols,
+      users: props.users
     }
   }).onOk(async (val) => {});
 }

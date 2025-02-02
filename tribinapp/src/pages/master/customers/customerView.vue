@@ -20,7 +20,8 @@
                     custData.MCUS_KTP_FILE,
                     custData.MCUS_CUSCD,
                     'KTP Upload',
-                    'MCUS_KTP_FILE'
+                    'MCUS_KTP_FILE',
+                    custData.users
                   )
                 "
                 :color="custData.MCUS_KTP_FILE ? 'blue' : 'grey'"
@@ -223,7 +224,7 @@ const onSubmitData = () => {
   });
 };
 
-const onClickPreviewFile = (fileName, id, labelForUpload, cols) => {
+const onClickPreviewFile = (fileName, id, labelForUpload, cols, users) => {
   $q.dialog({
     component: viewUploadedFiles,
     componentProps: {
@@ -233,6 +234,7 @@ const onClickPreviewFile = (fileName, id, labelForUpload, cols) => {
       id: id,
       storeCols: cols,
       valueCols: fileName,
+      users: users
     },
     // persistent: true,
   }).onOk(async (val) => {});

@@ -18,6 +18,7 @@
               { name: 'file', value: files[0] },
               { name: 'id', value: props.id },
               { name: 'col_name', value: props.storeCols },
+              { name: 'branch', value: props.users.branch },
             ]"
             @factory-failed ="(err, files) => failedUpload(err, files)"
           />
@@ -39,7 +40,8 @@ const props = defineProps({
   label: String,
   id: String,
   storeCols: String,
-  valueCols: String
+  valueCols: String,
+  users: Object
 });
 
 defineEmits([

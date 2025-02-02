@@ -12,14 +12,17 @@
           <div class="col">
             <div class="text-h6">View Uploaded Files</div>
           </div>
+          <div class="col text-right">
+            <q-btn label="Upload File" color="blue" @click="onUpload"/>
+          </div>
         </div>
       </q-card-section>
 
       <q-card-section class="q-pa-sm">
         <div class="row">
-          <div class="col">
-            <q-img :src="`https://joss.jatpowerindo.co.id/customer/file/${props.fileName}`" style="height: 50%;">
-              <div class="absolute-top text-center">{{ props.fileName }}</div>
+          <div class="col text-center">
+            <q-img :src="`https://joss.jatpowerindo.co.id/customer/file/${props.fileName}`" style="height: 60%;width: 70%">
+              <div class="absolute-bottom text-center">{{ props.fileName }}</div>
             </q-img>
           </div>
         </div>
@@ -32,6 +35,8 @@ import { api, api_web } from "boot/axios";
 import { ref, onMounted } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 
+import uploadFiles from "./uploadFiles.vue";
+
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
@@ -39,5 +44,24 @@ const $q = useQuasar();
 
 const props = defineProps({
   fileName: String,
+  label: String,
+  url: String,
+  id: String,
+  storeCols: String,
+  valueCols: String
 });
+
+const onUpload = () => {
+  $q.dialog({
+    component: uploadFiles,
+    componentProps: {
+      url: props.url,
+      label: props.label,
+      id: props.url,
+      storeCols: props.label,
+      valueCols: props.valueCols
+    }
+  }).onOk(async (val) => {});
+}
+
 </script>

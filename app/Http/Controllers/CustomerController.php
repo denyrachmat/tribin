@@ -23,7 +23,7 @@ class CustomerController extends Controller
 
     public function index()
     {
-        // return view('tribinapp_layouts', ['routeApp' => 'customer']);
+        return view('tribinapp_layouts', ['routeApp' => 'customer']);
         return view('master.customer', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()
@@ -232,59 +232,43 @@ class CustomerController extends Controller
     {
         $doc = $request->id;
         if (File::exists(public_path('attachments/customer/' . $doc))) {
-            return response()->file(public_path('attachments/customer/' . $doc));
+            $file = response()->file(public_path('attachments/customer/' . $doc));
+            // Convert the image data to base64
+            $base64Image = base64_encode($file);
+
+            // Determine the MIME type of the image
+            $mimeType = mime_content_type(public_path('attachments/customer/' . $doc));
+
+            return "data:' . $mimeType . ';base64,' . $base64Image . '";
         } else {
             return response()->json(['message' => 'not found'], 404);
         }
     }
 
-    function newUploadFile(Request $req){
+    function newUploadFile(Request $req)
+    {
         ini_set('max_execution_time', '1200');
         // $nama_file = $req->file->hashName();
         $file = new File($req->file);
         $extNya = $req->file('file')->getClientOriginalExtension();
 
-        return $extNya;
-        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
-        $nama_file = $fileHash . '.' . $extNya;
+        // return $extNya;
+        // $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        // $nama_file = $fileHash . '.' . $extNya;
 
         // return $nama_file;
         $oriFileName = $req->file('file')->getClientOriginalName();
 
-        if ($extNya == 'xls' || $extNya == 'xlsx') {
-            $splitString = intval(preg_replace('/[^0-9]+/', '', $oriFileName), 10);
+        $req->file->storeAs('/public/attachment/customer/', $oriFileName . '.' . $extNya);
 
-            $req->file->storeAs('/public/upload_ypo_fc/', $nama_file);
+        $affectedRow = M_CUS::on($this->dedicatedConnection)
+            ->where('MCUS_CUSCD', base64_decode($req->id))
+            ->where('MCUS_BRANCH', Auth::user()->branch)
+            ->update([
+                [$req->col_name] => $oriFileName
+            ]);
 
-            if ($extNya == 'xls') {
-                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
-                $writer = new Xlsx($spreadsheet);
-                $nama_file = $fileHash . '.xlsx';
-                $writer->save('/public/upload_ypo_fc/' . $nama_file);
-            }
-
-            $importer = new ImportFCMRI();
-
-            Excel::import($importer, public_path('/storage/upload_ypo_fc/' . $nama_file));
-
-            $updateFC = [];
-            foreach ($importer->data as $key => $valueImp) {
-                $updateFC[] = YPOForcast::updateOrCreate([
-                    'YFDD_ITMCD' => $valueImp['item'],
-                    'YFDD_YEAR' =>  $valueImp['year'],
-                    'YFDD_MONTH' =>  $valueImp['month'],
-                ],[
-                    'YFDD_ITMCD' => $valueImp['item'],
-                    'YFDD_YEAR' => $valueImp['year'],
-                    'YFDD_MONTH' => $valueImp['month'],
-                    'YFDD_FCQT' => $valueImp['qty'],
-                ]);
-            }
-
-            return $this->handleResponse($importer->data, 'Upload Sukses ' . $nama_file);
-        } else {
-            return $this->handleError("File name doesn't right! please check again !");
-        }
+        return ['msg' => $affectedRow ? 'OK' : 'No changes', 'FixedFileName' => $oriFileName];
     }
 
     function changeFile(Request $request)

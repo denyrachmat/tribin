@@ -230,6 +230,7 @@ Route::group(['middleware' => 'cors'], function () {
 
             Route::post('', [CustomerController::class, 'simpan']);
             Route::post('file/{id}', [CustomerController::class, 'changeFile']);
+            Route::post('upload', [CustomerController::class, 'newUploadFile']);
             Route::put('{id}', [CustomerController::class, 'update']);
         });
 

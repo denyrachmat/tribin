@@ -14,13 +14,49 @@
           </div>
           <div class="col text-right">
             <q-btn-group outline>
-              <q-btn @click="onClickPreviewFile(custData.MCUS_KTP_FILE)" :color="custData.MCUS_KTP_FILE ? 'blue' : 'grey'" outline icon="badge">
+              <q-btn
+                @click="
+                  onClickPreviewFile(
+                    custData.MCUS_KTP_FILE,
+                    custData.MCUS_CUSCD,
+                    'KTP Upload',
+                    'MCUS_KTP_FILE'
+                  )
+                "
+                :color="custData.MCUS_KTP_FILE ? 'blue' : 'grey'"
+                outline
+                icon="badge"
+              >
                 <q-tooltip> Upload KTP </q-tooltip>
               </q-btn>
-              <q-btn @click="onClickPreviewFile(custData.MCUS_NPWP_FILE)" :color="custData.MCUS_NPWP_FILE ? 'green' : 'grey'" outline icon="account_balance">
+              <q-btn
+                @click="
+                  onClickPreviewFile(
+                    custData.MCUS_NPWP_FILE,
+                    custData.MCUS_CUSCD,
+                    'NPWP Upload',
+                    'MCUS_NPWP_FILE'
+                  )
+                "
+                :color="custData.MCUS_NPWP_FILE ? 'green' : 'grey'"
+                outline
+                icon="account_balance"
+              >
                 <q-tooltip> Upload NPWP </q-tooltip>
               </q-btn>
-              <q-btn @click="onClickPreviewFile(custData.MCUS_NIB_FILE)" :color="custData.MCUS_NIB_FILE ? 'orange' : 'grey'" outline icon="apartment">
+              <q-btn
+                @click="
+                  onClickPreviewFile(
+                    custData.MCUS_NIB_FILE,
+                    custData.MCUS_CUSCD,
+                    'NIB Upload',
+                    'MCUS_NIB_FILE'
+                  )
+                "
+                :color="custData.MCUS_NIB_FILE ? 'orange' : 'grey'"
+                outline
+                icon="apartment"
+              >
                 <q-tooltip> Upload NIB </q-tooltip>
               </q-btn>
             </q-btn-group>
@@ -161,7 +197,7 @@ const custData = ref({
   MCUS_EMAIL: "",
   MCUS_KTP_FILE: "",
   MCUS_NPWP_FILE: "",
-  MCUS_NIB_FILE: ""
+  MCUS_NIB_FILE: "",
 });
 const isEdit = ref(false);
 
@@ -187,14 +223,18 @@ const onSubmitData = () => {
   });
 };
 
-const onClickPreviewFile = (fileName) => {
+const onClickPreviewFile = (fileName, id, labelForUpload, cols) => {
   $q.dialog({
     component: viewUploadedFiles,
     componentProps: {
-      fileName: fileName
+      fileName: fileName,
+      label: labelForUpload,
+      url: `${process.env.API_WEB}customer/upload`,
+      id: id,
+      storeCols: cols,
+      valueCols: fileName,
     },
     // persistent: true,
-  }).onOk(async (val) => {
-  });
-}
+  }).onOk(async (val) => {});
+};
 </script>

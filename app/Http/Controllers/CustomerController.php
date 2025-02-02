@@ -290,7 +290,7 @@ class CustomerController extends Controller
         $updated[(string)$req->col_name] = $oriFileName;
 
         $affectedRow = M_CUS::on($this->dedicatedConnection)
-            ->where('MCUS_CUSCD', base64_decode($req->id))
+            ->where('MCUS_CUSCD', $req->id)
             ->where('MCUS_BRANCH', $req->branch)
             ->update($updated);
 

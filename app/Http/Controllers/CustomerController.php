@@ -176,12 +176,22 @@ class CustomerController extends Controller
                 !empty($request->searchCol)
                 ? $request->searchCol
                 : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
-                ->get();
+                ->get()->toArray();
         } else {
-            $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
+            $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get()->toArray();
         }
 
-        return ['data' => $RS];
+        $hasil = [];
+        foreach ($RS as $key => $value) {
+            $hasil[] = array_merge(
+                $value,
+                [
+                    'users' => Auth::user()
+                ]
+            );
+        }
+
+        return ['data' => $hasil];
     }
 
     function searchAPIMaster(Request $request)
@@ -274,7 +284,7 @@ class CustomerController extends Controller
 
         $affectedRow = M_CUS::on($this->dedicatedConnection)
             ->where('MCUS_CUSCD', base64_decode($req->id))
-            ->where('MCUS_BRANCH', Auth::user()->branch)
+            ->where('MCUS_BRANCH', $req->branch)
             ->update([
                 [$req->col_name] => $oriFileName
             ]);

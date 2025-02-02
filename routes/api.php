@@ -46,7 +46,7 @@ Route::group(['prefix' => 'master', 'middleware' => 'api'], function () {
     });
 
     Route::prefix('customer')->group(function () {
-        Route::post('uploadAPI', [CustomerController::class, 'newshowFile']);
+        Route::post('uploadAPI', [CustomerController::class, 'newUploadFile']);
     });
 
     Route::group(['prefix' => 'conditions'], function () {

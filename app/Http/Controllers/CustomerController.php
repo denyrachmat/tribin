@@ -38,7 +38,7 @@ class CustomerController extends Controller
             ->leftJoin($currentDBName . '.M_CUS as B', function ($join) {
                 $join->on('A.MCUS_CUSCD', '=', DB::raw('B.MCUS_CUSCD COLLATE utf8mb4_unicode_ci'));
             })
-            ->where('A.MCUS_BRANCH',  Auth::user()->branch)
+            ->where('A.MCUS_BRANCH', Auth::user()->branch)
             // ->where('A.MCUS_CUSCD', 'COLLATE', 'utf8mb4_unicode_ci') // Apply COLLATE to A.MCUS_CUSCD in the WHERE clause
             ->whereNull('B.MCUS_CUSCD');
 
@@ -73,6 +73,15 @@ class CustomerController extends Controller
             'MCUS_TYPE' => 'required',
             'MCUS_KTP_FILE' => 'mimes:png,jpg,jpeg,pdf|max:2048',
             'MCUS_NPWP_FILE' => 'mimes:png,jpg,jpeg,pdf|max:2048',
+        ],[
+            'MCUS_CUSNM.required' => 'Customer Name cannot be empty !',
+            'MCUS_CURCD.required' => 'Customer Curr cannot be empty !',
+            'MCUS_TAXREG.required' => 'Customer NPWP cannot be empty !',
+            'MCUS_ADDR1.required' => 'Customer Address cannot be empty !',
+            'MCUS_TELNO.required' => 'Customer Phone cannot be empty !',
+            'MCUS_PIC_NAME.required' => 'Customer PIC Name cannot be empty !',
+            'MCUS_PIC_TELNO.required' => 'Customer PIC Phone cannot be empty !',
+            'MCUS_TYPE.required' => 'Customer Type cannot be empty !',
         ]);
 
         if ($validator->fails()) {
@@ -87,6 +96,7 @@ class CustomerController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 406);
         }
+
         $KTPfileName = null;
         $NPWPfileName = null;
         $NIBfileName = null;
@@ -111,11 +121,15 @@ class CustomerController extends Controller
             $location = 'attachments/customer';
             $file->move(public_path($location), $fileName);
         }
+
         $LastGENID = M_CUS::on($this->dedicatedConnection)->max('MCUS_GENID');
         $NEW_MCUS_CUSCD = NULL;
         $NewGENID = $LastGENID + 1;
         $NEW_MCUS_CUSCD = 'CUST-' . substr('0000' . $NewGENID, -4);
-        M_CUS::on($this->dedicatedConnection)->create([
+
+        M_CUS::on($this->dedicatedConnection)->updateOrCreate([
+            'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
+        ], [
             'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
             'MCUS_CUSNM' => $request->MCUS_CUSNM,
             'MCUS_CURCD' => $request->MCUS_CURCD,
@@ -137,8 +151,10 @@ class CustomerController extends Controller
             'MCUS_IDCARD' => $request->MCUS_IDCARD,
             'MCUS_GENID' => $NewGENID,
         ]);
+
         return [
-            'msg' => 'OK', 'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
+            'msg' => 'OK',
+            'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
             'MCUS_KTP_FILE' => $KTPfileName,
             'MCUS_NPWP_FILE' => $NPWPfileName,
             'MCUS_NIB_FILE' => $NIBfileName,
@@ -174,7 +190,7 @@ class CustomerController extends Controller
                 !empty($request->searchCol)
                 ? $request->searchCol
                 : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
-            ->get();
+                ->get();
         } else {
             $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
         }
@@ -188,12 +204,18 @@ class CustomerController extends Controller
             ->where('MCUS_CUSCD', base64_decode($request->id))
             ->where('MCUS_BRANCH', Auth::user()->branch)
             ->update([
-                'MCUS_CUSNM' => $request->MCUS_CUSNM, 'MCUS_CURCD' => $request->MCUS_CURCD,
-                'MCUS_TAXREG' => $request->MCUS_TAXREG, 'MCUS_ADDR1' => $request->MCUS_ADDR1,
-                'MCUS_TELNO' => $request->MCUS_TELNO, 'MCUS_CGCON' => $request->MCUS_CGCON,
-                'MCUS_TYPE' => $request->MCUS_TYPE, 'MCUS_GROUP' => $request->MCUS_GROUP,
-                'MCUS_REFF_MKT' => $request->MCUS_REFF_MKT, 'MCUS_PIC_NAME' => $request->MCUS_PIC_NAME,
-                'MCUS_PIC_TELNO' => $request->MCUS_PIC_TELNO, 'MCUS_EMAIL' => $request->MCUS_EMAIL,
+                'MCUS_CUSNM' => $request->MCUS_CUSNM,
+                'MCUS_CURCD' => $request->MCUS_CURCD,
+                'MCUS_TAXREG' => $request->MCUS_TAXREG,
+                'MCUS_ADDR1' => $request->MCUS_ADDR1,
+                'MCUS_TELNO' => $request->MCUS_TELNO,
+                'MCUS_CGCON' => $request->MCUS_CGCON,
+                'MCUS_TYPE' => $request->MCUS_TYPE,
+                'MCUS_GROUP' => $request->MCUS_GROUP,
+                'MCUS_REFF_MKT' => $request->MCUS_REFF_MKT,
+                'MCUS_PIC_NAME' => $request->MCUS_PIC_NAME,
+                'MCUS_PIC_TELNO' => $request->MCUS_PIC_TELNO,
+                'MCUS_EMAIL' => $request->MCUS_EMAIL,
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }

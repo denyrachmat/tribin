@@ -224,10 +224,14 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form', [CustomerController::class, 'index']);
             Route::post('import', [CustomerController::class, 'importFromAnotherCompany']);
             Route::get('file/{id}', [CustomerController::class, 'showFile']);
+            Route::get('fileNew/{id}/{cols}', [CustomerController::class, 'newshowFile']);
             Route::get('', [CustomerController::class, 'search']);
             Route::post('searchAPI', [CustomerController::class, 'searchAPI']);
+            Route::post('searchAPIMaster', [CustomerController::class, 'searchAPIMaster']);
+
             Route::post('', [CustomerController::class, 'simpan']);
             Route::post('file/{id}', [CustomerController::class, 'changeFile']);
+            Route::post('upload', [CustomerController::class, 'newUploadFile']);
             Route::put('{id}', [CustomerController::class, 'update']);
         });
 

@@ -23,6 +23,7 @@ class CustomerController extends Controller
 
     public function index()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'customer']);
         return view('master.customer', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()
@@ -190,12 +191,44 @@ class CustomerController extends Controller
                 !empty($request->searchCol)
                 ? $request->searchCol
                 : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
-                ->get();
+                ->get()->toArray();
         } else {
-            $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
+            $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get()->toArray();
         }
 
         return ['data' => $RS];
+    }
+
+    function searchAPIMaster(Request $request)
+    {
+        $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*')
+            ->where('MCUS_BRANCH', Auth::user()->branch);
+
+        if (isset($request->searchValue) && $request->searchValue !== "") {
+            $RSTemp->where($request->searchBy, 'LIKE', "%{$request->searchValue}%");
+        }
+
+        $hasil = [];
+        foreach ($RSTemp->get()->toArray() as $key => $value) {
+            $hasil[] = array_merge(
+                $value,
+                [
+                    'users' => Auth::user()
+                ]
+            );
+        }
+
+        // if (!empty($request->searchValue)) {
+        //     $RS = (clone $RSTemp)->where((
+        //         !empty($request->searchCol)
+        //         ? $request->searchCol
+        //         : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
+        //         ->get();
+        // } else {
+        //     $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
+        // }
+
+        return ['data' => $hasil];
     }
 
     function update(Request $request)
@@ -228,6 +261,55 @@ class CustomerController extends Controller
         } else {
             return response()->json(['message' => 'not found'], 404);
         }
+    }
+
+    function newshowFile($id, $cols)
+    {
+        $checkData = M_CUS::on($this->dedicatedConnection)
+            ->where('MCUS_CUSCD', $id)
+            ->first()
+            ->toArray();
+
+        $doc = $checkData[(string)$cols];
+
+        if (File::exists(public_path('storage/attachment/customer/' . $doc))) {
+            $file = response()->file(public_path('storage/attachment/customer/' . $doc));
+            // Convert the image data to base64
+            $base64Image = base64_encode($file);
+
+            // Determine the MIME type of the image
+            $mimeType = mime_content_type(public_path('storage/attachment/customer/' . $doc));
+            return $file;
+            return 'data:' . $mimeType . ';base64,' . $base64Image;
+        } else {
+            return response()->json(['message' => 'not found'], 404);
+        }
+    }
+
+    function newUploadFile(Request $req)
+    {
+        ini_set('max_execution_time', '1200');
+        // $nama_file = $req->file->hashName();
+        $file = new File($req->file);
+        $extNya = $req->file('file')->getClientOriginalExtension();
+
+        // return $extNya;
+        // $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        // $nama_file = $fileHash . '.' . $extNya;
+
+        // return $nama_file;
+        $oriFileName = $req->file('file')->getClientOriginalName();
+
+        $req->file->storeAs('/public/attachment/customer/', $oriFileName);
+
+        $updated[(string)$req->col_name] = $oriFileName;
+
+        $affectedRow = M_CUS::on($this->dedicatedConnection)
+            ->where('MCUS_CUSCD', $req->id)
+            ->where('MCUS_BRANCH', $req->branch)
+            ->update($updated);
+
+        return ['msg' => $affectedRow, 'FixedFileName' => $oriFileName, 'update' => $updated];
     }
 
     function changeFile(Request $request)

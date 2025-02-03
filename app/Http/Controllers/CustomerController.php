@@ -23,7 +23,7 @@ class CustomerController extends Controller
 
     public function index()
     {
-        return view('tribinapp_layouts', ['routeApp' => 'customer']);
+        // return view('tribinapp_layouts', ['routeApp' => 'customer']);
         return view('master.customer', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
             'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()

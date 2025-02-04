@@ -453,7 +453,7 @@ class InvoiceController extends Controller
                 ->first();
 
             if (!empty($Usage)) {
-                $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
+                $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
                 $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
                 $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             } else {
@@ -465,6 +465,7 @@ class InvoiceController extends Controller
             $totalHargaSewa += $HargaSewa;
             $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
         }
+
         if (in_array($this->dedicatedConnection, ['connect_jos_retail', 'connect_jos_service'])) {
             $PPNAmount = 0;
         } else {

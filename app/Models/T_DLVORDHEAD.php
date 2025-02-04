@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\Crypt;
 class T_DLVORDHEAD extends Model
 {
     use HasFactory;
-    public function __construct()
-    {
-        date_default_timezone_set('Asia/Jakarta');
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
-    }
+    // public function __construct()
+    // {
+    //     date_default_timezone_set('Asia/Jakarta');
+    //     $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+    // }
+
     protected $table = 'T_DLVORDHEAD';
     protected $fillable = [
         'TDLVORD_DLVCD',
@@ -55,8 +56,8 @@ class T_DLVORDHEAD extends Model
 
     public function payment()
     {
-        $branchPaymentAccount = (new BranchPaymentAccount())->setConnection($this->dedicatedConnection);
-        $tDlvpaydeta = (new T_DLVPAYDETA())->setConnection($this->dedicatedConnection);
+        $branchPaymentAccount = (new BranchPaymentAccount())->setConnection(Crypt::decryptString($_COOKIE['CGID']));
+        $tDlvpaydeta = (new T_DLVPAYDETA())->setConnection(Crypt::decryptString($_COOKIE['CGID']););
         // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
         return $this->hasManyThrough(
             $branchPaymentAccount,

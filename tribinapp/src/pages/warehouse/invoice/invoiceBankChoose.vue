@@ -87,6 +87,7 @@ const columns = ref([
     field: "id",
     sortable: true,
     align: "left",
+    format: (row) => str(row)
   },
   {
     name: "bank_name",

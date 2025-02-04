@@ -394,6 +394,7 @@ class InvoiceController extends Controller
             'MITM_ITMNM',
             'MITM_MODEL',
             'MITM_BRAND',
+            'TDLVORDDETA_PRC'
         )
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');

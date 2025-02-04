@@ -55,10 +55,12 @@ class T_DLVORDHEAD extends Model
 
     public function payment()
     {
+        $branchPaymentAccount = (new BranchPaymentAccount())->setConnection($this->dedicatedConnection);
+        $tDlvpaydeta = (new T_DLVPAYDETA())->setConnection($this->dedicatedConnection);
         // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
         return $this->hasManyThrough(
-            BranchPaymentAccount::class,
-            T_DLVPAYDETA::class,
+            $branchPaymentAccount,
+            $tDlvpaydeta,
             'TDLVPAYDETA_DLVCD',
             'id',
             'TDLVORD_DLVCD',
@@ -71,7 +73,8 @@ class T_DLVORDHEAD extends Model
         return $this->hasMany(M_COND_GROUP::class, 'MCOND_GRPNM', 'TDLVORD_CONDGRP');
     }
 
-    public function spk() {
+    public function spk()
+    {
         return $this->hasMany(C_SPK::class, 'CSPK_REFF_DOC', 'TDLVORD_DLVCD');
     }
 }

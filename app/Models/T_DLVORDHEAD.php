@@ -4,10 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 class T_DLVORDHEAD extends Model
 {
     use HasFactory;
+    public function __construct()
+    {
+        date_default_timezone_set('Asia/Jakarta');
+        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+    }
     protected $table = 'T_DLVORDHEAD';
     protected $fillable = [
         'TDLVORD_DLVCD',
@@ -51,8 +57,8 @@ class T_DLVORDHEAD extends Model
     {
         // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
         return $this->hasManyThrough(
-            BranchPaymentAccount::class,
-            T_DLVPAYDETA::class,
+            BranchPaymentAccount::on($this->dedicatedConnection )->get(),
+            T_DLVPAYDETA::on($this->dedicatedConnection )->get(),
             'TDLVPAYDETA_DLVCD',
             'id',
             'TDLVORD_DLVCD',

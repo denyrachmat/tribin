@@ -1287,7 +1287,7 @@ class InvoiceController extends Controller
                 'dlvacc',
                 'dlvsj',
                 'payment' => function ($f) {
-                    $f->on($this->dedicatedConnection)->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
+                    $f->connection($this->dedicatedConnection)->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
                 },
                 'condition' => function ($f) {
                     $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');

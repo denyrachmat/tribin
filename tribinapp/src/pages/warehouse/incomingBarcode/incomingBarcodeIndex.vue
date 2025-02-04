@@ -181,10 +181,14 @@ const onPrint = (datanya) => {
   console.log(datanya);
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to print this barcode ?`,
+    message: `Are you sure want to print this barcode ? Input copy print you wanted.`,
     cancel: true,
     persistent: true,
-  }).onOk(async () => {
+    prompt: {
+      model: 1,
+      type: "number", // optional
+    },
+  }).onOk(async (datas) => {
     if (qz.websocket.isActive()) {
       qz.websocket.disconnect();
     } else {
@@ -205,7 +209,7 @@ const onPrint = (datanya) => {
         const getSavedPrinter = localStorage.getItem("printerLabel");
 
         if (getSavedPrinter) {
-          printLabel(getSavedPrinter, datanya);
+          printLabel(getSavedPrinter, datanya, datas);
         } else {
           $q.dialog({
             title: "Options",
@@ -229,7 +233,7 @@ const onPrint = (datanya) => {
                 localStorage.setItem("printerLabel", datas, datanya);
               })
               .onDismiss(() => {
-                printLabel(datas, datanya);
+                printLabel(datas, datanya, datas);
               });
           });
         }
@@ -293,7 +297,7 @@ const printBarcode = () => {
   });
 };
 
-const printLabel = async (data, listData) => {
+const printLabel = async (data, listData, countLabel = 1) => {
   console.log(listData);
   return qz.printers.find(data).then(async (printer) => {
     let config = qz.configs.create(printer);
@@ -342,22 +346,37 @@ const printLabel = async (data, listData) => {
         //   // "\x1D\x56\x41\x00",
         // ];
 
-        const commands = [
-          "\x1B\x40", // Initialize printer
-          "\x1B\x4A\x18", // Feed paper by 24 dots (3mm) to adjust for gap
-          "\x1B\x64\x02", // Feed paper by 2 lines to move barcode up
-          "\x1D\x68\x50", // Set barcode height to 80 dots (10mm)
-          "\x1D\x77\x02", // Set barcode width to 2
-          "\x1D\x48\x02", // Set HRI position to below the barcode
-          "\x1D\x6B\x08", // Print Code128 barcode
-          "1234567890", // Barcode data
-          "\x00", // Null terminator for barcode data
-          "\x1B\x64\x03", // Feed paper by 3 lines to ensure proper alignment
-          "\x1D\x56\x42\x00", // Cut paper
-        ];
+        // const commands = [
+        //   "\x1B\x40", // Initialize printer
+        //   "\x1B\x4A\x18", // Feed paper by 24 dots (3mm) to adjust for gap
+        //   "\x1B\x64\x02", // Feed paper by 2 lines to move barcode up
+        //   "\x1D\x68\x50", // Set barcode height to 80 dots (10mm)
+        //   "\x1D\x77\x02", // Set barcode width to 2
+        //   "\x1D\x48\x02", // Set HRI position to below the barcode
+        //   "\x1D\x6B\x08", // Print Code128 barcode
+        //   "1234567890", // Barcode data
+        //   "\x00", // Null terminator for barcode data
+        //   "\x1B\x64\x03", // Feed paper by 3 lines to ensure proper alignment
+        //   "\x1D\x56\x42\x00", // Cut paper
+        // ];
 
-        // Convert commands to a single string
-        zpl.push(commands);
+        for (let index = 0; index < countLabel; index++) {
+          const commands = [
+            "\x1B\x40", // Initialize printer
+            "\x1D\x68\x20", // Set barcode height to 32 dots (4 mm)
+            "\x1D\x77\x02", // Set barcode width to medium
+            "\x1D\x48\x02", // Set text position to below the barcode
+            "\x1D\x6B\x08",
+            valHeader.TRCVBC_BCCD, // Print CODE39 barcode
+            "\x00",
+            // "\x1B\x4A\x20", // Feed 24 dots (3mm)
+            '\x1B\x4A\xB8', // Feed 184 dots (23mm = 20mm label + 3mm gap)
+            // "\x1B\x64\x02", // Cut paper (partial cut)
+          ];
+
+          // Convert commands to a single string
+          zpl.push(commands.join(""));
+        }
         // for (let index = 0; index < commands.length; index++) {
         //   const element = commands[index];
         //   zpl.push(element);
@@ -375,8 +394,6 @@ const printLabel = async (data, listData) => {
           timeout: 5000,
           onDismiss: () => {},
         });
-
-        for (let index = 0; index < zpl.length; index++) {}
 
         qz.websocket.disconnect();
       })

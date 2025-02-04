@@ -18,7 +18,9 @@ class CustomerController extends Controller
 
     public function __construct()
     {
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+        if (isset($_COOKIE['CGID'])) {
+            $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+        }
     }
 
     public function index()
@@ -74,7 +76,7 @@ class CustomerController extends Controller
             'MCUS_TYPE' => 'required',
             'MCUS_KTP_FILE' => 'mimes:png,jpg,jpeg,pdf|max:2048',
             'MCUS_NPWP_FILE' => 'mimes:png,jpg,jpeg,pdf|max:2048',
-        ],[
+        ], [
             'MCUS_CUSNM.required' => 'Customer Name cannot be empty !',
             'MCUS_CURCD.required' => 'Customer Curr cannot be empty !',
             'MCUS_TAXREG.required' => 'Customer NPWP cannot be empty !',
@@ -213,7 +215,8 @@ class CustomerController extends Controller
             $hasil[] = array_merge(
                 $value,
                 [
-                    'users' => Auth::user()
+                    'users' => Auth::user(),
+                    'conn' => $this->dedicatedConnection
                 ]
             );
         }
@@ -270,7 +273,7 @@ class CustomerController extends Controller
             ->first()
             ->toArray();
 
-        $doc = $checkData[(string)$cols];
+        $doc = $checkData[(string) $cols];
 
         if (File::exists(public_path('storage/attachment/customer/' . $doc))) {
             $file = response()->file(public_path('storage/attachment/customer/' . $doc));
@@ -279,7 +282,7 @@ class CustomerController extends Controller
 
             // Determine the MIME type of the image
             $mimeType = mime_content_type(public_path('storage/attachment/customer/' . $doc));
-            return $file;
+            // return $file;
             return 'data:' . $mimeType . ';base64,' . $base64Image;
         } else {
             return response()->json(['message' => 'not found'], 404);
@@ -302,9 +305,9 @@ class CustomerController extends Controller
 
         $req->file->storeAs('/public/attachment/customer/', $oriFileName);
 
-        $updated[(string)$req->col_name] = $oriFileName;
+        $updated[(string) $req->col_name] = $oriFileName;
 
-        $affectedRow = M_CUS::on($this->dedicatedConnection)
+        $affectedRow = M_CUS::on($req->conn)
             ->where('MCUS_CUSCD', $req->id)
             ->where('MCUS_BRANCH', $req->branch)
             ->update($updated);

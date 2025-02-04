@@ -21,7 +21,11 @@
       <q-card-section class="q-pa-sm">
         <div class="row">
           <div class="col text-center">
-            <q-img :src="linkImg" style="height: 60%; width: 70%" :key="refresh">
+            <q-img
+              :src="linkImg"
+              style="height: 60%; width: 70%"
+              :key="refresh"
+            >
               <div class="absolute-bottom text-center">
                 {{ props.fileName }}
               </div>
@@ -45,7 +49,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const $q = useQuasar();
 
 const linkImg = ref("~assets/no-image.jpg");
-const refresh = ref(0)
+const refresh = ref(0);
 
 const props = defineProps({
   fileName: String,
@@ -55,13 +59,25 @@ const props = defineProps({
   storeCols: String,
   valueCols: String,
   users: Object,
+  conn: String,
 });
 
 onMounted(async () => {
   if (props.id) {
-    linkImg.value = `https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}/${props.storeCols}`;
+    getImage();
+    // linkImg.value = `https://joss.jatpowerindo.co.id/customer/fileNew/${props.id}/${props.storeCols}`;
   }
 });
+
+const getImage = async () => {
+  await api_web
+    .get(`customer/fileNew/${props.id}/${props.storeCols}`)
+    .then((val) => {
+      linkImg.value = val;
+    }).catch(e => {
+      linkImg.value = '~assets/no-image.jpg'
+    });
+};
 
 const onUpload = () => {
   $q.dialog({
@@ -73,9 +89,10 @@ const onUpload = () => {
       storeCols: props.storeCols,
       valueCols: props.valueCols,
       users: props.users,
+      conn: props.conn
     },
   }).onDismiss(async (val) => {
-    refresh.value = refresh.value + 1
+    refresh.value = refresh.value + 1;
     onDialogOK();
   });
 };

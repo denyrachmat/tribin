@@ -14,13 +14,19 @@
             :max-files="1"
             auto-upload
             :factory="factoryFn"
-            :form-fields="(files) => [
-              { name: 'file', value: files[0] },
-              { name: 'id', value: props.id },
-              { name: 'col_name', value: props.storeCols },
-              { name: 'branch', value: props.users ? props.users.branch : '' },
-            ]"
-            @factory-failed ="(err, files) => failedUpload(err, files)"
+            :form-fields="
+              (files) => [
+                { name: 'file', value: files[0] },
+                { name: 'id', value: props.id },
+                { name: 'col_name', value: props.storeCols },
+                { name: 'conn', value: props.conn },
+                {
+                  name: 'branch',
+                  value: props.users ? props.users.branch : '',
+                },
+              ]
+            "
+            @factory-failed="(err, files) => failedUpload(err, files)"
           />
         </div>
       </div>
@@ -41,7 +47,8 @@ const props = defineProps({
   id: String,
   storeCols: String,
   valueCols: String,
-  users: Object
+  users: Object,
+  conn: String,
 });
 
 defineEmits([
@@ -67,13 +74,13 @@ const factoryFn = async (val) => {
   });
 
   if (processed) {
-      return processed
+    return processed;
   }
 };
 
 const failedUpload = (err, files) => {
-  console.log(err)
-}
+  console.log(err);
+};
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

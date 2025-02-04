@@ -32,7 +32,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="dataOutstanding()"
+              @update:model-value="getConfirmedData()"
               debounce="1000"
             >
               <template v-slot:append>
@@ -79,19 +79,21 @@
                 </q-btn>
                 <q-btn
                   flat
-                  color="green"
+                  :color="!props.row.dlvsj ? 'grey' : 'green'"
                   icon="print"
                   dense
                   @click="printInvoice(props.row)"
+                  :disable="!props.row.dlvsj"
                 >
                   <q-tooltip>Print Invoice</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  color="indigo"
+                  :color="!props.row.dlvsj ? 'grey' : 'indigo'"
                   icon="print"
                   dense
                   @click="printKwitansi(props.row.TDLVORD_DLVCD)"
+                  :disable="!props.row.dlvsj"
                 >
                   <q-tooltip>Print Receipt</q-tooltip>
                 </q-btn>

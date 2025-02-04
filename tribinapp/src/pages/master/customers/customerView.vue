@@ -21,12 +21,14 @@
                     custData.MCUS_CUSCD,
                     'KTP Upload',
                     'MCUS_KTP_FILE',
-                    custData.users
+                    custData.users,
+                    custData.conn
                   )
                 "
                 :color="custData.MCUS_KTP_FILE ? 'blue' : 'grey'"
                 outline
                 icon="badge"
+                :disable="!isEdit"
               >
                 <q-tooltip> Upload KTP </q-tooltip>
               </q-btn>
@@ -37,12 +39,14 @@
                     custData.MCUS_CUSCD,
                     'NPWP Upload',
                     'MCUS_NPWP_FILE',
-                    custData.users
+                    custData.users,
+                    custData.conn
                   )
                 "
                 :color="custData.MCUS_NPWP_FILE ? 'green' : 'grey'"
                 outline
                 icon="account_balance"
+                :disable="!isEdit"
               >
                 <q-tooltip> Upload NPWP </q-tooltip>
               </q-btn>
@@ -53,12 +57,14 @@
                     custData.MCUS_CUSCD,
                     'NIB Upload',
                     'MCUS_NIB_FILE',
-                    custData.users
+                    custData.users,
+                    custData.conn
                   )
                 "
                 :color="custData.MCUS_NIB_FILE ? 'orange' : 'grey'"
                 outline
                 icon="apartment"
+                :disable="!isEdit"
               >
                 <q-tooltip> Upload NIB </q-tooltip>
               </q-btn>
@@ -226,7 +232,7 @@ const onSubmitData = () => {
   });
 };
 
-const onClickPreviewFile = (fileName, id, labelForUpload, cols, users) => {
+const onClickPreviewFile = (fileName, id, labelForUpload, cols, users, conn) => {
   $q.dialog({
     component: viewUploadedFiles,
     componentProps: {
@@ -236,7 +242,8 @@ const onClickPreviewFile = (fileName, id, labelForUpload, cols, users) => {
       id: id,
       storeCols: cols,
       valueCols: fileName,
-      users: users
+      users: users,
+      conn: conn,
     },
     // persistent: true,
   }).onDismiss(async (val) => {

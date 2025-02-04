@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 class T_DLVORDHEAD extends Model
 {
@@ -66,7 +67,8 @@ class T_DLVORDHEAD extends Model
             'id',
             'TDLVORD_DLVCD',
             'TDLVPAYDETA_IDPAY',
-        );
+        )
+        ->select('branch_payment_accounts.*', DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1) as laravel_through_key"));
     }
 
     public function condition()

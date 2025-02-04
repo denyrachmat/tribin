@@ -95,8 +95,9 @@ class InvoiceController extends Controller
             T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $valueHead->TDLVORD_DLVCD)->delete();
 
             foreach ($request->payment as $key => $valuePays) {
+                $dataOrd = explode('/',$valueHead->TDLVORD_DLVCD);
                 T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
-                    'TDLVPAYDETA_DLVCD' => $valueHead->TDLVORD_DLVCD,
+                    'TDLVPAYDETA_DLVCD' => count($dataOrd) > 0 ? $dataOrd[0] : $valueHead->TDLVORD_DLVCD,
                     'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
                 ]);
             }
@@ -144,6 +145,7 @@ class InvoiceController extends Controller
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
                 'TDLVORD_INVCD',
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"),
+                // 'TDLVORD_DLVCD',
                 DB::raw('max(TDLVORD_ISSUDT) as TDLVORD_ISSUDT'),
                 'TDLVORD_INVCD',
                 'TDLVORD_REC_NO',
@@ -165,7 +167,11 @@ class InvoiceController extends Controller
             ->with([
                 'dlvacc',
                 'payment' => function ($f) {
-                    $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'), DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1) as TDLVPAYDETA_DLVCD"));
+                    $f->select(
+                        '*',
+                        DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+                        DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1) as TDLVPAYDETA_DLVCD")
+                    );
                 },
                 'condition' => function ($f) {
                     $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
@@ -183,6 +189,7 @@ class InvoiceController extends Controller
             ->where(DB::raw('RTRIM(TDLVORDDETA_ITMCD_ACT)'), '<>', '')
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
+                // 'TDLVORD_DLVCD',
                 DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"),
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')')"),
                 'TDLVORD_INVCD',

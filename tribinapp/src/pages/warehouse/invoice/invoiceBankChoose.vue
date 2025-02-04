@@ -87,7 +87,6 @@ const columns = ref([
     field: "id",
     sortable: true,
     align: "left",
-    format: (row) => row.toString()
   },
   {
     name: "bank_name",
@@ -121,7 +120,15 @@ const props = defineProps({
 onMounted(() => {
   if (props.payment && props.payment.length > 0) {
     console.log(props.payment)
-    selected.value = props.payment
+
+    selected.value = []
+
+    props.payment.map(valMap => {
+      selected.value.push({
+        ...valMap,
+        id: parseInt(valMap.TDLVPAYDETA_IDPAY)
+      })
+    })
   }
 
   getItem()

@@ -57,7 +57,7 @@ class T_DLVORDHEAD extends Model
     public function payment()
     {
         $branchPaymentAccount = (new BranchPaymentAccount())->setConnection(Crypt::decryptString($_COOKIE['CGID']));
-        $tDlvpaydeta = (new T_DLVPAYDETA())->setConnection(Crypt::decryptString($_COOKIE['CGID']););
+        $tDlvpaydeta = (new T_DLVPAYDETA())->setConnection(Crypt::decryptString($_COOKIE['CGID']));
         // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
         return $this->hasManyThrough(
             $branchPaymentAccount,

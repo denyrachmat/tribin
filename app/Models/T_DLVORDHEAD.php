@@ -57,8 +57,8 @@ class T_DLVORDHEAD extends Model
     {
         // return $this->hasMany(T_DLVPAYDETA::class, 'TDLVPAYDETA_DLVCD', 'TDLVORD_DLVCD');
         return $this->hasManyThrough(
-            BranchPaymentAccount::on($this->dedicatedConnection )->get(),
-            T_DLVPAYDETA::on($this->dedicatedConnection )->get(),
+            BranchPaymentAccount::class,
+            T_DLVPAYDETA::class,
             'TDLVPAYDETA_DLVCD',
             'id',
             'TDLVORD_DLVCD',

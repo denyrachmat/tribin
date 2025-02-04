@@ -165,7 +165,7 @@ class InvoiceController extends Controller
             ->with([
                 'dlvacc',
                 'payment' => function ($f) {
-                    $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'));
+                    $f->select('*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'), DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1)"));
                 },
                 'condition' => function ($f) {
                     $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');

@@ -1569,6 +1569,15 @@ class QuotationController extends Controller
             $newQuotationCode['quocode'] = $request->TQUO_QUOCD;
             $newQuotationCode['maxline'] = $dataHeader->TQUO_LINE;
 
+            if (!empty($dataHeader['TQUO_REJCTDT'])) {
+                T_QUOHEAD::on($this->dedicatedConnection)
+                    ->where('TQUO_QUOCD', $request->TQUO_QUOCD)
+                    ->update([
+                        'TQUO_REJCTDT' => null,
+                        'TQUO_REJCTBY' => null
+                    ]);
+            }
+
             T_QUODETA::on($this->dedicatedConnection)->where(
                 'TQUODETA_QUOCD',
                 $request->TQUO_QUOCD

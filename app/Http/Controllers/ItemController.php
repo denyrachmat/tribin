@@ -258,6 +258,7 @@ class ItemController extends Controller
             'MITM_STKUOM',
             'MITM_ITMCAT',
             'MITM_ITMTYPE',
+            'MITM_BRAND',
             'LATEST_PRC',
             'STOCK'
         ];

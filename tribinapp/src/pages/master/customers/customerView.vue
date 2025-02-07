@@ -74,79 +74,160 @@
       </q-card-section>
 
       <q-card-section class="q-pa-sm">
-        <div class="row q-pb-md">
-          <div class="col">
-            <q-input
-              label="Customer Name"
-              dense
-              v-model="custData.MCUS_CUSCD"
-              filled
-              :disable="isEdit"
-            />
-          </div>
-          <div class="col q-pl-sm">
-            <q-input
-              label="Customer Name"
-              dense
-              v-model="custData.MCUS_CUSNM"
-              filled
-            />
-          </div>
-          <div class="col q-pl-sm">
-            <q-input
-              label="Attn."
-              dense
-              v-model="custData.MCUS_PIC_NAME"
-              filled
-            />
-          </div>
-          <div class="col q-pl-sm">
-            <q-input
-              label="Attn. Phone"
-              dense
-              v-model="custData.MCUS_PIC_TELNO"
-              filled
-            />
-          </div>
-        </div>
-        <div class="row q-pb-md">
-          <div class="col">
-            <q-input
-              label="Tax Reg"
-              dense
-              v-model="custData.MCUS_TAXREG"
-              filled
-            />
-          </div>
-        </div>
-        <div class="row q-pb-md">
-          <div class="col">
-            <q-input
-              label="Customer Email"
-              dense
-              v-model="custData.MCUS_EMAIL"
-              filled
-            />
-          </div>
-          <div class="col q-pl-md">
-            <q-input
-              label="Customer Phone"
-              dense
-              v-model="custData.MCUS_TELNO"
-              filled
-              mask="####-####-####"
-            />
-          </div>
-        </div>
         <div class="row">
           <div class="col">
-            <q-input
-              label="Customer Address"
-              dense
-              v-model="custData.MCUS_ADDR1"
-              filled
-              type="textarea"
-            />
+            <fieldset style="border: 1px black solid; border-radius: 10px">
+              <legend style="margin-left: 1em; padding: 0.2em 0.8em">
+                <b>Customer Detail Info</b>
+              </legend>
+              <div class="row q-pb-md">
+                <div class="col">
+                  <q-input
+                    label="Customer Code"
+                    dense
+                    v-model="custData.MCUS_CUSCD"
+                    filled
+                    :disable="isEdit"
+                  />
+                </div>
+                <div class="col q-pl-sm">
+                  <q-input
+                    label="Customer Name"
+                    dense
+                    v-model="custData.MCUS_CUSNM"
+                    filled
+                  />
+                </div>
+                <div class="col q-pl-sm">
+                  <q-input
+                    label="Attn."
+                    dense
+                    v-model="custData.MCUS_PIC_NAME"
+                    filled
+                  />
+                </div>
+                <div class="col q-pl-sm">
+                  <q-input
+                    label="Attn. Phone"
+                    dense
+                    v-model="custData.MCUS_PIC_TELNO"
+                    filled
+                  />
+                </div>
+              </div>
+              <div class="row q-pb-md">
+                <div class="col">
+                  <q-input
+                    label="Tax Reg"
+                    dense
+                    v-model="custData.MCUS_TAXREG"
+                    filled
+                  />
+                </div>
+                <div class="col q-pl-md">
+                  <q-input
+                    label="Currency"
+                    dense
+                    v-model="custData.MCUS_CURCD"
+                    filled
+                    v-if="isNewCurr"
+                  >
+                    <template v-slot:append>
+                      <q-btn
+                        round
+                        dense
+                        flat
+                        :icon="isNewCurr ? 'list' : 'add'"
+                        @click="isNewCurr = !isNewCurr"
+                      >
+                        <q-tooltip>{{
+                          isNewCurr
+                            ? "Choose existing Currency"
+                            : "Insert new Currency"
+                        }}</q-tooltip>
+                      </q-btn>
+                    </template>
+                  </q-input>
+                  <q-select
+                    dense
+                    filled
+                    label="Category"
+                    v-model="custData.MCUS_CURCD"
+                    :options="listCurr"
+                    :loading="loading"
+                    v-else-if="!isNewCurr"
+                  >
+                    <template v-slot:append>
+                      <q-btn
+                        round
+                        dense
+                        flat
+                        :icon="isNewCurr ? 'list' : 'add'"
+                        @click="isNewCurr = !isNewCurr"
+                      >
+                        <q-tooltip>{{
+                          isNewCurr
+                            ? "Choose existing Currency"
+                            : "Insert new Currency"
+                        }}</q-tooltip>
+                      </q-btn>
+                    </template>
+                  </q-select>
+                </div>
+              </div>
+              <div class="row q-pb-md">
+                <div class="col">
+                  <q-input
+                    label="Customer Email"
+                    dense
+                    v-model="custData.MCUS_EMAIL"
+                    filled
+                  />
+                </div>
+                <div class="col q-pl-md">
+                  <q-input
+                    label="Customer Phone"
+                    dense
+                    v-model="custData.MCUS_TELNO"
+                    filled
+                    mask="####-####-####"
+                  />
+                </div>
+              </div>
+              <div class="row">
+                <div class="col">
+                  <q-input
+                    label="Customer Address"
+                    dense
+                    v-model="custData.MCUS_ADDR1"
+                    filled
+                    type="textarea"
+                  />
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <div class="row q-pt-md">
+          <div class="col">
+            <fieldset style="border: 1px black solid; border-radius: 10px">
+              <legend style="margin-left: 1em; padding: 0.2em 0.8em">
+                <b>Customer Detail Info</b>
+              </legend>
+
+              <div class="row q-pb-md">
+                <div class="col">
+                  <q-input
+                    label="Customer Code"
+                    dense
+                    v-model="custData.MCUS_CUSCD"
+                    filled
+                    :disable="isEdit"
+                  />
+                </div>
+              </div>
+            </fieldset>
           </div>
         </div>
       </q-card-section>
@@ -190,6 +271,8 @@ onMounted(() => {
     custData.value = props.headerData;
     isEdit.value = true;
   }
+
+  getCurrencyList()
 });
 
 const custData = ref({
@@ -209,6 +292,8 @@ const custData = ref({
   MCUS_NIB_FILE: "",
 });
 const isEdit = ref(false);
+const isNewCurr = ref(false);
+const listCurr = ref([]);
 
 const loading = ref(false);
 
@@ -232,7 +317,14 @@ const onSubmitData = () => {
   });
 };
 
-const onClickPreviewFile = (fileName, id, labelForUpload, cols, users, conn) => {
+const onClickPreviewFile = (
+  fileName,
+  id,
+  labelForUpload,
+  cols,
+  users,
+  conn
+) => {
   $q.dialog({
     component: viewUploadedFiles,
     componentProps: {
@@ -249,5 +341,16 @@ const onClickPreviewFile = (fileName, id, labelForUpload, cols, users, conn) => 
   }).onDismiss(async (val) => {
     onDismiss();
   });
+};
+
+const getCurrencyList = async () => {
+  loading.value = true;
+  await api_web
+    .get("customer/getAllRegisteredCurr")
+    .then((val) => {
+      loading.value = false;
+      listCurr.value = val.data
+    })
+    .catch((e) => {});
 };
 </script>

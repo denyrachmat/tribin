@@ -221,16 +221,6 @@ class CustomerController extends Controller
             );
         }
 
-        // if (!empty($request->searchValue)) {
-        //     $RS = (clone $RSTemp)->where((
-        //         !empty($request->searchCol)
-        //         ? $request->searchCol
-        //         : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
-        //         ->get();
-        // } else {
-        //     $RS = (clone $RSTemp)->whereNull('MCUS_CGCON')->get();
-        // }
-
         return ['data' => $hasil];
     }
 
@@ -357,5 +347,13 @@ class CustomerController extends Controller
                 ]);
         }
         return ['msg' => $affectedRow ? 'OK' : 'No changes', 'FixedFileName' => $fileName];
+    }
+
+    function getAllRegisteredCurr(Request $request) {
+        $RSTemp = M_CUS::on($this->dedicatedConnection)->select('MCUS_CURCD')
+            ->where('MCUS_BRANCH', Auth::user()->branch)
+            ->groupBy('MCUS_CURCD');
+
+        return $RSTemp->get()->pluck('MCUS_CURCD');
     }
 }

@@ -222,6 +222,7 @@ Route::group(['middleware' => 'cors'], function () {
         # Terkait Customer Master
         Route::prefix('customer')->group(function () {
             Route::get('form', [CustomerController::class, 'index']);
+            Route::get('getAllRegisteredCurr', [CustomerController::class, 'getAllRegisteredCurr']);
             Route::post('import', [CustomerController::class, 'importFromAnotherCompany']);
             Route::get('file/{id}', [CustomerController::class, 'showFile']);
             Route::get('fileNew/{id}/{cols}', [CustomerController::class, 'newshowFile']);

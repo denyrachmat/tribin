@@ -95,7 +95,7 @@ class InvoiceController extends Controller
             T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $valueHead->TDLVORD_DLVCD)->delete();
 
             foreach ($request->payment as $key => $valuePays) {
-                $dataOrd = explode('/',$valueHead->TDLVORD_DLVCD);
+                $dataOrd = explode('/', $valueHead->TDLVORD_DLVCD);
                 T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
                     'TDLVPAYDETA_DLVCD' => count($dataOrd) > 0 ? $dataOrd[0] : $valueHead->TDLVORD_DLVCD,
                     'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
@@ -230,17 +230,17 @@ class InvoiceController extends Controller
                 'M_ITM.MITM_BRAND',
                 'M_ITM.MITM_MODEL'
             )->groupBy(
-                'T_DLVORDDETA.id',
-                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                'T_DLVORDDETA.TDLVORDDETA_PRC',
-                'M_ITM_GRP.MITM_ITMNM',
-                'M_ITM_GRP.MITM_ITMNMREAL',
-                'M_ITM.MITM_BRAND',
-                'M_ITM.MITM_MODEL'
-            )
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'T_DLVORDDETA.TDLVORDDETA_PRC',
+                    'M_ITM_GRP.MITM_ITMNM',
+                    'M_ITM_GRP.MITM_ITMNMREAL',
+                    'M_ITM.MITM_BRAND',
+                    'M_ITM.MITM_MODEL'
+                )
                 ->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                         ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
@@ -446,6 +446,9 @@ class InvoiceController extends Controller
         }
 
         $totalHargaSewa = 0;
+
+        $PeriodFrom = '';
+        $PeriodTo = '';
         foreach ($RSDetail as $r) {
             $Usage = T_SLODETA::on($this->dedicatedConnection)->select(
                 'TSLODETA_USAGE_DESCRIPTION',
@@ -455,21 +458,22 @@ class InvoiceController extends Controller
                 'TSLODETA_PERIOD_FR',
                 'TSLODETA_PERIOD_TO'
             )
-                ->join('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
+                ->leftjoin('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
-                ->where('MITM_ITMTYPE', 1)
+                // ->where('MITM_ITMTYPE', 1)
                 ->first();
 
             if (!empty($Usage)) {
                 $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
-                $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
-                $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             } else {
                 $HargaSewa = 0;
-                $PeriodFrom = '';
-                $PeriodTo = '';
+            }
+
+            if ($Usage->MITM_ITMTYPE == 1) {
+                $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
+                $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             }
 
             $totalHargaSewa += $HargaSewa;

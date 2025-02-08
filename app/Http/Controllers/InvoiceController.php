@@ -455,7 +455,7 @@ class InvoiceController extends Controller
                 'TSLODETA_PERIOD_FR',
                 'TSLODETA_PERIOD_TO'
             )
-                ->leftjoin('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
+                ->join('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)

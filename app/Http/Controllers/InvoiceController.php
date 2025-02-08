@@ -453,11 +453,13 @@ class InvoiceController extends Controller
                 'TSLODETA_OPRPRC',
                 'TSLODETA_MOBDEMOB',
                 'TSLODETA_PERIOD_FR',
-                'TSLODETA_PERIOD_TO',
+                'TSLODETA_PERIOD_TO'
             )
+                ->leftjoin('M_ITM_GRP', 'TSLODETA_ITMCD', 'M_ITM_GRP.MITM_ITMNM')
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
+                ->where('MITM_ITMTYPE', '1')
                 ->first();
 
             if (!empty($Usage)) {
@@ -1289,7 +1291,7 @@ class InvoiceController extends Controller
             )
             ->with([
                 'dlvdet' => function ($f) {
-                    $f->join('M_ITM', 'TDLVORDDETA_ITMCD_ACT', 'MITM_ITMCD');
+                    $f->on($this->dedicatedConnection)->join('M_ITM', 'TDLVORDDETA_ITMCD_ACT', 'MITM_ITMCD');
                 },
                 'dlvacc',
                 'dlvsj',

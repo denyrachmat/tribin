@@ -474,7 +474,7 @@ class InvoiceController extends Controller
                 $HargaSewa = 0;
             }
 
-            if ($Usage->MITM_ITMTYPE == 1) {
+            if ($Usage->MITM_ITMTYPE == 1 || $Usage->MITM_ITMTYPE == 2) {
                 $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
                 $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
             }

@@ -456,7 +456,8 @@ class InvoiceController extends Controller
                 'TSLODETA_OPRPRC',
                 'TSLODETA_MOBDEMOB',
                 'TSLODETA_PERIOD_FR',
-                'TSLODETA_PERIOD_TO'
+                'TSLODETA_PERIOD_TO',
+                'MITM_ITMTYPE'
             )
                 ->leftjoin('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
@@ -464,6 +465,8 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 // ->where('MITM_ITMTYPE', 1)
                 ->first();
+
+            // return $Usage;
 
             if (!empty($Usage)) {
                 $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;

@@ -1555,6 +1555,14 @@ class QuotationController extends Controller
             'DET.*.item' => 'required',
             'DET.*.price' => 'required',
             'DET.*.qty' => 'required'
+        ],[
+            'TQUO_CUSCD.required'=> 'Please choose customer code !',
+            'TQUO_ATTN.required'=> 'Please fill the attn. !',
+            'TQUO_SBJCT.required'=> 'Please fill the subject !',
+            'TQUO_ISSUDT.required'=> 'Please fill the issued date !',
+            'DET.*.item.required'=> 'Please choose item on the detail line!',
+            'DET.*.price.required'=> 'Please fill the price on the detail line!',
+            'DET.*.qty.required'=> 'Please fill the quantity on the detail line!',
         ]);
 
         if ($validator->fails()) {

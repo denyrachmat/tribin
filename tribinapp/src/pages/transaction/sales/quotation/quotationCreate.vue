@@ -276,7 +276,7 @@
                         </q-select>
                       </q-item-label>
                     </q-item-section>
-                    <q-item-section v-if="quotationType === 1">
+                    <q-item-section v-if="quotationType === 1 || quotationType === 2">
                       <q-item-label>
                         <q-select
                           dense
@@ -320,7 +320,7 @@
                         />
                       </q-item-label>
                     </q-item-section>
-                    <q-item-section v-if="quotationType === 1">
+                    <q-item-section v-if="quotationType === 1 || quotationType === 2">
                       <q-item-label>
                         <q-input
                           dense
@@ -330,11 +330,11 @@
                         />
                       </q-item-label>
                     </q-item-section>
-                    <q-item-section v-if="quotationType === 2">
+                    <!-- <q-item-section v-if="quotationType === 2">
                       <q-item-label>
                         <q-input dense label="Qty" filled v-model="items.qty" />
                       </q-item-label>
-                    </q-item-section>
+                    </q-item-section> -->
 
                     <q-item-section side>
                       <q-btn

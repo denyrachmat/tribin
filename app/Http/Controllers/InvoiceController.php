@@ -459,7 +459,7 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
-                ->where('MITM_ITMTYPE', '1')
+                ->where('MITM_ITMTYPE', 1)
                 ->first();
 
             if (!empty($Usage)) {

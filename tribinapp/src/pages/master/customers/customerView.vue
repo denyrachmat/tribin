@@ -80,6 +80,17 @@
               <legend style="margin-left: 1em; padding: 0.2em 0.8em">
                 <b>Customer Detail Info</b>
               </legend>
+              <div class="row">
+                <div class="col">
+                  <q-radio
+                    v-model="custData.MCUS_TYPE"
+                    :val="custype.value"
+                    :label="custype.label"
+                    v-for="custype in listCustType"
+                    :key="custype.value"
+                  />
+                </div>
+              </div>
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
@@ -118,7 +129,17 @@
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
-                    label="Tax Reg (NPWP)"
+                    label="Attn. ID Card"
+                    dense
+                    v-model="custData.MCUS_IDCARD"
+                    filled
+                  />
+                </div>
+              </div>
+              <div class="row q-pb-md">
+                <div class="col">
+                  <q-input
+                    label="Tax Reg"
                     dense
                     v-model="custData.MCUS_TAXREG"
                     filled
@@ -151,7 +172,7 @@
                   <q-select
                     dense
                     filled
-                    label="Category"
+                    label="Currency"
                     v-model="custData.MCUS_CURCD"
                     :options="listCurr"
                     :loading="loading"
@@ -272,9 +293,11 @@ onMounted(() => {
     isEdit.value = true;
   }
 
-  getCurrencyList()
+  getCurrencyList();
+  getCustTypeList();
 });
 
+const listCustType = ref([]);
 const custData = ref({
   MCUS_CUSCD: "",
   MCUS_CUSNM: "",
@@ -349,7 +372,24 @@ const getCurrencyList = async () => {
     .get("customer/getAllRegisteredCurr")
     .then((val) => {
       loading.value = false;
-      listCurr.value = val.data
+      listCurr.value = val.data;
+    })
+    .catch((e) => {});
+};
+
+const getCustTypeList = async () => {
+  loading.value = true;
+  await api
+    .get(`master/gencode/${btoa("CUST_TYPE_LIST")}`)
+    .then((val) => {
+      loading.value = false;
+      listCustType.value = [];
+      val.data.map((v) => {
+        listCustType.value.push({
+          label: v.MGECD_DESC,
+          value: v.MGECD_VALUE,
+        });
+      });
     })
     .catch((e) => {});
 };

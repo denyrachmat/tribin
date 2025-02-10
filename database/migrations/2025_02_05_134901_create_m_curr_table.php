@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection('')->create('m_curr', function (Blueprint $table) {
+        Schema::create('M_CURR', function (Blueprint $table) {
             $table->id();
             $table->string('MCUR_CURCD');
             $table->string('MCUR_CURDESC');
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('')->dropIfExists('m_curr');
+        Schema::dropIfExists('M_CURR');
     }
 };

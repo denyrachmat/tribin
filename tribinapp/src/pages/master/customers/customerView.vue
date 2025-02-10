@@ -118,7 +118,7 @@
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
-                    label="Tax Reg"
+                    label="Tax Reg (NPWP)"
                     dense
                     v-model="custData.MCUS_TAXREG"
                     filled

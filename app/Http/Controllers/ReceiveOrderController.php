@@ -758,7 +758,7 @@ class ReceiveOrderController extends Controller
                     'TDLVORDDETA_DLVCD'
                 );
 
-            if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
+            if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
                 $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
             }
 

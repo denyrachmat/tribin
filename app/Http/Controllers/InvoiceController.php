@@ -467,7 +467,7 @@ class InvoiceController extends Controller
                 // ->where('MITM_ITMTYPE', 1)
                 ->first();
 
-            return $Usage;
+            // return $Usage;
 
             if (!empty($Usage)) {
                 $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;

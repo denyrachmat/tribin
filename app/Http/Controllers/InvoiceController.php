@@ -457,9 +457,10 @@ class InvoiceController extends Controller
                 'TSLODETA_MOBDEMOB',
                 'TSLODETA_PERIOD_FR',
                 'TSLODETA_PERIOD_TO',
-                'MITM_ITMTYPE'
+                'MITM_ITMTYPE',
+                'TSLODETA_ITMCD'
             )
-                ->leftjoin('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
+                ->leftjoin('M_ITM_GRP', 'MITM_ITMNM', 'like', DB::raw("CONCAT('%', T_SLODETA.TSLODETA_ITMCD, '%')"))
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
@@ -562,20 +563,22 @@ class InvoiceController extends Controller
         $Yfocus += 6;
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Lokasi', 0, 0, 'L');
-        $this->fpdf->Cell(50, 5, ': ' . (!empty($Subject) ? $Subject->TQUO_PROJECT_LOCATION : ''), 0, 0, 'L');
-        $this->fpdf->Line(63, $Yfocus + 5, 150, $Yfocus + 5);
-        $Yfocus += 5;
+        $this->fpdf->Cell(2, 5, ':');
+        $this->fpdf->MultiCell(138, 5, (!empty($Subject) ? $Subject->TQUO_PROJECT_LOCATION : ''));
+        $this->fpdf->Line(63, $this->fpdf->GetY() + 2, 180, $this->fpdf->GetY() + 2);
+        $Yfocus = $this->fpdf->GetY() + 5;
+        // $Yfocus += 5;
         $this->fpdf->SetXY(110, $Yfocus);
         $this->fpdf->Cell(50, 5, $Branch->MBRANCH_NM . ', ' . $DOIssuDate, 0, 0, 'L');
-        $Yfocus += 10;
+        $Yfocus = $this->fpdf->GetY() + 10;
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Jumlah', 0, 0, 'L');
         $this->fpdf->Cell(50, 5, ': Rp. ' . number_format($PPNAmount + $totalHargaSewa), 0, 0, 'L');
-        $Yfocus += 25;
+        $Yfocus = $this->fpdf->GetY() + 10;
         $this->fpdf->SetXY(120, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Syapril, S.T', 0, 0, 'L');
-        $Yfocus += 9;
-        $this->fpdf->SetXY(6, $Yfocus);
+        // $Yfocus += 9;
+        $this->fpdf->SetXY(6, 145);
         $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->Cell(50, 5, 'Note: Pembayaran dengan Giro/Cheque/Transfer dianggap sah apabila dan sudah masuk ke rekening kami', 0, 0, 'L');
 

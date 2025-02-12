@@ -457,16 +457,17 @@ class InvoiceController extends Controller
                 'TSLODETA_MOBDEMOB',
                 'TSLODETA_PERIOD_FR',
                 'TSLODETA_PERIOD_TO',
-                'MITM_ITMTYPE'
+                'MITM_ITMTYPE',
+                'TSLODETA_ITMCD'
             )
-                ->leftjoin('M_ITM_GRP', 'TSLODETA_ITMCD', 'MITM_ITMNM')
+                ->leftjoin('M_ITM_GRP', 'MITM_ITMNM', 'like', DB::raw("CONCAT('%', T_SLODETA.TSLODETA_ITMCD, '%')"))
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
-                ->where('TSLODETA_ITMCD','like', '%'.$r->TDLVORDDETA_ITMCD.'%')
+                ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 // ->where('MITM_ITMTYPE', 1)
                 ->first();
 
-            // return $Usage;
+            return $Usage;
 
             if (!empty($Usage)) {
                 $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;

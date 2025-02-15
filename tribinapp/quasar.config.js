@@ -52,6 +52,8 @@ module.exports = configure(function (ctx) {
       env: {
         API: "https://joss.jatpowerindo.co.id/api/",
         API_WEB: "https://joss.jatpowerindo.co.id/",
+        API_ACC: "https://joss-accounting.ikhsanhamidan.my.id/api/",
+        API_KEY_ACC: "f94278664935bc3ea0c89fc65855c5e061c236272ddd42fd22187da87c20ab9b",
       },
       target: {
         browser: ["es2019", "edge88", "firefox78", "chrome87", "safari13.1"],

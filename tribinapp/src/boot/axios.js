@@ -12,10 +12,11 @@ import { Notify } from 'quasar'
 // for each client)
 // const api = axios.create({ baseURL: process.env.API})
 
-// const api = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/api/"})
-// const api_web = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/"})
-const api = axios.create({ baseURL: "http://tribin.test/api/"})
-const api_web = axios.create({ baseURL: "http://tribin.test/"})
+const api = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/api/"})
+const api_web = axios.create({ baseURL: "https://joss.jatpowerindo.co.id/"})
+// const api = axios.create({ baseURL: "http://tribin.test/api/"})
+// const api_web = axios.create({ baseURL: "http://tribin.test/"})
+const api_acc = axios.create({ baseURL: process.env.API_ACC})
 
 api.interceptors.request.use((config) => {
   config.withCredentials = true
@@ -183,6 +184,87 @@ api_web.interceptors.response.use(function (response) {
   // return Promise.reject(error);
 });
 
+api_acc.interceptors.response.use(function (response) {
+  // Any status code that lie within the range of 2xx cause this function to trigger
+  // Do something with response data
+  if (response.data.message || response.data.msg) {
+    Notify.create({
+      color: "green",
+      message: response.data.message ? response.data.message : response.data.msg,
+    });
+  }
+
+  return response;
+}, function (e) {
+  // Any status codes that falls outside the range of 2xx cause this function to trigger
+  // Do something with response error
+
+  // console.log(e)
+  if (e.response) {
+    if (e.response.status == 422) {
+      errors = e.response.data.message;
+      if (errors) {
+        Object.keys(errors).map((val) => {
+          errors[val].map((val_det) => {
+            Notify.create({
+              color: "negative",
+              message: val_det,
+            });
+          });
+        });
+      } else {
+        if (blob) {
+          var decodedString = String.fromCharCode.apply(
+            null,
+            new Uint8Array(e.response.data)
+          );
+
+          Notify.create({
+            color: "negative",
+            message: decodedString,
+          });
+        } else {
+          Notify.create({
+            color: "negative",
+            message: "Undefined error!!",
+          });
+        }
+      }
+    }
+
+    // console.log(e.response.data)
+    if (e.response.status == 406) {
+      console.log('masuk sini kena validasi')
+      // console.log(Object.values(e.response.data))
+
+      Object.values(e.response.data).map((valErr) => {
+        valErr.map((valErrDet) => {
+          console.log(valErrDet)
+          Notify.create({
+            color: "negative",
+            message: `${valErrDet}`,
+          });
+        })
+      })
+    }
+
+    if (e.response.status == 401) {
+      Notify.create({
+        color: "negative",
+        message: "You need to login to access this function!",
+      });
+    }
+
+    if (e.response.status == 500) {
+      Notify.create({
+        color: "negative",
+        message: "Connection problem, please try again later.",
+      });
+    }
+  }
+  // return Promise.reject(error);
+});
+
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
@@ -197,6 +279,10 @@ export default boot(({ app }) => {
   app.config.globalProperties.$api_web = api_web
   // ^ ^ ^ this will allow you to use this.$api_web (for Vue Options API form)
   //       so you can easily perform requests against your app's API
+
+  app.config.globalProperties.$api_acc = api_acc
+  // ^ ^ ^ this will allow you to use this.$api_acc (for Vue Options API form)
+  //       so you can easily perform requests against your app's API
 })
 
-export { api, api_web }
+export { api, api_web, api_acc }

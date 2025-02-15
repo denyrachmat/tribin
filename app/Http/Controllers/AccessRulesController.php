@@ -102,7 +102,7 @@ class AccessRulesController extends Controller
             ->orderBy('code', 'asc')
             ->get()->toArray();
 
-        return $rs;
+        // return $rs;
         $rsfix = [];
         foreach ($rs as &$r) {
             if ($r['USED'] == '0') {

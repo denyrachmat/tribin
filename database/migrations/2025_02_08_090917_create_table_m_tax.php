@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('table_m_tax', function (Blueprint $table) {
+        Schema::create('M_TAX', function (Blueprint $table) {
             $table->id();
             $table->string('MTAX_CODE')->unique();
-            $table->string('MTAX_TYPE');
+            $table->string('MTAX_TYPE')->nullable();
             $table->float('MTAX_PERCENT');
             $table->datetime('MTAX_EFFDT');
+            $table->float('MTAX_TAXMIN')->nullable();
+            $table->float('MTAX_TAXMAX')->default(999999999999);
             $table->timestamps();
         });
     }
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('table_m_tax');
+        Schema::dropIfExists('M_TAX');
     }
 };

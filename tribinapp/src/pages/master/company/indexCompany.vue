@@ -19,8 +19,13 @@
           align="justify"
           narrow-indicator
         >
-          <q-tab name="company" label="Company Profile" icon="apartment"/>
+          <q-tab name="company" label="Company Profile" icon="apartment" />
           <q-tab name="payment" label="Payment Acc" icon="payments" />
+          <q-tab
+            name="acc"
+            label="Accounting Setup"
+            icon="account_balance_wallet"
+          />
         </q-tabs>
 
         <q-separator />
@@ -32,6 +37,10 @@
 
           <q-tab-panel name="payment">
             <paymentAccPanel />
+          </q-tab-panel>
+
+          <q-tab-panel name="acc">
+            <accIFSetupPanel />
           </q-tab-panel>
         </q-tab-panels>
       </div>
@@ -45,6 +54,7 @@ import { api, api_web } from "boot/axios";
 
 import companyProfilePanel from "./companyProfilePanel.vue";
 import paymentAccPanel from "./paymentAccPanel.vue";
+import accIFSetupPanel from "./accIFSetupPanel.vue";
 
 const $q = useQuasar();
 

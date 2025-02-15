@@ -43,6 +43,7 @@ Route::get('/logout', function (Request $request) {
 
 Route::group(['prefix' => 'master', 'middleware' => 'api'], function () {
     Route::get('gencode/{id}', [gencodeController::class, 'getGencode']);
+    Route::post('gencode', [gencodeController::class, 'saveGencode']);
     Route::prefix('item')->group(function () {
         Route::post('searchAPI', [ItemController::class, 'searchAPI']);
     });

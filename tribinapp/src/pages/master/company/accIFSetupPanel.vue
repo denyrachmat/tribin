@@ -89,7 +89,7 @@ const $q = useQuasar();
 onMounted(() => {
   getTransTypeList();
   getCOAList();
-  getTransSuppTypeList()
+  getTransSuppTypeList();
 });
 
 const onClickSave = () => {
@@ -100,29 +100,33 @@ const onClickSave = () => {
     persistent: true,
   }).onOk(async () => {
     loading.value = true;
-    console.log(listCustType.value)
-    console.log(listPOType.value)
+    console.log(listCustType.value);
+    console.log(listPOType.value);
 
-    const datanya = listCustType.value.push(...listPOType.value)
-    let hasil = []
+    const datanya = [...listCustType.value, ...listPOType.value];
+    let hasil = [];
+
+    console.log(datanya);
 
     datanya.map((v) => {
-      hasil.push({
-        MGECD_CODE: v.value,
-        MGECD_VALUE: v.valueChoosed,
-        MGECD_DESC: `${v.label} - ${v.valueChoosed}`,
-        MGECD_ACTIVE: 1,
-      });
+      if (v.valueChoosed) {
+        hasil.push({
+          MGECD_CODE: v.value,
+          MGECD_VALUE: v.valueChoosed,
+          MGECD_DESC: `${v.label} - ${v.valueChoosed}`,
+          MGECD_ACTIVE: 1,
+        });
+      }
     });
 
     await api
-    .post(`master/gencode`, {
-      data: hasil,
-    })
-    .then((val) => {
-      loading.value = false;
-    })
-    .catch((e) => {});
+      .post(`master/gencode`, {
+        data: hasil,
+      })
+      .then((val) => {
+        loading.value = false;
+      })
+      .catch((e) => {});
   });
 };
 
@@ -137,7 +141,7 @@ const getTransTypeList = async () => {
         listCustType.value.push({
           label: v.MGECD_DESC,
           value: v.MGECD_VALUE,
-          valueChoosed: "",
+          valueChoosed: v.CODE_VALUE,
         });
       });
     })
@@ -155,7 +159,7 @@ const getTransSuppTypeList = async () => {
         listPOType.value.push({
           label: v.MGECD_DESC,
           value: v.MGECD_VALUE,
-          valueChoosed: "",
+          valueChoosed: v.CODE_VALUE,
         });
       });
     })

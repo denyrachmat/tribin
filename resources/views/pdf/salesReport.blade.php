@@ -85,7 +85,7 @@
     <hr class="s1">
 </div>
 
-<div style="text-align: center;padding-bottom: 1em">
+<div style="text-align: center;">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Sales Report by Day</span>
     <br>
     <span style="font-family: Arial, sans-serif; font-style: bold">From {{date('d M Y', strtotime($dateRange[0]))}} to
@@ -174,7 +174,7 @@
     </table>
 </div>
 
-<div class="page-break"></div>
+<div style="page-break-before: always;"></div>
 
 <div style="text-align: center;padding-bottom: 1em;padding-top: 1em">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Perpanjangan</span>

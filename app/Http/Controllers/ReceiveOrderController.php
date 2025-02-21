@@ -251,7 +251,7 @@ class ReceiveOrderController extends Controller
     public function saveAPI(Request $request)
     {
         $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-        return env('ACC_URL');
+        // return env('ACC_URL');
         # data quotation header
         $validator = Validator::make($request->all(), [
             'TSLO_CUSCD' => 'required',
@@ -862,7 +862,7 @@ class ReceiveOrderController extends Controller
             }
         }
 
-        $companyGroupData = CompanyGroup::where(`connection`, $this->dedicatedConnection)->first();
+        $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
 
         $hasil = $hasilTemp;
 

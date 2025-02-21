@@ -92,12 +92,17 @@ class AccessRulesController extends Controller
         $rsCGRole = CompanyGroupAccess::select('role_name')
             ->where('nick_name', Auth::user()->nick_name)
             ->where('connection', $this->dedicatedConnection)
-            ->whereNull('deleted_at')->first();
+            ->whereNull('deleted_at')
+            ->first();
+
+            // return $rsCGRole;
         $rs = MenuRoles::select(['code', 'parent_code', 'name', 'url', 'icon', DB::raw("'0' USED")])
             ->join('menus', 'menu_code', '=', 'code')
             ->where('role_name', $rsCGRole->role_name)
             ->orderBy('code', 'asc')
             ->get()->toArray();
+
+        // return $rs;
         $rsfix = [];
         foreach ($rs as &$r) {
             if ($r['USED'] == '0') {

@@ -467,7 +467,6 @@ Route::group(['middleware' => 'cors'], function () {
 
         # Terkait Receive
         Route::prefix('receive')->group(function () {
-
             Route::get('form', [ReceiveController::class, 'index']);
             Route::get('formBarcodeCreate', [ReceiveController::class, 'formBarcodeCreate']);
             Route::get('form/{id}', [ReceiveController::class, 'loadById']);
@@ -478,6 +477,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('confirmIncoming', [ReceiveController::class, 'confirmIncoming']);
             Route::get('', [ReceiveController::class, 'search']);
             Route::post('searchAPI', [ReceiveController::class, 'searchAPI']);
+            Route::post('exportExcel', [ReceiveController::class, 'exportBarcode']);
+
             Route::get('outstanding-po', [ReceiveController::class, 'outstandingPO']);
             Route::get('outstanding-po/{id}', [ReceiveController::class, 'outstandingPOPerDocument']);
             Route::delete('item/{id}', [ReceiveController::class, 'delete']);

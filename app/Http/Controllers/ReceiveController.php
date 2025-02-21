@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\warehouse\incomingBarcodeExport;
 
 class ReceiveController extends Controller
 {
@@ -393,9 +395,9 @@ class ReceiveController extends Controller
                             AND CITRN_LOCCD = 'WH1'
                         ), 0) AS STOCK_QTY")
                     )
-                    ->join('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
-                    ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
-                    ->join(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
+                    ->leftjoin('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                    ->leftjoin('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
+                    ->leftjoin(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
                     ->leftjoin('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
                 },
                 'det' => function ($f) {
@@ -575,5 +577,16 @@ class ReceiveController extends Controller
         }
 
         return ['MSG' => 'Submitted successfully'];
+    }
+
+    function exportBarcode(Request $request)
+    {
+        return Excel::download(
+            new incomingBarcodeExport(
+                $this->dedicatedConnection,
+                $request->bc
+            ),
+            'incomingBarcodeExport.xlsx'
+        );
     }
 }

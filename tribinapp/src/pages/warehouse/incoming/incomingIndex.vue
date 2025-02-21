@@ -137,9 +137,23 @@
                   :disable="props.row.bc.length == 0"
                 >
                   <q-tooltip>{{
-                    parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV
-                      ? "All qty already confirmed"
-                      : "Confirm Data"
+                    props.row.bc.length == 0
+                      ? "No Barcode has been created, please confirm first!"
+                      : "Barcode Print"
+                  }}</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  :color="props.row.bc.length == 0 ? 'grey' : 'green'"
+                  icon="print"
+                  @click="onExportBarcode(props.row.bc)"
+                  dense
+                  :disable="props.row.bc.length == 0"
+                >
+                  <q-tooltip>{{
+                    props.row.bc.length == 0
+                      ? "No Barcode has been created, please confirm first!"
+                      : "Barcode Export Excel"
                   }}</q-tooltip>
                 </q-btn>
               </q-td>
@@ -366,4 +380,33 @@ const printLabel = async (data, listData) => {
       });
   });
 };
+
+const onExportBarcode = (bc) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to export all this item ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .post(`receive/exportExcel`, {
+        bc: bc
+      }, {
+        responseType: 'arraybuffer'
+      })
+      .then((datas) => {
+        loading.value = false;
+        const link = document.createElement("a");
+        link.download = name;
+        // const data = await fetch(datas).then((res) => res.blob());
+        link.href = window.URL.createObjectURL(
+          new Blob([datas.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+        );
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(link.href);
+      });
+  });
+}
 </script>

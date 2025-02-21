@@ -22,8 +22,11 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
 
+use App\Traits\gencodeTraits;
+
 class ReceiveOrderController extends Controller
 {
+    use gencodeTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -248,7 +251,7 @@ class ReceiveOrderController extends Controller
     public function saveAPI(Request $request)
     {
         $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-
+        return env('ACC_URL');
         # data quotation header
         $validator = Validator::make($request->all(), [
             'TSLO_CUSCD' => 'required',
@@ -343,7 +346,9 @@ class ReceiveOrderController extends Controller
         T_SLODETA::on($this->dedicatedConnection)->where('TSLODETA_SLOCD', $newDocumentCode)->delete();
 
         $quotationDetail = [];
+        $getTotalAmnt = 0;
         foreach ($request->det as $key => $value) {
+            $getTotalAmnt += $value['TSLODETA_ITMQT'] * $value['TSLODETA_PRC'];
             $quotationDetail[] = T_SLODETA::on($this->dedicatedConnection)->create([
                 'TSLODETA_SLOCD' => $newDocumentCode,
                 'TSLODETA_ITMCD' => $value['TSLODETA_ITMCD'],
@@ -360,6 +365,34 @@ class ReceiveOrderController extends Controller
             ]);
         }
 
+        // Check for default account
+        $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
+
+        $hasilAPI = [];
+        if (count($cekInvoiceAcc) > 0) {
+            $client = new \GuzzleHttp\Client();
+            $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
+                'body' => json_encode([
+                    'cg_code' => $this->dedicatedConnection,
+                    'date' => date('Y-m-d'),
+                    'reference_number' => $newDocumentCode,
+                    'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
+                    'description' => 'Sales Order ' . $newDocumentCode,
+                    'amount' => $getTotalAmnt,
+                ]),
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-KEY' => env('ACC_KEY'),
+                ]
+            ]);
+
+            if ($response->getStatusCode() != 200) {
+                return response()->json(['error' => 'Failed to post data to API'], 500);
+            }
+
+            $hasilAPI = json_decode($response->getBody(), true);
+        }
+
         return [
             'msg' => 'OK',
             'doc' => $newDocumentCode,
@@ -367,6 +400,16 @@ class ReceiveOrderController extends Controller
             'quotationHeader' => $quotationHeader,
             'quotationDetail' => $quotationDetail,
             'newPOCode' => $newPOCode,
+            'hasilAPI' => $hasilAPI,
+            'paramnya' => [
+                'cg_code' => $this->dedicatedConnection,
+                'date' => date('Y-m-d'),
+                'reference_number' => $newDocumentCode,
+                'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
+                'description' => 'Sales Order ' . $newDocumentCode,
+                'amount' => $getTotalAmnt,
+            ],
+            'gencode' => $cekInvoiceAcc
         ];
     }
 
@@ -506,18 +549,55 @@ class ReceiveOrderController extends Controller
 
     function deleteByID($id)
     {
+        $getDeletedDetail = T_SLODETA::on($this->dedicatedConnection)
+            ->where('TSLODETA_SLOCD', base64_decode($id))
+            ->get();
+
+        $totalAmount = 0;
+        foreach ($getDeletedDetail as $key => $value) {
+            $totalAmount += $value->TSLODETA_ITMQT * $value->TSLODETA_PRC;
+        }
+
+        $cekInvoiceAcc = $this->getGencode('DEF_CUST_INVOICE');
+
+        $hasilApi = [];
+        if (count($cekInvoiceAcc) > 0) {
+            $client = new \GuzzleHttp\Client();
+            $response = $client->post(env('ACC_URL'), [
+                'json' => [
+                    'cg_code' => $this->dedicatedConnection,
+                    'date' => date('Y-m-d'),
+                    'reference_number' => base64_decode($id),
+                    'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
+                    'description' => 'Sales Order ' . base64_decode($id) . ' Revise',
+                    'amount' => $totalAmount * - 1,
+                ],
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-KEY' => env('ACC_KEY'),
+                ]
+            ]);
+
+            if ($response->getStatusCode() != 201) {
+                return response()->json(['error' => 'Failed to post data to API'], 500);
+            }
+
+            $hasilApi = json_decode($response->getBody()->getContents());
+        }
+
         $headerDelete = T_SLOHEAD::on($this->dedicatedConnection)
             ->where('TSLO_SLOCD', base64_decode($id))
             ->delete();
 
-        $detDelete = T_SLODETA::on($this->dedicatedConnection)
+        $getDeletedDetail2 = T_SLODETA::on($this->dedicatedConnection)
             ->where('TSLODETA_SLOCD', base64_decode($id))
             ->delete();
 
         return [
             'msg' => 'Delete OK',
             'quotationHeader' => $headerDelete,
-            'quotationDetail' => $detDelete,
+            'quotationDetail' => $getDeletedDetail2,
+            'hasilApi' => $hasilApi
         ];
     }
 
@@ -732,7 +812,7 @@ class ReceiveOrderController extends Controller
                     'TSLODETA_PERIOD_TO',
                     'TDLVORDDETA_DLVCD'
                 )
-                ->join('T_SLODETA', function($j) {
+                ->join('T_SLODETA', function ($j) {
                     $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
                     $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
                 })
@@ -743,7 +823,7 @@ class ReceiveOrderController extends Controller
                 ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
                 ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
                 ->where('MITM_ITMCAT', $value)
-                ->whereBetween('T_SLODETA.created_at', [$request->fdate. " 00:00:00", $request->ldate. " 23:59:59"])
+                ->whereBetween('T_SLODETA.created_at', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"])
                 ->groupBy(
                     'TSLO_SLOCD',
                     'MITM_ITMCD',
@@ -768,13 +848,13 @@ class ReceiveOrderController extends Controller
             $cekTotalData = $RSTemp->get()->toArray();
 
             if (count($cekTotalData) > 0) {
-                $hasilTemp['BARU'][$value] = array_values(array_filter($cekTotalData, function($f) {
+                $hasilTemp['BARU'][$value] = array_values(array_filter($cekTotalData, function ($f) {
                     if (!str_contains($f['TSLO_SLOCD'], '-')) {
                         return $f;
                     }
                 }));
 
-                $hasilTemp['PERPANJANGAN'][$value] = array_values(array_filter($cekTotalData, function($f) {
+                $hasilTemp['PERPANJANGAN'][$value] = array_values(array_filter($cekTotalData, function ($f) {
                     if (str_contains($f['TSLO_SLOCD'], '-')) {
                         return $f;
                     }

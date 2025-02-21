@@ -518,7 +518,7 @@ const onSelectDN = (val) => {
     // Accesories
     selDN[0].dlvacc.map((accVal) => {
       listDet.value.push({
-        item_code: accVal.TDLVACCESSORY_ITMCD,
+        item_code: accVal.TDLVORDDETA_ITMCD_ACT,
         quantity: accVal.TDLVACCESSORY_ITMQT,
         unit_price: 0,
       });

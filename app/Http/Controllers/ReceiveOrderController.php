@@ -251,7 +251,6 @@ class ReceiveOrderController extends Controller
     public function saveAPI(Request $request)
     {
         $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-        // return env('ACC_URL');
         # data quotation header
         $validator = Validator::make($request->all(), [
             'TSLO_CUSCD' => 'required',
@@ -369,29 +368,29 @@ class ReceiveOrderController extends Controller
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
         $hasilAPI = [];
-        if (count($cekInvoiceAcc) > 0) {
-            $client = new \GuzzleHttp\Client();
-            $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
-                'body' => json_encode([
-                    'cg_code' => $this->dedicatedConnection,
-                    'date' => date('Y-m-d'),
-                    'reference_number' => $newDocumentCode,
-                    'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
-                    'description' => 'Sales Order ' . $newDocumentCode,
-                    'amount' => $getTotalAmnt,
-                ]),
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'X-API-KEY' => env('ACC_KEY'),
-                ]
-            ]);
+        // if (count($cekInvoiceAcc) > 0) {
+        //     $client = new \GuzzleHttp\Client();
+        //     $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
+        //         'body' => json_encode([
+        //             'cg_code' => $this->dedicatedConnection,
+        //             'date' => date('Y-m-d'),
+        //             'reference_number' => $newDocumentCode,
+        //             'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
+        //             'description' => 'Sales Order ' . $newDocumentCode,
+        //             'amount' => $getTotalAmnt,
+        //         ]),
+        //         'headers' => [
+        //             'Content-Type' => 'application/json',
+        //             'X-API-KEY' => env('ACC_KEY'),
+        //         ]
+        //     ]);
 
-            if ($response->getStatusCode() != 200) {
-                return response()->json(['error' => 'Failed to post data to API'], 500);
-            }
+        //     if ($response->getStatusCode() != 201) {
+        //         return $response->getBody();
+        //     }
 
-            $hasilAPI = json_decode($response->getBody(), true);
-        }
+        //     $hasilAPI = json_decode($response->getBody(), true);
+        // }
 
         return [
             'msg' => 'OK',
@@ -401,14 +400,14 @@ class ReceiveOrderController extends Controller
             'quotationDetail' => $quotationDetail,
             'newPOCode' => $newPOCode,
             'hasilAPI' => $hasilAPI,
-            'paramnya' => [
-                'cg_code' => $this->dedicatedConnection,
-                'date' => date('Y-m-d'),
-                'reference_number' => $newDocumentCode,
-                'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
-                'description' => 'Sales Order ' . $newDocumentCode,
-                'amount' => $getTotalAmnt,
-            ],
+            // 'paramnya' => [
+            //     'cg_code' => $this->dedicatedConnection,
+            //     'date' => date('Y-m-d'),
+            //     'reference_number' => $newDocumentCode,
+            //     'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
+            //     'description' => 'Sales Order ' . $newDocumentCode,
+            //     'amount' => $getTotalAmnt,
+            // ],
             'gencode' => $cekInvoiceAcc
         ];
     }

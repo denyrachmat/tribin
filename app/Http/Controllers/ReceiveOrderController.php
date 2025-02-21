@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanyGroup;
 use App\Models\M_COND_GROUP;
 use App\Models\M_Condition;
 use App\Models\M_ITM;
@@ -781,11 +782,17 @@ class ReceiveOrderController extends Controller
             }
         }
 
+        $companyGroupData = CompanyGroup::where(`connection`, $this->dedicatedConnection)->first();
+
         $hasil = $hasilTemp;
 
-        // return $hasil;
-
-        $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.salesReport', ['data' => $hasil, 'dateRange' => [$request->fdate, $request->ldate]]);
+        $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.salesReport', [
+            'data' => $hasil,
+            'dateRange' => [$request->fdate, $request->ldate],
+            'header' => $companyGroupData->name,
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => $companyGroupData->address
+        ]);
 
         return base64_encode($pdf->output());
     }

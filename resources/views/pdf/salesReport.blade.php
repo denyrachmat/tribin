@@ -75,7 +75,17 @@
       }
     }
 </style>
-<div style="text-align: center;padding-bottom: 1em">
+<div style="text-align: center">
+    <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
+    <div style="text-align: center; font-size: 16px;padding-bottom: 4px"><strong>{{$subHeader}}</strong></div>
+    <div style="text-align: center;font-size: 13px;padding-bottom: 10px"><strong>{{$addr}}</strong></div>
+</div>
+
+<div>
+    <hr class="s1">
+</div>
+
+<div style="text-align: center;">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Sales Report by Day</span>
     <br>
     <span style="font-family: Arial, sans-serif; font-style: bold">From {{date('d M Y', strtotime($dateRange[0]))}} to
@@ -164,7 +174,7 @@
     </table>
 </div>
 
-<div class="page-break"></div>
+<div style="page-break-before: always;"></div>
 
 <div style="text-align: center;padding-bottom: 1em;padding-top: 1em">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Perpanjangan</span>

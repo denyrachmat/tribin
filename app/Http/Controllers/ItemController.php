@@ -261,6 +261,15 @@ class ItemController extends Controller
             'MITM_ITMTYPE',
             'MITM_BRAND',
             'LATEST_PRC',
+            DB::raw("CASE WHEN (
+                SELECT TDLVORDDETA_DLVCD
+                FROM T_DLVORDDETA
+                where TDLVORDDETA_ITMCD_ACT = MITM_ITMNM
+                LIMIT 1
+            ) IS NOT NULL
+                THEN 1
+                ELSE 0
+            END AS DLV_STAT"),
             'STOCK'
         ];
 

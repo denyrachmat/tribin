@@ -368,29 +368,46 @@ class ReceiveOrderController extends Controller
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
         $hasilAPI = [];
-        // if (count($cekInvoiceAcc) > 0) {
-        //     $client = new \GuzzleHttp\Client();
-        //     $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
-        //         'body' => json_encode([
-        //             'cg_code' => $this->dedicatedConnection,
-        //             'date' => date('Y-m-d'),
-        //             'reference_number' => $newDocumentCode,
-        //             'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
-        //             'description' => 'Sales Order ' . $newDocumentCode,
-        //             'amount' => $getTotalAmnt,
-        //         ]),
-        //         'headers' => [
-        //             'Content-Type' => 'application/json',
-        //             'X-API-KEY' => env('ACC_KEY'),
-        //         ]
-        //     ]);
+        if (count($cekInvoiceAcc) > 0) {
+            try {
+                $client = new \GuzzleHttp\Client();
+                $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
+                    'body' => json_encode([
+                        'cg_code' => $this->dedicatedConnection,
+                        'date' => date('Y-m-d'),
+                        'reference_number' => $newDocumentCode,
+                        'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
+                        'description' => 'Sales Order ' . $newDocumentCode,
+                        'amount' => $getTotalAmnt,
+                        'payload' => []
+                    ]),
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'X-API-KEY' => env('ACC_KEY'),
+                    ]
+                ]);
 
-        //     if ($response->getStatusCode() != 201) {
-        //         return $response->getBody();
-        //     }
+                if ($response->getStatusCode() != 201) {
+                    return $response->getBody();
+                }
 
-        //     $hasilAPI = json_decode($response->getBody(), true);
-        // }
+                $hasilAPI = json_decode($response->getBody(), true);
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                $this->deleteByID(base64_encode($newDocumentCode), true);
+                return response()->json([
+                    'error' => 'Failed to post data to API',
+                    'message' => $e->getMessage(),
+                    'param' => [
+                        'cg_code' => $this->dedicatedConnection,
+                        'date' => date('Y-m-d'),
+                        'reference_number' => $newDocumentCode,
+                        'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
+                        'description' => 'Sales Order ' . $newDocumentCode,
+                        'amount' => $getTotalAmnt,
+                    ]
+                ], 500);
+            }
+        }
 
         return [
             'msg' => 'OK',
@@ -400,14 +417,14 @@ class ReceiveOrderController extends Controller
             'quotationDetail' => $quotationDetail,
             'newPOCode' => $newPOCode,
             'hasilAPI' => $hasilAPI,
-            // 'paramnya' => [
-            //     'cg_code' => $this->dedicatedConnection,
-            //     'date' => date('Y-m-d'),
-            //     'reference_number' => $newDocumentCode,
-            //     'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
-            //     'description' => 'Sales Order ' . $newDocumentCode,
-            //     'amount' => $getTotalAmnt,
-            // ],
+            'paramnya' => [
+                'cg_code' => $this->dedicatedConnection,
+                'date' => date('Y-m-d'),
+                'reference_number' => $newDocumentCode,
+                'journal_code' => count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]->CODE_VALUE : '',
+                'description' => 'Sales Order ' . $newDocumentCode,
+                'amount' => $getTotalAmnt,
+            ],
             'gencode' => $cekInvoiceAcc
         ];
     }
@@ -546,7 +563,7 @@ class ReceiveOrderController extends Controller
         return ['dataItem' => $RS, 'dataHeader' => $RSHeader];
     }
 
-    function deleteByID($id)
+    function deleteByID($id, $isDeleteOnly = false)
     {
         $getDeletedDetail = T_SLODETA::on($this->dedicatedConnection)
             ->where('TSLODETA_SLOCD', base64_decode($id))
@@ -557,28 +574,45 @@ class ReceiveOrderController extends Controller
             $totalAmount += $value->TSLODETA_ITMQT * $value->TSLODETA_PRC;
         }
 
-        $cekInvoiceAcc = $this->getGencode('DEF_CUST_INVOICE');
+        $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
         $hasilApi = [];
-        if (count($cekInvoiceAcc) > 0) {
-            $client = new \GuzzleHttp\Client();
-            $response = $client->post(env('ACC_URL'), [
-                'json' => [
-                    'cg_code' => $this->dedicatedConnection,
-                    'date' => date('Y-m-d'),
-                    'reference_number' => base64_decode($id),
-                    'journal_code' => $cekInvoiceAcc[0]->CODE_VALUE,
-                    'description' => 'Sales Order ' . base64_decode($id) . ' Revise',
-                    'amount' => $totalAmount * - 1,
-                ],
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'X-API-KEY' => env('ACC_KEY'),
-                ]
-            ]);
+        if (count($cekInvoiceAcc) > 0 && !$isDeleteOnly) {
+            try {
+                $client = new \GuzzleHttp\Client();
+                $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
+                    'body' => json_encode([
+                        'cg_code' => $this->dedicatedConnection,
+                        'date' => date('Y-m-d'),
+                        'reference_number' => base64_decode($id),
+                        'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
+                        'description' => 'Sales Order ' . base64_decode($id) . ' Revise',
+                        'amount' => $totalAmount * - 1,
+                    ]),
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'X-API-KEY' => env('ACC_KEY'),
+                    ]
+                ]);
 
-            if ($response->getStatusCode() != 201) {
-                return response()->json(['error' => 'Failed to post data to API'], 500);
+                if ($response->getStatusCode() != 201) {
+                    return $response->getBody();
+                }
+
+                $hasilAPI = json_decode($response->getBody(), true);
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                return response()->json([
+                    'error' => 'Failed to post data to API',
+                    'message' => $e->getMessage(),
+                    'param' => [
+                        'cg_code' => $this->dedicatedConnection,
+                        'date' => date('Y-m-d'),
+                        'reference_number' => base64_decode($id),
+                        'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
+                        'description' => 'Sales Order ' . base64_decode($id) . ' Revise',
+                        'amount' => $totalAmount * - 1,
+                    ]
+                ], 500);
             }
 
             $hasilApi = json_decode($response->getBody()->getContents());

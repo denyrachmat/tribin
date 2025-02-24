@@ -82,12 +82,13 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="'red'"
+                  :color="props.row.DLV_STAT == 1 ? 'grey' : 'red'"
                   icon="delete"
                   @click="onDelete(props.row.MITM_ITMCD)"
+                  :disable="props.row.DLV_STAT == 1"
                   dense
                 >
-                  <q-tooltip>Delete Data</q-tooltip>
+                  <q-tooltip>{{props.row.DLV_STAT == 1 ? 'This item code is used by delivery, cannot delete.' : 'Delete Data'}}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">

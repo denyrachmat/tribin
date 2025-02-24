@@ -84,6 +84,7 @@
               </q-item-label>
             </q-item-section>
 
+            <!-- Jika bukan service internal -->
             <q-item-section v-if="props.header.SRVH_ISINT == 0">
               <div v-if="props.mode === 'view'">
                 <q-item-label>

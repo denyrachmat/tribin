@@ -58,7 +58,8 @@
                     v-if="props.mode !== 'view'"
                   >
                     <q-editor
-                      @keyup.enter="scope.set"
+                      @keyup.ctrl.enter="scope.set"
+                      @keyup.enter.stop
                       v-model="scope.value"
                       :dense="$q.screen.lt.md"
                       :toolbar="[
@@ -148,6 +149,7 @@
                         verdana: 'Verdana',
                       }"
                     />
+                    <span>Press ctrl + enter to save the comments</span>
                   </q-popup-edit>
                 </div>
               </q-item-label>

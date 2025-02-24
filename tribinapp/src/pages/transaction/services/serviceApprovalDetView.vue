@@ -52,7 +52,7 @@
               ></q-item-label>
               <q-item-label caption> Tech. Remarks</q-item-label>
             </q-item-section>
-            <q-item-section>
+            <!-- <q-item-section>
               <q-item-label v-if="items.TSRVD_MGRRMK">
                 <div v-html="items.TSRVD_MGRRMK"></div>
               </q-item-label>
@@ -67,7 +67,7 @@
                 </q-btn>
               </q-item-label>
               <q-item-label caption> Mgr. Remarks</q-item-label>
-            </q-item-section>
+            </q-item-section> -->
             <q-item-section>
               <q-item-label
                 >Rp.

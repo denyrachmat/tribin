@@ -82,6 +82,7 @@
               </legend>
               <div class="row">
                 <div class="col">
+                  <span class="text-bold">Customer Type</span>
                   <q-radio
                     v-model="custData.MCUS_TYPE"
                     :val="custype.value"
@@ -94,7 +95,7 @@
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
-                    label="Customer Code"
+                    label="Customer Code*"
                     dense
                     v-model="custData.MCUS_CUSCD"
                     filled
@@ -103,7 +104,7 @@
                 </div>
                 <div class="col q-pl-sm">
                   <q-input
-                    label="Customer Name"
+                    label="Customer Name*"
                     dense
                     v-model="custData.MCUS_CUSNM"
                     filled
@@ -139,7 +140,7 @@
               <div class="row q-pb-md">
                 <div class="col">
                   <q-input
-                    label="Tax Reg"
+                    label="Tax Reg*"
                     dense
                     v-model="custData.MCUS_TAXREG"
                     filled
@@ -147,7 +148,7 @@
                 </div>
                 <div class="col q-pl-md">
                   <q-input
-                    label="Currency"
+                    label="Currency*"
                     dense
                     v-model="custData.MCUS_CURCD"
                     filled
@@ -207,7 +208,7 @@
                 </div>
                 <div class="col q-pl-md">
                   <q-input
-                    label="Customer Phone"
+                    label="Customer Phone*"
                     dense
                     v-model="custData.MCUS_TELNO"
                     filled
@@ -218,7 +219,7 @@
               <div class="row">
                 <div class="col">
                   <q-input
-                    label="Customer Address"
+                    label="Customer Address*"
                     dense
                     v-model="custData.MCUS_ADDR1"
                     filled
@@ -230,7 +231,7 @@
           </div>
         </div>
 
-        <div class="row q-pt-md">
+        <!-- <div class="row q-pt-md">
           <div class="col">
             <fieldset style="border: 1px black solid; border-radius: 10px">
               <legend style="margin-left: 1em; padding: 0.2em 0.8em">
@@ -250,7 +251,7 @@
               </div>
             </fieldset>
           </div>
-        </div>
+        </div> -->
       </q-card-section>
 
       <q-card-actions align="right">

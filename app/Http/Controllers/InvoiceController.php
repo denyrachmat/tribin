@@ -574,7 +574,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Jumlah', 0, 0, 'L');
         $this->fpdf->Cell(50, 5, ': Rp. ' . number_format($PPNAmount + $totalHargaSewa), 0, 0, 'L');
-        $Yfocus = $this->fpdf->GetY() + 10;
+        $Yfocus = $this->fpdf->GetY() + 15;
         $this->fpdf->SetXY(120, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Syapril, S.T', 0, 0, 'L');
         // $Yfocus += 9;

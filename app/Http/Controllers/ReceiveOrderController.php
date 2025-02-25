@@ -368,7 +368,7 @@ class ReceiveOrderController extends Controller
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
         $hasilAPI = [];
-        if (count($cekInvoiceAcc) > 0) {
+        if (count($cekInvoiceAcc) > 0 && $getTotalAmnt > 0) {
             try {
                 $client = new \GuzzleHttp\Client();
                 $response = $client->request('POST', env('ACC_URL').'api/post-journal', [

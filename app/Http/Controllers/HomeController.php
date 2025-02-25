@@ -237,7 +237,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv', 'manager'])) {
             $SPK = C_SPK::on($this->dedicatedConnection)->select('CSPK_PIC_AS', 'CSPK_REFF_DOC', 'CSPK_JOBDESK')
                 ->whereNotNull('submitted_at');
             if ($activeRole['code'] === 'ga_manager') {
@@ -250,7 +250,7 @@ class HomeController extends Controller
             $UnApprovedSPK = json_decode(json_encode($UnApprovedSPK), true);
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga_manager', 'srv_mgr'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'srv_mgr', 'manager'])) {
             $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)
                 ->select('T_SRV_HEAD.*')
                 ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
@@ -268,7 +268,8 @@ class HomeController extends Controller
             'dataDeliveryOrderNoDriver' => $dataDeliveryOrderNoDriver,
             'dataDeliveryOrderUndelivered' => $dataDeliveryOrderUndelivered,
             'dataUnApprovedSPK' => $UnApprovedSPK,
-            'dataUnApprovedService' => $unapproveService
+            'dataUnApprovedService' => $unapproveService,
+            'role' => $activeRole
         ];
     }
 

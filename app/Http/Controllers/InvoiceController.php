@@ -144,7 +144,10 @@ class InvoiceController extends Controller
             ->select(
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
                 'TDLVORD_INVCD',
-                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"),
+                DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END as TDLVORD_DLVCD"),
                 // 'TDLVORD_DLVCD',
                 DB::raw('max(TDLVORD_ISSUDT) as TDLVORD_ISSUDT'),
                 'TDLVORD_INVCD',
@@ -190,7 +193,10 @@ class InvoiceController extends Controller
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
                 // 'TDLVORD_DLVCD',
-                DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"),
+                DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"),
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')')"),
                 'TDLVORD_INVCD',
                 'TDLVORD_REC_NO',

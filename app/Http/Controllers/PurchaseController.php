@@ -315,7 +315,7 @@ class PurchaseController extends Controller
             ->with('det')
             ->leftJoin('T_RCV_HEAD', 'TRCV_REFFNO', 'TPCHORD_PCHCD')
             ->where('TPCHORD_BRANCH', Auth::user()->branch)
-            ->whereNotNull('TPCHORD_APPRVDT')
+            // ->whereNotNull('TPCHORD_APPRVDT')
             ->whereNull('TRCV_REFFNO');
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {

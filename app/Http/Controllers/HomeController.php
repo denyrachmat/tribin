@@ -104,6 +104,7 @@ class HomeController extends Controller
                 ->selectRaw("COUNT(*) TTLDETAIL, TQUODETA_QUOCD, TQUODETA_BRANCH")
                 ->groupBy("TQUODETA_QUOCD", "TQUODETA_BRANCH")
                 ->whereNull('deleted_at');
+
             $dataTobeApproved = T_QUOHEAD::on($this->dedicatedConnection)->select(DB::raw("TQUO_QUOCD,max(TTLDETAIL) TTLDETAIL,max(MCUS_CUSNM) MCUS_CUSNM, max(T_QUOHEAD.created_at) CREATED_AT,max(TQUO_SBJCT) TQUO_SBJCT,max(TQUO_ATTN) TQUO_ATTN,TQUO_BRANCH"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TQUO_QUOCD", "=", "TQUODETA_QUOCD")
@@ -135,6 +136,7 @@ class HomeController extends Controller
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD")
                 ->groupBy("TPCHORDDETA_PCHCD")
                 ->whereNull('deleted_at');
+
             $dataPurchaseOrderTobeUpproved = T_PCHORDHEAD::on($this->dedicatedConnection)->select(DB::raw("TPCHORD_PCHCD,max(TTLDETAIL) TTLDETAIL, max(T_PCHORDHEAD.created_at) CREATED_AT"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TPCHORD_PCHCD", "=", "TPCHORDDETA_PCHCD");

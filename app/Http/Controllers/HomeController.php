@@ -104,6 +104,7 @@ class HomeController extends Controller
                 ->selectRaw("COUNT(*) TTLDETAIL, TQUODETA_QUOCD, TQUODETA_BRANCH")
                 ->groupBy("TQUODETA_QUOCD", "TQUODETA_BRANCH")
                 ->whereNull('deleted_at');
+
             $dataTobeApproved = T_QUOHEAD::on($this->dedicatedConnection)->select(DB::raw("TQUO_QUOCD,max(TTLDETAIL) TTLDETAIL,max(MCUS_CUSNM) MCUS_CUSNM, max(T_QUOHEAD.created_at) CREATED_AT,max(TQUO_SBJCT) TQUO_SBJCT,max(TQUO_ATTN) TQUO_ATTN,TQUO_BRANCH"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TQUO_QUOCD", "=", "TQUODETA_QUOCD")
@@ -135,6 +136,7 @@ class HomeController extends Controller
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD")
                 ->groupBy("TPCHORDDETA_PCHCD")
                 ->whereNull('deleted_at');
+
             $dataPurchaseOrderTobeUpproved = T_PCHORDHEAD::on($this->dedicatedConnection)->select(DB::raw("TPCHORD_PCHCD,max(TTLDETAIL) TTLDETAIL, max(T_PCHORDHEAD.created_at) CREATED_AT"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TPCHORD_PCHCD", "=", "TPCHORDDETA_PCHCD");
@@ -237,7 +239,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv', 'manager'])) {
             $SPK = C_SPK::on($this->dedicatedConnection)->select('CSPK_PIC_AS', 'CSPK_REFF_DOC', 'CSPK_JOBDESK')
                 ->whereNotNull('submitted_at');
             if ($activeRole['code'] === 'ga_manager') {
@@ -250,7 +252,7 @@ class HomeController extends Controller
             $UnApprovedSPK = json_decode(json_encode($UnApprovedSPK), true);
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga_manager', 'srv_mgr'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'srv_mgr', 'manager'])) {
             $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)
                 ->select('T_SRV_HEAD.*')
                 ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
@@ -268,7 +270,8 @@ class HomeController extends Controller
             'dataDeliveryOrderNoDriver' => $dataDeliveryOrderNoDriver,
             'dataDeliveryOrderUndelivered' => $dataDeliveryOrderUndelivered,
             'dataUnApprovedSPK' => $UnApprovedSPK,
-            'dataUnApprovedService' => $unapproveService
+            'dataUnApprovedService' => $unapproveService,
+            'role' => $activeRole
         ];
     }
 

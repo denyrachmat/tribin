@@ -370,7 +370,9 @@ class ReceiveOrderController extends Controller
         $hasilAPI = [];
         if (count($cekInvoiceAcc) > 0 && $getTotalAmnt > 0) {
             try {
-                $client = new \GuzzleHttp\Client();
+                $client = new \GuzzleHttp\Client([
+                    'verify' => false,
+                ]);
                 $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
                     'body' => json_encode([
                         'cg_code' => $this->dedicatedConnection,
@@ -384,7 +386,7 @@ class ReceiveOrderController extends Controller
                     'headers' => [
                         'Content-Type' => 'application/json',
                         'X-API-KEY' => env('ACC_KEY'),
-                    ]
+                    ],
                 ]);
 
                 if ($response->getStatusCode() != 201) {

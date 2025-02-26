@@ -217,7 +217,7 @@ class ServiceAdminController extends Controller
 
     public function confirmDoneItem(Request $request, string $id)
     {
-        $hasil = T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', base64_decode($id));
+        $hasil = T_SRV_FIXDET::on($this->dedicatedConnection)->where('TSRVD_ID', base64_decode($id));
         if ((clone $hasil)->count() > 0) {
             $cekDataOS = (clone $hasil)->where('TSRVF_ISCONF', 0)->count();
 

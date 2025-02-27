@@ -330,7 +330,7 @@ const onSaveData = () => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getItem();
+    // getItem();
     onClearData()
   });
 };
@@ -340,6 +340,7 @@ const onClearData = () => {
   LOCFROM.value = "";
   LOCTO.value = "";
   ITMCD.value = [];
+  listItems.value = []
 };
 
 const onChooseItem = (data) => {

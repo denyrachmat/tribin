@@ -307,10 +307,13 @@ class InventoryController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'DOC' => 'required',
-            'ITMCD' => 'required',
+            'ITMCD.*' => 'required',
             'TRFTYPE' => 'required',
-            'QTY' => 'required',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
 
         $cek = [];
         foreach ($request->ITMCD as $key => $value) {

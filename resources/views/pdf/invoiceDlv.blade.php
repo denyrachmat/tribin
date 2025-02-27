@@ -85,10 +85,12 @@
             float: left;
             width: 80%;
         }
+
         .col5 {
             float: left;
             width: 100%;
         }
+
         /* Clear floats after the columns */
         .row:after {
             content: "";
@@ -134,7 +136,8 @@
 
 <body>
     <div style="text-align: center">
-        <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
+        <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span
+                style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
         <div style="text-align: center; font-size: 16px;padding-bottom: 4px"><strong>{{$subHeader}}</strong></div>
         <div style="text-align: center;font-size: 12px;padding-bottom: 10px"><strong>{{$addr}}</strong></div>
         <div style="text-align: center;font-size: 12px;padding-bottom: 10px"><strong>{{$telp}}</strong></div>
@@ -145,7 +148,8 @@
     </div>
 
     <div>
-        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>INVOICE</strong></span></div>
+        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>INVOICE</strong></span>
+        </div>
     </div>
 
     <div class="row">
@@ -174,7 +178,7 @@
                 <tr>
                     <td>Lokasi</td>
                     <td>:</td>
-                    <td>{{$subject->TQUO_PROJECT_LOCATION}}</td>
+                    <td>{{empty($subject) ? '-' : $subject->TQUO_PROJECT_LOCATION}}</td>
                 </tr>
             </table>
         </div>
@@ -183,7 +187,7 @@
                 <tr>
                     <td>Inv No</td>
                     <td>:</td>
-                    <td>{{$TDLVORD_INVCD}}</td>
+                    <td>{{$TDLVORD_INVCD ? $TDLVORD_INVCD : '-'}}</td>
                 </tr>
                 <tr>
                     <td>Date</td>
@@ -223,21 +227,36 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($dlvDetNew as $key => $value)
-                        @if(count($value['dataSLO']) > 0)
+                    @if($TDLVORD_REMARK === 'SERVICE-INTERNAL')
+                        @foreach($dlvdet as $key => $value)
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
                                 <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
-                                <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} - {{$value['dataSLO']['MUSAGE_DESCRIPTION']}} / {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_FR']))}} - {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_TO']))}} </td>
+                                <td class="tg-0lax">-</td>
                                 <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
-                                <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'],0,".",",") }}</td>
+                                <td class="tg-0lax">Rp {{number_format($value['TDLVORDDETA_PRC'], 0, ".", ",") }}</td>
                             </tr>
-                        @else
-                            <tr>
-                                <td class="tg-0lax" colspan=5>Data Not Found</td>
-                            </tr>
-                        @endif
-                    @endforeach
+                        @endforeach
+                    @else
+                        @foreach($dlvDetNew as $key => $value)
+                            @if(isset($value['dataSLO']) && count($value['dataSLO']) > 0)
+                                <tr>
+                                    <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
+                                    <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
+                                    <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} -
+                                        {{$value['dataSLO']['MUSAGE_DESCRIPTION']}} /
+                                        {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_FR']))}} -
+                                        {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_TO']))}} </td>
+                                    <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
+                                    <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'], 0, ".", ",") }}</td>
+                                </tr>
+                            @else
+                                <tr>
+                                    <td class="tg-0lax" colspan=5>Data Not Found</td>
+                                </tr>
+                            @endif
+                        @endforeach
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -248,25 +267,25 @@
                 <tr>
                     <td><b>Total</b></td>
                     <td><b>:</b></td>
-                    <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
+                    <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
                 </tr>
                 @if($isPPN == 1)
-                <tr>
-                    <td><b>PPN (11%)</b></td>
-                    <td><b>:</b></td>
-                    <td><b>Rp {{number_format($ppn,0,".",",")}}</b></td>
-                </tr>
-                <tr>
-                    <td><b>Total Tagihan</b></td>
-                    <td><b>:</b></td>
-                    <td><b>Rp {{number_format($total + $ppn,0,".",",")}}</b></td>
-                </tr>
+                    <tr>
+                        <td><b>PPN (11%)</b></td>
+                        <td><b>:</b></td>
+                        <td><b>Rp {{number_format($ppn, 0, ".", ",")}}</b></td>
+                    </tr>
+                    <tr>
+                        <td><b>Total Tagihan</b></td>
+                        <td><b>:</b></td>
+                        <td><b>Rp {{number_format($total + $ppn, 0, ".", ",")}}</b></td>
+                    </tr>
                 @else
-                <tr>
-                    <td><b>Total Tagihan</b></td>
-                    <td><b>:</b></td>
-                    <td><b>Rp {{number_format($total,0,".",",")}}</b></td>
-                </tr>
+                    <tr>
+                        <td><b>Total Tagihan</b></td>
+                        <td><b>:</b></td>
+                        <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
+                    </tr>
                 @endif
                 <tr>
                     <td><b>Terbilang</b></td>
@@ -295,23 +314,23 @@
                 </thead>
                 <tbody>
                     @if(count($payment) === 0)
-                    <tr>
-                        <td class="tg-0lax"><b>MANDIRI</b></td>
-                        <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
-                        <td class="tg-0lax"><b>113-0008-5858-99</b></td>
-                    </tr>
-                    <tr>
-                        <td class="tg-0lax"><b>MAYBANK INDONESIA</b></td>
-                        <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
-                        <td class="tg-0lax"><b>2760-8888-58</b></td>
-                    </tr>
+                        <tr>
+                            <td class="tg-0lax"><b>MANDIRI</b></td>
+                            <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
+                            <td class="tg-0lax"><b>113-0008-5858-99</b></td>
+                        </tr>
+                        <tr>
+                            <td class="tg-0lax"><b>MAYBANK INDONESIA</b></td>
+                            <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
+                            <td class="tg-0lax"><b>2760-8888-58</b></td>
+                        </tr>
                     @else
                         @foreach($payment as $key => $valuePayment)
-                        <tr>
-                            <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
-                            <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
-                            <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
-                        </tr>
+                            <tr>
+                                <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
+                                <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
+                                <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
+                            </tr>
                         @endforeach
                     @endif
                 </tbody>
@@ -321,7 +340,8 @@
 
     <div class="row" style="font-size: 12px; padding-top: 10px">
         <div class="col5">
-            Pada keterangan slip transfer mohon diisi sejelas-jelasnya, seperti nama penyewa, periode, nomor invoice dan sebagainya.
+            Pada keterangan slip transfer mohon diisi sejelas-jelasnya, seperti nama penyewa, periode, nomor invoice dan
+            sebagainya.
             Untuk Pembayaran yang menggunakan Bilyet Giro/Cheque, dianggap lunas jika dana sudah masuk ke rekening kami.
         </div>
     </div>

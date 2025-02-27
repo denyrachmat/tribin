@@ -95,9 +95,15 @@ class InvoiceController extends Controller
             T_DLVPAYDETA::on($this->dedicatedConnection)->where('TDLVPAYDETA_DLVCD', $valueHead->TDLVORD_DLVCD)->delete();
 
             foreach ($request->payment as $key => $valuePays) {
-                $dataOrd = explode('/', $valueHead->TDLVORD_DLVCD);
+                if ($valueHead->TDLVORD_REMARK == 'SERVICE-INTERNAL') {
+                    $dlvCD = $valueHead->TDLVORD_DLVCD;
+                } else {
+                    $dataOrd = explode('/', $valueHead->TDLVORD_DLVCD);
+                    $dlvCD = count($dataOrd) > 0 ? $dataOrd[0] : $valueHead->TDLVORD_DLVCD;
+                }
+
                 T_DLVPAYDETA::on($this->dedicatedConnection)->updateOrCreate([
-                    'TDLVPAYDETA_DLVCD' => count($dataOrd) > 0 ? $dataOrd[0] : $valueHead->TDLVORD_DLVCD,
+                    'TDLVPAYDETA_DLVCD' => $dlvCD,
                     'TDLVPAYDETA_IDPAY' => $valuePays['TDLVPAYDETA_IDPAY'],
                 ]);
             }
@@ -183,7 +189,9 @@ class InvoiceController extends Controller
                     $f->where('CSPK_PIC_AS', 'DRIVER');
                 }
             ])
-            ->join('T_DLVORDDETA', DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
+            ->join('T_DLVORDDETA', function ($join) {
+                $join->on(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), '=', DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"));
+            })
             ->join('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
@@ -223,7 +231,28 @@ class InvoiceController extends Controller
 
         $hasil = [];
         $listData = $data->get()->map(function ($dlv) {
-            $dlv->dlvsj = T_DLVSJDETA::on($this->dedicatedConnection)->where(DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)->first();
+            $dlv->dlvsj = T_DLVSJDETA::on($this->dedicatedConnection)
+                ->join(
+                    'T_DLVORDHEAD',
+                    DB::raw(
+                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                    ),
+                    DB::raw(
+                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVSJDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
+                END"
+                    )
+                )
+                ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVSJDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
+                END"), '=', $dlv->TDLVORD_DLVCD)
+                ->first();
+
             $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
                 'T_DLVORDDETA.id',
                 'T_DLVORDDETA.TDLVORDDETA_DLVCD',
@@ -234,7 +263,8 @@ class InvoiceController extends Controller
                 'M_ITM_GRP.MITM_ITMNM',
                 'M_ITM_GRP.MITM_ITMNMREAL',
                 'M_ITM.MITM_BRAND',
-                'M_ITM.MITM_MODEL'
+                'M_ITM.MITM_MODEL',
+                'TDLVORD_REMARK'
             )->groupBy(
                     'T_DLVORDDETA.id',
                     'T_DLVORDDETA.TDLVORDDETA_DLVCD',
@@ -245,7 +275,23 @@ class InvoiceController extends Controller
                     'M_ITM_GRP.MITM_ITMNM',
                     'M_ITM_GRP.MITM_ITMNMREAL',
                     'M_ITM.MITM_BRAND',
-                    'M_ITM.MITM_MODEL'
+                    'M_ITM.MITM_MODEL',
+                    'TDLVORD_REMARK'
+                )
+                ->join(
+                    'T_DLVORDHEAD',
+                    DB::raw(
+                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                    ),
+                    DB::raw(
+                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"
+                    )
                 )
                 ->leftJoin("M_ITM_GRP", function ($join) {
                     $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
@@ -259,7 +305,11 @@ class InvoiceController extends Controller
                     $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
                         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
                 })
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)
+                // ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)
+                ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"), '=', $dlv->TDLVORD_DLVCD)
                 ->get();
 
             return $dlv;
@@ -297,34 +347,39 @@ class InvoiceController extends Controller
         $dlvDetParse = [];
         $cek = [];
         foreach ($request->dlvdet as $key => $value) {
-            if ($request->TDLVORD_TYPE === 1) {
-                $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
-                    return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'] && $f['TSLODETA_PRC'] == $value['TDLVORDDETA_PRC'];
-                }));
-            } else {
-                // $getSLOByItem = $request->sloDet;
-                $getSLOByItemX = json_decode(json_encode($this->search(new Request([
-                    'searchBy' => 'TDLVORD_INVCD',
-                    'searchValue' => $request->TDLVORD_INVCD
-                ]))['data']), true);
-
-                $getSLOByItemxx = $getSLOByItemX[count($getSLOByItemX) - 1];
-                $getSLOByItem = array_values(array_filter($getSLOByItemxx['sloDet'], function ($f) use ($value) {
-                    return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
-                }));
-            }
-            // return $getSLOByItem;
-            $cek[] = $getSLOByItem;
-            // return $getSLOByItem[0];
-            if (count($getSLOByItem) > 0) {
-                if ($request->TDLVORD_TYPE === 1) {
-                    $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
-                } else {
-                    $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
-                }
-
+            if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {
+                $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']);
                 $total += $getTotalPrice;
-                $dlvDetParse[] = array_merge($value, ['dataSLO' => $getSLOByItem[0], 'totPRCSLO' => $getTotalPrice]);
+                $dlvDetParse[] = array_merge($value, ['totPRCSLO' => $getTotalPrice]);
+            } else {
+
+                if ($request->TDLVORD_TYPE === 1) {
+                    $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
+                        return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'] && $f['TSLODETA_PRC'] == $value['TDLVORDDETA_PRC'];
+                    }));
+                } else {
+                    // $getSLOByItem = $request->sloDet;
+                    $getSLOByItemX = json_decode(json_encode($this->search(new Request([
+                        'searchBy' => 'TDLVORD_INVCD',
+                        'searchValue' => $request->TDLVORD_INVCD
+                    ]))['data']), true);
+
+                    $getSLOByItemxx = $getSLOByItemX[count($getSLOByItemX) - 1];
+                    $getSLOByItem = array_values(array_filter($getSLOByItemxx['sloDet'], function ($f) use ($value) {
+                        return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
+                    }));
+                }
+                $cek[] = $getSLOByItem;
+                if (count($getSLOByItem) > 0) {
+                    if ($request->TDLVORD_TYPE === 1) {
+                        $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
+                    } else {
+                        $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
+                    }
+
+                    $total += $getTotalPrice;
+                    $dlvDetParse[] = array_merge($value, ['dataSLO' => $getSLOByItem[0], 'totPRCSLO' => $getTotalPrice]);
+                }
             }
         }
 
@@ -344,7 +399,7 @@ class InvoiceController extends Controller
                     'dlvDetNew' => $dlvDetParse,
                     'payment' => $request->payment,
                     'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total),
-                    'subject' => $Subject
+                    'subject' => $Subject,
                 ],
                 $request->all()
             )
@@ -393,9 +448,14 @@ class InvoiceController extends Controller
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->with('condition')
-            ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $doc)
+            ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"), $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->first();
+
+        // return $RSHeader;
 
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'TDLVORDDETA_ITMCD',
@@ -407,12 +467,31 @@ class InvoiceController extends Controller
             'MITM_ITMNM',
             'MITM_MODEL',
             'MITM_BRAND',
-            'TDLVORDDETA_PRC'
+            'TDLVORDDETA_PRC',
+            'TDLVORD_REMARK'
         )
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
+            ->join(
+                'T_DLVORDHEAD',
+                DB::raw(
+                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                ),
+                DB::raw(
+                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"
+                )
+            )
+            ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->get();
 
@@ -479,11 +558,19 @@ class InvoiceController extends Controller
                 $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
             } else {
                 $HargaSewa = 0;
+                if ($r->TDLVORD_REMARK == 'SERVICE-INTERNAL') {
+                    $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT);
+                }
             }
 
-            if ($Usage->MITM_ITMTYPE == 1 || $Usage->MITM_ITMTYPE == 2) {
-                $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
-                $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
+            if ($r->TDLVORD_REMARK !== 'SERVICE-INTERNAL') {
+                if ($Usage->MITM_ITMTYPE == 1 || $Usage->MITM_ITMTYPE == 2) {
+                    $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
+                    $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
+                }
+            } else {
+                $PeriodFrom = '-';
+                $PeriodTo = '-';
             }
 
             $totalHargaSewa += $HargaSewa;
@@ -496,7 +583,12 @@ class InvoiceController extends Controller
             $PPNAmount = $totalHargaSewa * 11 / 100;
         }
 
-        $subjek = !empty($Subject) ? ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT)))) : '';
+        if ($RSHeader->TDLVORD_REMARK === 'SERVICE-INTERNAL') {
+            $subjek = 'Service Internal';
+        } else {
+            $subjek = !empty($Subject) ? ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT)))) . ' Periode ' . $PeriodFrom . ' s/d ' . $PeriodTo : '';
+        }
+
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
         $this->fpdf->AddPage("P", 'A4');
@@ -539,7 +631,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Untuk Pembayaran', 0, 0, 'L');
         $this->fpdf->Cell(2, 5, ':');
-        $this->fpdf->MultiCell(138, 5, $subjek . ' Periode ' . $PeriodFrom . ' s/d ' . $PeriodTo);
+        $this->fpdf->MultiCell(138, 5, $subjek);
         $Yfocus = $this->fpdf->GetY() + 5;
         $this->fpdf->Line(63, $Yfocus - 3, 180, $Yfocus - 3);
 
@@ -570,7 +662,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Lokasi', 0, 0, 'L');
         $this->fpdf->Cell(2, 5, ':');
-        $this->fpdf->MultiCell(138, 5, (!empty($Subject) ? $Subject->TQUO_PROJECT_LOCATION : ''));
+        $this->fpdf->MultiCell(138, 5, (!empty($Subject) ? $Subject->TQUO_PROJECT_LOCATION : '-'));
         $this->fpdf->Line(63, $this->fpdf->GetY() + 2, 180, $this->fpdf->GetY() + 2);
         $Yfocus = $this->fpdf->GetY() + 5;
         // $Yfocus += 5;
@@ -624,12 +716,29 @@ class InvoiceController extends Controller
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->leftJoin('T_DLVORDDETA', DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
+            ->leftJoin(
+                'T_DLVORDDETA',
+                DB::raw(
+                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                ),
+                DB::raw(
+                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"
+                )
+            )
             ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
             ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
             ->leftJoin('T_DLVSJDETA', DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"))
-            ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $doc)
+            ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                THEN TDLVORD_DLVCD
+                ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+            END"), $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->with([
                 'condition' => function ($f) {
@@ -663,6 +772,8 @@ class InvoiceController extends Controller
             )
             ->first();
 
+        // return $RSHeader;
+
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'TDLVORDDETA_ITMCD',
             'TDLVORDDETA_DLVCD',
@@ -676,11 +787,32 @@ class InvoiceController extends Controller
             'MITM_MODEL',
             'MITM_BRAND',
             'MITM_ITMCAT',
+            'TDLVORD_REMARK'
         )
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
+            ->join(
+                'T_DLVORDHEAD',
+                DB::raw(
+                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                ),
+                DB::raw(
+                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"
+                )
+            )
+            ->where(DB::raw(
+                "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"
+            ), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)->get();
 
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
@@ -701,6 +833,8 @@ class InvoiceController extends Controller
 
         $Usage = NULL;
         $HargaSewa = NULL;
+
+        // return $RSDetail;
         foreach ($RSDetail as $r) {
             $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
             $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')
@@ -719,6 +853,7 @@ class InvoiceController extends Controller
 
         $totalHargaSewa = 0;
         $totalQty = 0;
+        $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
         foreach ($RSDetail as $r) {
             $Usage = T_SLODETA::on($this->dedicatedConnection)->select(
                 'TSLODETA_USAGE_DESCRIPTION',
@@ -732,11 +867,15 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 ->first();
-            $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
-            $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
-            $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
+
+            if ($r->TDLVORD_REMARK !== 'SERVICE-INTERNAL') {
+                $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
+                $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
+                $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
+            } else {
+                $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT);
+            }
             $totalHargaSewa += $HargaSewa;
-            $DOIssuDate = date_format(date_create($RSHeader->TDLVORD_ISSUDT), 'd-M-Y');
 
             $totalQty += $r->TDLVORDDETA_ITMQT;
         }
@@ -746,17 +885,17 @@ class InvoiceController extends Controller
             $PPNAmount = $totalHargaSewa * 11 / 100;
         }
 
-        $subjek = ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT))));
+        $subjek = ucwords(trim(str_replace('penawaran', '', strtolower(empty($Subject) || $RSHeader->TDLVORD_REMARK == 'SERVICE-INTERNAL' ? 'Internal Service' : $Subject->TQUO_SBJCT))));
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
         $perulangan = 1;
         $getDO = $doc;
-        if ($RSHeader->TDLVOR_ISSPLITSJ == 1) {
+        if ((!empty($RSHeader->TDLVORD_REMARK) && $RSHeader->TDLVORD_REMARK !== 'SERVICE-INTERNAL') && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
             $perulangan = count($RSDetail);
         }
 
         for ($i = 0; $i < $perulangan; $i++) {
-            if ($RSHeader->TDLVOR_ISSPLITSJ == 1) {
+            if ((!empty($RSHeader->TDLVORD_REMARK) && $RSHeader->TDLVORD_REMARK !== 'SERVICE-INTERNAL') && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
                 $getDO = $RSDetail[$i]->TDLVORDDETA_DLVCD;
             }
 
@@ -849,9 +988,9 @@ class InvoiceController extends Controller
                 $this->fpdf->SetXY(100, $Y);
                 $this->fpdf->Cell(29, 5, "{$qtyNya} {$r->MITM_STKUOM}", 0, 0, 'L');
                 $this->fpdf->SetXY(120, $Y);
-                $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
+                $this->fpdf->Cell(29, 5, empty($RSHeader->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
                 $this->fpdf->SetXY(145, $Y);
-                $this->fpdf->Cell(29, 5, date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
+                $this->fpdf->Cell(29, 5, empty($RSHeader->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
                 if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
@@ -860,7 +999,7 @@ class InvoiceController extends Controller
                 } else {
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
-                    $Y += 5;
+                    // $Y += 5;
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
                     $Y += 5;

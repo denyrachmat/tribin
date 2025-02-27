@@ -209,6 +209,16 @@ class ServiceAdminController extends Controller
                 'SO_DET' => $listForDODet,
             ]);
 
+            foreach ($listForDODet as $key => $valueItem) {
+                $this->transferLoc(new Request([
+                    'LOCFROM' => 'WH-SRV-DONE',
+                    'LOCTO' => '',
+                    'ITMCD' => $valueItem['TSLODETA_ITMCD'],
+                    'QTY' => $valueItem['BALQT'],
+                    'DOC' => $dataHead->SRVH_DOCNO
+                ]));
+            }
+
             $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
         }
 

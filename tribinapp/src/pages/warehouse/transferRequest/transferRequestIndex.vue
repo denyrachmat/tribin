@@ -85,17 +85,12 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.OS_TF == 0 ? 'cyan' : 'grey'"
+                  color="cyan"
                   icon="print"
                   @click="onClickPrint(props.row.TLOCREQ_DOCNO)"
                   dense
-                  :disable="props.row.OS_TF == 0"
                 >
-                  <q-tooltip>{{
-                    props.row.OS_TF == 0
-                      ? "Please Aprove first"
-                      : "Print handover request"
-                  }}</q-tooltip>
+                  <q-tooltip>Print handover request</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
@@ -186,7 +181,7 @@ const onClickApprove = (val) => {
     // persistent: true,
   }).onOk(async (res) => {
     loading.value = false;
-    onDialogOK();
+    getTFRequest();
   });
 };
 

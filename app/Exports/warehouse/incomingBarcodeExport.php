@@ -38,6 +38,8 @@ class incomingBarcodeExport implements FromCollection, WithHeadings, WithEvents
             ],
             [
                 'Barcode',
+                'Item Code',
+                'Item Name',
                 'Qty',
             ]
         ];
@@ -51,6 +53,8 @@ class incomingBarcodeExport implements FromCollection, WithHeadings, WithEvents
         foreach ($this->data as $key => $value) {
             $hasil[] = [
                 'TRCVBC_BCCD' => $value['TRCVBC_BCCD'],
+                'MITM_ITMCD' => $value['item_code'],
+                'MITM_ITMNM' => $value['MITM_ITMNM'],
                 'TRCVBC_BCQT' => $value['TRCVBC_BCQT'],
             ];
         }

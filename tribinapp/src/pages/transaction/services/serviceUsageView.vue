@@ -19,7 +19,11 @@
             v-ripple
             v-if="listItem.length === 0"
           >
-            <q-item-section> No items added </q-item-section>
+            <q-item-section>
+              {{
+                loading ? "Please wait, loading item description" : "All item has been used, you can direct confirm by click OK for finish the fix."
+              }}
+            </q-item-section>
           </q-item>
           <q-item
             v-for="(items, idx) in listItem"
@@ -57,7 +61,7 @@
 
             <q-item-section>
               <q-input
-                label="Requested Qty"
+                label="Stock Qty on Service Location"
                 v-model="items.STOCK"
                 filled
                 dense

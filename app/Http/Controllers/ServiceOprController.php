@@ -128,19 +128,21 @@ class ServiceOprController extends Controller
 
         $head = $RSTemp->get()->toArray();
 
+        // return $request->allFixed;
+
         $hasil = [];
         foreach ($head as $key => $value) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
-            ->with(['listFixDet' => function($j) use ($request) {
-                $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
-                $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
-                if(!($request->has('allFixed') && $request->allFixed === 1)){
-                    $j->where('TSRVF_ISCONF', 0);
-                }
-            }])
-            ->where('TSRVH_ID', $value['id'])
-            ->get()
-            ->toArray();
+                ->with(['listFixDet' => function($j) use ($request) {
+                    $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
+                    $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
+                    if(($request->has('allFixed') && $request->allFixed == 1)){
+                        $j->where('TSRVF_ISCONF', 0);
+                    }
+                }])
+                ->where('TSRVH_ID', $value['id'])
+                ->get()
+                ->toArray();
 
             $checkDataFlagApproved = array_filter($getDet, function($f){
                 return $f['TSRVD_FLGSTS'] === 2;
@@ -151,9 +153,9 @@ class ServiceOprController extends Controller
                 $listPartReq[] = array_merge(
                     $valueDet,
                     ['partReq' => T_LOC_REQ::on($this->dedicatedConnection)
-                    ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'].'-'.$valueDet['TSRVD_LINE'])
-                    ->get()
-                    ->toArray()
+                        ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'].'-'.$valueDet['TSRVD_LINE'])
+                        ->get()
+                        ->toArray()
                     ]
                 );
             }

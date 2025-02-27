@@ -317,6 +317,55 @@ class ItemController extends Controller
         return $data->get()->toArray();
     }
 
+    function seatchItemByLoc(Request $request)
+    {
+        $DataSet = DB::connection($this->dedicatedConnection);
+        $data = $DataSet->table('M_ITM_GRP')->select(
+            'MITM_ITMNM',
+            'MITM_ITMNMREAL',
+            'MITM_ITMTYPE',
+            'MITM_STKUOM',
+            'MITM_ITMCAT',
+            'MITM_BRANCH',
+            'MITM_BRAND',
+            'MITM_SPEC',
+            'MITM_MODEL',
+            'LATEST_PRC',
+            'CITRN_LOCCD',
+            DB::raw('SUM(CITRN_ITMQT) as STOCK')
+        )
+            ->where('MITM_BRANCH', Auth::user()->branch)
+            ->join('C_ITRN', 'MITM_ITMNM', 'CITRN_ITMCD')
+            ->where('IS_ITMCD', 1)
+            ->groupBy(
+                'MITM_ITMNM',
+                'MITM_ITMNMREAL',
+                'MITM_ITMTYPE',
+                'MITM_STKUOM',
+                'MITM_ITMCAT',
+                'MITM_BRANCH',
+                'MITM_BRAND',
+                'MITM_SPEC',
+                'MITM_MODEL',
+                'LATEST_PRC',
+                'CITRN_LOCCD'
+            );
+
+        if (
+            count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {
+                return !empty($f['value']);
+            })) > 0
+        ) {
+            foreach ($request->filter as $key => $value) {
+                if (isset($value['value']) && $value['value'] !== "") {
+                    $data->where($value['cols'], $value['param'], $value['param'] === 'like' ? "%{$value['value']}%" : $value['value']);
+                }
+            }
+        }
+
+        return $data->get()->toArray();
+    }
+
     function update(Request $request)
     {
         $affectedRow = M_ITM::on($this->dedicatedConnection)

@@ -79,33 +79,33 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="!props.row.dlvsj ? 'grey' : 'green'"
+                  :color="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj ? 'grey' : 'green'"
                   icon="print"
                   dense
                   @click="printInvoice(props.row)"
-                  :disable="!props.row.dlvsj"
+                  :disable="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj"
                 >
                   <q-tooltip>Print Invoice</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="!props.row.dlvsj ? 'grey' : 'indigo'"
+                  :color="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj ? 'grey' : 'indigo'"
                   icon="print"
                   dense
                   @click="printKwitansi(props.row.TDLVORD_DLVCD)"
-                  :disable="!props.row.dlvsj"
+                  :disable="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj"
                 >
                   <q-tooltip>Print Receipt</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="!props.row.dlvsj ? 'grey' : 'orange'"
+                  :color="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj ? 'grey' : 'orange'"
                   icon="print"
                   dense
                   @click="
                     onClickPrintSJ(props.row.spk, props.row.TDLVORD_DLVCD)
                   "
-                  :disable="!props.row.dlvsj"
+                  :disable="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
@@ -132,6 +132,13 @@ const columns = ref([
     name: "TDLVORD_DLVCD",
     label: "DO Number",
     field: "TDLVORD_DLVCD",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TSLO_QUOCD",
+    label: "Sales Order",
+    field: "TSLO_QUOCD",
     sortable: true,
     align: "left",
   },

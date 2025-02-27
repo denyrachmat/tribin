@@ -57,6 +57,7 @@
           emit-value
           map-options
           :loading="loading"
+          @update:model-value="onChooseLocation"
         />
       </div>
       <div class="col-12 col-sm-6">
@@ -218,9 +219,12 @@ const cols = ref([
 const rows = ref([])
 onMounted(async () => {
   await getLocation("");
-  await getItem([]);
   await getCG();
   await getNowCG();
+
+  if (transferType.value === "cg") {
+    await getItem([]);
+  }
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -304,7 +308,6 @@ const getItem = async (col = []) => {
     .then((response) => {
       loading.value = false;
       listItems.value = response.data;
-      listItems.value = response.data;
     })
     .catch(() => {
       loading.value = false;
@@ -342,4 +345,26 @@ const onClearData = () => {
 const onChooseItem = (data) => {
   QTY.value = data.STOCK;
 };
+
+const onChooseLocation = async (data) => {
+  loading.value = true;
+  await api_web
+    .post("item/seatchItemByLoc", {
+      filter: [
+        {
+          cols: "CITRN_LOCCD",
+          param: "=",
+          value: data,
+        },
+      ],
+    })
+    .then((response) => {
+      loading.value = false;
+      listItems.value = response.data;
+      console.log(response.data);
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+}
 </script>

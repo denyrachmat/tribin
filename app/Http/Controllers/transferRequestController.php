@@ -168,6 +168,11 @@ class transferRequestController extends Controller
                 ) as OS_TF")
             )
             ->where('TLOCREQ_ISREP', 0)
+            ->havingRaw("SUM(TLOCREQ_QTY) - (
+                    SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
+                    WHERE CITRN_DOCNO = TLOCREQ_DOCNO
+                    AND CITRN_LOCCD = 'WH-SRV'
+                ) > 0")
             ->groupBy(
                 // 'TLOCREQ_APPRVBY',
                 'TLOCREQ_DOCNO',

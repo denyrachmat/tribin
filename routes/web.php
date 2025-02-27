@@ -206,6 +206,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('searchAPITBL', [ItemController::class, 'searchAPITBL']);
             Route::post('searchAPIStockAndPriceOnly', [ItemController::class, 'searchAPIStockAndPriceOnly']);
             Route::post('searchItemDyn', [ItemController::class, 'searchItemDyn']);
+            Route::post('seatchItemByLoc', [ItemController::class, 'seatchItemByLoc']);
 
             Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);
             Route::get('deleteItem/{id}', [ItemController::class, 'deleteItem']);

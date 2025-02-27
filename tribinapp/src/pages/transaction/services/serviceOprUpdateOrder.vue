@@ -227,12 +227,6 @@
             </q-item-section>
             <q-item-section
               side
-              v-if="
-                items.partReq &&
-                props.mode === 'edit' &&
-                items.TSRVD_FLGSTS == 2 &&
-                items.partReq.length === 0
-              "
             >
               <q-btn
                 icon="compare_arrows"
@@ -259,12 +253,6 @@
             </q-item-section>
             <q-item-section
               side
-              v-if="
-                items.partReq &&
-                props.mode === 'edit' &&
-                items.TSRVD_FLGSTS == 2 &&
-                items.partReq.length > 0
-              "
             >
               <q-btn
                 icon="compare_arrows"

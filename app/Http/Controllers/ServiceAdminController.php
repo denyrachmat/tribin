@@ -220,23 +220,24 @@ class ServiceAdminController extends Controller
         $hasil = T_SRV_FIXDET::on($this->dedicatedConnection)->where('TSRVD_ID', base64_decode($id));
         if ((clone $hasil)->count() > 0) {
             $cekDataOS = (clone $hasil)->where('TSRVF_ISCONF', 0)->count();
-
             if ($cekDataOS > 0) {
                 $cekData = [];
                 foreach ($request->data as $key => $value) {
                     if ($value['STOCK'] > 0 && (int) $value['TSRVF_QTY'] > 0 && $value['STOCK'] >= (int) $value['TSRVF_QTY']) {
                         $cekOld = T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $value['id'])->where('TSRVF_ISCONF', 0)->first();
-                        $cekData[] = ['value' => $value, 'check' => $cekOld];
+                        $cekData[] = ['value' => $value, 'check' => $cekOld, 'status' => true];
                         $createdNew = T_SRV_FIXDET::on($this->dedicatedConnection)->create($cekOld->toArray());
                         T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $createdNew->id)->update([
                             'TSRVF_ISCONF' => 1
                         ]);
 
                         T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $value['id'])->delete();
+                    } else {
+                        $cekData[] = ['value' => $value, 'check' => 'Stock not enough', 'status' => false];
                     }
                 }
 
-                return response(['msg' => 'Some item has been updated !', 'data' => $cekData]);
+                return response(['msg' => count(array_filter($cekData, function($f) { return !$f['status'];})) > 0 ? 'Some item not updated !' : 'Some item has been updated !', 'data' => $cekData]);
             } else {
                 $cekDataAll = (clone $hasil)->get()->toArray();
                 $doc = T_SRV_HEAD::on($this->dedicatedConnection)->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
@@ -250,12 +251,12 @@ class ServiceAdminController extends Controller
                         'LOCTO' => 'WH-SRV-DONE',
                         'ITMCD' => $valueDet['TSRVF_ITMCD'],
                         'QTY' => $valueDet['TSRVF_QTY'],
-                        'DOC' => "{$doc->SRVH_DOCNO}-{base64_decode($id)}"
+                        'DOC' => "{$doc->SRVH_DOCNO}-".base64_decode($id)
                     ]));
                 }
 
                 // Set to done
-                (clone $hasil)->update([
+                T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->update([
                     'TSRVD_FLGSTS' => 3
                 ]);
 

@@ -10,9 +10,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\T_LOC_REQ;
 use App\Models\C_ITRN;
+use App\Traits\LocationTraits;
 
 class transferRequestController extends Controller
 {
+    use LocationTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -168,17 +170,18 @@ class transferRequestController extends Controller
                 ) as OS_TF")
             )
             ->where('TLOCREQ_ISREP', 0)
-            ->havingRaw("SUM(TLOCREQ_QTY) - (
-                    SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
-                    WHERE CITRN_DOCNO = TLOCREQ_DOCNO
-                    AND CITRN_LOCCD = 'WH-SRV'
-                ) > 0")
+            // ->havingRaw("SUM(TLOCREQ_QTY) - (
+            //         SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
+            //         WHERE CITRN_DOCNO = TLOCREQ_DOCNO
+            //         AND CITRN_LOCCD = 'WH-SRV'
+            //     ) > 0")
             ->groupBy(
                 // 'TLOCREQ_APPRVBY',
                 'TLOCREQ_DOCNO',
                 'TLOCREQ_FRLOC',
                 'TLOCREQ_TOLOC',
-            );
+            )
+            ->orderBy('TLOCREQ_DOCNO', 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $data->where($request->searchBy, 'like', '%{ $request->searchValue }%');
@@ -200,11 +203,21 @@ class transferRequestController extends Controller
 
     function approveData($id)
     {
+
         $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->where('TLOCREQ_DOCNO', base64_decode($id))
             ->get();
 
         foreach ($data as $key => $value) {
+
+            // $this->transferLoc(new Request([
+            //     'LOCFROM' => $value['TLOCREQ_FRLOC'],
+            //     'LOCTO' => '',
+            //     'ITMCD' => $valueItem['TSLODETA_ITMCD'],
+            //     'QTY' => $valueItem['BALQT'],
+            //     'DOC' => $dataHead->SRVH_DOCNO
+            // ]));
+
             $cekForIss = DB::connection($this->dedicatedConnection)
                 ->table('V_STOCK_CHECK')
                 ->where('CITRN_ITMCD', $value['TLOCREQ_ITMCD'])

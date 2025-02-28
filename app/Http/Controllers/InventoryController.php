@@ -455,6 +455,20 @@ class InventoryController extends Controller
     public function printHandoverPDF(Request $request)
     {
         $data = T_LOC_REQ::on($this->dedicatedConnection)
+            ->select(
+                'TLOCREQ_ITMCD',
+                'MITM_ITMNM',
+                'TLOCREQ_QTY',
+                'TLOCREQ_FRLOC',
+                'TLOCREQ_TOLOC',
+                'TLOCREQ_ISREP',
+                DB::raw("(
+                    SELECT SUM(CITRN_ITMQT)
+                    FROM C_ITRN
+                    WHERE CITRN_ITMCD = TLOCREQ_ITMCD
+                    AND CITRN_LOCCD = TLOCREQ_TOLOC
+                ) AS STOCK")
+            )
             ->where('TLOCREQ_DOCNO', base64_decode($request->data))
             ->join('M_ITM', 'MITM_ITMCD', 'TLOCREQ_ITMCD')
             ->get()

@@ -475,18 +475,8 @@ class InvoiceController extends Controller
             })
             ->join(
                 'T_DLVORDHEAD',
-                DB::raw(
-                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
-                ),
-                DB::raw(
-                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"
-                )
+                'TDLVORD_DLVCD',
+                'TDLVORDDETA_DLVCD'
             )
             ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
                     THEN TDLVORDDETA_DLVCD
@@ -513,6 +503,8 @@ class InvoiceController extends Controller
 
         $Usage = NULL;
         $HargaSewa = NULL;
+
+        // return $RSDetail;
         foreach ($RSDetail as $r) {
             $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
             $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')
@@ -792,20 +784,25 @@ class InvoiceController extends Controller
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
+            // ->join(
+            //     'T_DLVORDHEAD',
+            //     DB::raw(
+            //         "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            //         THEN TDLVORD_DLVCD
+            //         ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+            //     END"
+            //     ),
+            //     DB::raw(
+            //         "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            //         THEN TDLVORDDETA_DLVCD
+            //         ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+            //     END"
+            //     )
+            // )
             ->join(
                 'T_DLVORDHEAD',
-                DB::raw(
-                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
-                ),
-                DB::raw(
-                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"
-                )
+                'TDLVORD_DLVCD',
+                'TDLVORDDETA_DLVCD'
             )
             ->where(DB::raw(
                 "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'

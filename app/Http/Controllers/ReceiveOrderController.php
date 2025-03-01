@@ -287,6 +287,7 @@ class ReceiveOrderController extends Controller
             if ($request->isRecreate) {
                 $cekSLOData = T_SLOHEAD::on($this->dedicatedConnection)->where('TSLO_SLOCD', 'like', $request->TSLO_SLOCD . '%')->orderBy('created_at', 'desc')->first();
                 $newDocumentCode =  $request->TSLO_SLOCD . (str_contains($cekSLOData->TSLO_SLOCD, '-') ? '-' . sprintf('%03d', (int) substr($cekSLOData->TSLO_SLOCD, -3) + 1) :  '-001');
+                $LastLine = $cekSLOData->TSLO_LINE;
             } else {
                 $newDocumentCode =  $request->TSLO_SLOCD;
             }

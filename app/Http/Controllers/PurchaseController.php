@@ -307,16 +307,73 @@ class PurchaseController extends Controller
 
     function searchApprovedPO(Request $request)
     {
-        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )') AS PO_CUSTDESC"), "TPCHORD_PCHCD", "TPCHORD_SUPCD", "MSUP_SUPNM", "TPCHORD_ISSUDT", "TPCHORD_DLVDT", "TPCHORD_REQCD"])
+        $RS = T_PCHORDHEAD::on($this->dedicatedConnection)->select([
+            DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )') AS PO_CUSTDESC"),
+            "TPCHORD_PCHCD",
+            "TPCHORD_SUPCD",
+            "MSUP_SUPNM",
+            "TPCHORD_ISSUDT",
+            "TPCHORD_DLVDT",
+            "TPCHORD_REQCD"
+        ])
             ->leftJoin("M_SUP", function ($join) {
                 $join->on("TPCHORD_SUPCD", "=", "MSUP_SUPCD")
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
             })
-            ->with('det')
+            ->with(['det' => function ($f) {
+                $f->select(
+                    'TPCHORDDETA_PCHCD',
+                    'TPCHORDDETA_ITMCD',
+                    'TPCHORDDETA_ITMQT',
+                    'TPCHORDDETA_ITMPRC_PER',
+                    'TPCHORDDETA_BRANCH',
+                    DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL) as TPCHORDDETA_ITMQT')
+                )
+                    ->leftjoin('T_RCV_HEAD', 'TPCHORDDETA_PCHCD', 'TRCV_REFFNO')
+                    ->leftJoin(DB::raw("(
+                        SELECT
+                            CITRN_ITMCD,
+                            CITRN_DOCNO,
+                            COALESCE(SUM(CITRN_ITMQT), 0) AS TOTAL
+                        FROM V_STOCK_CHECK
+                        where CITRN_LOCCD = 'WH1'
+                        group by
+                            CITRN_ITMCD,
+                            CITRN_DOCNO
+                    ) itrn"), function ($j) {
+                        $j->on('itrn.CITRN_ITMCD', 'TPCHORDDETA_ITMCD');
+                        $j->on('itrn.CITRN_DOCNO', 'TRCV_RCVCD');
+                    })
+                    ->where(DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL)'), '>', 0);
+            }])
+            ->wherehas('det', function ($f) {
+                $f->select(
+                    'TPCHORDDETA_PCHCD',
+                    'TPCHORDDETA_ITMCD',
+                    // 'TPCHORDDETA_ITMQT',
+                    'TPCHORDDETA_ITMPRC_PER',
+                    'TPCHORDDETA_BRANCH',
+                    DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL) as TPCHORDDETA_ITMQT')
+                )
+                    ->join('T_RCV_HEAD', 'TPCHORDDETA_PCHCD', 'TRCV_REFFNO')
+                    ->leftJoin(DB::raw("(
+                        SELECT
+                            CITRN_ITMCD,
+                            CITRN_DOCNO,
+                            SUM(CITRN_ITMQT) AS TOTAL
+                        FROM V_STOCK_CHECK
+                        where CITRN_LOCCD = 'WH1'
+                        group by
+                            CITRN_ITMCD,
+                            CITRN_DOCNO
+                    ) itrn"), function ($j) {
+                        $j->on('itrn.CITRN_ITMCD', 'TPCHORDDETA_ITMCD');
+                        $j->on('itrn.CITRN_DOCNO', 'TRCV_RCVCD');
+                    })
+                    ->where(DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL)'), '>', 0);
+            })
             ->leftJoin('T_RCV_HEAD', 'TRCV_REFFNO', 'TPCHORD_PCHCD')
-            ->where('TPCHORD_BRANCH', Auth::user()->branch)
-            // ->whereNotNull('TPCHORD_APPRVDT')
-            ->whereNull('TRCV_REFFNO');
+            ->where('TPCHORD_BRANCH', Auth::user()->branch);
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {
             $RS->where(DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )')"), 'like', '%' . $request->searchValue . '%');
@@ -391,7 +448,7 @@ class PurchaseController extends Controller
     function loadPOByIdApproval(Request $request)
     {
         $RS = T_PCHORDDETA::on($request->has('conn') ? $request->conn : $this->dedicatedConnection)->select([
-            "id",
+            "T_PCHORDDETA.id",
             "TPCHORDDETA_ITMCD",
             "MITM_ITMNMREAL AS MITM_ITMNM",
             "TPCHORDDETA_ITMQT",
@@ -399,11 +456,14 @@ class PurchaseController extends Controller
         ])
             ->leftJoin("M_ITM_GRP", function ($join) {
                 $join->on("TPCHORDDETA_ITMCD", "=", "MITM_ITMNM")
-                    ->on('TPCHORDDETA_BRANCH', '=', 'MITM_BRANCH');
+                    ->on('TPCHORDDETA_BRANCH', '=', 'MITM_BRANCH')
+                    ->where('IS_ITMCD', 1);
             })
             ->where('TPCHORDDETA_PCHCD', base64_decode($request->id))
             ->where('TPCHORDDETA_BRANCH', $request->TPCHORD_BRANCH)
-            ->whereNull('deleted_at')->get();
+            ->whereNull('T_PCHORDDETA.deleted_at')
+            ->get();
+
         return ['dataItem' => $RS];
     }
 

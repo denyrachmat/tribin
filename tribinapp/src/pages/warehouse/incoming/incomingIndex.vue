@@ -267,7 +267,20 @@ const onConfirmation = (data = []) => {
   });
 };
 
-const onDelete = (data) => {};
+const onDelete = (data) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete this DO ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web.delete(`receive/item/${data}`).then((res) => {
+      loading.value = false;
+      getIncomingData();
+    });
+  })
+};
 
 const onPrintBarcode = (data) => {
   $q.dialog({

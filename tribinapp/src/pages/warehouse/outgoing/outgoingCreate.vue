@@ -150,6 +150,7 @@
               :options="[
                 { label: 'From SO', value: 1 },
                 { label: 'Send Following DO', value: 2 },
+                { label: 'Return', value: 3, disable: true },
               ]"
               @update:model-value="(val) => clearForm()"
               :disable="TDLVORD_DLVCD != ''"
@@ -214,26 +215,8 @@
                     {{ idx + 1 }}
                   </q-avatar>
                 </q-item-section>
-                <!-- <q-item-section>
-                  <q-item-label>
-                    <q-input
-                      dense
-                      label="Item Code"
-                      filled
-                      v-model="items.TSLODETA_ITMCD"
-                      readonly
-                    />
-                  </q-item-label>
-                </q-item-section> -->
                 <q-item-section>
                   <q-item-label>
-                    <!-- <q-input
-                      dense
-                      label="Item Name"
-                      filled
-                      v-model="items.MITM_ITMNM"
-                      :readonly="TDLVORDDETA_SLOCD != ''"
-                    /> -->
                     <q-select
                       dense
                       filled

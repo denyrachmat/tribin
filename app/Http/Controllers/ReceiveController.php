@@ -245,13 +245,14 @@ class ReceiveController extends Controller
         $LastLine = T_RCV_HEAD::on($this->dedicatedConnection)
             ->whereMonth('created_at', '=', date('m'))
             ->whereYear('created_at', '=', date('Y'))
+            ->where('TRCV_RCVCD', 'STK%')
             ->first();
 
         if ($request->has('TRCV_RCVCD') && !empty($request->TRCV_RCVCD)) {
             $newDocumentCode = $request->TRCV_RCVCD;
         } else {
             if (!$LastLine) {
-                $newDocumentCode = '001/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                $newDocumentCode = '0001/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             } else {
                 $getLastLine = explode('/', $LastLine->TRCV_RCVCD)[0];
                 $newDocumentCode = substr('00' . ((int) $getLastLine), -3) . '/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');

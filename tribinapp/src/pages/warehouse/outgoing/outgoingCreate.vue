@@ -307,7 +307,7 @@
                       label="Qty"
                       filled
                       v-model="items.BALQT"
-                      :readonly="!splitSJ || typeOutgoing == 3"
+                      :readonly="(typeOutgoing === 1 && typeOutgoing === 2 && !splitSJ) || (typeOutgoing !== 3)"
                     />
                   </q-item-label>
                 </q-item-section>
@@ -326,7 +326,7 @@
                   </q-item-label>
                   <q-item-label caption> Price </q-item-label>
                 </q-item-section>
-                <q-item-section side v-if="splitSJ == 1">
+                <q-item-section side v-if="splitSJ == 1 || typeOutgoing === 3">
                   <q-btn
                     icon="delete"
                     color="red"

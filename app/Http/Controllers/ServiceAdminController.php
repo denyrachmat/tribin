@@ -206,6 +206,7 @@ class ServiceAdminController extends Controller
                 'TDLVORD_CUSCD' => $dataHead->SRVH_CUSCD,
                 'TDLVORD_ISSUDT' => $dataHead->SRVH_ISSDT,
                 'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
+                'typeOutgoing' => 4,
                 'SO_DET' => $listForDODet,
             ]);
 

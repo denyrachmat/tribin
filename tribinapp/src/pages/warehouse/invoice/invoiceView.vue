@@ -69,43 +69,43 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="!props.row.TDLVORD_CONDGRP || !props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset') ? 'grey' : 'purple'"
+                  :color="condButton('gensetharian', props.row) ? 'grey' : 'purple'"
                   icon="print"
                   dense
                   @click="printDailyGenset(props.row.TDLVORD_DLVCD)"
-                  :disable="!props.row.dlvsj || !props.row.TDLVORD_CONDGRP || !props.row.TDLVORD_CONDGRP.toLowerCase().includes('genset')"
+                  :disable="condButton('gensetharian', props.row)"
                 >
                   <q-tooltip>Print Form Genset Harian</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj ? 'grey' : 'green'"
+                  :color="condButton('invoice', props.row) ? 'grey' : 'green'"
                   icon="print"
                   dense
                   @click="printInvoice(props.row)"
-                  :disable="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj"
+                  :disable="condButton('invoice', props.row)"
                 >
                   <q-tooltip>Print Invoice</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj ? 'grey' : 'indigo'"
+                  :color="condButton('receipt', props.row) ? 'grey' : 'indigo'"
                   icon="print"
                   dense
                   @click="printKwitansi(props.row.TDLVORD_DLVCD)"
-                  :disable="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj"
+                  :disable="condButton('receipt', props.row)"
                 >
                   <q-tooltip>Print Receipt</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj ? 'grey' : 'orange'"
+                  :color="condButton('sj', props.row) ? 'grey' : 'orange'"
                   icon="print"
                   dense
                   @click="
                     onClickPrintSJ(props.row.spk, props.row.TDLVORD_DLVCD)
                   "
-                  :disable="props.row.TDLVORD_REMARK !== 'SERVICE-INTERNAL' && !props.row.dlvsj"
+                  :disable="condButton('sj', props.row)"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
@@ -163,6 +163,13 @@ const columns = ref([
     sortable: true,
     align: "left",
   },
+  {
+    name: "DLV_TYPE",
+    label: "Type",
+    field: "DLV_TYPE",
+    sortable: true,
+    align: "left",
+  },
   // TDLVORD_INVCD
 ]);
 const loading = ref(false);
@@ -172,6 +179,24 @@ const filter = ref("");
 onMounted(() => {
   getConfirmedData();
 });
+
+const condButton = (btn, data) => {
+  if (btn === 'gensetharian') {
+    return !data.dlvsj || !data.TDLVORD_CONDGRP || !data.TDLVORD_CONDGRP.toLowerCase().includes('genset')
+  }
+
+  if (btn === 'invoice') {
+    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && !data.dlvsj)
+  }
+
+  if (btn === 'receipt') {
+    return data.TDLVORD_TYPE === 3 || data.TDLVORD_TYPE !== 4 && !data.dlvsj
+  }
+
+  if (btn === 'sj') {
+    return data.TDLVORD_TYPE !== 4 && !data.dlvsj
+  }
+}
 
 const getConfirmedData = async () => {
   loading.value = true;

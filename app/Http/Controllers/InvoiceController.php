@@ -150,7 +150,7 @@ class InvoiceController extends Controller
             ->select(
                 DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
                 'TDLVORD_INVCD',
-                DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END as TDLVORD_DLVCD"),
@@ -160,7 +160,20 @@ class InvoiceController extends Controller
                 'TDLVORD_REC_NO',
                 'TDLVORDDETA_SLOCD',
                 'TDLVORD_CUSCD',
-                'MCUS_CUSNM',
+                DB::raw('CASE WHEN TDLVORD_TYPE = 3
+                    THEN MSUP_SUPNM
+                    ELSE MCUS_CUSNM
+                END AS MCUS_CUSNM'),
+                DB::raw("CASE WHEN TDLVORD_TYPE = 1
+                    THEN 'Sales'
+                    ELSE CASE WHEN TDLVORD_TYPE = 2
+                        THEN 'Combined'
+                        ELSE CASE WHEN TDLVORD_TYPE = 3
+                            THEN 'Return PO'
+                            ELSE 'Internal Service'
+                        END
+                    END
+                END AS DLV_TYPE"),
                 'MCUS_TELNO',
                 'MCUS_PIC_TELNO',
                 'MCUS_ADDR1',
@@ -189,11 +202,14 @@ class InvoiceController extends Controller
                     $f->where('CSPK_PIC_AS', 'DRIVER');
                 }
             ])
-            ->join('T_DLVORDDETA', function ($join) {
+            ->leftjoin('T_DLVORDDETA', function ($join) {
                 $join->on(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), '=', DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"));
             })
-            ->join('M_CUS', function ($join) {
+            ->leftjoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftjoin('M_SUP', function ($join) {
+                $join->on('TDLVORD_CUSCD', '=', 'MSUP_SUPCD')->on('TDLVORD_BRANCH', '=', 'MSUP_BRANCH');
             })
             ->leftJoin('T_SLOHEAD', 'TSLO_SLOCD', 'TDLVORDDETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TQUO_QUOCD', 'TSLO_QUOCD')
@@ -201,7 +217,7 @@ class InvoiceController extends Controller
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
                 // 'TDLVORD_DLVCD',
-                DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END"),
@@ -211,6 +227,7 @@ class InvoiceController extends Controller
                 'TDLVORD_CUSCD',
                 'TDLVORDDETA_SLOCD',
                 'MCUS_CUSNM',
+                'MSUP_SUPNM',
                 'MCUS_TELNO',
                 'MCUS_PIC_TELNO',
                 'MCUS_ADDR1',
@@ -235,19 +252,19 @@ class InvoiceController extends Controller
                 ->join(
                     'T_DLVORDHEAD',
                     DB::raw(
-                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                        "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END"
                     ),
                     DB::raw(
-                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                        "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"
                     )
                 )
-                ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"), '=', $dlv->TDLVORD_DLVCD)
@@ -281,13 +298,13 @@ class InvoiceController extends Controller
                 ->join(
                     'T_DLVORDHEAD',
                     DB::raw(
-                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                        "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END"
                     ),
                     DB::raw(
-                        "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                        "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORDDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"
@@ -306,7 +323,7 @@ class InvoiceController extends Controller
                         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
                 })
                 // ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)
-                ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORDDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"), '=', $dlv->TDLVORD_DLVCD)
@@ -352,13 +369,11 @@ class InvoiceController extends Controller
                 $total += $getTotalPrice;
                 $dlvDetParse[] = array_merge($value, ['totPRCSLO' => $getTotalPrice]);
             } else {
-
                 if ($request->TDLVORD_TYPE === 1) {
                     $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
                         return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'] && $f['TSLODETA_PRC'] == $value['TDLVORDDETA_PRC'];
                     }));
-                } else {
-                    // $getSLOByItem = $request->sloDet;
+                } elseif ($request->TDLVORD_TYPE === 2 || $request->TDLVORD_TYPE === 3) {
                     $getSLOByItemX = json_decode(json_encode($this->search(new Request([
                         'searchBy' => 'TDLVORD_INVCD',
                         'searchValue' => $request->TDLVORD_INVCD
@@ -368,7 +383,9 @@ class InvoiceController extends Controller
                     $getSLOByItem = array_values(array_filter($getSLOByItemxx['sloDet'], function ($f) use ($value) {
                         return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
                     }));
+
                 }
+
                 $cek[] = $getSLOByItem;
                 if (count($getSLOByItem) > 0) {
                     if ($request->TDLVORD_TYPE === 1) {
@@ -382,6 +399,8 @@ class InvoiceController extends Controller
                 }
             }
         }
+
+        // return $cek;
 
         $ppn = $total * 0.11;
 
@@ -448,7 +467,7 @@ class InvoiceController extends Controller
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->with('condition')
-            ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END"), $doc)
@@ -478,7 +497,7 @@ class InvoiceController extends Controller
                 'TDLVORD_DLVCD',
                 'TDLVORDDETA_DLVCD'
             )
-            ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORDDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"), $doc)
@@ -692,6 +711,7 @@ class InvoiceController extends Controller
                 'TDLVORD_REMARK',
                 'MCUS_TELNO',
                 'TDLVORD_INVCD',
+                'TDLVORD_TYPE',
                 'TDLVORD_LINE',
                 'TQUO_PROJECT_LOCATION',
                 'TSLODETA_PERIOD_FR',
@@ -711,13 +731,13 @@ class InvoiceController extends Controller
             ->leftJoin(
                 'T_DLVORDDETA',
                 DB::raw(
-                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END"
                 ),
                 DB::raw(
-                    "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                    "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORDDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"
@@ -727,7 +747,7 @@ class InvoiceController extends Controller
             ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
             ->leftJoin('T_DLVSJDETA', DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"))
-            ->where(DB::raw("CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                 THEN TDLVORD_DLVCD
                 ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
             END"), $doc)
@@ -750,6 +770,7 @@ class InvoiceController extends Controller
                 'TDLVORD_REMARK',
                 'MCUS_TELNO',
                 'TDLVORD_INVCD',
+                'TDLVORD_TYPE',
                 'TDLVORD_LINE',
                 'TQUO_PROJECT_LOCATION',
                 'TSLODETA_PERIOD_FR',
@@ -779,7 +800,8 @@ class InvoiceController extends Controller
             'MITM_MODEL',
             'MITM_BRAND',
             'MITM_ITMCAT',
-            'TDLVORD_REMARK'
+            'TDLVORD_REMARK',
+            'TDLVORD_TYPE'
         )
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -787,13 +809,13 @@ class InvoiceController extends Controller
             // ->join(
             //     'T_DLVORDHEAD',
             //     DB::raw(
-            //         "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            //         "CASE WHEN TDLVORD_TYPE = 4
             //         THEN TDLVORD_DLVCD
             //         ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
             //     END"
             //     ),
             //     DB::raw(
-            //         "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+            //         "CASE WHEN TDLVORD_TYPE = 4
             //         THEN TDLVORDDETA_DLVCD
             //         ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
             //     END"
@@ -805,7 +827,7 @@ class InvoiceController extends Controller
                 'TDLVORDDETA_DLVCD'
             )
             ->where(DB::raw(
-                "CASE WHEN TDLVORD_REMARK = 'SERVICE-INTERNAL'
+                "CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORDDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"
@@ -865,7 +887,8 @@ class InvoiceController extends Controller
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
                 ->first();
 
-            if ($r->TDLVORD_REMARK !== 'SERVICE-INTERNAL') {
+                // return $r;
+            if ($r->TDLVORD_TYPE < 3) {
                 $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
                 $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
                 $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');
@@ -887,12 +910,12 @@ class InvoiceController extends Controller
 
         $perulangan = 1;
         $getDO = $doc;
-        if ((!empty($RSHeader->TDLVORD_REMARK) && $RSHeader->TDLVORD_REMARK !== 'SERVICE-INTERNAL') && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
+        if ((!empty($RSHeader->TDLVORD_TYPE) && $RSHeader->TDLVORD_TYPE !== 4) && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
             $perulangan = count($RSDetail);
         }
 
         for ($i = 0; $i < $perulangan; $i++) {
-            if ((!empty($RSHeader->TDLVORD_REMARK) && $RSHeader->TDLVORD_REMARK !== 'SERVICE-INTERNAL') && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
+            if ((!empty($RSHeader->TDLVORD_TYPE) && $RSHeader->TDLVORD_TYPE !== 4) && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
                 $getDO = $RSDetail[$i]->TDLVORDDETA_DLVCD;
             }
 

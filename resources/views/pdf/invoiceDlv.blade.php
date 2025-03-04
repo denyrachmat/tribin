@@ -223,11 +223,11 @@
                         <th class="tg-0lax"><b>Capacity / Model</b></th>
                         <th class="tg-0lax"><b>Pemakaian / Periode</b></th>
                         <th class="tg-0lax"><b>Qty</b></th>
-                        <th class="tg-0lax"><b>Total Harga Sewa</b></th>
+                        <th class="tg-0lax"><b>{{$TDLVORD_TYPE > 2 ? 'Total Harga Barang': 'Total Harga Sewa'}}</b></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if($TDLVORD_REMARK === 'SERVICE-INTERNAL')
+                    @if($TDLVORD_TYPE === 3 || $TDLVORD_TYPE === 4)
                         @foreach($dlvdet as $key => $value)
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>

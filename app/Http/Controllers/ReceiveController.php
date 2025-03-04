@@ -499,22 +499,25 @@ class ReceiveController extends Controller
                         'T_RCV_DETAIL.id',
                         'id_header',
                         'item_code',
-                        DB::raw('quantity - COALESCE(SUM(TRCVBC_BCQT), 0) as quantity'),
+                        'MITM_ITMNM',
+                        DB::raw('quantity as quantity'),
                         'unit_price',
                         DB::raw('CASE WHEN id_reff IS NULL THEN 0 ELSE 1 END AS IS_CONFIRMED'),
-                        DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0) AS CONFIRMED_QTY')
+                        DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0) - quantity AS CONFIRMED_QTY')
                     )
                         // ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'id_header')
                         ->leftJoin('T_RCV_BC_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                        ->join('M_ITM', 'MITM_ITMCD', 'item_code')
                         ->leftJoin('C_ITRN', function ($join) {
                             $join->on('TRCVBC_BCCD', 'id_reff');
                             // $join->on('CITRN_DOCNO', 'TRCV_RCVCD');
-                            // $join->where('CITRN_LOCCD', 'WH1');
                         })
+                        ->where('CITRN_LOCCD', 'WH1')
                         ->groupBy(
                             'T_RCV_DETAIL.id',
                             'id_header',
                             'item_code',
+                            'MITM_ITMNM',
                             'quantity',
                             'unit_price',
                             'id_reff'

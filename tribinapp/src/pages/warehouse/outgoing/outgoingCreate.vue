@@ -109,16 +109,49 @@
                 "
                 behavior="dialog"
                 option-label="LABEL"
-                option-value="TRCV_RCVCD"
                 emit-value
                 map-options
                 :loading="loading"
                 :readonly="TDLVORDDETA_SLOCD != ''"
-                @update:model-value="(value) => onChooseDO(value)"
+                @update:model-value="(value) => onChooseDOIncoming(value)"
               ></q-select>
             </div>
             <div class="col q-pl-md">
               <!-- <q-input v-model="MCUS_CUSNM" label="Customer" dense readonly /> -->
+              <q-select
+                dense
+                filled
+                label="Supplier Choose"
+                v-model="MCUS_CUSNM"
+                use-input
+                input-debounce="500"
+                :options="listCustomers"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'supp')
+                "
+                behavior="dialog"
+                option-label="MSUP_SUPNM"
+                option-value="MSUP_SUPNM"
+                emit-value
+                map-options
+                :loading="loading"
+                :readonly="TDLVORDDETA_SLOCD != ''"
+                v-if="typeOutgoing === 3"
+              >
+                <template v-slot:after>
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    icon="person_add"
+                    @click="onAddCustClick()"
+                    color="cyan"
+                  >
+                    <q-tooltip>Add new customer</q-tooltip>
+                  </q-btn>
+                </template>
+              </q-select>
+
               <q-select
                 dense
                 filled
@@ -137,6 +170,7 @@
                 map-options
                 :loading="loading"
                 :readonly="TDLVORDDETA_SLOCD != ''"
+                v-else
               >
                 <template v-slot:after>
                   <q-btn
@@ -174,7 +208,7 @@
               :options="[
                 { label: 'From SO', value: 1 },
                 { label: 'Send Following DO', value: 2 },
-                { label: 'Return', value: 3, disable: true },
+                { label: 'Return', value: 3 },
               ]"
               @update:model-value="(val) => clearForm()"
               :disable="TDLVORD_DLVCD != ''"
@@ -273,7 +307,7 @@
                       label="Qty"
                       filled
                       v-model="items.BALQT"
-                      :readonly="!splitSJ"
+                      :readonly="!splitSJ || typeOutgoing == 3"
                     />
                   </q-item-label>
                 </q-item-section>
@@ -356,6 +390,7 @@ const props = defineProps({
 
 onMounted(async () => {
   await getCustomer(props.dataHeader.TDLVORD_CUSCD);
+  await getSupplier("");
   if (Object.values(props.dataHeader).length > 0) {
     console.log(props.dataHeader);
     TDLVORD_DLVCD.value = props.dataHeader.TDLVORD_DLVCD;
@@ -381,13 +416,14 @@ const MCUS_CUSNM = ref("");
 const TDLVORD_REMARK = ref("");
 const listItems = ref([]);
 const listCustomers = ref([]);
+const listSuppliers = ref([]);
 const listItem = ref([]);
 const listItemBackUp = ref([]);
 const splitInvoice = ref(false);
 const splitSJ = ref(0);
 const typeOutgoing = ref(1);
 const listInvoice = ref([]);
-const listIncoming = ref([])
+const listIncoming = ref([]);
 
 const getSumAllDetail = computed(() => {
   let hasilLess = [];
@@ -448,6 +484,10 @@ const filterFn = (val, update, abort, fun) => {
       getCustomer(val);
     }
 
+    if (fun === "supp") {
+      getSupplier(val);
+    }
+
     if (fun === "item") {
       await getItem(val);
     }
@@ -472,6 +512,22 @@ const getCustomer = async (val, cols = "MCUS_CUSNM") => {
     .then((response) => {
       loading.value = false;
       listCustomers.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getSupplier = async (val, cols = "MSUP_SUPNM") => {
+  loading.value = true;
+  await api_web
+    .post("supplier/searchAPI", {
+      searchValue: val,
+      searchCol: cols,
+    })
+    .then((response) => {
+      loading.value = false;
+      listSuppliers.value = response.data.data;
     })
     .catch(() => {
       loading.value = false;
@@ -646,17 +702,6 @@ const onChooseDO = (val) => {
     TDLVORD_INVCD.value = dataDO.TDLVORD_INVCD;
     TDLVORD_DLVCD.value = dataDO.TDLVORD_DLVCD;
     splitSJ.value = dataDO.TDLVOR_ISSPLITSJ;
-    // typeOutgoing.value = dataDO.TDLVORD_TYPE
-
-    // listItems.value = []
-    // dataDO.dlvdet.map(valMap => {
-    //   listItems.value.push({
-    //     ...valMap,
-    //     BALQT: valMap.TDLVORDDETA_ITMQT,
-    //     TSLODETA_PRC: valMap.TDLVORDDETA_PRC
-    //   })
-    // })
-    // getListItemCode(dataDO.TDLVORDDETA_SLOCD);
   } else {
     $q.notify({
       color: "red",
@@ -664,6 +709,33 @@ const onChooseDO = (val) => {
     });
   }
   console.log(getDataDO);
+};
+
+const onChooseDOIncoming = (val) => {
+  console.log(val);
+  if (val) {
+    const datanya = val;
+
+    TDLVORDDETA_SLOCD.value = datanya.TRCV_RCVCD;
+    MCUS_CUSNM.value = datanya.MSUP_SUPNM;
+    TDLVORD_CUSCD.value = datanya.MSUP_SUPCD;
+    TDLVORD_REMARK.value = datanya.TRCV_DOCNO;
+    splitSJ.value = 0;
+
+    datanya.det.map((val) => {
+      listItems.value.push({
+        TSLODETA_ITMCD: val.MITM_ITMNM,
+        BALQT: val.quantity,
+        TSLODETA_PRC: val.unit_price,
+        TDLVORDDETA_ITMCD_ACT: val.item_code
+      });
+    });
+  } else {
+    $q.notify({
+      color: "red",
+      message: "Cannot found the incoming DO.",
+    });
+  }
 };
 
 const onChangeItem = (idx, value) => {

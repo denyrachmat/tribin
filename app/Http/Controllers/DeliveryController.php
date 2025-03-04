@@ -302,8 +302,7 @@ class DeliveryController extends Controller
 
         $LastLine = empty($checkLine) ? 0 : $checkLine->TDLVORD_LINE;
 
-        // return (empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 1) || (!empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 2);
-        if ((empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 1) || (!empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 2)) {
+        if ((empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 1) || (!empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 2 || (empty($request->TDLVORD_INVCD) && $request->typeOutgoing == 3))) {
             $quotationHeader = [];
             $newQuotationCode = '';
             $newInvoiceCode = '';

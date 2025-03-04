@@ -124,7 +124,7 @@ class SupplierController extends Controller
             $RS = (clone $RSTemp)->where((
                 !empty($request->searchCol)
                 ? $request->searchCol
-                : 'MCUS_CUSNM'), 'like', '%' . $request->searchValue . '%')
+                : 'MSUP_SUPNM'), 'like', '%' . $request->searchValue . '%')
             ->get();
         } else {
             $RS = (clone $RSTemp)->get();

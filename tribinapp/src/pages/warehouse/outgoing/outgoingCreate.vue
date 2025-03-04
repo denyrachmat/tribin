@@ -70,8 +70,9 @@
                   <q-btn round dense flat icon="search" @click="onSearchSO" />
                 </template>
               </q-input>
+
               <q-select
-                v-else
+                v-else-if="typeOutgoing === 2"
                 dense
                 filled
                 label="DO Choose"
@@ -86,6 +87,29 @@
                 behavior="dialog"
                 option-label="LABEL"
                 option-value="TDLVORD_DLVCD"
+                emit-value
+                map-options
+                :loading="loading"
+                :readonly="TDLVORDDETA_SLOCD != ''"
+                @update:model-value="(value) => onChooseDO(value)"
+              ></q-select>
+
+              <q-select
+                v-else
+                dense
+                filled
+                label="DO Incoming Choose"
+                v-model="TDLVORDDETA_SLOCD"
+                use-input
+                input-debounce="500"
+                :options="listIncoming"
+                @filter="
+                  (val, update, abort) =>
+                    filterFn(val, update, abort, 'incoming')
+                "
+                behavior="dialog"
+                option-label="LABEL"
+                option-value="TRCV_RCVCD"
                 emit-value
                 map-options
                 :loading="loading"
@@ -363,6 +387,7 @@ const splitInvoice = ref(false);
 const splitSJ = ref(0);
 const typeOutgoing = ref(1);
 const listInvoice = ref([]);
+const listIncoming = ref([])
 
 const getSumAllDetail = computed(() => {
   let hasilLess = [];
@@ -430,6 +455,10 @@ const filterFn = (val, update, abort, fun) => {
     if (fun === "invoice") {
       await getInvoice(val);
     }
+
+    if (fun === "incoming") {
+      await getIncoming(val);
+    }
   });
 };
 
@@ -459,6 +488,22 @@ const getInvoice = async (val, cols = "TDLVORD_DLVCD") => {
     .then((response) => {
       loading.value = false;
       listInvoice.value = response.data.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const getIncoming = async (val, cols = "TRCV_RCVCD") => {
+  loading.value = true;
+  await api_web
+    .post("receive/getConfirmedIncomingList", {
+      searchBy: cols,
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listIncoming.value = response.data.data;
     })
     .catch((e) => {
       loading.value = false;

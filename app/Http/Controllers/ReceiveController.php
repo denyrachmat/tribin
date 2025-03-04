@@ -133,23 +133,21 @@ class ReceiveController extends Controller
 
     function delete($id)
     {
-        $parentDoc = T_RCV_DETAIL::on($this->dedicatedConnection)->select('id_header')
-            ->where('id', $id)
-            ->first();
-
-        $affectedRow = T_RCV_DETAIL::on($this->dedicatedConnection)->where('id', $id)
+        $affectedRow = T_RCV_DETAIL::on($this->dedicatedConnection)->where('id_header', $id)
             ->update([
                 'deleted_at' => date('Y-m-d H:i:s'),
                 'deleted_by' => Auth::user()->nick_name
             ]);
-        if ($affectedRow) {
-            $countRow = T_RCV_DETAIL::on($this->dedicatedConnection)
-                ->where('id_header', $parentDoc->id_header)
-                ->whereNull('deleted_at')
-                ->count();
 
+        $countRow = T_RCV_DETAIL::on($this->dedicatedConnection)
+            ->where('id_header', $id)
+            ->whereNull('deleted_at')
+            ->count();
+
+        if ($affectedRow) {
             if ($countRow === 0) {
-                T_RCV_HEAD::on($this->dedicatedConnection)->where('id', $parentDoc->id_header)
+                T_RCV_HEAD::on($this->dedicatedConnection)
+                    ->where('id', $id)
                     ->update([
                         'deleted_at' => date('Y-m-d H:i:s'),
                         'deleted_by' => Auth::user()->nick_name,
@@ -245,7 +243,7 @@ class ReceiveController extends Controller
         $LastLine = T_RCV_HEAD::on($this->dedicatedConnection)
             ->whereMonth('created_at', '=', date('m'))
             ->whereYear('created_at', '=', date('Y'))
-            ->where('TRCV_RCVCD', 'STK%')
+            ->where('TRCV_RCVCD', 'NOT LIKE', 'STK%')
             ->first();
 
         if ($request->has('TRCV_RCVCD') && !empty($request->TRCV_RCVCD)) {
@@ -255,7 +253,7 @@ class ReceiveController extends Controller
                 $newDocumentCode = '0001/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             } else {
                 $getLastLine = explode('/', $LastLine->TRCV_RCVCD)[0];
-                $newDocumentCode = substr('00' . ((int) $getLastLine), -3) . '/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                $newDocumentCode = substr('000' . ((int) $getLastLine + 1), -4) . '/JAT/RCV/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             }
         }
 
@@ -351,12 +349,6 @@ class ReceiveController extends Controller
 
     function searchApi(Request $request)
     {
-        $columnMap = [
-            'TSLO_SLOCD',
-            'MCUS_CUSNM',
-            'TSLO_POCD',
-        ];
-
         $RS = T_RCV_HEAD::on($this->dedicatedConnection)->select([
             "T_RCV_HEAD.id",
             "TRCV_RCVCD",
@@ -381,7 +373,7 @@ class ReceiveController extends Controller
             ->leftJoin(DB::raw('(SELECT T_RCV_DETAIL.*, (quantity * unit_price) AS TRCVDET_TOTAMT FROM T_RCV_DETAIL) T_RCV_DETAIL'), "T_RCV_HEAD.id", 'id_header')
             ->leftJoin('T_RCV_BC_DETAIL', "TRCVBC_DETID", 'T_RCV_DETAIL.id')
             ->with([
-                'bc' => function($f) {
+                'bc' => function ($f) {
                     $f->select(
                         'TRCVBC_BCCD',
                         'TRCV_RCVCD',
@@ -396,10 +388,10 @@ class ReceiveController extends Controller
                             AND CITRN_LOCCD = 'WH1'
                         ), 0) AS STOCK_QTY")
                     )
-                    ->leftjoin('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
-                    ->leftjoin('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
-                    ->leftjoin(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
-                    ->leftjoin('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
+                        ->leftjoin('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                        ->leftjoin('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
+                        ->leftjoin(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
+                        ->leftjoin('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
                 },
                 'det' => function ($f) {
                     $f->select(
@@ -432,6 +424,136 @@ class ReceiveController extends Controller
                 }
             ])
             ->where('TRCV_BRANCH', Auth::user()->branch)
+            // ->where('TRCV_RCVCD', 'NOT LIKE', 'STK%')
+            ->groupBy(
+                "T_RCV_HEAD.id",
+                "MSUP_SUPNM",
+                "MSUP_CURCD",
+                "TRCV_RCVCD",
+                "TRCV_ISSUDT",
+                "TRCV_DOCNO",
+                "TRCV_REFFNO",
+                "MSUP_SUPCD",
+                "MCUS_CUSCD",
+                "MCUS_CUSNM",
+                "MCUS_CURCD",
+                "TRCV_SUBMITTED_AT"
+            );
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        return ['data' => $RS->get()];
+    }
+
+    function getConfirmedIncomingList(Request $request)
+    {
+        $RS = T_RCV_HEAD::on($this->dedicatedConnection)->select([
+            "T_RCV_HEAD.id",
+            "TRCV_RCVCD",
+            DB::raw("CONCAT(TRCV_RCVCD, ' - ', TRCV_ISSUDT) AS LABEL"),
+            "TRCV_ISSUDT",
+            "TRCV_REFFNO",
+            "TRCV_DOCNO",
+            DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CUSCD ELSE MSUP_SUPCD END AS MSUP_SUPCD"),
+            DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CUSNM ELSE MSUP_SUPNM END AS MSUP_SUPNM"),
+            DB::raw("CASE WHEN MSUP_SUPCD IS NULL THEN MCUS_CURCD ELSE MSUP_CURCD END AS MSUP_CURCD"),
+            "TRCV_SUBMITTED_AT",
+            DB::raw('SUM(quantity) AS TOT_RCV'),
+            DB::raw('SUM(TRCVDET_TOTAMT) AS TOT_AMT'),
+            DB::raw('CASE WHEN MSUP_SUPCD IS NULL THEN 2 ELSE 1 END AS RCV_STATE'),
+            DB::raw('SUM(TRCVBC_BCQT) AS CONFIRMED_QTY')
+        ])
+            ->leftJoin("M_SUP", function ($join) {
+                $join->on('TRCV_SUPCD', '=', 'MSUP_SUPCD')->on('TRCV_BRANCH', '=', 'MSUP_BRANCH');
+            })
+            ->leftJoin("M_CUS", function ($join) {
+                $join->on('TRCV_SUPCD', '=', 'MCUS_CUSCD')->on('TRCV_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->leftJoin(DB::raw('(SELECT T_RCV_DETAIL.*, (quantity * unit_price) AS TRCVDET_TOTAMT FROM T_RCV_DETAIL) T_RCV_DETAIL'), "T_RCV_HEAD.id", 'id_header')
+            ->leftJoin('T_RCV_BC_DETAIL', "TRCVBC_DETID", 'T_RCV_DETAIL.id')
+            ->with([
+                'bc' => function ($f) {
+                    $f->select(
+                        'TRCVBC_BCCD',
+                        'TRCV_RCVCD',
+                        'TRCVBC_DOCNO',
+                        'TRCVBC_BCQT',
+                        'MSUP_SUPNM',
+                        'item_code',
+                        'MITM_ITMNM',
+                        DB::raw("COALESCE((
+                            SELECT SUM(CITRN_ITMQT)
+                            FROM C_ITRN WHERE id_reff = TRCVBC_BCCD
+                            AND CITRN_LOCCD = 'WH1'
+                        ), 0) AS STOCK_QTY")
+                    )
+                        ->leftjoin('T_RCV_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                        ->leftjoin('T_RCV_HEAD', 'T_RCV_HEAD.id', 'T_RCV_DETAIL.id_header')
+                        ->leftjoin(DB::raw("(SELECT * FROM M_ITM) itm"), 'MITM_ITMCD', 'item_code')
+                        ->leftjoin('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
+                },
+                'det' => function ($f) {
+                    $f->select(
+                        'T_RCV_DETAIL.id',
+                        'id_header',
+                        'item_code',
+                        DB::raw('quantity - COALESCE(SUM(TRCVBC_BCQT), 0) as quantity'),
+                        'unit_price',
+                        DB::raw('CASE WHEN id_reff IS NULL THEN 0 ELSE 1 END AS IS_CONFIRMED'),
+                        DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0) AS CONFIRMED_QTY')
+                    )
+                        // ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'id_header')
+                        ->leftJoin('T_RCV_BC_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                        ->leftJoin('C_ITRN', function ($join) {
+                            $join->on('TRCVBC_BCCD', 'id_reff');
+                            // $join->on('CITRN_DOCNO', 'TRCV_RCVCD');
+                            // $join->where('CITRN_LOCCD', 'WH1');
+                        })
+                        ->groupBy(
+                            'T_RCV_DETAIL.id',
+                            'id_header',
+                            'item_code',
+                            'quantity',
+                            'unit_price',
+                            'id_reff'
+                        )
+                        ->having(DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0)'), '>', 0)
+                        ->whereNull('T_RCV_DETAIL.deleted_at')
+                        ->get();
+                }
+            ])
+            ->whereHas('det', function ($f) {
+                $f->select(
+                    'T_RCV_DETAIL.id',
+                    'id_header',
+                    'item_code',
+                    DB::raw('quantity - COALESCE(SUM(TRCVBC_BCQT), 0) as quantity'),
+                    'unit_price',
+                    DB::raw('CASE WHEN id_reff IS NULL THEN 0 ELSE 1 END AS IS_CONFIRMED'),
+                    DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0) AS CONFIRMED_QTY')
+                )
+                    // ->join('T_RCV_HEAD', 'T_RCV_HEAD.id', 'id_header')
+                    ->leftJoin('T_RCV_BC_DETAIL', 'TRCVBC_DETID', 'T_RCV_DETAIL.id')
+                    ->leftJoin('C_ITRN', function ($join) {
+                        $join->on('TRCVBC_BCCD', 'id_reff');
+                        // $join->on('CITRN_DOCNO', 'TRCV_RCVCD');
+                        // $join->where('CITRN_LOCCD', 'WH1');
+                    })
+                    ->groupBy(
+                        'T_RCV_DETAIL.id',
+                        'id_header',
+                        'item_code',
+                        'quantity',
+                        'unit_price',
+                        'id_reff'
+                    )
+                    ->having(DB::raw('COALESCE(SUM(TRCVBC_BCQT), 0)'), '>', 0)
+                    ->whereNull('T_RCV_DETAIL.deleted_at');
+            })
+            ->where('TRCV_BRANCH', Auth::user()->branch)
+            ->where('TRCV_RCVCD', 'NOT LIKE', 'STK%')
             ->groupBy(
                 "T_RCV_HEAD.id",
                 "MSUP_SUPNM",
@@ -528,9 +650,9 @@ class ReceiveController extends Controller
             if (empty($cek) && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
                 $bc = '';
                 if (empty($cekLatestBarcode)) {
-                    $bc = 'BC'.date('Ymd').'0001';
+                    $bc = 'BC' . date('Ymd') . '0001';
                 } else {
-                    $bc = 'BC'.date('Ymd').sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
+                    $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
                 }
 
                 C_ITRN::on($this->dedicatedConnection)->create([

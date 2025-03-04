@@ -327,7 +327,38 @@ class PurchaseController extends Controller
                     'TPCHORDDETA_ITMQT',
                     'TPCHORDDETA_ITMPRC_PER',
                     'TPCHORDDETA_BRANCH',
-                    DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL) as TPCHORDDETA_ITMQT')
+                    DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0)) as TPCHORDDETA_ITMQT'),
+                    DB::raw('COALESCE(itrn.TOTAL, 0) as itn')
+                )
+                    ->leftjoin(DB::raw('(
+                        SELECT
+                            T_RCV_HEAD.id,
+                            id_header,
+                            item_code,
+                            TRCV_REFFNO,
+                            COALESCE(SUM(quantity), 0) AS TOTAL
+                        FROM T_RCV_HEAD
+                        LEFT JOIN T_RCV_DETAIL ON T_RCV_HEAD.id = id_header
+                        WHERE T_RCV_HEAD.deleted_at is null
+                        group by
+                            T_RCV_HEAD.id,
+                            id_header,
+                            TRCV_REFFNO,
+                            item_code
+                    ) itrn'), function($j) {
+                        $j->on('TPCHORDDETA_PCHCD', 'TRCV_REFFNO');
+                        $j->on('itrn.item_code', 'TPCHORDDETA_ITMCD');
+                    })
+                    ->where(DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0))'), '>', 0);
+            }])
+            ->wherehas('det', function ($f) {
+                $f->select(
+                    'TPCHORDDETA_PCHCD',
+                    'TPCHORDDETA_ITMCD',
+                    'TPCHORDDETA_ITMQT',
+                    'TPCHORDDETA_ITMPRC_PER',
+                    'TPCHORDDETA_BRANCH',
+                    DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0)) as TPCHORDDETA_ITMQT')
                 )
                     ->leftjoin('T_RCV_HEAD', 'TPCHORDDETA_PCHCD', 'TRCV_REFFNO')
                     ->leftJoin(DB::raw("(
@@ -344,36 +375,19 @@ class PurchaseController extends Controller
                         $j->on('itrn.CITRN_ITMCD', 'TPCHORDDETA_ITMCD');
                         $j->on('itrn.CITRN_DOCNO', 'TRCV_RCVCD');
                     })
-                    ->where(DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL)'), '>', 0);
-            }])
-            ->wherehas('det', function ($f) {
-                $f->select(
-                    'TPCHORDDETA_PCHCD',
-                    'TPCHORDDETA_ITMCD',
-                    // 'TPCHORDDETA_ITMQT',
-                    'TPCHORDDETA_ITMPRC_PER',
-                    'TPCHORDDETA_BRANCH',
-                    DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL) as TPCHORDDETA_ITMQT')
-                )
-                    ->join('T_RCV_HEAD', 'TPCHORDDETA_PCHCD', 'TRCV_REFFNO')
-                    ->leftJoin(DB::raw("(
-                        SELECT
-                            CITRN_ITMCD,
-                            CITRN_DOCNO,
-                            SUM(CITRN_ITMQT) AS TOTAL
-                        FROM V_STOCK_CHECK
-                        where CITRN_LOCCD = 'WH1'
-                        group by
-                            CITRN_ITMCD,
-                            CITRN_DOCNO
-                    ) itrn"), function ($j) {
-                        $j->on('itrn.CITRN_ITMCD', 'TPCHORDDETA_ITMCD');
-                        $j->on('itrn.CITRN_DOCNO', 'TRCV_RCVCD');
-                    })
-                    ->where(DB::raw('(TPCHORDDETA_ITMQT - itrn.TOTAL)'), '>', 0);
+                    ->where(DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0))'), '>', 0);
             })
             ->leftJoin('T_RCV_HEAD', 'TRCV_REFFNO', 'TPCHORD_PCHCD')
-            ->where('TPCHORD_BRANCH', Auth::user()->branch);
+            ->where('TPCHORD_BRANCH', Auth::user()->branch)
+            ->groupby(
+                DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )')"),
+                "TPCHORD_PCHCD",
+                "TPCHORD_SUPCD",
+                "MSUP_SUPNM",
+                "TPCHORD_ISSUDT",
+                "TPCHORD_DLVDT",
+                "TPCHORD_REQCD"
+            );
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {
             $RS->where(DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )')"), 'like', '%' . $request->searchValue . '%');

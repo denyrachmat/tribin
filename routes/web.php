@@ -479,6 +479,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('', [ReceiveController::class, 'search']);
             Route::post('searchAPI', [ReceiveController::class, 'searchAPI']);
             Route::post('exportExcel', [ReceiveController::class, 'exportBarcode']);
+            Route::post('getConfirmedIncomingList', [ReceiveController::class, 'getConfirmedIncomingList']);
 
             Route::get('outstanding-po', [ReceiveController::class, 'outstandingPO']);
             Route::get('outstanding-po/{id}', [ReceiveController::class, 'outstandingPOPerDocument']);

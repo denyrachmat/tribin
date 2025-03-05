@@ -370,11 +370,11 @@ class InvoiceController extends Controller
                 $total += $getTotalPrice;
                 $dlvDetParse[] = array_merge($value, ['totPRCSLO' => $getTotalPrice]);
             } else {
-                if ($request->TDLVORD_TYPE === 1) {
+                if ($request->TDLVORD_TYPE == 1) {
                     $getSLOByItem = array_values(array_filter($request->sloDet, function ($f) use ($value) {
                         return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'] && $f['TSLODETA_PRC'] == $value['TDLVORDDETA_PRC'];
                     }));
-                } elseif ($request->TDLVORD_TYPE === 2 || $request->TDLVORD_TYPE === 3) {
+                } elseif ($request->TDLVORD_TYPE == 2 || $request->TDLVORD_TYPE == 3) {
                     $getSLOByItemX = json_decode(json_encode($this->search(new Request([
                         'searchBy' => 'TDLVORD_INVCD',
                         'searchValue' => $request->TDLVORD_INVCD

@@ -231,7 +231,7 @@
               <q-btn
                 icon="compare_arrows"
                 :color="
-                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
                     .length > 0
                     ? 'grey'
                     : 'orange'
@@ -239,7 +239,7 @@
                 outline
                 @click="onClickRequest(idx)"
                 :disable="
-                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
                     .length > 0
                 "
               >
@@ -247,7 +247,9 @@
                   items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
                     .length > 0
                     ? "Already send request to warehouse, please wait till request fullfiled"
-                    : "Request Part to Warehouse"
+                    : items.TSRVD_FLGSTS !== 2
+                     ? 'Please wait until customer has approve the service.'
+                     : "Request Part to Warehouse"
                 }}</q-tooltip>
               </q-btn>
             </q-item-section>
@@ -256,9 +258,18 @@
             >
               <q-btn
                 icon="compare_arrows"
-                color="cyan"
+                :color="
+                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                    .length > 0
+                    ? 'grey'
+                    : 'cyan'
+                "
                 outline
                 @click="onClickPrintRequest(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
+                :disable="
+                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                    .length > 0
+                "
               >
                 <q-tooltip>Print Part Request</q-tooltip>
               </q-btn>

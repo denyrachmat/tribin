@@ -363,6 +363,7 @@ class InvoiceController extends Controller
         $total = 0;
         $dlvDetParse = [];
         $cek = [];
+        $getSLOByItem=[];
         foreach ($request->dlvdet as $key => $value) {
             if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {
                 $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']);

@@ -369,48 +369,48 @@ class ReceiveOrderController extends Controller
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
         $hasilAPI = [];
-        if (count($cekInvoiceAcc) > 0 && $getTotalAmnt > 0) {
-            try {
-                $client = new \GuzzleHttp\Client([
-                    'verify' => false,
-                ]);
-                $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
-                    'body' => json_encode([
-                        'cg_code' => $this->dedicatedConnection,
-                        'date' => date('Y-m-d'),
-                        'reference_number' => $newDocumentCode,
-                        'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
-                        'description' => 'Sales Order ' . $newDocumentCode,
-                        'amount' => $getTotalAmnt,
-                        'payload' => []
-                    ]),
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                        'X-API-KEY' => env('ACC_KEY'),
-                    ],
-                ]);
+        // if (count($cekInvoiceAcc) > 0 && $getTotalAmnt > 0) {
+        //     try {
+        //         $client = new \GuzzleHttp\Client([
+        //             'verify' => false,
+        //         ]);
+        //         $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
+        //             'body' => json_encode([
+        //                 'cg_code' => $this->dedicatedConnection,
+        //                 'date' => date('Y-m-d'),
+        //                 'reference_number' => $newDocumentCode,
+        //                 'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
+        //                 'description' => 'Sales Order ' . $newDocumentCode,
+        //                 'amount' => $getTotalAmnt,
+        //                 'payload' => []
+        //             ]),
+        //             'headers' => [
+        //                 'Content-Type' => 'application/json',
+        //                 'X-API-KEY' => env('ACC_KEY'),
+        //             ],
+        //         ]);
 
-                if ($response->getStatusCode() != 201) {
-                    return $response->getBody();
-                }
+        //         if ($response->getStatusCode() != 201) {
+        //             return $response->getBody();
+        //         }
 
-                $hasilAPI = json_decode($response->getBody(), true);
-            } catch (\GuzzleHttp\Exception\RequestException $e) {
-                $this->deleteByID(base64_encode($newDocumentCode), true);
-                return response()->json([
-                    'error' => 'Failed to post data to API',
-                    'message' => $e->getMessage(),
-                    'param' => [
-                        'cg_code' => $this->dedicatedConnection,
-                        'date' => date('Y-m-d'),
-                        'reference_number' => $newDocumentCode,
-                        'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
-                        'description' => 'Sales Order ' . $newDocumentCode,
-                        'amount' => $getTotalAmnt,
-                    ]
-                ], 500);
-            }
-        }
+        //         $hasilAPI = json_decode($response->getBody(), true);
+        //     } catch (\GuzzleHttp\Exception\RequestException $e) {
+        //         $this->deleteByID(base64_encode($newDocumentCode), true);
+        //         return response()->json([
+        //             'error' => 'Failed to post data to API',
+        //             'message' => $e->getMessage(),
+        //             'param' => [
+        //                 'cg_code' => $this->dedicatedConnection,
+        //                 'date' => date('Y-m-d'),
+        //                 'reference_number' => $newDocumentCode,
+        //                 'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
+        //                 'description' => 'Sales Order ' . $newDocumentCode,
+        //                 'amount' => $getTotalAmnt,
+        //             ]
+        //         ], 500);
+        //     }
+        // }
 
         return [
             'msg' => 'OK',

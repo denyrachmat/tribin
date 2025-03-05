@@ -389,7 +389,7 @@ class InvoiceController extends Controller
 
                 $cek[] = $getSLOByItem;
                 if (count($getSLOByItem) > 0) {
-                    if ($request->TDLVORD_TYPE === 1) {
+                    if ($request->TDLVORD_TYPE == 1) {
                         $getTotalPrice = ($getSLOByItem[0]['TSLODETA_PRC'] * $value['TDLVORDDETA_ITMQT']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
                     } else {
                         $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']) + $getSLOByItem[0]['TSLODETA_OPRPRC'] + $getSLOByItem[0]['TSLODETA_MOBDEMOB'];
@@ -595,7 +595,7 @@ class InvoiceController extends Controller
             $PPNAmount = $totalHargaSewa * 11 / 100;
         }
 
-        if ($RSHeader->TDLVORD_REMARK === 'SERVICE-INTERNAL') {
+        if ($RSHeader->TDLVORD_REMARK == 'SERVICE-INTERNAL') {
             $subjek = 'Service Internal';
         } else {
             $subjek = !empty($Subject) ? ucwords(trim(str_replace('penawaran', '', strtolower($Subject->TQUO_SBJCT)))) . ' Periode ' . $PeriodFrom . ' s/d ' . $PeriodTo : '';
@@ -952,7 +952,7 @@ class InvoiceController extends Controller
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(3, 30);
             $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami kirimkan barang-barang di bawah ini :' : ''), 0, 0, 'L');
-            if (count($RSHeader->spk) === 0) {
+            if (count($RSHeader->spk) == 0) {
                 $this->fpdf->SetXY(70, 30);
                 $this->fpdf->Cell(29, 5, ', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
             }
@@ -1231,19 +1231,19 @@ class InvoiceController extends Controller
 
             $getOperator = count($RSHeader->spk) > 0
                 ? array_values(array_filter($RSHeader->spk, function ($f) {
-                    return $f['CSPK_PIC_AS'] === 'OPERATOR';
+                    return $f['CSPK_PIC_AS'] == 'OPERATOR';
                 }))[0]['CSPK_PIC_NAME']
                 : '-';
 
             $getDriver = count($RSHeader->spk) > 0
                 ? array_values(array_filter($RSHeader->spk, function ($f) {
-                    return $f['CSPK_PIC_AS'] === 'OPERATOR';
+                    return $f['CSPK_PIC_AS'] == 'OPERATOR';
                 }))[0]['CSPK_PIC_NAME']
                 : '-';
 
             $getKordinator = count($RSHeader->spk) > 0
                 ? array_values(array_filter($RSHeader->spk, function ($f) {
-                    return $f['CSPK_PIC_AS'] === 'KOORDINATOR';
+                    return $f['CSPK_PIC_AS'] == 'KOORDINATOR';
                 }))[0]['CSPK_PIC_NAME']
                 : '-';
 

@@ -307,7 +307,7 @@ class DeliveryController extends Controller
             $newQuotationCode = '';
             $newInvoiceCode = '';
 
-            if ($request->typeOutgoing === 2) {
+            if ($request->typeOutgoing == 2) {
                 // $getLatestDOData = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', 'like', $request->TDLVORD_DLVCD.'%')->orderBy('TDLVORD_DLVCD', 'desc')->first()->TDLVORD_DLVCD;
                 // $getLatestDO = explode('/', $getLatestDOData);
                 // if (count($getLatestDO) > 1) {

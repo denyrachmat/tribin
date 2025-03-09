@@ -188,6 +188,7 @@ const listLoc = ref([]);
 
 const listDet = ref([]);
 const loading = ref(false);
+const addMoreItems = ref(false);
 
 onMounted(async () => {
   console.log(props);

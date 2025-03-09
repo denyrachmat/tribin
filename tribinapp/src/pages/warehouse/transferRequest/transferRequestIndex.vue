@@ -86,12 +86,11 @@
                 <q-btn
                   flat
                   :color="
-                    props.row.OS_TF == 0 ? 'grey' : 'cyan'
+                    'cyan'
                   "
                   icon="print"
                   @click="onClickPrint(props.row.TLOCREQ_DOCNO)"
                   dense
-                  :disable="props.row.OS_TF == 0"
                 >
                   <q-tooltip>Print handover request</q-tooltip>
                 </q-btn>

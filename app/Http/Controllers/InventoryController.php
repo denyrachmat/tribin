@@ -456,6 +456,7 @@ class InventoryController extends Controller
     {
         $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->select(
+                'TLOCREQ_DOCNO',
                 'TLOCREQ_ITMCD',
                 'MITM_ITMNM',
                 'TLOCREQ_QTY',
@@ -473,6 +474,8 @@ class InventoryController extends Controller
             ->join('M_ITM', 'MITM_ITMCD', 'TLOCREQ_ITMCD')
             ->get()
             ->toArray();
+
+        // return $data;
 
         // return view('pdf.handoverStock', [
         //     'data' => $data,

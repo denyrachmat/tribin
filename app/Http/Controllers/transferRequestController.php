@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\T_LOC_REQ;
 use App\Models\C_ITRN;
+use App\Models\M_GENCODE;
 use App\Traits\LocationTraits;
 
 class transferRequestController extends Controller
@@ -209,15 +210,6 @@ class transferRequestController extends Controller
             ->get();
 
         foreach ($data as $key => $value) {
-
-            // $this->transferLoc(new Request([
-            //     'LOCFROM' => $value['TLOCREQ_FRLOC'],
-            //     'LOCTO' => '',
-            //     'ITMCD' => $valueItem['TSLODETA_ITMCD'],
-            //     'QTY' => $valueItem['BALQT'],
-            //     'DOC' => $dataHead->SRVH_DOCNO
-            // ]));
-
             $cekForIss = DB::connection($this->dedicatedConnection)
                 ->table('V_STOCK_CHECK')
                 ->where('CITRN_ITMCD', $value['TLOCREQ_ITMCD'])

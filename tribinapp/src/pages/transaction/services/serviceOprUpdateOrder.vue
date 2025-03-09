@@ -166,7 +166,7 @@
                 flat
                 @click="onClickAddItem(idx, 'add')"
               >
-                <q-tooltip>Update Fix Data</q-tooltip>
+                <q-tooltip>Add part to fix problem</q-tooltip>
               </q-btn>
             </q-item-section>
             <q-item-section side>
@@ -212,11 +212,18 @@
             >
               <q-btn
                 icon="task"
-                color="indigo"
+                :color="submitedItems[idx].listFixDet.filter(fil => fil.STOCK_BENGKEL > 0).length !== submitedItems[idx].listFixDet.length ? 'grey' : 'indigo'"
                 outline
                 @click="onClickDone(idx)"
+                :disable="submitedItems[idx].listFixDet.filter(fil => fil.STOCK_BENGKEL > 0).length !== submitedItems[idx].listFixDet.length"
               >
-                <q-tooltip>Mark this problem as done</q-tooltip>
+                <q-tooltip>
+                  {{
+                    submitedItems[idx].listFixDet.filter(fil => fil.STOCK_BENGKEL > 0).length !== submitedItems[idx].listFixDet.length
+                    ? 'No stock on service location, please request stock to warehouse.'
+                    : 'Mark this problem as done'
+                  }}
+                </q-tooltip>
                 <q-badge
                   color="red"
                   floating
@@ -231,22 +238,19 @@
               <q-btn
                 icon="compare_arrows"
                 :color="
-                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
-                    .length > 0
+                  items.TSRVD_FLGSTS !== 2 || items.partReq.length > 0
                     ? 'grey'
                     : 'orange'
                 "
                 outline
                 @click="onClickRequest(idx)"
                 :disable="
-                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
-                    .length > 0
+                  items.TSRVD_FLGSTS !== 2 || items.partReq.length > 0
                 "
               >
                 <q-tooltip>{{
-                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
-                    .length > 0
-                    ? "Already send request to warehouse, please wait till request fullfiled"
+                  items.partReq.length > 0
+                    ? "Already send request to warehouse, please wait till request fullfiled. Or not approved customer yet"
                     : items.TSRVD_FLGSTS !== 2
                      ? 'Please wait until customer has approve the service.'
                      : "Request Part to Warehouse"
@@ -475,7 +479,9 @@ const onClickRequest = (idx) => {
     listDet.push({
       TLOCREQ_ITMCD: valMap.TSRVF_ITMCD,
       TLOCREQ_QTY: valMap.TSRVF_QTY,
-      TLOCREQ_ISREP: 1
+      TLOCREQ_PRC: valMap.TSRVF_PRC,
+      TLOCREQ_ISREP: 1,
+      SAVED_DATA: valMap.SAVED_DATA
     });
   });
   $q.dialog({

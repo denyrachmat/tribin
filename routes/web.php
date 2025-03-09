@@ -515,6 +515,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::resource('servicesOPR', ServiceOprController::class);
         Route::prefix('servicesOPRs')->group(function () {
             Route::post('search', [ServiceOprController::class, 'search']);
+            Route::post('saveTransferLocDraft', [ServiceOprController::class, 'saveTransferLocDraft']);
         });
 
         Route::prefix('acc')->group(function () {

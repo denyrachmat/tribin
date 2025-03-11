@@ -179,7 +179,7 @@
                 flat
                 @click="onClickAddOpr(items, idx)"
               >
-                <q-tooltip>Add part to fix problem</q-tooltip>
+                <q-tooltip>Add Operator</q-tooltip>
               </q-btn>
             </q-item-section>
             <q-item-section side>
@@ -265,7 +265,7 @@
                 >
               </q-btn>
             </q-item-section>
-            <q-item-section side v-if="items.TSRVD_FLGSTS == 2 && items.partReq.length > 0">
+            <q-item-section side v-if="items.TSRVD_FLGSTS == 2 && items.partReq.length === 0">
               <q-btn
                 icon="compare_arrows"
                 :color="
@@ -530,7 +530,8 @@ const onClickAddOpr = (data, idx) => {
   $q.dialog({
     component: serviceOperatorSetup,
     componentProps: {
-      detail: data,
+      detail: data.opr,
+      status: data.TSRVD_FLGSTS < 2
     },
     // persistent: true,
   }).onOk(async (res) => {

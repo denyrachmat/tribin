@@ -71,7 +71,7 @@
                       @click="isNewOpr = !isNewOpr"
                     >
                       <q-tooltip>{{
-                        isNewOpr
+                        !isNewOpr
                           ? "Choose existing operator / mekanik"
                           : "Insert new operator / mekanik"
                       }}</q-tooltip>
@@ -137,7 +137,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 
 const $q = useQuasar();
 const props = defineProps({
-  detail: Object,
+  detail: Array,
 });
 
 const listType = ref([]);
@@ -146,6 +146,9 @@ const loading = ref(false);
 const listOperator = ref([]);
 
 onMounted(() => {
+  if (props.detail && props.detail.length > 0) {
+    listOperator.value = props.detail
+  }
   getTypeListOPR();
 });
 

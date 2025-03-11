@@ -15,10 +15,11 @@ use App\Models\T_SRV_FIXDET;
 use App\Models\T_LOC_REQ;
 
 use App\Traits\LocationTraits;
+use App\Traits\gencodeTraits;
 
 class ServiceOprController extends Controller
 {
-    use LocationTraits;
+    use LocationTraits, gencodeTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -161,13 +162,23 @@ class ServiceOprController extends Controller
 
             $listPartReq = [];
             foreach ($getDet as $keyDet => $valueDet) {
+                $getListOPR = [];
+                $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$valueDet['id']}";
+                foreach ($this->getGencode(base64_encode($IDCode)) as $key => $valueGenCode) {
+                    $getListOPR[] = [
+                        'OPRTYPE' => $valueGenCode['MGECD_VALUE'],
+                        'OPRNAME' => $valueGenCode['MGECD_DESC'],
+                    ];
+                }
+
                 $listPartReq[] = array_merge(
                     $valueDet,
                     [
                         'partReq' => T_LOC_REQ::on($this->dedicatedConnection)
                             ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
                             ->get()
-                            ->toArray()
+                            ->toArray(),
+                        'opr' => $getListOPR
                     ]
                 );
             }

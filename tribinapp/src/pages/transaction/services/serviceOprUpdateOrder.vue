@@ -169,6 +169,19 @@
                 <q-tooltip>Add part to fix problem</q-tooltip>
               </q-btn>
             </q-item-section>
+            <q-item-section
+              side
+              v-if="props.mode === 'edit' && items.TSRVD_FLGSTS < 2"
+            >
+              <q-btn
+                icon="person"
+                :color="items.opr && items.opr.length > 0 ? 'indigo' : 'red'"
+                flat
+                @click="onClickAddOpr(items, idx)"
+              >
+                <q-tooltip>Add part to fix problem</q-tooltip>
+              </q-btn>
+            </q-item-section>
             <q-item-section side>
               <q-btn
                 icon="visibility"
@@ -212,29 +225,47 @@
             >
               <q-btn
                 icon="task"
-                :color="submitedItems[idx].listFixDet.filter(fil => fil.STOCK_BENGKEL > 0).length !== submitedItems[idx].listFixDet.length ? 'grey' : 'indigo'"
+                :color="
+                  submitedItems[idx].listFixDet.filter(
+                    (fil) => fil.STOCK_BENGKEL > 0
+                  ).length !== submitedItems[idx].listFixDet.length
+                    ? 'grey'
+                    : 'indigo'
+                "
                 outline
                 @click="onClickDone(idx)"
-                :disable="submitedItems[idx].listFixDet.filter(fil => fil.STOCK_BENGKEL > 0).length !== submitedItems[idx].listFixDet.length"
+                :disable="
+                  submitedItems[idx].listFixDet.filter(
+                    (fil) => fil.STOCK_BENGKEL > 0
+                  ).length !== submitedItems[idx].listFixDet.length
+                "
               >
                 <q-tooltip>
                   {{
-                    submitedItems[idx].listFixDet.filter(fil => fil.STOCK_BENGKEL > 0).length !== submitedItems[idx].listFixDet.length
-                    ? 'No stock on service location, please request stock to warehouse.'
-                    : 'Mark this problem as done'
+                    submitedItems[idx].listFixDet.filter(
+                      (fil) => fil.STOCK_BENGKEL > 0
+                    ).length !== submitedItems[idx].listFixDet.length
+                      ? "No stock on service location, please request stock to warehouse."
+                      : "Mark this problem as done"
                   }}
                 </q-tooltip>
                 <q-badge
                   color="red"
                   floating
-                  v-if="submitedItems[idx].listFixDet.filter(fil => fil.TSRVF_ISCONF == 0).length > 0"
-                  >{{submitedItems[idx].listFixDet.filter(fil => fil.TSRVF_ISCONF == 0).length}}</q-badge
+                  v-if="
+                    submitedItems[idx].listFixDet.filter(
+                      (fil) => fil.TSRVF_ISCONF == 0
+                    ).length > 0
+                  "
+                  >{{
+                    submitedItems[idx].listFixDet.filter(
+                      (fil) => fil.TSRVF_ISCONF == 0
+                    ).length
+                  }}</q-badge
                 >
               </q-btn>
             </q-item-section>
-            <q-item-section
-              side
-            >
+            <q-item-section side v-if="items.TSRVD_FLGSTS == 2 && items.partReq.length > 0">
               <q-btn
                 icon="compare_arrows"
                 :color="
@@ -244,34 +275,36 @@
                 "
                 outline
                 @click="onClickRequest(idx)"
-                :disable="
-                  items.TSRVD_FLGSTS !== 2 || items.partReq.length > 0
-                "
+                :disable="items.TSRVD_FLGSTS !== 2 || items.partReq.length > 0"
               >
                 <q-tooltip>{{
                   items.partReq.length > 0
                     ? "Already send request to warehouse, please wait till request fullfiled. Or not approved customer yet"
                     : items.TSRVD_FLGSTS !== 2
-                     ? 'Please wait until customer has approve the service.'
-                     : "Request Part to Warehouse"
+                    ? "Please wait until customer has approve the service."
+                    : "Request Part to Warehouse"
                 }}</q-tooltip>
               </q-btn>
             </q-item-section>
-            <q-item-section
-              side
-            >
+            <q-item-section side v-if="items.TSRVD_FLGSTS == 2 && items.partReq.length > 0">
               <q-btn
                 icon="compare_arrows"
                 :color="
-                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                  items.TSRVD_FLGSTS !== 2 ||
+                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
                     .length > 0
                     ? 'grey'
                     : 'cyan'
                 "
                 outline
-                @click="onClickPrintRequest(`${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`)"
+                @click="
+                  onClickPrintRequest(
+                    `${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`
+                  )
+                "
                 :disable="
-                  items.TSRVD_FLGSTS !== 2 || items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                  items.TSRVD_FLGSTS !== 2 ||
+                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
                     .length > 0
                 "
               >
@@ -296,14 +329,12 @@
         >
           <q-tooltip>
             {{
-                loading
-                ? 'Please wait on loading'
-                : (
-                  submitedItems.filter((fil) => fil.listFixDet).length === 0 ||
+              loading
+                ? "Please wait on loading"
+                : submitedItems.filter((fil) => fil.listFixDet).length === 0 ||
                   submitedItems.filter((fil) => fil.TSRVD_REMARK).length === 0
-                  ? 'Please make sure Used Qty not more bigger than Requested Qty'
-                  : 'Submit Service'
-                )
+                ? "Please make sure Used Qty not more bigger than Requested Qty"
+                : "Submit Service"
             }}
           </q-tooltip>
         </q-btn>
@@ -326,6 +357,7 @@ import { date, useQuasar, useDialogPluginComponent } from "quasar";
 import serviceOprItemAdd from "./serviceOprItemAdd.vue";
 import itemRequestIndex from "../../warehouse/itemRequest/itemRequestIndex.vue";
 import serviceUsageView from "./serviceUsageView.vue";
+import serviceOperatorSetup from "./serviceOperatorSetup.vue";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
@@ -345,6 +377,8 @@ const dataApi = ref({
 });
 const submitedItems = ref([]);
 const loading = ref(false);
+const listType = ref([]);
+const listOpr = ref([]);
 
 onMounted(async () => {
   if (props.header) {
@@ -437,39 +471,19 @@ const onClickReject = (idx) => {
   });
 };
 
-// const onClickDone = (idx) => {
-//   $q.dialog({
-//     title: "Confirmation",
-//     message: `Do you want to mark this problem as done ?`,
-//     cancel: true,
-//     persistent: true,
-//   }).onOk(async () => {
-//     loading.value = true;
-//     await api_web
-//       .put(`servicesAdmins/updateByDet/${btoa(submitedItems.value[idx].id)}`, {
-//         TSRVD_FLGSTS: 3,
-//       })
-//       .then((response) => {
-//         loading.value = false;
-//         onDialogOK();
-//       })
-//       .catch((e) => {
-//         loading.value = false;
-//       });
-//   });
-// };
-
 const onClickDone = (val) => {
   $q.dialog({
     component: serviceUsageView,
     componentProps: {
       idDetail: submitedItems.value[val].id,
-      detail: submitedItems.value[val].listFixDet.filter(fil => fil.TSRVF_ISCONF == 0),
-    }
+      detail: submitedItems.value[val].listFixDet.filter(
+        (fil) => fil.TSRVF_ISCONF == 0
+      ),
+    },
   }).onOk(async (res) => {
     onDialogOK();
   });
-}
+};
 
 // serviceUsageView
 const onClickRequest = (idx) => {
@@ -481,7 +495,7 @@ const onClickRequest = (idx) => {
       TLOCREQ_QTY: valMap.TSRVF_QTY,
       TLOCREQ_PRC: valMap.TSRVF_PRC,
       TLOCREQ_ISREP: 1,
-      SAVED_DATA: valMap.SAVED_DATA
+      SAVED_DATA: valMap.SAVED_DATA,
     });
   });
   $q.dialog({
@@ -494,7 +508,7 @@ const onClickRequest = (idx) => {
         TLOCREQ_TOLOC: "WH-SRV",
       },
       dataDet: listDet,
-      qtyOnly: true
+      qtyOnly: true,
     },
     // persistent: true,
   }).onOk(async (res) => {
@@ -510,5 +524,18 @@ const onClickPrintRequest = (val) => {
       "_blank"
     )
     .focus();
+};
+
+const onClickAddOpr = (data, idx) => {
+  $q.dialog({
+    component: serviceOperatorSetup,
+    componentProps: {
+      detail: data,
+    },
+    // persistent: true,
+  }).onOk(async (res) => {
+    console.log(res);
+    data.opr = res;
+  });
 };
 </script>

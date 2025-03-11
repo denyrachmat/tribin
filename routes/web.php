@@ -45,6 +45,7 @@ use App\Http\Controllers\ServiceAdminController;
 use App\Http\Controllers\transferRequestController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
+use App\Http\Controllers\gencodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -88,7 +89,9 @@ Route::get('testPrint', [ReceiveOrderController::class, 'testPrint']);
 Route::group(['middleware' => 'cors'], function () {
     Route::middleware('auth')->group(function () {
         Route::get('actionlogout', [LoginController::class, 'actionlogout'])->name('actionlogout');
-
+        Route::prefix('gencode')->group(function () {
+            Route::get('get/{id}', [gencodeController::class, 'getGencode']);
+        });
         # Terkait Company Group
         Route::prefix('companies')->group(function () {
             Route::get('nowCG', [CompanyGroupController::class, 'getNowCG']);

@@ -265,20 +265,20 @@
                 >
               </q-btn>
             </q-item-section>
-            <q-item-section side v-if="items.TSRVD_FLGSTS == 2 && items.partReq.length === 0">
+            <q-item-section side v-if="props.mode === 'edit' && (items.TSRVD_FLGSTS === 2 && !(items.partReq && items.partReq.length > 0))">
               <q-btn
                 icon="compare_arrows"
                 :color="
-                  items.TSRVD_FLGSTS !== 2 || items.partReq.length > 0
+                  items.TSRVD_FLGSTS !== 2 || (items.partReq && items.partReq.length > 0)
                     ? 'grey'
                     : 'orange'
                 "
                 outline
                 @click="onClickRequest(idx)"
-                :disable="items.TSRVD_FLGSTS !== 2 || items.partReq.length > 0"
+                :disable="items.TSRVD_FLGSTS !== 2 || (items.partReq && items.partReq.length > 0)"
               >
                 <q-tooltip>{{
-                  items.partReq.length > 0
+                  (items.partReq && items.partReq.length > 0)
                     ? "Already send request to warehouse, please wait till request fullfiled. Or not approved customer yet"
                     : items.TSRVD_FLGSTS !== 2
                     ? "Please wait until customer has approve the service."
@@ -286,7 +286,7 @@
                 }}</q-tooltip>
               </q-btn>
             </q-item-section>
-            <q-item-section side v-if="items.TSRVD_FLGSTS == 2 && items.partReq.length > 0">
+            <q-item-section side v-if="props.mode === 'edit' && (items.TSRVD_FLGSTS === 2 && !(items.partReq && items.partReq.length > 0))">
               <q-btn
                 icon="compare_arrows"
                 :color="

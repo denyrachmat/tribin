@@ -218,8 +218,8 @@ class ServiceOprController extends Controller
 
                 if (!empty($getDetailID)) {
                     T_SRV_DET::on($this->dedicatedConnection)->where('id', $getDetailID->id)->update([
-                        'TSRVD_FLGSTS' => 1,
-                        'TSRVD_REMARK' => 'Re-add Lines'
+                        'TSRVD_FLGSTS' => 0,
+                        // 'TSRVD_REMARK' => $getDetailID->TSRVD_REMARK. ' - Additional items.'
                     ]);
 
                     $hasil = [];

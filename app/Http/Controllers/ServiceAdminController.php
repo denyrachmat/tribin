@@ -18,10 +18,11 @@ use App\Models\T_SRV_DET;
 use App\Models\T_LOC_REQ;
 
 use App\Traits\LocationTraits;
+use App\Traits\gencodeTraits;
 
 class ServiceAdminController extends Controller
 {
-    use LocationTraits;
+    use LocationTraits, gencodeTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -111,9 +112,7 @@ class ServiceAdminController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-    }
+    public function show(string $id) {}
 
     /**
      * Show the form for editing the specified resource.
@@ -248,7 +247,9 @@ class ServiceAdminController extends Controller
                     }
                 }
 
-                return response(['msg' => count(array_filter($cekData, function($f) { return !$f['status'];})) > 0 ? 'Some item not updated !' : 'Some item has been updated !', 'data' => $cekData]);
+                return response(['msg' => count(array_filter($cekData, function ($f) {
+                    return !$f['status'];
+                })) > 0 ? 'Some item not updated !' : 'Some item has been updated !', 'data' => $cekData]);
             } else {
                 $cekDataAll = (clone $hasil)->get()->toArray();
                 $doc = T_SRV_HEAD::on($this->dedicatedConnection)->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
@@ -262,7 +263,7 @@ class ServiceAdminController extends Controller
                         'LOCTO' => 'WH-SRV-DONE',
                         'ITMCD' => $valueDet['TSRVF_ITMCD'],
                         'QTY' => $valueDet['TSRVF_QTY'],
-                        'DOC' => "{$doc->SRVH_DOCNO}-".base64_decode($id)
+                        'DOC' => "{$doc->SRVH_DOCNO}-" . base64_decode($id)
                     ]));
                 }
 
@@ -352,14 +353,37 @@ class ServiceAdminController extends Controller
                         $j->select('*', DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'));
                         $j->join('M_ITM', 'MITM_ITMCD', 'TSRVF_ITMCD');
                         // $j->where('TSRVF_ISCONF', 1);
-                    }
+                    },
                 ])
                 ->where('TSRVH_ID', $value['id'])
                 ->get()
                 ->toArray();
+
+            $listPartReq = [];
+            foreach ($getDet as $keyDet => $valueDet) {
+                $getListOPR = [];
+                $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$valueDet['id']}";
+                foreach ($this->getGencode(base64_encode($IDCode)) as $key => $valueGenCode) {
+                    $getListOPR[] = [
+                        'OPRTYPE' => $valueGenCode['MGECD_VALUE'],
+                        'OPRNAME' => $valueGenCode['MGECD_DESC'],
+                    ];
+                }
+
+                $listPartReq[] = array_merge(
+                    $valueDet,
+                    [
+                        'partReq' => T_LOC_REQ::on($this->dedicatedConnection)
+                            ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
+                            ->get()
+                            ->toArray(),
+                        'opr' => $getListOPR
+                    ]
+                );
+            }
             $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 0)->get()->toArray();
             $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', 1)->get()->toArray();
-            $hasil[] = array_merge($value, ['detail' => $getDet, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
+            $hasil[] = array_merge($value, ['detail' => $listPartReq, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
         }
 
         return ['data' => $hasil];

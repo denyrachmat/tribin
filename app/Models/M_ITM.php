@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
 class M_ITM extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $table = 'M_ITM';
     protected $primaryKey = "MITM_ITMCD";
     public $incrementing = false;

@@ -85,7 +85,7 @@
             </q-item-section>
 
             <!-- Jika bukan service internal -->
-            <q-item-section v-if="props.header.SRVH_ISINT == 0">
+            <q-item-section>
               <div v-if="props.mode === 'view'">
                 <q-item-label>
                   {{ items.TSRVF_PRC.toLocaleString() }}

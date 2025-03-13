@@ -376,7 +376,9 @@ class DeliveryController extends Controller
             $idAutoIDX = 0;
             foreach ($request->SO_DET as $keySODet => $valueSODetHeader) {
                 $quotationHeader['TDLVORD_DLVCD'] = $newQuotationCode . "/{$idAuto}";
-                $dataDLVHead[$idAutoIDX]['HEAD'] = T_DLVORDHEAD::on($this->dedicatedConnection)->create($quotationHeader);
+                $dataDLVHead[$idAutoIDX]['HEAD'] = T_DLVORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
+                    'TDLVORD_DLVCD' => $newQuotationCode
+                ], $quotationHeader);
                 $dataDLVHead[$idAutoIDX]['DET'] = [$valueSODetHeader];
                 $idAuto++;
 
@@ -385,7 +387,10 @@ class DeliveryController extends Controller
         } else {
             $dataDLVHead = [
                 [
-                    'HEAD' => T_DLVORDHEAD::on($this->dedicatedConnection)->create($quotationHeader),
+                    'HEAD' => T_DLVORDHEAD::on($this->dedicatedConnection)
+                        ->updateOrCreate([
+                            'TDLVORD_DLVCD' => $newQuotationCode
+                        ], $quotationHeader),
                     'DET' => $request->SO_DET
                 ]
             ];

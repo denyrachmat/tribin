@@ -52,6 +52,12 @@
               ></q-item-label>
               <q-item-label caption> Tech. Remarks</q-item-label>
             </q-item-section>
+            <q-item-section>
+              <q-item-label
+                ><div v-html="items.TSRVD_LOC"></div
+              ></q-item-label>
+              <q-item-label caption> Location</q-item-label>
+            </q-item-section>
             <!-- <q-item-section>
               <q-item-label v-if="items.TSRVD_MGRRMK">
                 <div v-html="items.TSRVD_MGRRMK"></div>

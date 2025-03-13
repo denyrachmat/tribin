@@ -90,6 +90,23 @@
             <b>List Of Items</b>
           </legend>
 
+          <div class="row">
+            <div class="col text-right">
+              <q-checkbox
+                v-model="addMoreItems"
+                label="Add More Items ?"
+                color="primary"
+              />
+              <q-btn
+                icon="add"
+                color="primary"
+                flat
+                @click="onAddItems()"
+                v-if="addMoreItems"
+              />
+            </div>
+          </div>
+
           <template v-if="listDet.length > 0">
             <div
               class="row q-col-gutter-md q-pt-md"
@@ -114,24 +131,30 @@
                   emit-value
                   map-options
                   :loading="loading"
-                :readonly="qtyOnly"
+                  :readonly="qtyOnly && list.SAVED_DATA != 0"
                 >
                 </q-select>
               </div>
 
-              <div class="col-12 col-sm-3">
+              <div :class="addMoreItems && !list.SAVED_DATA ? 'col-12 col-sm-2' : 'col-12 col-sm-3'">
                 <q-input label="Qty" dense filled v-model="list.TLOCREQ_QTY" />
               </div>
 
-              <div class="col-12 col-sm-2">
+              <div :class="addMoreItems && !list.SAVED_DATA ? 'col-12 col-sm-2' : 'col-12 col-sm-3'" v-if="addMoreItems && !list.SAVED_DATA">
+                <q-input label="Price" dense filled v-model="list.TLOCREQ_PRC" />
+              </div>
+
+              <div :class="addMoreItems && !list.SAVED_DATA ? 'col-12 col-sm-1' : 'col-12 col-sm-2'">
                 <q-checkbox
                   v-model="list.TLOCREQ_ISREP"
-                  label="Is replacement ?"
                   color="teal"
                   :true-value="1"
                   :false-value="0"
                   :disable="loading"
-                />
+                  label="Swap"
+                >
+                  <q-tooltip>Check it for swap part with new one</q-tooltip>
+                </q-checkbox>
               </div>
 
               <div class="col-12 col-sm-1">
@@ -169,7 +192,7 @@ const $q = useQuasar();
 const props = defineProps({
   dataHeader: Array,
   dataDet: Array,
-  qtyOnly: Boolean
+  qtyOnly: Boolean,
 });
 
 const header = ref({
@@ -183,6 +206,7 @@ const listLoc = ref([]);
 
 const listDet = ref([]);
 const loading = ref(false);
+const addMoreItems = ref(false);
 
 onMounted(async () => {
   console.log(props);
@@ -250,31 +274,41 @@ const onClickDeleteLines = (idx) => {
 const onSubmitData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to send this request ?`,
+    message: `Are you sure want to send this request ? ${addMoreItems.value ? ' You add more item, this service request will need manager approval & cust. approval, Continue ?' : null}`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
     loading.value = true;
     await api_web
-      .post(`inventory/saveTransferLocDraft`, {
+      .post(`servicesOPRs/saveTransferLocDraft`, {
         TLOCREQ_DOCNO: header.value.TLOCREQ_DOCNO,
         TLOCREQ_FRLOC: header.value.TLOCREQ_FRLOC,
         TLOCREQ_TOLOC: header.value.TLOCREQ_TOLOC,
         detail: listDet.value,
+        add_items: addMoreItems.value,
       })
       .then(async (response) => {
         loading.value = false;
 
-          $q.notify({
-            color: "green",
-            message: `${response.data.msg}`,
-          });
+        $q.notify({
+          color: "green",
+          message: `${response.data.msg}`,
+        });
 
-          onDialogOK();
+        onDialogOK();
       })
       .catch((err) => {
         loading.value = false;
       });
+  });
+};
+
+const onAddItems = () => {
+  listDet.value.push({
+    TLOCREQ_ITMCD: "",
+    TLOCREQ_QTY: 0,
+    TLOCREQ_ISREP: 0,
+    SAVED_DATA: 0
   });
 };
 

@@ -267,7 +267,10 @@ const onClickView = (val) => {
       TSRVD_CUSTRMK: valMap.TSRVD_CUSTRMK,
       TSRVD_REMARK: valMap.TSRVD_REMARK,
       TSRVD_FLGSTS: valMap.TSRVD_FLGSTS,
+      TSRVD_LOC: valMap.TSRVD_LOC,
       listFixDet: valMap.list_fix_det,
+      opr: valMap.opr,
+      type: valMap.type,
     });
   });
 

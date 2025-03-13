@@ -475,6 +475,7 @@ class ServiceAdminController extends Controller
         $dataService = T_SRV_HEAD::on($this->dedicatedConnection)
             ->select(
                 'T_SRV_HEAD.*',
+                'T_SRV_DET.id as iddet',
                 'TSRVD_LOC'
             )
             ->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
@@ -486,13 +487,13 @@ class ServiceAdminController extends Controller
         $hasilService = null;
         if (!empty($dataService)) {
             $getListOPR = [];
-            $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$dataService['id']}";
+            $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$dataService['iddet']}";
             foreach ($this->getGencode(base64_encode($IDCode)) as $key => $valueGenCode) {
                 $getListOPR[] = "{$valueGenCode['MGECD_DESC']} ({$valueGenCode['MGECD_VALUE']})";
             }
 
             $getListType = [];
-            $IDCodeType = "SRV_TYPE_{$this->dedicatedConnection}_{$dataService['id']}";
+            $IDCodeType = "SRV_TYPE_{$this->dedicatedConnection}_{$dataService['iddet']}";
             foreach ($this->getGencode(base64_encode($IDCodeType)) as $key => $valueGenCode) {
                 $getListType[] = $valueGenCode['MGECD_VALUE'];
             }
@@ -504,6 +505,14 @@ class ServiceAdminController extends Controller
         } else {
             $hasilService = $dataService;
         }
+
+        // return [
+        //     'data' => $data,
+        //     'header' => 'JAYA ABADI TEKNIK',
+        //     'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+        //     'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia',
+        //     'service' => $hasilService
+        // ];
 
         $pdf = Pdf::loadView('pdf.partRequestForm', [
             'data' => $data,

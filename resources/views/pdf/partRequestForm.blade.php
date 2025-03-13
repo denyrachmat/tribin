@@ -143,6 +143,28 @@
                     <td>:</td>
                     <td>{{$data[0]['TLOCREQ_DOCNO']}}</td>
                 </tr>
+                <tr>
+                    <td>Location</td>
+                    <td>:</td>
+                    <td>{{$service['TSRVD_LOC']}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <table style="font-size: 13px">
+                <tr>
+                    <td>Type Service</td>
+                    <td>:</td>
+                    <td>{{$data[0]['TLOCREQ_DOCNO']}}</td>
+                </tr>
+                @foreach($service['opr'] => $valueOPR)
+                <tr>
+                    <td>{{$valueOPR}}</td>
+                </tr>
+                @endforeach
             </table>
         </div>
     </div>

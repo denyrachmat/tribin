@@ -372,6 +372,14 @@ class ServiceAdminController extends Controller
                     ];
                 }
 
+                $getListType = [];
+                $IDCodeType = "SRV_TYPE_{$this->dedicatedConnection}_{$valueDet['id']}";
+                foreach ($this->getGencode(base64_encode($IDCodeType)) as $key => $valueGenCode) {
+                    $getListType[] = [
+                        'OPRNAME' => $valueGenCode['MGECD_VALUE'],
+                    ];
+                }
+
                 $listPartReq[] = array_merge(
                     $valueDet,
                     [
@@ -379,7 +387,8 @@ class ServiceAdminController extends Controller
                             ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
                             ->get()
                             ->toArray(),
-                        'opr' => $getListOPR
+                        'opr' => $getListOPR,
+                        'type' => $getListType
                     ]
                 );
             }
@@ -462,11 +471,46 @@ class ServiceAdminController extends Controller
             ->get()
             ->toArray();
 
+        $splitID = explode('-', base64_decode($id));
+        $dataService = T_SRV_HEAD::on($this->dedicatedConnection)
+            ->select(
+                'T_SRV_HEAD.*',
+                'TSRVD_LOC'
+            )
+            ->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
+            ->where('SRVH_DOCNO', $splitID[0])
+            ->where('TSRVD_LINE', $splitID[1])
+            ->first()
+            ->toArray();
+
+        $hasilService = null;
+        if (!empty($dataService)) {
+            $getListOPR = [];
+            $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$dataService['id']}";
+            foreach ($this->getGencode(base64_encode($IDCode)) as $key => $valueGenCode) {
+                $getListOPR[] = "{$valueGenCode['MGECD_DESC']} ({$valueGenCode['MGECD_VALUE']})";
+            }
+
+            $getListType = [];
+            $IDCodeType = "SRV_TYPE_{$this->dedicatedConnection}_{$dataService['id']}";
+            foreach ($this->getGencode(base64_encode($IDCodeType)) as $key => $valueGenCode) {
+                $getListType[] = $valueGenCode['MGECD_VALUE'];
+            }
+
+            $hasilService = array_merge($dataService, [
+                'opr' => $getListOPR,
+                'type' => $getListType
+            ]);
+        } else {
+            $hasilService = $dataService;
+        }
+
         $pdf = Pdf::loadView('pdf.partRequestForm', [
             'data' => $data,
             'header' => 'JAYA ABADI TEKNIK',
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia'
+            'addr' => 'Jl. Tembus Terminal No. 17 KM. 12 Alang-alang Lebar, Palembang-Indonesia',
+            'service' => $hasilService
         ]);
 
         return $pdf->stream('part-request.pdf');

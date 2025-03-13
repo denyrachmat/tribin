@@ -274,170 +274,185 @@
               <q-item-label caption lines="1">Location</q-item-label>
             </q-item-section>
 
-            <q-item-section
-              side
-            >
-              <q-btn
-                icon="construction"
-                color="green"
-                flat
-                @click="onClickAddItem(idx, 'add')"
-              >
-                <q-tooltip>Add part to fix problem</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section
-              side
-            >
-              <q-btn
-                icon="person"
-                :color="items.opr && items.opr.length > 0 ? 'indigo' : 'red'"
-                flat
-                @click="onClickAddOpr(items, idx)"
-              >
-                <q-tooltip>Add Operator</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section
-              side
-            >
-              <q-btn
-                icon="category"
-                :color="items.type && items.type.length > 0 ? 'indigo' : 'red'"
-                flat
-                @click="onClickAddType(items)"
-              >
-                <q-tooltip>Add Type Service</q-tooltip>
-              </q-btn>
-            </q-item-section>
             <q-item-section side>
-              <q-btn
-                icon="visibility"
-                color="cyan"
-                flat
-                @click="onClickAddItem(idx, 'view')"
-                :disable="!items.listFixDet"
-              >
-                <q-tooltip>View Added Item</q-tooltip>
-                <q-badge
-                  color="red"
-                  floating
-                  v-if="items.listFixDet.length > 0"
-                  >{{ items.listFixDet.length }}</q-badge
+              <q-btn-group outline>
+
+                <!-- Manage service items -->
+                <q-btn
+                  icon="construction"
+                  color="green"
+                  outline
+                  @click="onClickAddItem(idx, 'add')"
+                  v-if="props.mode === 'edit' && items.TSRVD_FLGSTS < 2"
                 >
-              </q-btn>
-            </q-item-section>
-            <q-item-section side v-if="props.mode === 'approvecust'">
-              <q-btn
-                icon="how_to_reg"
-                color="green"
-                outline
-                @click="onClickApprove(idx)"
-              >
-                <q-tooltip>Approve this as customer</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section side v-if="props.mode === 'approvecust'">
-              <q-btn
-                icon="cancel"
-                color="red"
-                outline
-                @click="onClickReject(idx)"
-              >
-                <q-tooltip>Reject this as customer</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section
-              side
-              v-if="props.mode === 'edit' && items.TSRVD_FLGSTS == 2"
-            >
-              <q-btn
-                icon="task"
-                :color="
-                  submitedItems[idx].listFixDet.filter(
-                    (fil) => fil.STOCK_BENGKEL > 0
-                  ).length !== submitedItems[idx].listFixDet.length
-                    ? 'grey'
-                    : 'indigo'
-                "
-                outline
-                @click="onClickDone(idx)"
-                :disable="
-                  submitedItems[idx].listFixDet.filter(
-                    (fil) => fil.STOCK_BENGKEL > 0
-                  ).length !== submitedItems[idx].listFixDet.length
-                "
-              >
-                <q-tooltip>
-                  {{
+                  <q-tooltip>Add part to fix problem</q-tooltip>
+                </q-btn>
+
+                <!-- View service part list-->
+                <q-btn
+                  icon="visibility"
+                  color="cyan"
+                  outline
+                  @click="onClickAddItem(idx, 'view')"
+                  :disable="!items.listFixDet"
+                >
+                  <q-tooltip>View Added Item</q-tooltip>
+                  <q-badge
+                    color="red"
+                    floating
+                    v-if="items.listFixDet.length > 0"
+                    >{{ items.listFixDet.length }}</q-badge
+                  >
+                </q-btn>
+
+                <!-- Approve from Customer -->
+                <q-btn
+                  icon="how_to_reg"
+                  color="green"
+                  outline
+                  @click="onClickApprove(idx)"
+                  v-if="props.mode === 'approvecust'"
+                >
+                  <q-tooltip>Approve this as customer</q-tooltip>
+                </q-btn>
+
+                <!-- Reject from Customer -->
+                <q-btn
+                  icon="cancel"
+                  color="red"
+                  outline
+                  @click="onClickReject(idx)"
+                  v-if="props.mode === 'approvecust'"
+                >
+                  <q-tooltip>Reject this as customer</q-tooltip>
+                </q-btn>
+
+                <!-- Manage use the requested items and confirm fix -->
+                <q-btn
+                  icon="task"
+                  :color="
                     submitedItems[idx].listFixDet.filter(
                       (fil) => fil.STOCK_BENGKEL > 0
                     ).length !== submitedItems[idx].listFixDet.length
-                      ? "No stock on service location, please request stock to warehouse."
-                      : "Mark this problem as done"
-                  }}
-                </q-tooltip>
-                <q-badge
-                  color="red"
-                  floating
-                  v-if="
-                    submitedItems[idx].listFixDet.filter(
-                      (fil) => fil.TSRVF_ISCONF == 0
-                    ).length > 0
+                      ? 'grey'
+                      : 'indigo'
                   "
-                  >{{
+                  outline
+                  @click="onClickDone(idx)"
+                  :disable="
                     submitedItems[idx].listFixDet.filter(
-                      (fil) => fil.TSRVF_ISCONF == 0
-                    ).length
-                  }}</q-badge
+                      (fil) => fil.STOCK_BENGKEL > 0
+                    ).length !== submitedItems[idx].listFixDet.length
+                  "
+                  v-if="props.mode === 'edit' && items.TSRVD_FLGSTS == 2"
                 >
-              </q-btn>
-            </q-item-section>
-            <q-item-section side v-if="props.mode === 'edit' && (items.TSRVD_FLGSTS === 2 && !(items.partReq && items.partReq.length > 0))">
-              <q-btn
-                icon="compare_arrows"
-                :color="
-                  items.TSRVD_FLGSTS !== 2 || (items.partReq && items.partReq.length > 0)
-                    ? 'grey'
-                    : 'orange'
-                "
-                outline
-                @click="onClickRequest(idx)"
-                :disable="items.TSRVD_FLGSTS !== 2 || (items.partReq && items.partReq.length > 0)"
-              >
-                <q-tooltip>{{
-                  (items.partReq && items.partReq.length > 0)
-                    ? "Already send request to warehouse, please wait till request fullfiled. Or not approved customer yet"
-                    : items.TSRVD_FLGSTS !== 2
-                    ? "Please wait until customer has approve the service."
-                    : "Request Part to Warehouse"
-                }}</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section side v-if="props.mode === 'edit' && (items.TSRVD_FLGSTS === 2 && !(items.partReq && items.partReq.length > 0))">
-              <q-btn
-                icon="compare_arrows"
-                :color="
-                  items.TSRVD_FLGSTS !== 2 ||
-                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
-                    .length > 0
-                    ? 'grey'
-                    : 'cyan'
-                "
-                outline
-                @click="
-                  onClickPrintRequest(
-                    `${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`
-                  )
-                "
-                :disable="
-                  items.TSRVD_FLGSTS !== 2 ||
-                  items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
-                    .length > 0
-                "
-              >
-                <q-tooltip>Print Part Request</q-tooltip>
-              </q-btn>
+                  <q-tooltip>
+                    {{
+                      submitedItems[idx].listFixDet.filter(
+                        (fil) => fil.STOCK_BENGKEL > 0
+                      ).length !== submitedItems[idx].listFixDet.length
+                        ? "No stock on service location, please request stock to warehouse."
+                        : "Mark this problem as done"
+                    }}
+                  </q-tooltip>
+                  <q-badge
+                    color="red"
+                    floating
+                    v-if="
+                      submitedItems[idx].listFixDet.filter(
+                        (fil) => fil.TSRVF_ISCONF == 0
+                      ).length > 0
+                    "
+                    >{{
+                      submitedItems[idx].listFixDet.filter(
+                        (fil) => fil.TSRVF_ISCONF == 0
+                      ).length
+                    }}</q-badge
+                  >
+                </q-btn>
+
+                <!-- Add / View type Service -->
+                <q-btn
+                  icon="category"
+                  :color="
+                    items.type && items.type.length > 0 ? 'indigo' : 'red'
+                  "
+                  outline
+                  @click="onClickAddType(items)"
+                >
+                  <q-tooltip>Add Type Service</q-tooltip>
+                </q-btn>
+
+                <!-- Add / View operator -->
+                <q-btn
+                  icon="person"
+                  :color="items.opr && items.opr.length > 0 ? 'indigo' : 'red'"
+                  outline
+                  @click="onClickAddOpr(items, idx)"
+                >
+                  <q-tooltip>Add Operator</q-tooltip>
+                </q-btn>
+
+                <!-- Part request list -->
+                <q-btn
+                  icon="compare_arrows"
+                  :color="
+                    items.TSRVD_FLGSTS !== 2 ||
+                    (items.partReq && items.partReq.length > 0)
+                      ? 'grey'
+                      : 'orange'
+                  "
+                  outline
+                  @click="onClickRequest(idx)"
+                  :disable="
+                    items.TSRVD_FLGSTS !== 2 ||
+                    (items.partReq && items.partReq.length > 0)
+                  "
+                  v-if="
+                    props.mode === 'edit' &&
+                    items.TSRVD_FLGSTS === 2 &&
+                    !(items.partReq && items.partReq.length > 0)
+                  "
+                >
+                  <q-tooltip>{{
+                    items.partReq && items.partReq.length > 0
+                      ? "Already send request to warehouse, please wait till request fullfiled. Or not approved customer yet"
+                      : items.TSRVD_FLGSTS !== 2
+                      ? "Please wait until customer has approve the service."
+                      : "Request Part to Warehouse"
+                  }}</q-tooltip>
+                </q-btn>
+
+                <!-- Print Part Request -->
+                <q-btn
+                  icon="print"
+                  :color="
+                    items.TSRVD_FLGSTS !== 2 ||
+                    items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                      .length > 0
+                      ? 'grey'
+                      : 'cyan'
+                  "
+                  outline
+                  @click="
+                    onClickPrintRequest(
+                      `${dataApi.SRVH_DOCNO}-${items.TSRVD_LINE}`
+                    )
+                  "
+                  :disable="
+                    items.TSRVD_FLGSTS !== 2 ||
+                    items.partReq.filter((fil) => fil.TLOCREQ_APPRVDT !== null)
+                      .length > 0
+                  "
+                  v-if="
+                    props.mode === 'edit' &&
+                    items.TSRVD_FLGSTS === 2 &&
+                    (items.partReq && items.partReq.length > 0)
+                  "
+                >
+                  <q-tooltip>Print Part Request</q-tooltip>
+                </q-btn>
+              </q-btn-group>
             </q-item-section>
           </q-item>
         </q-list>
@@ -668,7 +683,10 @@ const onClickAddOpr = (data, idx) => {
     component: serviceOperatorSetup,
     componentProps: {
       detail: data.opr,
-      isView: data.TSRVD_FLGSTS > 1 || props.mode == 'view'
+      isView:
+        data.TSRVD_FLGSTS > 1 ||
+        props.mode == "view" ||
+        props.mode == "approvecust",
     },
     // persistent: true,
   }).onOk(async (res) => {
@@ -682,13 +700,15 @@ const onClickAddType = (data) => {
     component: serviceTypeSetup,
     componentProps: {
       detail: data.type,
-      isView: data.TSRVD_FLGSTS > 1 || props.mode == 'view'
+      isView:
+        data.TSRVD_FLGSTS > 1 ||
+        props.mode == "view" ||
+        props.mode == "approvecust",
     },
     // persistent: true,
   }).onOk(async (res) => {
     console.log(res);
     data.type = res;
   });
-
-}
+};
 </script>

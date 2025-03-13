@@ -12,7 +12,7 @@
           <div class="col">
             <div class="text-h6">Operator / Mekanik Setup</div>
           </div>
-          <div class="col text-right">
+          <div class="col text-right" v-if="!props.isView">
             <q-btn icon="add" outline color="blue" @click="onClickAddItem()" />
           </div>
         </div>
@@ -49,7 +49,7 @@
                   emit-value
                   map-options
                   option-label="MGECD_DESC"
-                  option-value="MGECD_VALUE"
+                  option-value="MGECD_DESC"
                   :readonly="props.isView"
                 >
                 </q-select>
@@ -133,7 +133,7 @@
         <q-btn
           label="OK"
           color="primary"
-          @click="props.isView ? onDialogCancel : onSubmitData()"
+          @click="props.isView ? onDialogCancel() : onSubmitData()"
           :disable="loading"
           :loading="loading"
         />

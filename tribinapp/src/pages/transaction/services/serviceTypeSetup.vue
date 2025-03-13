@@ -12,7 +12,7 @@
           <div class="col">
             <div class="text-h6">Service Type Setup</div>
           </div>
-          <div class="col text-right">
+          <div class="col text-right" v-if="!props.isView">
             <q-btn icon="add" outline color="blue" @click="onClickAddItem()" />
           </div>
         </div>
@@ -47,7 +47,7 @@
                   :options="listCat"
                   :loading="loading"
                   option-label="MGECD_DESC"
-                  option-value="MGECD_VALUE"
+                  option-value="MGECD_DESC"
                   emit-value
                   map-options
                   :readonly="props.isView"
@@ -75,7 +75,7 @@
         <q-btn
           label="OK"
           color="primary"
-          @click="props.isView ? onDialogCancel : onSubmitData()"
+          @click="props.isView ? onDialogCancel() : onSubmitData()"
           :disable="loading"
           :loading="loading"
         />

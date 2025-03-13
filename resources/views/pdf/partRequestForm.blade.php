@@ -152,22 +152,6 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col">
-            <table style="font-size: 13px">
-                <tr>
-                    <td>Type Service</td>
-                    <td>:</td>
-                </tr>
-                @foreach($service['opr'] as $key => $valueOPR)
-                <tr>
-                    <td>{{$valueOPR}}</td>
-                </tr>
-                @endforeach
-            </table>
-        </div>
-    </div>
-
     <div class="row" style="font-size: 13px; padding-top: 10px">
         <div class="col12">
             Dengan hormat,
@@ -175,6 +159,43 @@
             Sehubungan dengan usaha untuk memberikan pelayanan yang memuaskan kepada customer kami,
             <br>
             maka berikut kami membutuhkan part berikut :
+        </div>
+    </div>
+
+    <div class="row" style="padding-top: 1em;">
+        <div class="col">
+            <table style="font-size: 13px;">
+                <tr>
+                    <td>Operator / Mekanik</td>
+                    <td>:</td>
+                </tr>
+                <tr>
+                    <td>
+                        <ul>
+                            @foreach($service['opr'] as $key => $valueOPR)
+                            <li>{{$valueOPR}}</li>
+                            @endforeach
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="col">
+            <table style="font-size: 13px;">
+                <tr>
+                    <td>Type Service</td>
+                    <td>:</td>
+                </tr>
+                <tr>
+                    <td>
+                        <ul>
+                            @foreach($service['type'] as $key => $valueType)
+                            <li>{{$valueType}}</li>
+                            @endforeach
+                        </ul>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 

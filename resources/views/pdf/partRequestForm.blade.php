@@ -158,9 +158,8 @@
                 <tr>
                     <td>Type Service</td>
                     <td>:</td>
-                    <td>{{$data[0]['TLOCREQ_DOCNO']}}</td>
                 </tr>
-                @foreach($service['opr'] as $valueOPR)
+                @foreach($service['opr'] as $key => $valueOPR)
                 <tr>
                     <td>{{$valueOPR}}</td>
                 </tr>

@@ -20,6 +20,7 @@ class T_SRV_DET extends Model
         'TSRVD_QTY',
         'TSRVD_MGRRMK',
         'created_by',
+        'TSRVD_LOC'
     ];
 
     public function listFixDet() {

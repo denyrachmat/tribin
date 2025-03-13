@@ -34,6 +34,7 @@
               <q-item-label caption lines="1">Item</q-item-label>
             </q-item-section>
 
+            <!-- Customer Remarks -->
             <q-item-section>
               <q-item-label>
                 {{ items.TSRVD_CUSTRMK }}
@@ -41,6 +42,7 @@
               <q-item-label caption lines="1">Customer Remarks</q-item-label>
             </q-item-section>
 
+            <!-- Operator Remarks -->
             <q-item-section>
               <q-item-label>
                 <div class="cursor-pointer">
@@ -154,6 +156,122 @@
                 </div>
               </q-item-label>
               <q-item-label caption lines="1">Operator Remarks</q-item-label>
+            </q-item-section>
+
+            <!-- Location Remarks -->
+            <q-item-section>
+              <q-item-label>
+                <div class="cursor-pointer">
+                  <span v-if="!items.TSRVD_LOC" class="bg-orange">
+                    No location yet !, Click here to add location.
+                  </span>
+                  <span v-else>
+                    <div v-html="items.TSRVD_LOC"></div>
+                  </span>
+
+                  <q-popup-edit
+                    v-model="items.TSRVD_LOC"
+                    auto-save
+                    v-slot="scope"
+                    v-if="props.mode !== 'view'"
+                  >
+                    <q-editor
+                      @keyup.ctrl.enter="scope.set"
+                      @keyup.enter.stop
+                      v-model="scope.value"
+                      :dense="$q.screen.lt.md"
+                      :toolbar="[
+                        [
+                          {
+                            label: $q.lang.editor.align,
+                            icon: $q.iconSet.editor.align,
+                            fixedLabel: true,
+                            options: ['left', 'center', 'right', 'justify'],
+                          },
+                        ],
+
+                        [
+                          'bold',
+                          'italic',
+                          'strike',
+                          'underline',
+                          'subscript',
+                          'superscript',
+                        ],
+                        ['token', 'hr', 'link', 'custom_btn'],
+                        ['print', 'fullscreen'],
+                        [
+                          {
+                            label: $q.lang.editor.formatting,
+                            icon: $q.iconSet.editor.formatting,
+                            list: 'no-icons',
+                            options: [
+                              'p',
+                              'h1',
+                              'h2',
+                              'h3',
+                              'h4',
+                              'h5',
+                              'h6',
+                              'code',
+                            ],
+                          },
+                          {
+                            label: $q.lang.editor.fontSize,
+                            icon: $q.iconSet.editor.fontSize,
+                            fixedLabel: true,
+                            fixedIcon: true,
+                            list: 'no-icons',
+                            options: [
+                              'size-1',
+                              'size-2',
+                              'size-3',
+                              'size-4',
+                              'size-5',
+                              'size-6',
+                              'size-7',
+                            ],
+                          },
+                          {
+                            label: $q.lang.editor.defaultFont,
+                            icon: $q.iconSet.editor.font,
+                            fixedIcon: true,
+                            list: 'no-icons',
+                            options: [
+                              'default_font',
+                              'arial',
+                              'arial_black',
+                              'comic_sans',
+                              'courier_new',
+                              'impact',
+                              'lucida_grande',
+                              'times_new_roman',
+                              'verdana',
+                            ],
+                          },
+                          'removeFormat',
+                        ],
+                        ['quote', 'unordered', 'ordered', 'outdent', 'indent'],
+
+                        ['undo', 'redo'],
+                        ['viewsource'],
+                      ]"
+                      :fonts="{
+                        arial: 'Arial',
+                        arial_black: 'Arial Black',
+                        comic_sans: 'Comic Sans MS',
+                        courier_new: 'Courier New',
+                        impact: 'Impact',
+                        lucida_grande: 'Lucida Grande',
+                        times_new_roman: 'Times New Roman',
+                        verdana: 'Verdana',
+                      }"
+                    />
+                    <span>Press ctrl + enter to save the comments</span>
+                  </q-popup-edit>
+                </div>
+              </q-item-label>
+              <q-item-label caption lines="1">Location</q-item-label>
             </q-item-section>
 
             <q-item-section
@@ -494,7 +612,7 @@ const onClickRequest = (idx) => {
       TLOCREQ_ITMCD: valMap.TSRVF_ITMCD,
       TLOCREQ_QTY: valMap.TSRVF_QTY,
       TLOCREQ_PRC: valMap.TSRVF_PRC,
-      TLOCREQ_ISREP: 1,
+      TLOCREQ_ISREP: 0,
       SAVED_DATA: valMap.SAVED_DATA,
     });
   });

@@ -151,6 +151,7 @@
                   :true-value="1"
                   :false-value="0"
                   :disable="loading"
+                  label="Swap"
                 >
                   <q-tooltip>Check it for swap part with new one</q-tooltip>
                 </q-checkbox>

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('M_TAX', function (Blueprint $table) {
             $table->id();
             $table->string('MTAX_CODE')->unique();
+            $table->string('MTAX_CODEH')->nullable();
             $table->string('MTAX_TYPE')->nullable();
             $table->float('MTAX_PERCENT');
             $table->datetime('MTAX_EFFDT');

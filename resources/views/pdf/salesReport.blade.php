@@ -94,6 +94,7 @@
 
 <hr>
 
+@if(count($data['BARU']) > 0)
 <div style="text-align: center;padding-bottom: 1em;padding-top: 1em">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Baru</span>
 </div>
@@ -129,7 +130,13 @@
                         @php
                             $subtotal = 0;
                         @endphp
-                        @foreach($value as $keyDet => $valueDet)
+                        @foreach($value as $keyUsage => $valueUsage)
+                            <tr style="page-break-inside: avoid;">
+                                <td class="tg-0lax" style="text-align: left;" colspan="12">
+                                    <h3>{{$keyUsage}}</h3>
+                                </td>
+                            </tr>
+                            @foreach($valueUsage as $keyDet => $valueDet)
                                 @php
                                     $subtotal += $valueDet['TSLODETA_ITMQT'];
                                     $total += $valueDet['TSLODETA_ITMQT'];
@@ -152,6 +159,7 @@
                                     <td class="tg-0lax" style="text-align: left;">
                                         {{date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_TO']))}}</td>
                                 </tr>
+                            @endforeach
                         @endforeach
                         <tr>
                             <td class="tg-0laxa" style="text-align: left;" colspan="7">
@@ -173,9 +181,11 @@
         </tbody>
     </table>
 </div>
+@endif
 
 <div style="page-break-before: always;"></div>
 
+@if(count($data['PERPANJANGAN']) > 0)
 <div style="text-align: center;padding-bottom: 1em;padding-top: 1em">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Perpanjangan</span>
 </div>
@@ -211,7 +221,13 @@
                         @php
                             $subtotal = 0;
                         @endphp
-                        @foreach($value as $keyDet => $valueDet)
+                        @foreach($value as $keyUsage => $valueUsage)
+                            <tr style="page-break-inside: avoid;">
+                                <td class="tg-0lax" style="text-align: left;" colspan="12">
+                                    <h3>{{$keyUsage}}</h3>
+                                </td>
+                            </tr>
+                            @foreach($valueUsage as $keyDet => $valueDet)
                                 @php
                                     $subtotal += $valueDet['TSLODETA_ITMQT'];
                                     $total += $valueDet['TSLODETA_ITMQT'];
@@ -234,6 +250,7 @@
                                     <td class="tg-0lax" style="text-align: left;">
                                         {{date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_TO']))}}</td>
                                 </tr>
+                            @endforeach
                         @endforeach
                         <tr>
                             <td class="tg-0laxa" style="text-align: left;" colspan="7">
@@ -255,6 +272,8 @@
         </tbody>
     </table>
 </div>
+
+@endif
 
 <table class="tg2" style="margin-top: 5em;width:100%;text-align:center;border:0">
     <tr>

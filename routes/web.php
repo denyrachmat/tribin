@@ -46,6 +46,8 @@ use App\Http\Controllers\transferRequestController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
 use App\Http\Controllers\gencodeController;
+use App\Http\Controllers\TaxController;
+use App\Http\Controllers\DiscController;
 
 /*
 |--------------------------------------------------------------------------
@@ -304,12 +306,12 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('', [ReceiveOrderController::class, 'search']);
             Route::post('searchAPI', [ReceiveOrderController::class, 'searchApi']);
             Route::put('{id}', [ReceiveOrderController::class, 'update']);
-            // Route::get('{id}', [ReceiveOrderController::class, 'loadById']);
             Route::get('getData/{id}', [ReceiveOrderController::class, 'getSLOByIDAPI']);
             Route::delete('itemsAPI/{id}', [ReceiveOrderController::class, 'deleteByID']);
             Route::get('salesReportForm', [ReceiveOrderController::class, 'salesReportForm']);
 
             Route::post('marketingReport', [ReceiveOrderController::class, 'marketingReport']);
+            Route::post('proformaInvReport', [ReceiveOrderController::class, 'proformaInvReport']);
 
             Route::delete('items/{id}', [ReceiveOrderController::class, 'deleteItemById']);
             Route::put('items/{id}', [ReceiveOrderController::class, 'updateItem']);
@@ -604,6 +606,9 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('payroll/download-payroll', [PayrollController::class, 'payrollExportPDF'])->name('payroll.payrollExportPDF');
             Route::post('payroll/download-payslip', [PayrollController::class, 'payslipExportPDF'])->name('payroll.payslipExportPDF');
         });
+
+        Route::resource('tax', TaxController::class);
+        Route::resource('disc', DiscController::class);
     });
 });
 

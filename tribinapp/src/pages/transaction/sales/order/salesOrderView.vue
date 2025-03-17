@@ -99,17 +99,28 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="props.row.TSLO_SLOCD.includes('-') ? 'grey' : 'indigo'"
+                  :color="
+                    props.row.TSLO_SLOCD.includes('-') ? 'grey' : 'indigo'
+                  "
                   icon="autorenew"
                   @click="onClickRenew(props.row.TSLO_SLOCD)"
                   dense
                   :disable="props.row.TSLO_SLOCD.includes('-')"
                 >
                   <q-tooltip>{{
-                    props.row.TSLO_SLOCD.includes('-')
-                    ? 'Cannot renew extended SO, please renew at main SO !!'
-                    : 'Renew Sales Order'
+                    props.row.TSLO_SLOCD.includes("-")
+                      ? "Cannot renew extended SO, please renew at main SO !!"
+                      : "Renew Sales Order"
                   }}</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  :color="'cyan'"
+                  icon="print"
+                  @click="onClickPrintProforma(props.row.TSLO_SLOCD)"
+                  dense
+                >
+                  <q-tooltip>{{ "Print Proforma Invoice" }}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -184,7 +195,7 @@ onMounted(() => {
   dataRo();
 });
 
-const dataRo = async() => {
+const dataRo = async () => {
   loading.value = true;
   await api_web
     .post("receive-order/searchAPI", {
@@ -198,7 +209,7 @@ const dataRo = async() => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const onClickNew = () => {
   $q.dialog({
@@ -214,7 +225,7 @@ const onClickEdit = (val) => {
     component: salesOrderCreate,
     componentProps: {
       sloHeader: val,
-      isRecreate: false
+      isRecreate: false,
     },
     // persistent: true,
   }).onOk(async (val) => {
@@ -242,13 +253,40 @@ const onClickRenew = (val) => {
     component: salesOrderCreate,
     componentProps: {
       sloHeader: val,
-      isRecreate: true
+      isRecreate: true,
     },
     // persistent: true,
   }).onOk(async (val) => {
     dataRo();
   });
-}
+};
+
+const onClickPrintProforma = (slo) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to print proforma invoice ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .post("receive-order/proformaInvReport", {
+        TSLO_SLOCD: slo
+      })
+      .then((response) => {
+        loading.value = false;
+        let pdfWindow = window.open("");
+        pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+            encodeURI(response.data) +
+            "'></iframe>"
+        );
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
 </script>
 <style lang="sass">
 .my-sticky-header-column-table

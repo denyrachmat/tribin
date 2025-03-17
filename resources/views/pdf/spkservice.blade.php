@@ -191,7 +191,7 @@
                 <tbody>
                     @foreach($data[0]['detail'] as $key => $value)
                     <tr>
-                        <td class="tg-0lax">{{$value['TSRVD_ITMCD']}}</td>
+                        <td class="tg-0lax">{{$value['TSRVD_ITMCD']}} ({{$value['MITM_ITMNM']}})</td>
                         <td class="tg-0lax">{{$value['TSRVD_CUSTRMK']}}</td>
                         <td class="tg-0lax">{{$value['TSRVD_QTY']}}</td>
                         <td class="tg-0lax">{!!$value['TSRVD_REMARK']!!}</td>

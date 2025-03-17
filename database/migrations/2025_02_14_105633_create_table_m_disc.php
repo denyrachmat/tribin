@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('M_DISC', function (Blueprint $table) {
             $table->id();
+            $table->string('MDISC_CODE')->unique();
+            $table->string('MDISC_DESC')->nullable();
+            $table->float('MDISC_PERCENT')->nullable();
+            $table->float('MDISC_AMT')->nullable();
             $table->timestamps();
         });
     }

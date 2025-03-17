@@ -369,48 +369,6 @@ class ReceiveOrderController extends Controller
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
         $hasilAPI = [];
-        // if (count($cekInvoiceAcc) > 0 && $getTotalAmnt > 0) {
-        //     try {
-        //         $client = new \GuzzleHttp\Client([
-        //             'verify' => false,
-        //         ]);
-        //         $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
-        //             'body' => json_encode([
-        //                 'cg_code' => $this->dedicatedConnection,
-        //                 'date' => date('Y-m-d'),
-        //                 'reference_number' => $newDocumentCode,
-        //                 'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
-        //                 'description' => 'Sales Order ' . $newDocumentCode,
-        //                 'amount' => $getTotalAmnt,
-        //                 'payload' => []
-        //             ]),
-        //             'headers' => [
-        //                 'Content-Type' => 'application/json',
-        //                 'X-API-KEY' => env('ACC_KEY'),
-        //             ],
-        //         ]);
-
-        //         if ($response->getStatusCode() != 201) {
-        //             return $response->getBody();
-        //         }
-
-        //         $hasilAPI = json_decode($response->getBody(), true);
-        //     } catch (\GuzzleHttp\Exception\RequestException $e) {
-        //         $this->deleteByID(base64_encode($newDocumentCode), true);
-        //         return response()->json([
-        //             'error' => 'Failed to post data to API',
-        //             'message' => $e->getMessage(),
-        //             'param' => [
-        //                 'cg_code' => $this->dedicatedConnection,
-        //                 'date' => date('Y-m-d'),
-        //                 'reference_number' => $newDocumentCode,
-        //                 'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
-        //                 'description' => 'Sales Order ' . $newDocumentCode,
-        //                 'amount' => $getTotalAmnt,
-        //             ]
-        //         ], 500);
-        //     }
-        // }
 
         return [
             'msg' => 'OK',
@@ -737,6 +695,7 @@ class ReceiveOrderController extends Controller
             ->where("TSLO_ISSUDT", "<=", $request->dateTo)
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->get()->toArray();
+
         if ($request->fileType === 'json') {
             return ['data' => $RS];
         } else {
@@ -846,6 +805,7 @@ class ReceiveOrderController extends Controller
                     'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
+                    'MUSAGE_ALIAS',
                     'TDLVORDDETA_DLVCD'
                 )
                 ->join('T_SLODETA', function ($j) {
@@ -857,6 +817,7 @@ class ReceiveOrderController extends Controller
                 ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
                 ->join('M_CUS', 'MCUS_CUSCD', 'TSLO_CUSCD')
                 ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
+                ->leftJoin('M_USAGE', 'M_USAGE.id', DB::raw('CAST(TSLODETA_USAGE_DESCRIPTION AS INTEGER)'))
                 ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
                 ->where('MITM_ITMCAT', $value)
                 ->whereBetween('T_SLODETA.created_at', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"])
@@ -872,6 +833,7 @@ class ReceiveOrderController extends Controller
                     'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
+                    'MUSAGE_ALIAS',
                     'TDLVORDDETA_DLVCD'
                 );
 
@@ -884,17 +846,25 @@ class ReceiveOrderController extends Controller
             $cekTotalData = $RSTemp->get()->toArray();
 
             if (count($cekTotalData) > 0) {
-                $hasilTemp['BARU'][$value] = array_values(array_filter($cekTotalData, function ($f) {
+                $baru = array_values(array_filter($cekTotalData, function ($f) {
                     if (!str_contains($f['TSLO_SLOCD'], '-')) {
                         return $f;
                     }
                 }));
 
-                $hasilTemp['PERPANJANGAN'][$value] = array_values(array_filter($cekTotalData, function ($f) {
+                foreach ($baru as $keyBaru => $valuebaru) {
+                    $hasilTemp['BARU'][$value][$valuebaru['MUSAGE_ALIAS']][] = $valuebaru;
+                }
+
+                $perpanjangan = array_values(array_filter($cekTotalData, function ($f) {
                     if (str_contains($f['TSLO_SLOCD'], '-')) {
                         return $f;
                     }
                 }));
+
+                foreach ($perpanjangan as $keyBaru => $valuePerpanjangan) {
+                    $hasilTemp['PERPANJANGAN'][$value][$valuePerpanjangan['MUSAGE_ALIAS']][] = $valuePerpanjangan;
+                }
             }
         }
 
@@ -902,9 +872,49 @@ class ReceiveOrderController extends Controller
 
         $hasil = $hasilTemp;
 
+        // return $hasil;
+
         $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.salesReport', [
             'data' => $hasil,
             'dateRange' => [$request->fdate, $request->ldate],
+            'header' => $companyGroupData->name,
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => $companyGroupData->address
+        ]);
+
+        return base64_encode($pdf->output());
+    }
+
+    public function proformaInvReport(Request $request) {
+        $RS = T_SLOHEAD::on($this->dedicatedConnection)->select(
+            DB::raw("
+                T_SLOHEAD.*,
+                TQUO_SBJCT,
+                TQUO_ATTN,
+                TQUO_PROJECT_LOCATION,
+                MCUS_CUSNM,
+                MCUS_PIC_TELNO,
+                MCUS_ADDR1,
+                MCUS_TELNO
+            ")
+        )
+        ->leftJoin('T_QUOHEAD', function ($join) {
+            $join->on('TSLO_QUOCD', '=', 'TQUO_QUOCD');
+        })
+        ->join('M_CUS', function ($join) {
+            $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
+        })
+        ->where("TSLO_SLOCD", $request->TSLO_SLOCD)
+        ->where('TSLO_BRANCH', Auth::user()->branch)
+        ->get()
+        ->toArray();
+
+        $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
+
+        return $RS;
+
+        $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.proformaInvoice', [
+            'data' => $RS,
             'header' => $companyGroupData->name,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
             'addr' => $companyGroupData->address

@@ -357,6 +357,7 @@ class ServiceAdminController extends Controller
                         // $j->where('TSRVF_ISCONF', 1);
                     },
                 ])
+                ->join('M_ITM', 'MITM_ITMCD', 'TSRVD_ITMCD')
                 ->where('TSRVH_ID', $value['id'])
                 ->get()
                 ->toArray();
@@ -446,6 +447,8 @@ class ServiceAdminController extends Controller
                 }
             }
         }
+
+        // return $data['data'];
 
         $pdf = Pdf::loadView('pdf.spkservice', [
             'data' => $data['data'],

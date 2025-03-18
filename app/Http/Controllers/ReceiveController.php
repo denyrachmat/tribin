@@ -146,10 +146,11 @@ class ReceiveController extends Controller
 
         $cekDOC = T_RCV_HEAD::on($this->dedicatedConnection)
             ->where('id', $id)
-            ->first()
-            ->pluck('TRCV_DOCNO');
+            ->first();
 
-        $deleteBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_DOCNO', $cekDOC)->delete();
+        // return $cekDOC;
+
+        $deleteBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_DOCNO', $cekDOC->TRCV_DOCNO)->delete();
 
         if ($affectedRow) {
             if ($countRow === 0) {

@@ -164,13 +164,13 @@ const getTransSuppTypeList = async () => {
           value: v.MGECD_VALUE,
           valueChoosed: v.CODE_VALUE,
         });
-      });
 
-      if (v.MGECD_DESC2 === "acc") {
-        getCOAListSupp(idx);
-      } else {
-        getFromAPI(v.MGECD_DESC2, "listCOASupp", idx);
-      }
+        if (v.MGECD_DESC2 === "acc") {
+          getCOAListSupp(idx);
+        } else {
+          getFromAPI(v.MGECD_DESC2, "listCOASupp", idx);
+        }
+      });
     })
     .catch((e) => {});
 };

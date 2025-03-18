@@ -1202,7 +1202,7 @@ class InvoiceController extends Controller
             ->join(DB::raw('jatpower_tribin.users'), 'nick_name', 'T_SLODETA.created_by')
             ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-            ->where('MITM_ITMCAT', 'GENSET')
+            // ->where('MITM_ITMCAT', 'GENSET')
             ->get();
 
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(

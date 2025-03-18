@@ -428,7 +428,7 @@ class PurchaseController extends Controller
             })
             ->where('TPCHREQDETA_PCHCD', base64_decode($request->id))
             ->where('TPCHREQDETA_BRANCH', $request->TPCHREQDETA_BRANCH)
-            ->whereNull('deleted_at')
+            ->whereNull('T_PCHREQDETA.deleted_at')
             ->get();
 
         return ['dataItem' => $RS];
@@ -443,7 +443,7 @@ class PurchaseController extends Controller
             })
             ->where('TPCHREQDETA_PCHCD', base64_decode($request->id))
             ->where('TPCHREQDETA_BRANCH', $request->TPCHREQDETA_BRANCH)
-            ->whereNull('deleted_at')->get();
+            ->whereNull('T_PCHREQDETA.deleted_at')->get();
         return ['dataItem' => $RS];
     }
 
@@ -490,7 +490,7 @@ class PurchaseController extends Controller
             })
             ->where('TPCHORDDETA_PCHCD', base64_decode($request->id))
             ->where('TPCHORDDETA_BRANCH', $request->TPCHORDDETA_BRANCH)
-            ->whereNull('deleted_at')->get();
+            ->whereNull('T_PCHORDDETA.deleted_at')->get();
         return ['dataItem' => $RS];
     }
 
@@ -526,7 +526,7 @@ class PurchaseController extends Controller
                 $join->on("TPCHREQDETA_ITMCD", "=", "MITM_ITMCD")
                     ->on("TPCHREQDETA_BRANCH", "=", "MITM_BRANCH");
             })
-            ->whereNull("deleted_at")
+            ->whereNull("T_PCHREQDETA.deleted_at")
             ->where('TPCHREQDETA_BRANCH', Auth::user()->branch)
             ->where("TPCHREQDETA_PCHCD", $doc)
             ->get()->toArray();
@@ -617,7 +617,7 @@ class PurchaseController extends Controller
                 $join->on("TPCHORDDETA_ITMCD", "=", "MITM_ITMCD")
                     ->on('TPCHORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            ->whereNull("deleted_at")
+            ->whereNull("T_PCHORDDETA.deleted_at")
             ->where("TPCHORDDETA_PCHCD", $doc)
             ->get()->toArray();
 
@@ -857,7 +857,7 @@ class PurchaseController extends Controller
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHREQDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD,TPCHREQDETA_BRANCH")
                 ->groupBy("TPCHREQDETA_PCHCD", "TPCHREQDETA_BRANCH")
-                ->whereNull('deleted_at');
+                ->whereNull('T_PCHREQDETA.deleted_at');
             $dataPurchaseRequestTobeUpproved = T_PCHREQHEAD::on($this->dedicatedConnection)->select(DB::raw("TPCHREQ_PCHCD,max(TTLDETAIL) TTLDETAIL, max(T_PCHREQHEAD.created_at) CREATED_AT,max(TPCHREQ_PURPOSE) TPCHREQ_PURPOSE,TPCHREQ_BRANCH"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TPCHREQ_PCHCD", "=", "TPCHREQDETA_PCHCD")
@@ -872,7 +872,7 @@ class PurchaseController extends Controller
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHREQDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHREQDETA_PCHCD, TPCHREQDETA_BRANCH")
                 ->groupBy("TPCHREQDETA_PCHCD", "TPCHREQDETA_BRANCH")
-                ->whereNull('deleted_at');
+                ->whereNull('T_PCHREQDETA.deleted_at');
             $dataPurchaseRequestApproved = T_PCHREQHEAD::on($this->dedicatedConnection)->select(DB::raw("TPCHREQ_PCHCD,max(TTLDETAIL) TTLDETAIL, max(T_PCHREQHEAD.created_at) CREATED_AT,max(TPCHREQ_PURPOSE) TPCHREQ_PURPOSE, max(TPCHREQ_REJCTDT) TPCHREQ_REJCTDT, max(TPCHREQ_APPRVDT) TPCHREQ_APPRVDT,MPCHREQTYPE_NAME,TPCHREQ_TYPE"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TPCHREQ_PCHCD", "=", "TPCHREQDETA_PCHCD")
@@ -902,7 +902,7 @@ class PurchaseController extends Controller
             $RSDetail = DB::connection($this->dedicatedConnection)->table('T_PCHORDDETA')
                 ->selectRaw("COUNT(*) TTLDETAIL, TPCHORDDETA_PCHCD, TPCHORDDETA_BRANCH")
                 ->groupBy("TPCHORDDETA_PCHCD", 'TPCHORDDETA_BRANCH')
-                ->whereNull('deleted_at');
+                ->whereNull('T_PCHORDDETA.deleted_at');
             $data = T_PCHORDHEAD::on($this->dedicatedConnection)->select(DB::raw("TPCHORD_PCHCD,max(TTLDETAIL) TTLDETAIL, max(T_PCHORDHEAD.created_at) CREATED_AT, MAX(MSUP_SUPNM) MSUP_SUPNM,TPCHORD_BRANCH"))
                 ->joinSub($RSDetail, 'dt', function ($join) {
                     $join->on("TPCHORD_PCHCD", "=", "TPCHORDDETA_PCHCD")
@@ -951,7 +951,7 @@ class PurchaseController extends Controller
                 })
                 ->where('TPCHREQDETA_PCHCD', $PRCode)
                 ->where('TPCHREQDETA_BRANCH', $request->TPCHREQ_BRANCH)
-                ->whereNull('deleted_at')
+                ->whereNull('T_PCHREQDETA.deleted_at')
                 ->get();
             foreach ($RSPRDetail as $r) {
                 $totalRow = M_ITM::on($request->has('conn') ? $request->conn : $RSPR->MSUP_CGCON)

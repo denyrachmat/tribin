@@ -405,7 +405,7 @@ class PurchaseController extends Controller
             })
             ->where('TPCHREQDETA_PCHCD', base64_decode($request->id))
             ->where('TPCHREQDETA_BRANCH', Auth::user()->branch)
-            ->whereNull('deleted_at')->get();
+            ->whereNull('T_PCHREQDETA.deleted_at')->get();
         return ['dataItem' => $RS];
     }
     function loadByIdApproval(Request $request)

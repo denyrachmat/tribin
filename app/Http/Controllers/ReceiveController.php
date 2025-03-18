@@ -144,6 +144,13 @@ class ReceiveController extends Controller
             ->whereNull('deleted_at')
             ->count();
 
+        $cekDOC = T_RCV_HEAD::on($this->dedicatedConnection)
+            ->where('id', $id)
+            ->first()
+            ->pluck('TRCV_DOCNO');
+
+        $deleteBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_DOCNO', $cekDOC)->delete();
+
         if ($affectedRow) {
             if ($countRow === 0) {
                 T_RCV_HEAD::on($this->dedicatedConnection)
@@ -244,7 +251,9 @@ class ReceiveController extends Controller
             ->whereMonth('created_at', '=', date('m'))
             ->whereYear('created_at', '=', date('Y'))
             ->where('TRCV_RCVCD', 'NOT LIKE', 'STK%')
+            ->orderBy('created_at', 'desc')
             ->first();
+
 
         if ($request->has('TRCV_RCVCD') && !empty($request->TRCV_RCVCD)) {
             $newDocumentCode = $request->TRCV_RCVCD;

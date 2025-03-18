@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('MTAX_CODE')->unique();
             $table->string('MTAX_CODEH')->nullable();
+            $table->string('MTAX_DESC');
             $table->string('MTAX_TYPE')->nullable();
-            $table->float('MTAX_PERCENT');
+            $table->float('MTAX_AMT');
             $table->datetime('MTAX_EFFDT');
             $table->float('MTAX_TAXMIN')->nullable();
             $table->float('MTAX_TAXMAX')->default(999999999999);

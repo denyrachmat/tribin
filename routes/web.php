@@ -112,7 +112,6 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('access/{id}', [CompanyGroupController::class, 'loadByNickName']);
             Route::post('access', [CompanyGroupController::class, 'saveAccess']);
             Route::delete('access/{id}', [CompanyGroupController::class, 'deleteAccess']);
-
         });
 
         # Terkait Company Group
@@ -608,6 +607,9 @@ Route::group(['middleware' => 'cors'], function () {
         });
 
         Route::resource('tax', TaxController::class);
+        Route::prefix('taxes')->group(function () {
+            Route::post('searchAPI', [TaxController::class, 'searchAPI']);
+        });
         Route::resource('disc', DiscController::class);
     });
 });

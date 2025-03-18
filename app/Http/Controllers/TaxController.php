@@ -12,7 +12,7 @@ class TaxController extends Controller
      */
     public function index()
     {
-        //
+        return view('tribinapp_layouts', ['routeApp' => 'tax']);
     }
 
     /**
@@ -66,6 +66,18 @@ class TaxController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $data = M_TAX::where('MTAX_CODE', $id)->delete();
+
+        return $data;
+    }
+
+    public function searchAPI(Request $request) {
+        $RS = new M_TAX;
+
+        if (!empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        return ['data' => $RS->get()];
     }
 }

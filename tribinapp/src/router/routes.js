@@ -11,6 +11,7 @@ const routes = [
       { path: 'item', component: () => import('pages/master/items/itemMasterIndex.vue') },
       { path: 'customer', component: () => import('pages/master/customers/customerMasterView.vue') },
       { path: 'company', component: () => import('pages/master/company/indexCompany.vue') },
+      { path: 'tax', component: () => import('pages/master/tax/taxView.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
       { path: 'outgoing', component: () => import('pages/warehouse/outgoing/outgoingView.vue') },
       { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },

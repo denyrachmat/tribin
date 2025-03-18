@@ -31,7 +31,7 @@
             <q-select
               outlined
               v-model="filterCol"
-              :options="col"
+              :options="cols"
               label="Search Columns"
               option-value="name"
               option-label="label"
@@ -70,23 +70,21 @@
               <q-td auto-width>
                 <q-btn
                   flat
-                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'orange'"
+                  :color="'orange'"
                   icon="edit"
                   @click="onClickNew(props.row)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Edit Data'}}</q-tooltip>
+                  <q-tooltip>{{ "Edit Data" }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'grey' : 'red'"
+                  :color="'red'"
                   icon="delete"
-                  @click="onDelete(props.row.id)"
+                  @click="onDelete(props.row.MTAX_CODE)"
                   dense
-                  :disable="parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV"
                 >
-                  <q-tooltip>{{parseInt(props.row.CONFIRMED_QTY) == props.row.TOT_RCV ? 'All qty already confirmed' : 'Delete Data'}}</q-tooltip>
+                  <q-tooltip>{{ "Delete Data" }}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -104,40 +102,75 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
-import locationCreate from "./locationCreate.vue"
-
-const $q = useQuasar()
+import taxCreate from "./taxCreate.vue";
+const $q = useQuasar();
 
 const rows = ref([]);
+
 const cols = ref([
   {
-    name: "MLOC_LOCCD",
-    label: "Location Code",
-    field: "MLOC_LOCCD",
+    name: "MTAX_CODE",
+    label: "Tax Code",
+    field: "MTAX_CODE",
     sortable: true,
     align: "left",
   },
   {
-    name: "MLOC_LOCNM",
-    label: "Location Name",
-    field: "MLOC_LOCNM",
+    name: "MTAX_DESC",
+    label: "Tax Desc",
+    field: "MTAX_DESC",
     sortable: true,
     align: "left",
   },
-])
+  {
+    name: "MTAX_TYPE",
+    label: "Type",
+    field: "MTAX_TYPE",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "MTAX_AMT",
+    label: "Amount",
+    field: "MTAX_AMT",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "MTAX_EFFDT",
+    label: "Eff. Date",
+    field: "MTAX_EFFDT",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "MTAX_TAXMIN",
+    label: "Min. Tax Active",
+    field: "MTAX_TAXMIN",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "MTAX_TAXMAX",
+    label: "Max. Tax Active",
+    field: "MTAX_TAXMAX",
+    sortable: true,
+    align: "left",
+  },
+]);
 
 const loading = ref(false);
-const filterCol = ref('')
-const filter = ref('')
+const filterCol = ref("");
+const filter = ref("");
 
 onMounted(() => {
-    getLocationData()
-})
+  getTaxData();
+});
 
-const getLocationData = async () => {
-    loading.value = true;
+const getTaxData = async () => {
+  loading.value = true;
   await api_web
-    .post(`location/searchAPI`, {
+    .post(`taxes/searchAPI`, {
       searchBy: filterCol.value,
       searchValue: filter.value,
     })
@@ -148,21 +181,36 @@ const getLocationData = async () => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const onClickNew = (data = []) => {
   $q.dialog({
-    component: locationCreate,
+    component: taxCreate,
     componentProps: {
       dataHeader: data,
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getLocationData();
+    getTaxData();
   });
-}
+};
 
-const onDelete = (data) => {
-
-}
+const onDelete = (id) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to delete tax master (${id})?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .delete(`tax/${id}`)
+      .then((response) => {
+        loading.value = false;
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
 </script>

@@ -80,4 +80,18 @@ class TaxController extends Controller
 
         return ['data' => $RS->get()];
     }
+
+    public function listTaxes() {
+        $RS = new M_TAX;
+
+        $hasil = [];
+        foreach ($RS->get() as $key => $value) {
+            $hasil[] = [
+                'value' => $value->MTAX_CODE,
+                'label' => $value->MTAX_DESC
+            ];
+        }
+
+        return $hasil;
+    }
 }

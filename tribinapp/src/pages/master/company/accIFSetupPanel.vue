@@ -19,7 +19,7 @@
                   filled
                   :label="list.label"
                   v-model="list.valueChoosed"
-                  :options="listCOA"
+                  :options="listCOA[idx]"
                   :loading="loading"
                   emit-value
                 >
@@ -47,7 +47,7 @@
                   filled
                   :label="list.label"
                   v-model="list.valueChoosed"
-                  :options="listCOA"
+                  :options="listCOASupp[idx]"
                   :loading="loading"
                   emit-value
                 >
@@ -83,12 +83,12 @@ const listCustType = ref([]);
 const listPOType = ref([]);
 const loading = ref(false);
 const listCOA = ref([]);
+const listCOASupp = ref([]);
 
 const $q = useQuasar();
 
 onMounted(() => {
   getTransTypeList();
-  getCOAList();
   getTransSuppTypeList();
 });
 
@@ -100,9 +100,6 @@ const onClickSave = () => {
     persistent: true,
   }).onOk(async () => {
     loading.value = true;
-    console.log(listCustType.value);
-    console.log(listPOType.value);
-
     const datanya = [...listCustType.value, ...listPOType.value];
     let hasil = [];
 
@@ -137,12 +134,18 @@ const getTransTypeList = async () => {
     .then((val) => {
       loading.value = false;
       listCustType.value = [];
-      val.data.map((v) => {
+      val.data.map((v, idx) => {
         listCustType.value.push({
           label: v.MGECD_DESC,
           value: v.MGECD_VALUE,
           valueChoosed: v.CODE_VALUE,
         });
+
+        if (v.MGECD_DESC2 === "acc") {
+          getCOAList(idx);
+        } else {
+          getFromAPI(v.MGECD_DESC2, "listCOA", idx);
+        }
       });
     })
     .catch((e) => {});
@@ -155,13 +158,19 @@ const getTransSuppTypeList = async () => {
     .then((val) => {
       loading.value = false;
       listPOType.value = [];
-      val.data.map((v) => {
+      val.data.map((v, idx) => {
         listPOType.value.push({
           label: v.MGECD_DESC,
           value: v.MGECD_VALUE,
           valueChoosed: v.CODE_VALUE,
         });
       });
+
+      if (v.MGECD_DESC2 === "acc") {
+        getCOAListSupp(idx);
+      } else {
+        getFromAPI(v.MGECD_DESC2, "listCOASupp", idx);
+      }
     })
     .catch((e) => {});
 };
@@ -176,14 +185,52 @@ const getCOAList = async (idx) => {
     })
     .then((val) => {
       loading.value = false;
-      listCOA.value = [];
+      listCOA[idx].value = [];
       val.data.data.map((v) => {
-        listCOA.value.push({
+        listCOA[idx].value.push({
           label: v.name,
           value: v.code,
         });
       });
     })
     .catch((e) => {});
+};
+
+const getCOAListSupp = async (idx) => {
+  loading.value = true;
+  await api_acc
+    .get(`feature-list?cg_code=CG&start=0&length=10`, {
+      headers: {
+        "X-API-KEY": process.env.API_KEY_ACC,
+      },
+    })
+    .then((val) => {
+      loading.value = false;
+      listCOASupp[idx].value = [];
+      val.data.data.map((v) => {
+        listCOASupp[idx].value.push({
+          label: v.name,
+          value: v.code,
+        });
+      });
+    })
+    .catch((e) => {});
+};
+
+const getFromAPI = async (url, toVar, idx) => {
+  loading.value = true;
+  await api_web
+    .get(url)
+    .then((val) => {
+      loading.value = false;
+      if (toVar == "listCOA") {
+        listCOA.value[idx] = val.data;
+      } else if (toVar == "listCOASupp") {
+        listCOASupp.value[idx] = val.data;
+      }
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 </script>

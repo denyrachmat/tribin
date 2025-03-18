@@ -609,6 +609,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::resource('tax', TaxController::class);
         Route::prefix('taxes')->group(function () {
             Route::post('searchAPI', [TaxController::class, 'searchAPI']);
+            Route::get('listTaxes', [TaxController::class, 'listTaxes']);
         });
         Route::resource('disc', DiscController::class);
     });

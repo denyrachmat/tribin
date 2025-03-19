@@ -397,7 +397,7 @@
                 <q-btn
                   icon="compare_arrows"
                   :color="
-                    items.TSRVD_FLGSTS !== 2 ||
+                    items.TSRVD_FLGSTS != 2 ||
                     (items.partReq && items.partReq.length > 0)
                       ? 'grey'
                       : 'orange'
@@ -405,12 +405,12 @@
                   outline
                   @click="onClickRequest(idx)"
                   :disable="
-                    items.TSRVD_FLGSTS !== 2 ||
+                    items.TSRVD_FLGSTS != 2 ||
                     (items.partReq && items.partReq.length > 0)
                   "
                   v-if="
                     props.mode === 'edit' &&
-                    items.TSRVD_FLGSTS === 2 &&
+                    items.TSRVD_FLGSTS == 2 &&
                     !(items.partReq && items.partReq.length > 0)
                   "
                 >

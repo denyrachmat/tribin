@@ -5,14 +5,19 @@ namespace App\Traits;
 use Illuminate\Http\Request;
 use App\Models\M_GENCODE;
 use Illuminate\Support\Facades\Crypt;
+use DB;
 
 trait gencodeTraits
 {
     public function getGencode($code, $value = '', $cg = '')
     {
-        $dataHead = M_GENCODE::select('mg.*', 'mg2.MGECD_VALUE as CODE_VALUE')
+        $dataHead = M_GENCODE::select('mg.*', DB::raw('(
+                SELECT MGECD_VALUE FROM M_GENCODE
+                WHERE MGECD_CODE = mg.MGECD_VALUE
+                AND (MGECD_CG = mg.MGECD_CG OR MGECD_CG IS NULL)
+            ) as CODE_VALUE'))
             ->from('M_GENCODE as mg')
-            ->leftjoin('M_GENCODE as mg2', 'mg.MGECD_VALUE', '=', 'mg2.MGECD_CODE')
+            // ->leftjoin('M_GENCODE as mg2', 'mg.MGECD_VALUE', '=', 'mg2.MGECD_CODE')
             ->where('mg.MGECD_CODE', base64_decode($code))
             ->where('mg.MGECD_ACTIVE', 1);
 
@@ -30,7 +35,7 @@ trait gencodeTraits
                 $conn = Crypt::decryptString($cg);
                 $dataByCG = (clone $dataHead)->where('mg.MGECD_CG', $conn)->get()->toArray();
                 if (count($dataByCG) > 0)
-                    array_push($hasil, $dataByCG);
+                    $hasil = array_merge($hasil, $dataByCG);
             }
         }
 

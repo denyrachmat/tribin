@@ -115,10 +115,11 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="'cyan'"
+                  :color="props.row.dlv.length === 0 ? 'grey' : 'cyan'"
                   icon="print"
                   @click="onClickPrintProforma(props.row.TSLO_SLOCD)"
                   dense
+                  :disable="props.row.dlv.length === 0"
                 >
                   <q-tooltip>{{ "Print Proforma Invoice" }}</q-tooltip>
                 </q-btn>

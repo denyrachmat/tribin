@@ -94,7 +94,7 @@
             <div class="col text-right">
               <q-checkbox
                 v-model="addMoreItems"
-                label="Add More Items ?"
+                label="Change Items ?"
                 color="primary"
               />
               <q-btn
@@ -157,7 +157,7 @@
                 </q-checkbox>
               </div>
 
-              <div class="col-12 col-sm-1">
+              <div class="col-12 col-sm-1" v-if="addMoreItems">
                 <q-btn
                   icon="delete"
                   color="red"

@@ -111,6 +111,8 @@
                 <th class="tg-0lax">Operator</th>
                 <th class="tg-0lax">Perusahaan</th>
                 <th class="tg-0lax">Jumlah</th>
+                <th class="tg-0lax">Pajak</th>
+                <th class="tg-0lax">Total</th>
                 <th class="tg-0lax">Status Bayar</th>
                 <th class="tg-0lax">Marketing</th>
                 <th class="tg-0lax">Tgl Awal</th>
@@ -119,27 +121,30 @@
         </thead>
         <tbody style="page-break-inside: avoid;">
             @php
-                $total = 0;
+                $total = $totalTax = 0;
             @endphp
             @foreach($data['BARU'] as $key => $value)
                         <tr style="page-break-inside: avoid;">
-                            <td class="tg-0lax" style="text-align: center;" colspan="12">
+                            <td class="tg-0lax" style="text-align: center;" colspan="14">
                                 <h3>{{$key}}</h3>
                             </td>
                         </tr>
                         @php
                             $subtotal = 0;
+                            $subtotalTax = 0;
                         @endphp
                         @foreach($value as $keyUsage => $valueUsage)
                             <tr style="page-break-inside: avoid;">
-                                <td class="tg-0lax" style="text-align: left;" colspan="12">
+                                <td class="tg-0lax" style="text-align: left;" colspan="14">
                                     <h3>{{$keyUsage}}</h3>
                                 </td>
                             </tr>
                             @foreach($valueUsage as $keyDet => $valueDet)
                                 @php
                                     $subtotal += $valueDet['TSLODETA_ITMQT'];
+                                    $subtotalTax += $valueDet['totalTax'];
                                     $total += $valueDet['TSLODETA_ITMQT'];
+                                    $totalTax += $valueDet['totalTax'];
                                 @endphp
                                 <tr>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_ITMCD']}}</td>
@@ -152,6 +157,8 @@
                                         {{$valueDet['CSPK_PIC_AS'] == 'OPERATOR' ? $valueDet['CSPK_PIC_NAME'] : ''}}</td>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['MCUS_CUSNM']}}</td>
                                     <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['TSLODETA_ITMQT'])}}</td>
+                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['totalTax'])}}</td>
+                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['TSLODETA_ITMQT'] + $valueDet['totalTax'])}}</td>
                                     <td class="tg-0lax" style="text-align: left;"></td>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['name']}}</td>
                                     <td class="tg-0lax" style="text-align: left;">
@@ -166,6 +173,8 @@
                                 Subtotal
                             </td>
                             <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotalTax)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
                             <td class="tg-0laxa" style="text-align: center;" colspan="4">
                             </td>
                         </tr>
@@ -175,6 +184,8 @@
                     Grand Total
                 </td>
                 <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($totalTax)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total + $totalTax)}}</td>
                 <td class="tg-0laxa" style="text-align: center;" colspan="4">
                 </td>
             </tr>
@@ -202,6 +213,8 @@
                 <th class="tg-0lax">Operator</th>
                 <th class="tg-0lax">Perusahaan</th>
                 <th class="tg-0lax">Jumlah</th>
+                <th class="tg-0lax">Pajak</th>
+                <th class="tg-0lax">Total</th>
                 <th class="tg-0lax">Status Bayar</th>
                 <th class="tg-0lax">Marketing</th>
                 <th class="tg-0lax">Tgl Awal</th>
@@ -211,26 +224,30 @@
         <tbody style="page-break-inside: avoid;">
             @php
                 $total = 0;
+                $totalTax = 0;
             @endphp
             @foreach($data['PERPANJANGAN'] as $key => $value)
                         <tr style="page-break-inside: avoid;">
-                            <td class="tg-0lax" style="text-align: center;" colspan="12">
+                            <td class="tg-0lax" style="text-align: center;" colspan="14">
                                 <h3>{{$key}}</h3>
                             </td>
                         </tr>
                         @php
                             $subtotal = 0;
+                            $subtotalTax = 0;
                         @endphp
                         @foreach($value as $keyUsage => $valueUsage)
                             <tr style="page-break-inside: avoid;">
-                                <td class="tg-0lax" style="text-align: left;" colspan="12">
+                                <td class="tg-0lax" style="text-align: left;" colspan="14">
                                     <h3>{{$keyUsage}}</h3>
                                 </td>
                             </tr>
                             @foreach($valueUsage as $keyDet => $valueDet)
                                 @php
                                     $subtotal += $valueDet['TSLODETA_ITMQT'];
+                                    $subtotalTax += $valueDet['totalTax'];
                                     $total += $valueDet['TSLODETA_ITMQT'];
+                                    $totalTax += $valueDet['totalTax'];
                                 @endphp
                                 <tr>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_ITMCD']}}</td>
@@ -243,7 +260,9 @@
                                         {{$valueDet['CSPK_PIC_AS'] == 'OPERATOR' ? $valueDet['CSPK_PIC_NAME'] : ''}}</td>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['MCUS_CUSNM']}}</td>
                                     <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['TSLODETA_ITMQT'])}}</td>
-                                    <td class="tg-0lax" style="text-align: left;"></td>
+                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['totalTax'])}}</td>
+                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['TSLODETA_ITMQT'] + $valueDet['totalTax'])}}</td>
+                                    <td class="tg-0lax" style="text-align: right;"></td>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['name']}}</td>
                                     <td class="tg-0lax" style="text-align: left;">
                                         {{date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_FR']))}}</td>
@@ -257,6 +276,8 @@
                                 Subtotal
                             </td>
                             <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotalTax)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
                             <td class="tg-0laxa" style="text-align: center;" colspan="4">
                             </td>
                         </tr>
@@ -266,6 +287,8 @@
                     Grand Total
                 </td>
                 <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($totalTax)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total + $totalTax)}}</td>
                 <td class="tg-0laxa" style="text-align: center;" colspan="4">
                 </td>
             </tr>
@@ -275,7 +298,7 @@
 
 @endif
 
-<table class="tg2" style="margin-top: 5em;width:100%;text-align:center;border:0">
+<table class="tg2" style="margin-top: 5em;width:100%;text-align:center;border:0;page-break-inside: avoid;">
     <tr>
         <td colspan="3">Dibuat Oleh</td>
         <td>Diperiksa Oleh</td>

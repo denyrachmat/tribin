@@ -834,12 +834,24 @@ class ReceiveOrderController extends Controller
                     'CSPK_PIC_NAME',
                     'MCUS_CUSNM',
                     DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
+                    DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQTORI'),
                     'name',
                     'T_SLOHEAD.created_by',
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'MUSAGE_ALIAS',
-                    'TDLVORDDETA_DLVCD'
+                    'TDLVORDDETA_DLVCD',
+                    DB::raw("(
+                        SELECT
+                            CASE WHEN MTAX_TYPE = 'PERCENT'
+                                THEN SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) * (MTAX_AMT / 100)
+                                ELSE MTAX_AMT
+                            END
+                        FROM jatpower_tribin.T_TAX_MAP
+                        INNER JOIN jatpower_tribin.M_TAX ON TTAXM_TYPE = MTAX_CODE
+                        WHERE TTAXM_DOCNO = TSLO_SLOCD
+                        AND TTAXM_CG = '".$this->dedicatedConnection."'
+                    ) AS totalTax")
                 )
                 ->join('T_SLODETA', function ($j) {
                     $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
@@ -867,7 +879,9 @@ class ReceiveOrderController extends Controller
                     'TSLODETA_PERIOD_FR',
                     'TSLODETA_PERIOD_TO',
                     'MUSAGE_ALIAS',
-                    'TDLVORDDETA_DLVCD'
+                    'TDLVORDDETA_DLVCD',
+                    'TDLVORDDETA_ITMQT',
+                    'TDLVORDDETA_PRC'
                 );
 
             if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
@@ -886,7 +900,7 @@ class ReceiveOrderController extends Controller
                 }));
 
                 foreach ($baru as $keyBaru => $valuebaru) {
-                    $hasilTemp['BARU'][$value][$valuebaru['MUSAGE_ALIAS']][] = $valuebaru;
+                    $hasilTemp['BARU'][$value][$valuebaru['MUSAGE_ALIAS']][] = array_merge($valuebaru);
                 }
 
                 $perpanjangan = array_values(array_filter($cekTotalData, function ($f) {
@@ -896,7 +910,7 @@ class ReceiveOrderController extends Controller
                 }));
 
                 foreach ($perpanjangan as $keyBaru => $valuePerpanjangan) {
-                    $hasilTemp['PERPANJANGAN'][$value][$valuePerpanjangan['MUSAGE_ALIAS']][] = $valuePerpanjangan;
+                    $hasilTemp['PERPANJANGAN'][$value][$valuePerpanjangan['MUSAGE_ALIAS']][] = array_merge($valuePerpanjangan);
                 }
             }
         }
@@ -987,14 +1001,14 @@ class ReceiveOrderController extends Controller
             ->where('TQUOPAYDETA_QUOCD', $RS['TSLO_QUOCD'])
             ->get();
 
-        if (empty($checkSetupPayment)) {
+        if (count($checkSetupPayment) === 0) {
             $checkSetupPayment = BranchPaymentAccount::on($this->dedicatedConnection)->select(
                 'bank_name',
                 'bank_account_name',
                 'bank_account_number'
             )
-            ->where('BRANCH', Auth::user()->branch)
-            ->get();
+                ->where('BRANCH', Auth::user()->branch)
+                ->get();
         }
 
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.proformaInvoice', array_merge($RS, [

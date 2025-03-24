@@ -976,25 +976,20 @@ class ReceiveOrderController extends Controller
             $totalTax += $valueTaxes['TTAXM_TAXAMT'];
         }
 
-        // $cekDefaultPrep = BranchPaymentAccount::on('mysql')->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn));
-        // $defData = (clone $cekDefaultPrep)->where('branch_menu', $RS['TQUO_TYPE'] == 1 ? 'sewa' : 'jual')->first();
-
-        // $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
-        //     ->where('BRANCH', Auth::user()->branch)
-        //     ->whereNull('deleted_at')
-        //     ->where('bank_account_name', $defData->bank_account_name)
-        //     ->get();
-
-        $checkSetupPayment = T_QUOPAYDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+        $checkSetupPaymentHead = T_QUOPAYDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
             ->select(
                 'bank_name',
                 'bank_account_name',
                 'bank_account_number'
             )
             ->join('branch_payment_accounts as bpa', 'bpa.id', 'TQUOPAYDETA_IDPAY')
-            ->where('TQUOPAYDETA_QUOCD', $RS['TSLO_QUOCD'])
-            ->where('BRANCH', Auth::user()->branch)
-            ->get();
+            ->where('BRANCH', Auth::user()->branch);
+
+        $checkSetupPayment = (clone $checkSetupPaymentHead)->where('TQUOPAYDETA_QUOCD', $RS['TSLO_QUOCD'])->get();
+
+        if (empty($checkSetupPayment)) {
+            $checkSetupPayment = (clone $checkSetupPaymentHead)->get();
+        }
 
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.proformaInvoice', array_merge($RS, [
             'header' => $companyGroupData->name,

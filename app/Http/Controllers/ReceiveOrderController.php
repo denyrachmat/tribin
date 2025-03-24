@@ -305,10 +305,10 @@ class ReceiveOrderController extends Controller
         if ($request->has('TSLO_SLOCD') && !empty($request->TSLO_SLOCD)) {
             if ($request->isRecreate) {
                 $cekSLOData = T_SLOHEAD::on($this->dedicatedConnection)->where('TSLO_SLOCD', 'like', $request->TSLO_SLOCD . '%')->orderBy('created_at', 'desc')->first();
-                $newDocumentCode =  $request->TSLO_SLOCD . (str_contains($cekSLOData->TSLO_SLOCD, '-') ? '-' . sprintf('%03d', (int) substr($cekSLOData->TSLO_SLOCD, -3) + 1) :  '-001');
+                $newDocumentCode = $request->TSLO_SLOCD . (str_contains($cekSLOData->TSLO_SLOCD, '-') ? '-' . sprintf('%03d', (int) substr($cekSLOData->TSLO_SLOCD, -3) + 1) : '-001');
                 $LastLine = $cekSLOData->TSLO_LINE;
             } else {
-                $newDocumentCode =  $request->TSLO_SLOCD;
+                $newDocumentCode = $request->TSLO_SLOCD;
             }
         } else {
             if (!$LastLine) {
@@ -352,7 +352,7 @@ class ReceiveOrderController extends Controller
             'TSLO_MAP_URL' => $request->TSLO_MAP_URL,
             'TSLO_TYPE' => $request->TSLO_TYPE,
             'TSLO_SERVTRANS_COST' => $request->TSLO_SERVTRANS_COST,
-            'TSLO_ISCON' => (int)$request->TSLO_ISCON,
+            'TSLO_ISCON' => (int) $request->TSLO_ISCON,
             'created_by' => Auth::user()->nick_name,
             'TSLO_BRANCH' => Auth::user()->branch
         ];
@@ -939,23 +939,25 @@ class ReceiveOrderController extends Controller
             ->join('M_CUS', function ($join) {
                 $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->with(['det' => function ($j) {
-                $j->select(
-                    'TSLODETA_SLOCD',
-                    'TSLODETA_ITMCD',
-                    'MITM_ITMNM',
-                    'MITM_BRAND',
-                    'MITM_MODEL',
-                    'TSLODETA_ITMQT',
-                    'TSLODETA_USAGE_DESCRIPTION',
-                    'TSLODETA_PRC',
-                    'TSLODETA_PERIOD_FR',
-                    'TSLODETA_PERIOD_TO'
-                )
-                    ->leftJoin('M_ITM_GRP', function ($join) {
-                        $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMNM')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
-                    });
-            }])
+            ->with([
+                'det' => function ($j) {
+                    $j->select(
+                        'TSLODETA_SLOCD',
+                        'TSLODETA_ITMCD',
+                        'MITM_ITMNM',
+                        'MITM_BRAND',
+                        'MITM_MODEL',
+                        'TSLODETA_ITMQT',
+                        'TSLODETA_USAGE_DESCRIPTION',
+                        'TSLODETA_PRC',
+                        'TSLODETA_PERIOD_FR',
+                        'TSLODETA_PERIOD_TO'
+                    )
+                        ->leftJoin('M_ITM_GRP', function ($join) {
+                            $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMNM')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
+                        });
+                }
+            ])
             ->where("TSLO_SLOCD", $request->TSLO_SLOCD)
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->first()
@@ -974,13 +976,24 @@ class ReceiveOrderController extends Controller
             $totalTax += $valueTaxes['TTAXM_TAXAMT'];
         }
 
-        $cekDefaultPrep = BranchPaymentAccount::on('mysql')->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn));
-        $defData = (clone $cekDefaultPrep)->where('branch_menu', $RS['TQUO_TYPE'] == 1 ? 'sewa' : 'jual')->first();
+        // $cekDefaultPrep = BranchPaymentAccount::on('mysql')->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn));
+        // $defData = (clone $cekDefaultPrep)->where('branch_menu', $RS['TQUO_TYPE'] == 1 ? 'sewa' : 'jual')->first();
 
-        $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+        // $branchPaymentAccount = BranchPaymentAccount::on($this->dedicatedConnection)
+        //     ->where('BRANCH', Auth::user()->branch)
+        //     ->whereNull('deleted_at')
+        //     ->where('bank_account_name', $defData->bank_account_name)
+        //     ->get();
+
+        $checkSetupPayment = T_QUOPAYDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+            ->select(
+                'bank_name',
+                'bank_account_name',
+                'bank_account_number'
+            )
+            ->join('branch_payment_accounts as bpa', 'bpa.id', 'TQUOPAYDETA_IDPAY')
+            ->where('TQUOPAYDETA_QUOCD', $RS['TSLO_QUOCD'])
             ->where('BRANCH', Auth::user()->branch)
-            ->whereNull('deleted_at')
-            ->where('bank_account_name', $defData->bank_account_name)
             ->get();
 
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.proformaInvoice', array_merge($RS, [
@@ -992,7 +1005,7 @@ class ReceiveOrderController extends Controller
             'totalAll' => $total + $totalTax,
             'taxes' => $taxes,
             'terbilang' => $this->numberToSentence($total + $totalTax),
-            'payment' => $branchPaymentAccount
+            'payment' => $checkSetupPayment
         ]));
 
         return base64_encode($pdf->output());

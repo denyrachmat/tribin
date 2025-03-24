@@ -314,6 +314,7 @@ Route::group(['middleware' => 'cors'], function () {
 
             Route::delete('items/{id}', [ReceiveOrderController::class, 'deleteItemById']);
             Route::put('items/{id}', [ReceiveOrderController::class, 'updateItem']);
+            Route::get('assignSOEmptyTax', [ReceiveOrderController::class, 'assignSOEmptyTax']);
         });
 
         Route::prefix('assignment-driver')->group(function () {

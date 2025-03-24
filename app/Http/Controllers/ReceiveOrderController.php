@@ -8,10 +8,12 @@ use App\Models\M_Condition;
 use App\Models\M_ITM;
 use App\Models\M_USAGE;
 use App\Models\T_DLVORDDETA;
+use App\Models\T_QUOPAYDETA;
 use App\Models\T_SLO_DRAFT_DETAIL;
 use App\Models\T_SLO_DRAFT_HEAD;
 use App\Models\T_SLODETA;
 use App\Models\T_SLOHEAD;
+use App\Models\T_TAX_MAP;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Validator;
@@ -21,12 +23,14 @@ use Illuminate\Support\Facades\Crypt;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
+use App\Models\BranchPaymentAccount;
 
 use App\Traits\gencodeTraits;
+use App\Traits\taxesTraits;
 
 class ReceiveOrderController extends Controller
 {
-    use gencodeTraits;
+    use gencodeTraits, taxesTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -215,6 +219,8 @@ class ReceiveOrderController extends Controller
         }
         $countDetail = count($request->TSLODETA_ITMCD);
         $quotationDetail = [];
+
+        $totalAmount = 0;
         for ($i = 0; $i < $countDetail; $i++) {
             $quotationDetail[] = [
                 'TSLODETA_SLOCD' => $newDocumentCode,
@@ -231,11 +237,22 @@ class ReceiveOrderController extends Controller
                 'created_at' => date('Y-m-d H:i:s'),
                 'TSLODETA_BRANCH' => Auth::user()->branch
             ];
+
+            $totalAmount += $request->TSLODETA_PRC[$i];
         }
 
         T_SLOHEAD::on($this->dedicatedConnection)->create($quotationHeader);
         if (!empty($quotationDetail)) {
             T_SLODETA::on($this->dedicatedConnection)->insert($quotationDetail);
+        }
+        $tax = null;
+        if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
+            $tax = $this->storeTaxes(new Request([
+                'TTAXM_DOCNO' => $newDocumentCode,
+                'TTAXM_CG' => $this->dedicatedConnection,
+                'AMOUNT' => $totalAmount,
+                'MTAX_CODE' => $request->TAX_CODE,
+            ]));
         }
 
         return [
@@ -245,6 +262,7 @@ class ReceiveOrderController extends Controller
             'quotationHeader' => $quotationHeader,
             'quotationDetail' => $quotationDetail,
             'newPOCode' => $newPOCode,
+            'tax' => $tax
         ];
     }
 
@@ -367,8 +385,18 @@ class ReceiveOrderController extends Controller
 
         // Check for default account
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
-
         $hasilAPI = [];
+
+
+        $tax = null;
+        if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
+            $tax = $this->storeTaxes(new Request([
+                'TTAXM_DOCNO' => $newDocumentCode,
+                'TTAXM_CG' => $this->dedicatedConnection,
+                'AMOUNT' => $getTotalAmnt,
+                'MTAX_CODE' => $request->TAX_CODE,
+            ]));
+        }
 
         return [
             'msg' => 'OK',
@@ -386,7 +414,8 @@ class ReceiveOrderController extends Controller
                 'description' => 'Sales Order ' . $newDocumentCode,
                 'amount' => $getTotalAmnt,
             ],
-            'gencode' => $cekInvoiceAcc
+            'gencode' => $cekInvoiceAcc,
+            'tax' => $tax
         ];
     }
 
@@ -468,7 +497,7 @@ class ReceiveOrderController extends Controller
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
-        return ['data' => $RS->get()];
+        return ['data' => $RS->orderBy('TSLO_SLOCD', 'DESC')->get()];
     }
 
     function searchDraft(Request $request)
@@ -587,11 +616,14 @@ class ReceiveOrderController extends Controller
             ->where('TSLODETA_SLOCD', base64_decode($id))
             ->delete();
 
+        $taxes = $this->deleteTaxes(base64_decode($id), $this->dedicatedConnection);
+
         return [
             'msg' => 'Delete OK',
             'quotationHeader' => $headerDelete,
             'quotationDetail' => $getDeletedDetail2,
-            'hasilApi' => $hasilApi
+            'hasilApi' => $hasilApi,
+            'taxes' => $taxes
         ];
     }
 
@@ -885,41 +917,150 @@ class ReceiveOrderController extends Controller
         return base64_encode($pdf->output());
     }
 
-    public function proformaInvReport(Request $request) {
+    public function proformaInvReport(Request $request)
+    {
         $RS = T_SLOHEAD::on($this->dedicatedConnection)->select(
             DB::raw("
                 T_SLOHEAD.*,
                 TQUO_SBJCT,
                 TQUO_ATTN,
                 TQUO_PROJECT_LOCATION,
+                TQUO_TYPE,
                 MCUS_CUSNM,
                 MCUS_PIC_TELNO,
                 MCUS_ADDR1,
                 MCUS_TELNO
             ")
         )
-        ->leftJoin('T_QUOHEAD', function ($join) {
-            $join->on('TSLO_QUOCD', '=', 'TQUO_QUOCD');
-        })
-        ->join('M_CUS', function ($join) {
-            $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
-        })
-        ->where("TSLO_SLOCD", $request->TSLO_SLOCD)
-        ->where('TSLO_BRANCH', Auth::user()->branch)
-        ->get()
-        ->toArray();
+            ->leftJoin('T_QUOHEAD', function ($join) {
+                $join->on('TSLO_QUOCD', '=', 'TQUO_QUOCD');
+            })
+            ->join('M_CUS', function ($join) {
+                $join->on('TSLO_CUSCD', '=', 'MCUS_CUSCD')->on('TSLO_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->with(['det' => function ($j) {
+                $j->select(
+                    'TSLODETA_SLOCD',
+                    'TSLODETA_ITMCD',
+                    'MITM_ITMNM',
+                    'MITM_BRAND',
+                    'MITM_MODEL',
+                    'TSLODETA_ITMQT',
+                    'TSLODETA_USAGE_DESCRIPTION',
+                    'TSLODETA_PRC',
+                    'TSLODETA_PERIOD_FR',
+                    'TSLODETA_PERIOD_TO'
+                )
+                    ->leftJoin('M_ITM_GRP', function ($join) {
+                        $join->on('TSLODETA_ITMCD', '=', 'MITM_ITMNM')->on('TSLODETA_BRANCH', '=', 'MITM_BRANCH');
+                    });
+            }])
+            ->where("TSLO_SLOCD", $request->TSLO_SLOCD)
+            ->where('TSLO_BRANCH', Auth::user()->branch)
+            ->first()
+            ->toArray();
 
         $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
 
-        return $RS;
+        $taxes = $this->getTaxes($request->TSLO_SLOCD, $this->dedicatedConnection);
+        $total = 0;
+        foreach ($RS['det'] as $key => $value) {
+            $total += $value['TSLODETA_ITMQT'] * $value['TSLODETA_PRC'];
+        }
 
-        $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.proformaInvoice', [
-            'data' => $RS,
+        $totalTax = 0;
+        foreach ($taxes as $key => $valueTaxes) {
+            $totalTax += $valueTaxes['TTAXM_TAXAMT'];
+        }
+
+        $cekDefaultPrep = BranchPaymentAccount::on('mysql')->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn));
+        $defData = (clone $cekDefaultPrep)->where('branch_menu', $RS['TQUO_TYPE'] == 1 ? 'sewa' : 'jual')->first();
+        $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+            ->where('BRANCH', Auth::user()->branch)
+            ->whereNull('deleted_at')
+            ->where('bank_account_name', $defData->bank_account_name)
+            ->get();
+
+        $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.proformaInvoice', array_merge($RS, [
             'header' => $companyGroupData->name,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-            'addr' => $companyGroupData->address
-        ]);
+            'addr' => $companyGroupData->address,
+            'telp' => $companyGroupData->phone,
+            'total' => $total,
+            'totalAll' => $total + $totalTax,
+            'taxes' => $taxes,
+            'terbilang' => $this->numberToSentence($total + $totalTax),
+            'payment' => $branchPaymentAccount
+        ]));
 
         return base64_encode($pdf->output());
+    }
+
+    public function numberToSentence($nilai)
+    {
+        $nilai = round(abs($nilai));
+        $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+        $temp = "";
+
+        if ($nilai < 12) {
+            $temp = " " . $huruf[$nilai];
+        } else if ($nilai < 20) {
+            $temp = $this->numberToSentence($nilai - 10) . " belas";
+        } else if ($nilai < 100) {
+            $temp = $this->numberToSentence(floor($nilai / 10)) . " puluh" . $this->numberToSentence($nilai % 10);
+        } else if ($nilai < 200) {
+            $temp = " seratus" . $this->numberToSentence($nilai - 100);
+        } else if ($nilai < 1000) {
+            $temp = $this->numberToSentence(floor($nilai / 100)) . " ratus" . $this->numberToSentence($nilai % 100);
+        } else if ($nilai < 2000) {
+            $temp = " seribu" . $this->numberToSentence($nilai - 1000);
+        } else if ($nilai < 1000000) {
+            $temp = $this->numberToSentence(floor($nilai / 1000)) . " ribu" . $this->numberToSentence($nilai % 1000);
+        } else if ($nilai < 1000000000) {
+            $temp = $this->numberToSentence(floor($nilai / 1000000)) . " juta" . $this->numberToSentence($nilai % 1000000);
+        } else if ($nilai < 1000000000000) {
+            $temp = $this->numberToSentence(floor($nilai / 1000000000)) . " milyar" . $this->numberToSentence($nilai % 1000000000);
+        } else if ($nilai < 1000000000000000) {
+            $temp = $this->numberToSentence(floor($nilai / 1000000000000)) . " trilyun" . $this->numberToSentence($nilai % 1000000000000);
+        }
+
+        return $temp;
+    }
+
+    public function assignSOEmptyTax()
+    {
+        $RS = T_SLOHEAD::on($this->dedicatedConnection)
+            ->select('TSLO_SLOCD')
+            ->where('TSLO_BRANCH', Auth::user()->branch)
+            ->get();
+
+        foreach ($RS as $key => $value) {
+            $checkTax = $this->getTaxes($value->TSLO_SLOCD, $this->dedicatedConnection);
+
+            if (count($checkTax) === 0) {
+                $getDetail = T_SLODETA::on($this->dedicatedConnection)
+                    ->select('*')
+                    ->where('TSLODETA_SLOCD', $value->TSLO_SLOCD)
+                    ->get();
+
+                $getTotalAmount = 0;
+                foreach ($getDetail as $keyDetail => $valueDetail) {
+                    $getTotalAmount += $valueDetail->TSLODETA_ITMQT * $valueDetail->TSLODETA_PRC;
+                }
+
+                $getDefault = $this->getGencode(base64_encode('CUST_ACC_LIST'), base64_encode('DEF_CUST_TAX'));
+
+                if (!empty($getDefault)) {
+                    $this->storeTaxes(new Request([
+                        'TTAXM_DOCNO' => $value->TSLO_SLOCD,
+                        'TTAXM_CG' => $this->dedicatedConnection,
+                        'AMOUNT' => $getTotalAmount,
+                        'MTAX_CODE' => $getDefault->CODE_VALUE
+                    ]));
+                }
+            }
+        }
+
+        return ['msg' => 'OK'];
     }
 }

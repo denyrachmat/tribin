@@ -7,17 +7,23 @@ use App\Models\M_GENCODE;
 
 trait gencodeTraits
 {
-    public function getGencode($code, $type = '=')
+    public function getGencode($code, $value = '')
     {
-        return M_GENCODE::select('mg.*', 'mg2.MGECD_VALUE as CODE_VALUE')
+        $data = M_GENCODE::select('mg.*', 'mg2.MGECD_VALUE as CODE_VALUE')
             ->from('M_GENCODE as mg')
             ->leftjoin('M_GENCODE as mg2', 'mg.MGECD_VALUE', '=', 'mg2.MGECD_CODE')
-            ->where('mg.MGECD_CODE',$type,  base64_decode($code).($type === 'like' ? '%' : null))
-            ->where('mg.MGECD_ACTIVE', 1)
-            ->get();
+            ->where('mg.MGECD_CODE', base64_decode($code))
+            ->where('mg.MGECD_ACTIVE', 1);
+
+        if ($value != '') {
+           return $data->where('mg.MGECD_VALUE', base64_decode($value))->first();
+        }
+
+        return $data->get();
     }
 
-    public function getDynamicsGencode(Request $request) {
+    public function getDynamicsGencode(Request $request)
+    {
         $select = $request->has('select') ? $request->select : 'mg.*';
         $data = M_GENCODE::select($select, 'mg2.MGECD_VALUE as CODE_VALUE')
             ->from('M_GENCODE as mg')
@@ -42,7 +48,7 @@ trait gencodeTraits
             $gencode = M_GENCODE::updateOrCreate([
                 'MGECD_CODE' => $value['MGECD_CODE'],
                 'MGECD_VALUE' => $value['MGECD_VALUE'],
-            ],[
+            ], [
                 'MGECD_CODE' => $value['MGECD_CODE'],
                 'MGECD_VALUE' => $value['MGECD_VALUE'],
                 'MGECD_DESC' => $value['MGECD_DESC'],

@@ -19,4 +19,14 @@ class M_TAX extends Model
         'MTAX_TAXMIN',
         'MTAX_TAXMAX',
     ];
+
+    public function childTaxes()
+    {
+        return $this->hasMany(M_TAX::class, 'MTAX_CODEH', 'MTAX_CODE');
+    }
+
+    public function taxes()
+    {
+        return $this->childTaxes()->with('taxes');
+    }
 }

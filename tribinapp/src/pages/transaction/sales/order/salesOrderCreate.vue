@@ -156,6 +156,42 @@
               />
             </div>
           </div>
+
+          <div class="row q-col-gutter-sm q-pt-md">
+            <div class="col-12 col-sm-12">
+              <!-- <q-select
+                dense
+                filled
+                label="Tax Code"
+                v-model="forms.TAX_CODE"
+                :options="listTaxes"
+                :loading="loading"
+                emit-value
+                map-options
+                :disable="forms.TSLO_QUOCD !== ''"
+              >
+              </q-select> -->
+
+              <q-select
+                dense
+                filled
+                label="Tax Code"
+                v-model="forms.TAX_CODE"
+                use-input
+                input-debounce="500"
+                :options="listTaxes"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'tax')
+                "
+                behavior="dialog"
+                option-label="MTAX_DESC"
+                option-value="MTAX_CODE"
+                emit-value
+                map-options
+                :loading="loading"
+              />
+            </div>
+          </div>
         </fieldset>
 
         <div class="row q-py-md">
@@ -202,26 +238,26 @@
               :disable="loading"
             />
           </div>
-            <div class="col text-right">
-              <q-btn
-                flat
-                icon="add"
-                color="blue"
-                label="Add Lines"
-                @click="onAddItemLine"
-                :loading="loading"
-              >
-              </q-btn>
-              <q-btn
-                flat
-                icon="person"
-                color="indigo"
-                label="Customer"
-                @click="onCustView"
-                :loading="loading"
-              >
-              </q-btn>
-            </div>
+          <div class="col text-right">
+            <q-btn
+              flat
+              icon="add"
+              color="blue"
+              label="Add Lines"
+              @click="onAddItemLine"
+              :loading="loading"
+            >
+            </q-btn>
+            <q-btn
+              flat
+              icon="person"
+              color="indigo"
+              label="Customer"
+              @click="onCustView"
+              :loading="loading"
+            >
+            </q-btn>
+          </div>
         </div>
 
         <fieldset
@@ -244,7 +280,11 @@
             </div>
           </div>
           <template v-if="quotDetail.length > 0">
-            <div class="row q-col-gutter-xs q-pb-md" v-for="(quot, idx) in quotDetail" :key="idx">
+            <div
+              class="row q-col-gutter-xs q-pb-md"
+              v-for="(quot, idx) in quotDetail"
+              :key="idx"
+            >
               <div class="col-12 col-md-1 text-center">
                 <q-avatar text-color="white" color="primary">
                   {{ idx + 1 }}
@@ -273,7 +313,13 @@
               </div>
 
               <div class="col-4 col-md-1">
-                <q-input type="number" v-model="quot.TSLODETA_ITMQT" dense hint="Qty" outline/>
+                <q-input
+                  type="number"
+                  v-model="quot.TSLODETA_ITMQT"
+                  dense
+                  hint="Qty"
+                  outline
+                />
               </div>
 
               <div class="col-4 col-md-2" v-if="forms.TSLO_TYPE == 1">
@@ -299,11 +345,25 @@
                 />
               </div>
 
-              <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-1' : 'col-4 col-md-3'}`">
-                <q-input type="number" v-model="quot.TSLODETA_PRC" dense hint="Price" outline/>
+              <div
+                :class="`${
+                  forms.TSLO_TYPE == 1 ? 'col-4 col-md-1' : 'col-4 col-md-3'
+                }`"
+              >
+                <q-input
+                  type="number"
+                  v-model="quot.TSLODETA_PRC"
+                  dense
+                  hint="Price"
+                  outline
+                />
               </div>
 
-              <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-2' : 'col-6 col-md-2'}`">
+              <div
+                :class="`${
+                  forms.TSLO_TYPE == 1 ? 'col-4 col-md-2' : 'col-6 col-md-2'
+                }`"
+              >
                 <q-input
                   filled
                   v-model="quot.TSLODETA_PERIOD_FR"
@@ -340,7 +400,11 @@
                 </q-input>
               </div>
 
-              <div :class="`${forms.TSLO_TYPE == 1 ? 'col-4 col-md-2' : 'col-6 col-md-2'}`">
+              <div
+                :class="`${
+                  forms.TSLO_TYPE == 1 ? 'col-4 col-md-2' : 'col-6 col-md-2'
+                }`"
+              >
                 <q-input
                   filled
                   v-model="quot.TSLODETA_PERIOD_TO"
@@ -387,9 +451,7 @@
               </div>
             </div>
           </template>
-          <div class="text-center" v-else>
-            No Items Added
-          </div>
+          <div class="text-center" v-else>No Items Added</div>
         </fieldset>
       </q-card-section>
 
@@ -416,7 +478,7 @@ const $q = useQuasar();
 
 const props = defineProps({
   sloHeader: String,
-  isRecreate: Boolean
+  isRecreate: Boolean,
 });
 
 const forms = ref({
@@ -432,11 +494,13 @@ const forms = ref({
   TSLO_ADDRESS_DESCRIPTION: "",
   TSLO_SERVTRANS_COST: 0,
   TSLO_ISCON: 0,
+  TAX_CODE: "",
 });
 
 const filterCol = ref("");
 const filter = ref("");
 
+const listTaxes = ref([]);
 const listQuo = ref([]);
 const listItems = ref([]);
 const listCustomers = ref([]);
@@ -449,6 +513,7 @@ const listUsage = ref([]);
 onMounted(async () => {
   await getUsage();
   await getCustomer();
+  await getTaxes();
   if (props.sloHeader && props.sloHeader !== "") {
     await getROData(props.sloHeader);
 
@@ -458,6 +523,7 @@ onMounted(async () => {
     await getQuotation(forms.value.TSLO_QUOCD);
     // await onSelectQuotation(forms.value.TSLO_QUOCD)
   }
+  await getDefaultTax();
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -476,6 +542,10 @@ const filterFn = (val, update, abort, fun) => {
 
     if (fun === "usage") {
       await getUsage(val);
+    }
+
+    if (fun === "tax") {
+      await getTaxes(val);
     }
   });
 };
@@ -562,13 +632,31 @@ const getROData = async (val) => {
       forms.value.TSLO_TYPE = parseInt(response.data.TSLO_TYPE);
       forms.value.TSLO_ISCON = parseInt(response.data.TSLO_ISCON);
 
-      quotDetail.value = []
-      response.data.det.map(valDet => {
+      quotDetail.value = [];
+      response.data.det.map((valDet) => {
         quotDetail.value.push({
           ...valDet,
-          TSLODETA_USAGE_DESCRIPTION: parseInt(valDet.TSLODETA_USAGE_DESCRIPTION)
-        })
-      })
+          TSLODETA_USAGE_DESCRIPTION: parseInt(
+            valDet.TSLODETA_USAGE_DESCRIPTION
+          ),
+        });
+      });
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getTaxes = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("taxes/searchAPI", {
+      searchBy: "MTAX_DESC",
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listTaxes.value = response.data.data;
     })
     .catch(() => {
       loading.value = false;
@@ -581,7 +669,6 @@ const onSelectQuotation = async (val) => {
   await api
     .get(`transaction/quotation/view/${btoa(val)}`)
     .then(async (response) => {
-
       await getUsage();
       await getItem();
 
@@ -596,7 +683,7 @@ const onSelectQuotation = async (val) => {
       );
 
       quotDetail.value = [];
-      console.log(response.data.data.det)
+      console.log(response.data.data.det);
       response.data.data.det.map((valMap) => {
         quotDetail.value.push({
           TSLODETA_ITMCD: valMap.TQUODETA_ITMCD,
@@ -639,7 +726,9 @@ const onClickDeleteLines = (idx) => {
 const onSubmitData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want ${props.isRecreate ? 'Re-create this SO' : 'to save this SO'} ?`,
+    message: `Are you sure want ${
+      props.isRecreate ? "Re-create this SO" : "to save this SO"
+    } ?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
@@ -648,7 +737,7 @@ const onSubmitData = () => {
       .post(`receive-order/saveAPI`, {
         ...forms.value,
         det: quotDetail.value,
-        isRecreate: props.isRecreate
+        isRecreate: props.isRecreate,
       })
       .then((response) => {
         loading.value = false;
@@ -684,6 +773,20 @@ const onCustView = () => {
     forms.value.TSLO_ADDRESS_NAME = val.TSLO_ADDRESS_NAME;
     forms.value.TSLO_ADDRESS_DESCRIPTION = val.TSLO_ADDRESS_DESCRIPTION;
   });
+};
+
+const getDefaultTax = async () => {
+  loading.value = true;
+  await api
+    .get(`master/gencode/${btoa("CUST_ACC_LIST")}/${btoa("DEF_CUST_TAX")}`)
+    .then((val) => {
+      loading.value = false;
+      console.log(val)
+      if (val.data.CODE_VALUE && !forms.value.TAX_CODE) {
+        forms.value.TAX_CODE = val.data.CODE_VALUE;
+      }
+    })
+    .catch((e) => {});
 };
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

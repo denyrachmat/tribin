@@ -245,6 +245,7 @@ class ReceiveOrderController extends Controller
         if (!empty($quotationDetail)) {
             T_SLODETA::on($this->dedicatedConnection)->insert($quotationDetail);
         }
+
         $tax = null;
         if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
             $tax = $this->storeTaxes(new Request([
@@ -410,7 +411,7 @@ class ReceiveOrderController extends Controller
                 'cg_code' => $this->dedicatedConnection,
                 'date' => date('Y-m-d'),
                 'reference_number' => $newDocumentCode,
-                'journal_code' => count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]->CODE_VALUE : '',
+                'journal_code' => count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['CODE_VALUE'] : '',
                 'description' => 'Sales Order ' . $newDocumentCode,
                 'amount' => $getTotalAmnt,
             ],
@@ -1056,7 +1057,7 @@ class ReceiveOrderController extends Controller
                         'TTAXM_DOCNO' => $value->TSLO_SLOCD,
                         'TTAXM_CG' => $this->dedicatedConnection,
                         'AMOUNT' => $getTotalAmount,
-                        'MTAX_CODE' => $getDefault->CODE_VALUE
+                        'MTAX_CODE' => $getDefault['CODE_VALUE']
                     ]));
                 }
             }

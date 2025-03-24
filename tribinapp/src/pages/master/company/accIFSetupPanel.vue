@@ -26,6 +26,18 @@
                 >
                 </q-select>
               </div>
+
+              <div class="col-1 text-right">
+                <q-btn
+                  color="red"
+                  icon="close"
+                  @click="onClickDelete(list, idx, 'cust')"
+                  flat
+                  dense
+                >
+                  <q-tooltip>Remove data</q-tooltip>
+                </q-btn>
+              </div>
             </div>
           </fieldset>
         </div>
@@ -54,6 +66,17 @@
                   map-options
                 >
                 </q-select>
+              </div>
+              <div class="col-1 text-right">
+                <q-btn
+                  color="red"
+                  icon="close"
+                  @click="onClickDelete(list, idx, 'supp')"
+                  flat
+                  dense
+                >
+                  <q-tooltip>Remove data</q-tooltip>
+                </q-btn>
               </div>
             </div>
           </fieldset>
@@ -114,6 +137,11 @@ const onClickSave = () => {
           MGECD_VALUE: v.valueChoosed,
           MGECD_DESC: `${v.label} - ${v.valueChoosed}`,
           MGECD_ACTIVE: 1,
+          MGECD_CG:
+            document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("CGID="))
+              ?.split("=")[1] || "",
         });
       }
     });
@@ -131,8 +159,14 @@ const onClickSave = () => {
 
 const getTransTypeList = async () => {
   loading.value = true;
+  const getCG =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("CGID="))
+      ?.split("=")[1] || "";
+
   await api
-    .get(`master/gencode/${btoa("CUST_ACC_LIST")}`)
+    .get(`master/gencode/${btoa("CUST_ACC_LIST")}/0/${getCG}`)
     .then((val) => {
       loading.value = false;
       listCustType.value = [];
@@ -155,8 +189,14 @@ const getTransTypeList = async () => {
 
 const getTransSuppTypeList = async () => {
   loading.value = true;
+  const getCG =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("CGID="))
+      ?.split("=")[1] || "";
+
   await api
-    .get(`master/gencode/${btoa("SUPP_ACC_LIST")}`)
+    .get(`master/gencode/${btoa("SUPP_ACC_LIST")}/0/${getCG}`)
     .then((val) => {
       loading.value = false;
       listPOType.value = [];
@@ -217,6 +257,14 @@ const getCOAListSupp = async (idx) => {
       });
     })
     .catch((e) => {});
+};
+
+const onClickDelete = (list, idx, type) => {
+  if (type === "cust") {
+    listCustType.value[idx].valueChoosed = null;
+  } else {
+    listPOType.value[idx].valueChoosed = null;
+  }
 };
 
 const getFromAPI = async (url, toVar, idx) => {

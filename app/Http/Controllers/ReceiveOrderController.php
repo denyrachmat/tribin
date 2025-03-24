@@ -975,6 +975,7 @@ class ReceiveOrderController extends Controller
 
         $cekDefaultPrep = BranchPaymentAccount::on('mysql')->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn));
         $defData = (clone $cekDefaultPrep)->where('branch_menu', $RS['TQUO_TYPE'] == 1 ? 'sewa' : 'jual')->first();
+
         $branchPaymentAccount = BranchPaymentAccount::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
             ->where('BRANCH', Auth::user()->branch)
             ->whereNull('deleted_at')
@@ -1048,7 +1049,7 @@ class ReceiveOrderController extends Controller
                     $getTotalAmount += $valueDetail->TSLODETA_ITMQT * $valueDetail->TSLODETA_PRC;
                 }
 
-                $getDefault = $this->getGencode(base64_encode('CUST_ACC_LIST'), base64_encode('DEF_CUST_TAX'));
+                $getDefault = $this->getGencode(base64_encode('CUST_ACC_LIST'), base64_encode('DEF_CUST_TAX'), $_COOKIE['CGID']);
 
                 if (!empty($getDefault)) {
                     $this->storeTaxes(new Request([

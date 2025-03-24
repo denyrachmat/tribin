@@ -13,7 +13,9 @@ class M_GENCODE extends Model
     protected $fillable = [
         'MGECD_CODE',
         'MGECD_VALUE',
-        'MGECD_DESC',
         'MGECD_ACTIVE',
+        'MGECD_DESC',
+        'MGECD_DESC2',
+        'MGECD_CG'
     ];
 }

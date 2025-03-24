@@ -776,9 +776,14 @@ const onCustView = () => {
 };
 
 const getDefaultTax = async () => {
+  const getCG =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("CGID="))
+      ?.split("=")[1] || "";
   loading.value = true;
   await api
-    .get(`master/gencode/${btoa("CUST_ACC_LIST")}/${btoa("DEF_CUST_TAX")}`)
+    .get(`master/gencode/${btoa("CUST_ACC_LIST")}/${btoa("DEF_CUST_TAX")}/${getCG}`)
     .then((val) => {
       loading.value = false;
       console.log(val)

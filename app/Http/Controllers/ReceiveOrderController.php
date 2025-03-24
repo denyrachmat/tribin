@@ -983,12 +983,18 @@ class ReceiveOrderController extends Controller
                 'bank_account_number'
             )
             ->join('branch_payment_accounts as bpa', 'bpa.id', 'TQUOPAYDETA_IDPAY')
-            ->where('BRANCH', Auth::user()->branch);
-
-        $checkSetupPayment = (clone $checkSetupPaymentHead)->where('TQUOPAYDETA_QUOCD', $RS['TSLO_QUOCD'])->get();
+            ->where('BRANCH', Auth::user()->branch)
+            ->where('TQUOPAYDETA_QUOCD', $RS['TSLO_QUOCD'])
+            ->get();
 
         if (empty($checkSetupPayment)) {
-            $checkSetupPayment = (clone $checkSetupPaymentHead)->get();
+            $checkSetupPayment = BranchPaymentAccount::on($this->dedicatedConnection)->select(
+                'bank_name',
+                'bank_account_name',
+                'bank_account_number'
+            )
+            ->where('BRANCH', Auth::user()->branch)
+            ->get();
         }
 
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.proformaInvoice', array_merge($RS, [

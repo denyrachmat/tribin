@@ -42,7 +42,7 @@ Route::get('/logout', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::group(['prefix' => 'master', 'middleware' => 'api'], function () {
-    Route::get('gencode/{id}', [gencodeController::class, 'getGencode']);
+    Route::get('gencode/{id}/{value?}', [gencodeController::class, 'getGencode']);
     Route::post('gencode', [gencodeController::class, 'saveGencode']);
     Route::prefix('item')->group(function () {
         Route::post('searchAPI', [ItemController::class, 'searchAPI']);

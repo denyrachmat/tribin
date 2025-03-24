@@ -219,44 +219,24 @@
             <table class="tg">
                 <thead>
                     <tr>
-                        <th class="tg-0lax"><b>Merk</b></th>
+                        <!-- <th class="tg-0lax"><b>Merk</b></th> -->
                         <th class="tg-0lax"><b>Capacity / Model</b></th>
                         <th class="tg-0lax"><b>Pemakaian / Periode</b></th>
                         <th class="tg-0lax"><b>Qty</b></th>
-                        <th class="tg-0lax"><b>{{$TDLVORD_TYPE > 2 ? 'Total Harga Barang': 'Total Harga Sewa'}}</b></th>
+                        <th class="tg-0lax"><b>{{$TQUO_TYPE > 2 ? 'Total Harga Barang': 'Total Harga Sewa'}}</b></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if($TDLVORD_TYPE === 3 || $TDLVORD_TYPE === 4)
-                        @foreach($dlvdet as $key => $value)
-                            <tr>
-                                <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
-                                <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
-                                <td class="tg-0lax">-</td>
-                                <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
-                                <td class="tg-0lax">Rp {{number_format($value['TDLVORDDETA_PRC'], 0, ".", ",") }}</td>
-                            </tr>
-                        @endforeach
-                    @else
-                        @foreach($dlvDetNew as $key => $value)
-                            @if(isset($value['dataSLO']) && count($value['dataSLO']) > 0)
-                                <tr>
-                                    <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
-                                    <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
-                                    <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} -
-                                        {{$value['dataSLO']['MUSAGE_DESCRIPTION']}} /
-                                        {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_FR']))}} -
-                                        {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_TO']))}} </td>
-                                    <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
-                                    <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'], 0, ".", ",") }}</td>
-                                </tr>
-                            @else
-                                <tr>
-                                    <td class="tg-0lax" colspan=5>Data Not Found</td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    @endif
+                    @foreach($det as $key => $value)
+                    <tr>
+                        <!-- <td class="tg-0lax">{{$value['MITM_BRAND']}}</td> -->
+                        <td class="tg-0lax">{{$value['MITM_ITMNM']}}</td>
+                        <td class="tg-0lax">{{date('d M Y', strtotime($value['TSLODETA_PERIOD_FR']))}} - {{date('d M Y', strtotime($value['TSLODETA_PERIOD_TO']))}}</td>
+
+                        <td class="tg-0lax">{{$value['TSLODETA_ITMQT']}}</td>
+                        <td class="tg-0lax">Rp {{number_format($value['TSLODETA_PRC'], 0, ".", ",") }}</td>
+                    </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -269,24 +249,21 @@
                     <td><b>:</b></td>
                     <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
                 </tr>
-                @if($isPPN == 1)
-                    <tr>
-                        <td><b>PPN (11%)</b></td>
-                        <td><b>:</b></td>
-                        <td><b>Rp {{number_format($ppn, 0, ".", ",")}}</b></td>
-                    </tr>
-                    <tr>
-                        <td><b>Total Tagihan</b></td>
-                        <td><b>:</b></td>
-                        <td><b>Rp {{number_format($total + $ppn, 0, ".", ",")}}</b></td>
-                    </tr>
-                @else
-                    <tr>
-                        <td><b>Total Tagihan</b></td>
-                        <td><b>:</b></td>
-                        <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
-                    </tr>
-                @endif
+                @foreach($taxes as $key => $valueTax)
+                @php
+                $taxSum = is_array($valueTax['TTAXM_TAXAMT']) ? array_sum($valueTax['TTAXM_TAXAMT']) : 0;
+                @endphp
+                <tr>
+                    <td><b>{{$valueTax['MTAX_DESC']}}</b></td>
+                    <td><b>:</b></td>
+                    <td><b>Rp {{number_format($valueTax['TTAXM_TAXAMT'], 0, ".", ",")}}</b></td>
+                </tr>
+                @endforeach
+                <tr>
+                    <td><b>Total Tagihan</b></td>
+                    <td><b>:</b></td>
+                    <td><b>Rp {{number_format($totalAll, 0, ".", ",")}}</b></td>
+                </tr>
                 <tr>
                     <td><b>Terbilang</b></td>
                     <td><b>:</b></td>
@@ -313,26 +290,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if(count($payment) === 0)
-                        <tr>
-                            <td class="tg-0lax"><b>MANDIRI</b></td>
-                            <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
-                            <td class="tg-0lax"><b>113-0008-5858-99</b></td>
-                        </tr>
-                        <tr>
-                            <td class="tg-0lax"><b>MAYBANK INDONESIA</b></td>
-                            <td class="tg-0lax"><b>PT. JAT POWERINDO</b></td>
-                            <td class="tg-0lax"><b>2760-8888-58</b></td>
-                        </tr>
-                    @else
-                        @foreach($payment as $key => $valuePayment)
-                            <tr>
-                                <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
-                                <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
-                                <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
-                            </tr>
-                        @endforeach
-                    @endif
+                    @foreach($payment as $key => $valuePayment)
+                    <tr>
+                        <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
+                        <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
+                        <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
+                    </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>

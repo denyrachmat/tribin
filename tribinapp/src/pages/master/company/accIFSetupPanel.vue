@@ -22,6 +22,7 @@
                   :options="listCOA[idx]"
                   :loading="loading"
                   emit-value
+                  map-options
                 >
                 </q-select>
               </div>
@@ -50,6 +51,7 @@
                   :options="listCOASupp[idx]"
                   :loading="loading"
                   emit-value
+                  map-options
                 >
                 </q-select>
               </div>

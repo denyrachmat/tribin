@@ -976,7 +976,7 @@ class ReceiveOrderController extends Controller
             $totalTax += $valueTaxes['TTAXM_TAXAMT'];
         }
 
-        $checkSetupPaymentHead = T_QUOPAYDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+        $checkSetupPayment = T_QUOPAYDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
             ->select(
                 'bank_name',
                 'bank_account_name',

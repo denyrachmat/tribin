@@ -851,6 +851,7 @@ class ReceiveOrderController extends Controller
                         INNER JOIN jatpower_tribin.M_TAX ON TTAXM_TYPE = MTAX_CODE
                         WHERE TTAXM_DOCNO = TSLO_SLOCD
                         AND TTAXM_CG = '".$this->dedicatedConnection."'
+                        AND deleted_at IS NULL
                     ) AS totalTax")
                 )
                 ->join('T_SLODETA', function ($j) {

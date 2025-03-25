@@ -269,24 +269,21 @@
                     <td><b>:</b></td>
                     <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
                 </tr>
-                @if($isPPN == 1)
-                    <tr>
-                        <td><b>PPN (11%)</b></td>
-                        <td><b>:</b></td>
-                        <td><b>Rp {{number_format($ppn, 0, ".", ",")}}</b></td>
-                    </tr>
-                    <tr>
-                        <td><b>Total Tagihan</b></td>
-                        <td><b>:</b></td>
-                        <td><b>Rp {{number_format($total + $ppn, 0, ".", ",")}}</b></td>
-                    </tr>
-                @else
-                    <tr>
-                        <td><b>Total Tagihan</b></td>
-                        <td><b>:</b></td>
-                        <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
-                    </tr>
-                @endif
+                @foreach($taxes as $key => $valueTax)
+                @php
+                $taxSum = is_array($valueTax['TTAXM_TAXAMT']) ? array_sum($valueTax['TTAXM_TAXAMT']) : 0;
+                @endphp
+                <tr>
+                    <td><b>{{$valueTax['MTAX_DESC']}}</b></td>
+                    <td><b>:</b></td>
+                    <td><b>Rp {{number_format($valueTax['TTAXM_TAXAMT'], 0, ".", ",")}}</b></td>
+                </tr>
+                @endforeach
+                <tr>
+                    <td><b>Total Tagihan</b></td>
+                    <td><b>:</b></td>
+                    <td><b>Rp {{number_format($totalAll, 0, ".", ",")}}</b></td>
+                </tr>
                 <tr>
                     <td><b>Terbilang</b></td>
                     <td><b>:</b></td>

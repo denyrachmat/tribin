@@ -20,9 +20,11 @@ use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\T_DLVSJDETA;
 use App\Models\CompanyGroup;
 use App\Models\T_DLVPAYDETA;
+use App\Traits\taxesTraits;
 
 class InvoiceController extends Controller
 {
+    use taxesTraits;
     protected $dedicatedConnection;
 
     protected $fpdf;
@@ -178,6 +180,7 @@ class InvoiceController extends Controller
                 'MCUS_PIC_TELNO',
                 'MCUS_ADDR1',
                 'TSLO_QUOCD',
+                'TSLO_SLOCD',
                 'TSLO_POCD',
                 'TQUO_SBJCT',
                 'TQUO_ATTN',
@@ -231,6 +234,7 @@ class InvoiceController extends Controller
                 'MCUS_TELNO',
                 'MCUS_PIC_TELNO',
                 'MCUS_ADDR1',
+                'TSLO_SLOCD',
                 'TSLO_QUOCD',
                 'TSLO_POCD',
                 'TQUO_SBJCT',
@@ -364,6 +368,10 @@ class InvoiceController extends Controller
         $dlvDetParse = [];
         $cek = [];
         $getSLOByItem=[];
+
+
+        $taxes = $this->getTaxes($request->TSLO_SLOCD, $this->dedicatedConnection);
+        $total = 0;
         foreach ($request->dlvdet as $key => $value) {
             if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {
                 $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']);
@@ -401,9 +409,14 @@ class InvoiceController extends Controller
             }
         }
 
-        // return $cek;
+        // return $taxes;
 
         $ppn = $total * 0.11;
+
+        $totalTax = 0;
+        foreach ($taxes as $key => $valueTaxes) {
+            $totalTax += $valueTaxes['TTAXM_TAXAMT'];
+        }
 
         $pdf = Pdf::loadView(
             'pdf.invoiceDlv',
@@ -415,10 +428,12 @@ class InvoiceController extends Controller
                     'telp' => $RSCG->phone,
                     'isPPN' => $getCompGroups->flg_ppn,
                     'total' => $total,
+                    'totalAll' => $total + $totalTax,
+                    'taxes' => $taxes,
+                    'terbilang' => $this->numberToSentence($total + $totalTax),
                     'ppn' => $ppn,
                     'dlvDetNew' => $dlvDetParse,
                     'payment' => $request->payment,
-                    'terbilang' => $this->numberToSentence($getCompGroups->flg_ppn == 1 ? $total + $ppn : $total),
                     'subject' => $Subject,
                 ],
                 $request->all()

@@ -13,6 +13,7 @@ const routes = [
       { path: 'company', component: () => import('pages/master/company/indexCompany.vue') },
       { path: 'tax', component: () => import('pages/master/tax/taxView.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
+      { path: 'poReport', component: () => import('pages/transaction/purchasing/poReportView.vue') },
       { path: 'outgoing', component: () => import('pages/warehouse/outgoing/outgoingView.vue') },
       { path: 'outgoingConfirm', component: () => import('pages/warehouse/outgoingConfirm/outConfView.vue') },
       { path: 'invoice', component: () => import('pages/warehouse/invoice/invoiceView.vue') },

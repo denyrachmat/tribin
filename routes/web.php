@@ -432,6 +432,11 @@ Route::group(['middleware' => 'cors'], function () {
             Route::delete('items/{id}', [PurchaseController::class, 'updatePODetail']);
         });
 
+        Route::prefix('purchase-status')->group(function () {
+            Route::get('form', [PurchaseController::class, 'poReportView']);
+            Route::post('searchAPI', [PurchaseController::class, 'fetchPurchaseReport']);
+        });
+
         # Terkait Sales Order Draft Transaction
         Route::prefix('sales-order-draft')->group(function () {
             Route::get('document/{id}', [ReceiveOrderController::class, 'loadDraftById']);

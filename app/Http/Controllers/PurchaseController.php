@@ -212,8 +212,23 @@ class PurchaseController extends Controller
                 'TPCHORDDETA_BRANCH' => Auth::user()->branch
             ];
         }
+
         if (!empty($itemDetail)) {
             T_PCHORDDETA::on($this->dedicatedConnection)->insert($itemDetail);
+        }
+
+        if ($request->has('det') && count($request->det) > 0) {
+            foreach ($request->det as $key => $value) {
+                T_PCHORDDETA::on($this->dedicatedConnection)->create([
+                    'TPCHORDDETA_PCHCD' => $newPOCode,
+                    'TPCHORDDETA_ITMCD' => $value['TPCHORDDETA_ITMCD'],
+                    'TPCHORDDETA_ITMQT' => $value['TPCHORDDETA_ITMQT'],
+                    'TPCHORDDETA_ITMPRC_PER' => $value['TPCHORDDETA_ITMPRC_PER'],
+                    'created_by' => Auth::user()->nick_name,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'TPCHORDDETA_BRANCH' => Auth::user()->branch
+                ]);
+            }
         }
 
         return [
@@ -1173,9 +1188,14 @@ class PurchaseController extends Controller
             'TPCHORD_APPRVDT',
             'TPCHORD_REJCTDT',
             'TPCHORD_SUPCD',
+            'TPCHORD_REQCD',
+            'TPCHORD_ATTN',
             'MSUP_SUPNM',
+            'TPCHORDDETA_PCHCD',
             'TPCHORD_BRANCH',
+            'TPCHORD_REMARK',
             DB::raw('SUM(TPCHORDDETA_ITMQT) as total_qty'),
+            DB::raw('SUM(T_RCV_DETAIL.quantity) as total_rcv_qty'),
             DB::raw('SUM(TPCHORDDETA_ITMQT * TPCHORDDETA_ITMPRC_PER) as total_price')
         )
             ->leftJoin('M_SUP', function ($join) {
@@ -1186,6 +1206,11 @@ class PurchaseController extends Controller
                 $join->on('TPCHORD_PCHCD', '=', 'TPCHORDDETA_PCHCD')
                     ->on('TPCHORD_BRANCH', '=', 'TPCHORDDETA_BRANCH');
             })
+            ->leftJoin('T_RCV_HEAD', 'TPCHORD_PCHCD', 'TRCV_REFFNO')
+            ->leftJoin('T_RCV_DETAIL', function ($join) {
+                $join->on('T_RCV_HEAD.id', 'id_header');
+                $join->on('T_PCHORDDETA.TPCHORDDETA_ITMCD', 'item_code');
+            })
             ->orderBy('TPCHORD_ISSUDT', 'desc')
             ->groupBy(
                 'TPCHORD_PCHCD',
@@ -1193,8 +1218,12 @@ class PurchaseController extends Controller
                 'TPCHORD_APPRVDT',
                 'TPCHORD_REJCTDT',
                 'TPCHORD_SUPCD',
+                'TPCHORD_REQCD',
+                'TPCHORD_ATTN',
                 'MSUP_SUPNM',
+                'TPCHORDDETA_PCHCD',
                 'TPCHORD_BRANCH',
+                'TPCHORD_REMARK',
             );
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {

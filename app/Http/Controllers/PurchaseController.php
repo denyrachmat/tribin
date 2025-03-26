@@ -320,17 +320,18 @@ class PurchaseController extends Controller
                 $join->on("TPCHORD_SUPCD", "=", "MSUP_SUPCD")
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
             })
-            ->with(['det' => function ($f) {
-                $f->select(
-                    'TPCHORDDETA_PCHCD',
-                    'TPCHORDDETA_ITMCD',
-                    'TPCHORDDETA_ITMQT',
-                    'TPCHORDDETA_ITMPRC_PER',
-                    'TPCHORDDETA_BRANCH',
-                    DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0)) as TPCHORDDETA_ITMQT'),
-                    DB::raw('COALESCE(itrn.TOTAL, 0) as itn')
-                )
-                    ->leftjoin(DB::raw('(
+            ->with([
+                'det' => function ($f) {
+                    $f->select(
+                        'TPCHORDDETA_PCHCD',
+                        'TPCHORDDETA_ITMCD',
+                        'TPCHORDDETA_ITMQT',
+                        'TPCHORDDETA_ITMPRC_PER',
+                        'TPCHORDDETA_BRANCH',
+                        DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0)) as TPCHORDDETA_ITMQT'),
+                        DB::raw('COALESCE(itrn.TOTAL, 0) as itn')
+                    )
+                        ->leftjoin(DB::raw('(
                         SELECT
                             T_RCV_HEAD.id,
                             id_header,
@@ -345,12 +346,13 @@ class PurchaseController extends Controller
                             id_header,
                             TRCV_REFFNO,
                             item_code
-                    ) itrn'), function($j) {
-                        $j->on('TPCHORDDETA_PCHCD', 'TRCV_REFFNO');
-                        $j->on('itrn.item_code', 'TPCHORDDETA_ITMCD');
-                    })
-                    ->where(DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0))'), '>', 0);
-            }])
+                    ) itrn'), function ($j) {
+                            $j->on('TPCHORDDETA_PCHCD', 'TRCV_REFFNO');
+                            $j->on('itrn.item_code', 'TPCHORDDETA_ITMCD');
+                        })
+                        ->where(DB::raw('(TPCHORDDETA_ITMQT - COALESCE(itrn.TOTAL, 0))'), '>', 0);
+                }
+            ])
             ->wherehas('det', function ($f) {
                 $f->select(
                     'TPCHORDDETA_PCHCD',
@@ -611,6 +613,7 @@ class PurchaseController extends Controller
             $MSUP_TAXREG = $r['MSUP_TAXREG'];
         }
         $RSUserWhoPrepare = User::select('name')->whereIn('nick_name', [$created_by])->first();
+        $RSUserApproved = User::select('name')->whereIn('nick_name', [$TPCHORD_APPRVBY])->first();
 
         $RSDetail = T_PCHORDDETA::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('TPCHORDDETA_ITMCD', 'MITM_BRAND', 'MITM_ITMNM', 'MITM_MODEL', 'TPCHORDDETA_ITMQT', 'TPCHORDDETA_ITMPRC_PER', 'MITM_STKUOM')
             ->leftJoin("M_ITM", function ($join) {
@@ -790,7 +793,7 @@ class PurchaseController extends Controller
         $this->fpdf->SetXY(90 + 27, $y);
         $this->fpdf->MultiCell(27, 5, $RSUserWhoPrepare->name, 1, 'C');
         $this->fpdf->SetXY(90 + 27 + 27, $y);
-        $this->fpdf->MultiCell(27, 5, '', 1, 'C');
+        $this->fpdf->MultiCell(27, 5, $RSUserApproved->name, 1, 'C');
         $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
         $this->fpdf->MultiCell(27, 5, '', 1, 'C');
 
@@ -1153,5 +1156,49 @@ class PurchaseController extends Controller
     function formStatus()
     {
         return view('transaction.purchase_request_status');
+    }
+
+    function poReportView()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'poReport']);
+    }
+
+    function fetchPurchaseReport(Request $request)
+    {
+        $data = T_PCHORDHEAD::on($this->dedicatedConnection)->select(
+            'TPCHORD_PCHCD',
+            'TPCHORD_ISSUDT',
+            'TPCHORD_APPRVDT',
+            'TPCHORD_REJCTDT',
+            'TPCHORD_SUPCD',
+            'MSUP_SUPNM',
+            'TPCHORD_BRANCH',
+            DB::raw('SUM(TPCHORDDETA_ITMQT) as total_qty'),
+            DB::raw('SUM(TPCHORDDETA_ITMQT * TPCHORDDETA_ITMPRC_PER) as total_price')
+        )
+            ->leftJoin('M_SUP', function ($join) {
+                $join->on('TPCHORD_SUPCD', '=', 'MSUP_SUPCD')
+                    ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
+            })
+            ->leftJoin('T_PCHORDDETA', function ($join) {
+                $join->on('TPCHORD_PCHCD', '=', 'TPCHORDDETA_PCHCD')
+                    ->on('TPCHORD_BRANCH', '=', 'TPCHORDDETA_BRANCH');
+            })
+            ->orderBy('TPCHORD_ISSUDT', 'desc')
+            ->groupBy(
+                'TPCHORD_PCHCD',
+                'TPCHORD_ISSUDT',
+                'TPCHORD_APPRVDT',
+                'TPCHORD_REJCTDT',
+                'TPCHORD_SUPCD',
+                'MSUP_SUPNM',
+                'TPCHORD_BRANCH',
+            );
+
+        if (!empty($request->searchBy) && !empty($request->searchValue)) {
+            $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        return ['data' => $data->get()];
     }
 }

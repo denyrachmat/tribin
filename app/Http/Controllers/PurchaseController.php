@@ -793,7 +793,9 @@ class PurchaseController extends Controller
         $this->fpdf->SetXY(90 + 27, $y);
         $this->fpdf->MultiCell(27, 5, $RSUserWhoPrepare->name, 1, 'C');
         $this->fpdf->SetXY(90 + 27 + 27, $y);
+        $this->fpdf->SetFont('Arial', '', 6);
         $this->fpdf->MultiCell(27, 5, $RSUserApproved->name, 1, 'C');
+        $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
         $this->fpdf->MultiCell(27, 5, '', 1, 'C');
 

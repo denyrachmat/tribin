@@ -192,40 +192,7 @@ class PurchaseController extends Controller
             'TPCHORD_BRANCH' => Auth::user()->branch
         ];
 
-        # data detail item
-        $validator = Validator::make($request->all(), [
-            'TPCHORDDETA_ITMCD' => 'required|array',
-            'TPCHORDDETA_ITMQT' => 'required|array',
-            'TPCHORDDETA_ITMQT.*' => 'required|numeric',
-            'TPCHORDDETA_ITMPRC_PER' => 'required|array',
-            'TPCHORDDETA_ITMPRC_PER.*' => 'required|numeric',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 406);
-        }
-
-        T_PCHORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
-            'TPCHORD_PCHCD' => $newPOCode,
-        ], $headerTable);
-
-        $countDetail = count($request->TPCHORDDETA_ITMCD);
-        $itemDetail = [];
-        for ($i = 0; $i < $countDetail; $i++) {
-            $itemDetail[] = [
-                'TPCHORDDETA_PCHCD' => $newPOCode,
-                'TPCHORDDETA_ITMCD' => $request->TPCHORDDETA_ITMCD[$i],
-                'TPCHORDDETA_ITMQT' => $request->TPCHORDDETA_ITMQT[$i],
-                'TPCHORDDETA_ITMPRC_PER' => $request->TPCHORDDETA_ITMPRC_PER[$i],
-                'created_by' => Auth::user()->nick_name,
-                'created_at' => date('Y-m-d H:i:s'),
-                'TPCHORDDETA_BRANCH' => Auth::user()->branch
-            ];
-        }
-
-        if (!empty($itemDetail)) {
-            T_PCHORDDETA::on($this->dedicatedConnection)->insert($itemDetail);
-        }
 
         if ($request->has('det') && count($request->det) > 0) {
             foreach ($request->det as $key => $value) {
@@ -238,6 +205,42 @@ class PurchaseController extends Controller
                     'created_at' => date('Y-m-d H:i:s'),
                     'TPCHORDDETA_BRANCH' => Auth::user()->branch
                 ]);
+            }
+        } else {
+
+            # data detail item
+            $validator = Validator::make($request->all(), [
+                'TPCHORDDETA_ITMCD' => 'required|array',
+                'TPCHORDDETA_ITMQT' => 'required|array',
+                'TPCHORDDETA_ITMQT.*' => 'required|numeric',
+                'TPCHORDDETA_ITMPRC_PER' => 'required|array',
+                'TPCHORDDETA_ITMPRC_PER.*' => 'required|numeric',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 406);
+            }
+
+            T_PCHORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
+                'TPCHORD_PCHCD' => $newPOCode,
+            ], $headerTable);
+
+            $countDetail = count($request->TPCHORDDETA_ITMCD);
+            $itemDetail = [];
+            for ($i = 0; $i < $countDetail; $i++) {
+                $itemDetail[] = [
+                    'TPCHORDDETA_PCHCD' => $newPOCode,
+                    'TPCHORDDETA_ITMCD' => $request->TPCHORDDETA_ITMCD[$i],
+                    'TPCHORDDETA_ITMQT' => $request->TPCHORDDETA_ITMQT[$i],
+                    'TPCHORDDETA_ITMPRC_PER' => $request->TPCHORDDETA_ITMPRC_PER[$i],
+                    'created_by' => Auth::user()->nick_name,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'TPCHORDDETA_BRANCH' => Auth::user()->branch
+                ];
+            }
+
+            if (!empty($itemDetail)) {
+                T_PCHORDDETA::on($this->dedicatedConnection)->insert($itemDetail);
             }
         }
 

@@ -136,12 +136,25 @@
           </div>
           <div class="row q-col-gutter-md q-pt-sm">
             <div class="col-12 col-sm-12">
-              <q-input
-                label="PR No."
+              <q-select
                 dense
                 filled
+                label="PR No."
                 v-model="header.TPCHORD_REQCD"
+                use-input
+                input-debounce="500"
+                :options="listPR"
+                @filter="
+                  (val, update, abort) => filterFn(val, update, abort, 'pr')
+                "
+                behavior="dialog"
+                option-label="PO_CUSTDESC"
+                option-value="TPCHREQ_PCHCD"
+                emit-value
+                map-options
+                :loading="loading"
                 :readonly="props.mode === 'view'"
+                @update:model-value="(value) => onSelectPR(value)"
               />
             </div>
           </div>
@@ -328,11 +341,13 @@ const listDet = ref([]);
 const loading = ref(false);
 const listSupplier = ref([]);
 const listItems = ref([]);
-const listTaxes = ref([])
+const listTaxes = ref([]);
+const listPR = ref([]);
 
 onMounted(async () => {
   await getItem("");
   await getSupplier("");
+  await getPR("");
 
   if (props.dataHeader && Object.values(props.dataHeader).length > 0) {
     header.value = {
@@ -351,7 +366,7 @@ onMounted(async () => {
 
     await getDetailItem();
   }
-  await getTaxes()
+  await getTaxes();
   getDefaultTax();
 });
 
@@ -359,6 +374,10 @@ const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "supp") {
       await getSupplier(val);
+    }
+
+    if (fun === "pr") {
+      await getPR(val);
     }
   });
 };
@@ -405,6 +424,52 @@ const getItem = async (val) => {
     .then((response) => {
       loading.value = false;
       listItems.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getPR = async (val = null) => {
+  loading.value = true;
+  await api_web
+    .get(
+      `purchase-request?searchBy=${
+        val ? "TPCHREQ_PCHCD" : "0"
+      }&searchValue=${val}`
+    )
+    .then((response) => {
+      loading.value = false;
+      listPR.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const onSelectPR = async (val) => {
+  console.log(val);
+  const getSelectedData = listPR.value.find(
+    (item) => item.TPCHREQ_PCHCD === val
+  );
+  console.log(getSelectedData);
+  loading.value = true;
+  await api_web
+    .get(`purchase-request/${btoa(val)}`)
+    .then((response) => {
+      loading.value = false;
+      header.value.TPCHORD_SUPCD = getSelectedData["TPCHREQ_SUPCD"];
+
+      if (response.data.dataItem && response.data.dataItem.length > 0) {
+        listDet.value = [];
+        response.data.dataItem.map((valMap) => {
+          listDet.value.push({
+            TPCHORDDETA_ITMCD: valMap.TPCHREQDETA_ITMCD,
+            TPCHORDDETA_ITMQT: valMap.TPCHREQDETA_ITMQT,
+            TPCHORDDETA_ITMPRC_PER: 0,
+          });
+        });
+      }
     })
     .catch(() => {
       loading.value = false;
@@ -475,10 +540,12 @@ const getDefaultTax = async () => {
       ?.split("=")[1] || "";
   loading.value = true;
   await api
-    .get(`master/gencode/${btoa("CUST_ACC_LIST")}/${btoa("DEF_SUPP_TAX")}/${getCG}`)
+    .get(
+      `master/gencode/${btoa("CUST_ACC_LIST")}/${btoa("DEF_SUPP_TAX")}/${getCG}`
+    )
     .then((val) => {
       loading.value = false;
-      console.log(val)
+      console.log(val);
       if (val.data.CODE_VALUE && !header.value.TAX_CODE) {
         header.value.TAX_CODE = val.data.CODE_VALUE;
       }

@@ -80,6 +80,18 @@
                 >
                   {{ col.value }}
                 </q-badge>
+                <q-badge
+                  :color="
+                    col.value === 'Received'
+                      ? 'green'
+                      : col.value === 'Not Received'
+                      ? 'red'
+                      : 'orange'
+                  "
+                  v-else-if="col.name === 'status_rcv'"
+                >
+                  {{ col.value }}
+                </q-badge>
                 <span v-else>
                   {{ col.value }}
                 </span>
@@ -160,6 +172,18 @@ const columns = [
         : row.TPCHORD_REJCTDT
         ? "Rejected"
         : "Pending",
+    sortable: true,
+  },
+  {
+    name: "status_rcv",
+    label: "Status Receive",
+    align: "left",
+    field: (row) =>
+      row.total_qty === row.total_rcv_qty
+        ? "Received"
+        : row.total_qty > 0 && row.total_qty > row.total_rcv_qty
+        ? "Partially Received"
+        : "Not Received",
     sortable: true,
   },
 ];

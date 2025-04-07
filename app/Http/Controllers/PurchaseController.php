@@ -19,9 +19,11 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
+use App\Traits\taxesTraits;
 
 class PurchaseController extends Controller
 {
+    use taxesTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -33,6 +35,7 @@ class PurchaseController extends Controller
 
     function formOrder()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'po']);
         return view('transaction.purchase_order');
     }
 
@@ -113,6 +116,7 @@ class PurchaseController extends Controller
                     'TPCHREQDETA_BRANCH' => Auth::user()->branch
                 ];
             }
+
             if (!empty($quotationDetail)) {
                 T_PCHREQDETA::on($this->dedicatedConnection)->insert($quotationDetail);
             }
@@ -165,12 +169,16 @@ class PurchaseController extends Controller
             ->max('TPCHORD_LINE');
 
         $newPOCode = '';
-        if (!$LastLine) {
-            $LastLine = 1;
-            $newPOCode = '001/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+        if ($request->has('TPCHORD_PCHCD') && !empty($request->TPCHORD_PCHCD)) {
+            $newPOCode = $request->TPCHORD_PCHCD;
         } else {
-            $LastLine++;
-            $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+            if (!$LastLine) {
+                $LastLine = 1;
+                $newPOCode = '001/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+            } else {
+                $LastLine++;
+                $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+            }
         }
 
         $headerTable = [
@@ -197,7 +205,9 @@ class PurchaseController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        T_PCHORDHEAD::on($this->dedicatedConnection)->create($headerTable);
+        T_PCHORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
+            'TPCHORD_PCHCD' => $newPOCode,
+        ], $headerTable);
 
         $countDetail = count($request->TPCHORDDETA_ITMCD);
         $itemDetail = [];
@@ -229,6 +239,15 @@ class PurchaseController extends Controller
                     'TPCHORDDETA_BRANCH' => Auth::user()->branch
                 ]);
             }
+        }
+
+        if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
+            $tax = $this->storeTaxes(new Request([
+                'TTAXM_DOCNO' => $newPOCode,
+                'TTAXM_CG' => $this->dedicatedConnection,
+                'AMOUNT' => $totalAmount,
+                'MTAX_CODE' => $request->TAX_CODE,
+            ]));
         }
 
         return [
@@ -272,7 +291,17 @@ class PurchaseController extends Controller
         ];
 
         if ($request->approval == '1') {
-            $RS = T_PCHREQHEAD::on($this->dedicatedConnection)->select(["TPCHREQ_PCHCD", "TPCHREQ_PURPOSE", "TPCHREQ_ISSUDT", "TPCHREQ_TYPE", "MPCHREQTYPE_NAME", "TPCHREQ_SUPCD", "MSUP_SUPNM"])
+            $RS = T_PCHREQHEAD::on($this->dedicatedConnection)
+                ->select([
+                    "TPCHREQ_PCHCD",
+                    "TPCHREQ_PURPOSE",
+                    "TPCHREQ_ISSUDT",
+                    "TPCHREQ_TYPE",
+                    "MPCHREQTYPE_NAME",
+                    "TPCHREQ_SUPCD",
+                    "MSUP_SUPNM",
+                    DB::raw("CONCAT(TPCHREQ_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHREQ_ISSUDT,' )') AS PO_CUSTDESC")
+                ])
                 ->leftJoin("M_PCHREQTYPE", "TPCHREQ_TYPE", "=", "MPCHREQTYPE_ID")
                 ->leftJoin("M_SUP", function ($join) {
                     $join->on("TPCHREQ_SUPCD", "=", "MSUP_SUPCD")
@@ -288,7 +317,16 @@ class PurchaseController extends Controller
                 ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
                 ->get();
         } else {
-            $RS = T_PCHREQHEAD::on($this->dedicatedConnection)->select(["TPCHREQ_PCHCD", "TPCHREQ_PURPOSE", "TPCHREQ_ISSUDT", "TPCHREQ_TYPE", "MPCHREQTYPE_NAME", "TPCHREQ_SUPCD", "MSUP_SUPNM"])
+            $RS = T_PCHREQHEAD::on($this->dedicatedConnection)->select([
+                "TPCHREQ_PCHCD",
+                "TPCHREQ_PURPOSE",
+                "TPCHREQ_ISSUDT",
+                "TPCHREQ_TYPE",
+                "MPCHREQTYPE_NAME",
+                "TPCHREQ_SUPCD",
+                "MSUP_SUPNM",
+                DB::raw("CONCAT(TPCHREQ_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHREQ_ISSUDT,' )') AS PO_CUSTDESC")
+            ])
                 ->leftJoin("M_PCHREQTYPE", "TPCHREQ_TYPE", "=", "MPCHREQTYPE_ID")
                 ->leftJoin("M_SUP", function ($join) {
                     $join->on("TPCHREQ_SUPCD", "=", "MSUP_SUPCD")

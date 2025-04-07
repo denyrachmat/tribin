@@ -192,7 +192,9 @@ class PurchaseController extends Controller
             'TPCHORD_BRANCH' => Auth::user()->branch
         ];
 
-
+        T_PCHORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
+            'TPCHORD_PCHCD' => $newPOCode,
+        ], $headerTable);
 
         if ($request->has('det') && count($request->det) > 0) {
             foreach ($request->det as $key => $value) {
@@ -207,7 +209,6 @@ class PurchaseController extends Controller
                 ]);
             }
         } else {
-
             # data detail item
             $validator = Validator::make($request->all(), [
                 'TPCHORDDETA_ITMCD' => 'required|array',
@@ -220,10 +221,6 @@ class PurchaseController extends Controller
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 406);
             }
-
-            T_PCHORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
-                'TPCHORD_PCHCD' => $newPOCode,
-            ], $headerTable);
 
             $countDetail = count($request->TPCHORDDETA_ITMCD);
             $itemDetail = [];

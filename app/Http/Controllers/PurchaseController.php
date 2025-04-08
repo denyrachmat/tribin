@@ -784,22 +784,29 @@ class PurchaseController extends Controller
             $subTotal += $lineTotal;
             $y += 5;
         }
+        $totalTax = 0;
+
         $vat = strlen($MSUP_TAXREG) !== 0 ? 11 / 100 : 0;
         $vatValue = $subTotal * $vat;
         $grandTotal = $vatValue + $subTotal;
         $this->fpdf->SetXY(3, $y);
         $this->fpdf->SetFont('Arial', 'I', 10);
-        $this->fpdf->MultiCell(125, 10, ucwords($this->numberToSentence($grandTotal)), 1);
+        $this->fpdf->MultiCell(125, 10, ucwords($this->numberToSentence($grandTotal + $totalTax)), 1);
 
-        if ($RSCG->flg_ppn == 1) {
+        // if ($RSCG->flg_ppn == 1) {
+        //     // $y += 5;
+        //     // $this->fpdf->SetXY(128, $y);
+        //     // $this->fpdf->Cell(35, 5, 'VAT/PPN', 1, 0);
+        //     // $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
+        // }
+
+        $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
+        if (count($taxes) > 0) {
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(128, $y);
             $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
             $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
 
-            $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
-
-            $totalTax = 0;
             foreach ($taxes as $keyTaxes => $valueTaxes) {
                 $totalTax += $valueTaxes['TTAXM_TAXAMT'];
                 $y += 5;
@@ -807,10 +814,6 @@ class PurchaseController extends Controller
                 $this->fpdf->Cell(35, 5, $valueTaxes['MTAX_DESC'], 1, 0);
                 $this->fpdf->Cell(35, 5, number_format($valueTaxes['TTAXM_TAXAMT']), 1, 0, 'R');
             }
-            // $y += 5;
-            // $this->fpdf->SetXY(128, $y);
-            // $this->fpdf->Cell(35, 5, 'VAT/PPN', 1, 0);
-            // $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
         }
 
         $y += 5;
@@ -1271,7 +1274,7 @@ class PurchaseController extends Controller
                 $join->on('T_RCV_HEAD.id', 'id_header');
                 $join->on('T_PCHORDDETA.TPCHORDDETA_ITMCD', 'item_code');
             })
-            ->leftJoin(DB::raw("(SELECT * FROM jatpower_tribin.T_TAX_MAP WHERE TTAXM_CG = '".$this->dedicatedConnection."') AS T_TAX_MAP"), function ($join) {
+            ->leftJoin(DB::raw("(SELECT * FROM jatpower_tribin.T_TAX_MAP WHERE TTAXM_CG = '" . $this->dedicatedConnection . "') AS T_TAX_MAP"), function ($join) {
                 $join->on('TPCHORD_PCHCD', '=', 'TTAXM_DOCNO');
             })
             ->orderBy('TPCHORD_ISSUDT', 'desc')

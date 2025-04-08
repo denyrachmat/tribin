@@ -793,7 +793,9 @@ class PurchaseController extends Controller
         }
 
         $vat = strlen($MSUP_TAXREG) !== 0 ? 11 / 100 : 0;
-        $vatValue = $subTotal * $vat;
+        // $vatValue = $subTotal * $vat;
+
+        $vatValue = 0;
         $grandTotal = $vatValue + $subTotal;
         $this->fpdf->SetXY(3, $y);
         $this->fpdf->SetFont('Arial', 'I', 10);

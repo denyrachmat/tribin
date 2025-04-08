@@ -812,11 +812,11 @@ class PurchaseController extends Controller
             $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
             $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
 
-            foreach ($taxes as $keyTaxes => $valueTaxes) {
+            foreach ($taxes as $keyTaxes => $valueTaxes2) {
                 $y += 5;
                 $this->fpdf->SetXY(128, $y);
-                $this->fpdf->Cell(35, 5, $valueTaxes['MTAX_DESC'], 1, 0);
-                $this->fpdf->Cell(35, 5, number_format($valueTaxes['TTAXM_TAXAMT']), 1, 0, 'R');
+                $this->fpdf->Cell(35, 5, $valueTaxes2['MTAX_DESC'], 1, 0);
+                $this->fpdf->Cell(35, 5, number_format($valueTaxes2['TTAXM_TAXAMT']), 1, 0, 'R');
             }
         }
 

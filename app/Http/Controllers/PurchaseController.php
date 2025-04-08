@@ -785,6 +785,12 @@ class PurchaseController extends Controller
             $y += 5;
         }
         $totalTax = 0;
+        $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
+        if (count($taxes) > 0) {
+            foreach ($taxes as $keyTaxes => $valueTaxes) {
+                $totalTax += $valueTaxes['TTAXM_TAXAMT'];
+            }
+        }
 
         $vat = strlen($MSUP_TAXREG) !== 0 ? 11 / 100 : 0;
         $vatValue = $subTotal * $vat;
@@ -800,7 +806,6 @@ class PurchaseController extends Controller
         //     // $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
         // }
 
-        $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
         if (count($taxes) > 0) {
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(128, $y);
@@ -808,7 +813,6 @@ class PurchaseController extends Controller
             $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
 
             foreach ($taxes as $keyTaxes => $valueTaxes) {
-                $totalTax += $valueTaxes['TTAXM_TAXAMT'];
                 $y += 5;
                 $this->fpdf->SetXY(128, $y);
                 $this->fpdf->Cell(35, 5, $valueTaxes['MTAX_DESC'], 1, 0);

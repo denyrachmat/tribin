@@ -520,31 +520,36 @@ class HomeController extends Controller
                 'title' => 'Sales Order',
                 'total' => number_format($totalSales),
                 'icon' => 'point_of_sale',
-                'color' => 'primary'
+                'color' => 'primary',
+                'length' => 3
             ],
             [
                 'title' => 'Purchase Order',
                 'total' => number_format($totalPO),
                 'icon' => 'shopping_bag',
-                'color' => 'success'
+                'color' => 'green',
+                'length' => 3
             ],
             [
                 'title' => 'Customer',
                 'total' => number_format($totalCustomer),
                 'icon' => 'group',
-                'color' => 'warning'
+                'color' => 'warning',
+                'length' => 6
             ],
             [
                 'title' => 'Sales Amount',
-                'total' => number_format($totalAmountSales, 2),
+                'total' => 'Rp '.number_format($totalAmountSales, 2),
                 'icon' => 'payments',
-                'color' => 'danger'
+                'color' => 'red',
+                'length' => 6
             ],
             [
                 'title' => 'PO Amount',
-                'total' => number_format($totalAmountPO, 2),
+                'total' => 'Rp '.number_format($totalAmountPO, 2),
                 'icon' => 'payments',
-                'color' => 'danger'
+                'color' => 'orange',
+                'length' => 6
             ]
         ];
 

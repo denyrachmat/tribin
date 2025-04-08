@@ -2,7 +2,7 @@
   <div class="q-pa-md bg-grey-5 window-height">
     <div class="row">
       <div
-        :class="`col-3 q-pa-sm`"
+        :class="`col-${card.length} q-pa-sm`"
         v-for="(card, idx) in listDashboard"
         :key="idx"
       >
@@ -10,7 +10,7 @@
           <q-card-section>
             <div class="row">
               <div class="col">
-                <div class="text-h3 text-cyan">{{ card.total }}</div>
+                <div class="text-h5 text-cyan">{{ card.total }}</div>
                 <div class="text-subtitle2 text-cyan">{{ card.title }}</div>
               </div>
               <div class="col text-right">
@@ -93,48 +93,56 @@ const listDashboard = ref([
     title: "Total Sales",
     icon: "shopping_cart",
     color: "cyan",
+    length: 3
   },
   {
     total: 900,
     title: "Total Purchase",
     icon: "shopping_bag",
     color: "cyan",
+    length: 3
   },
   {
     total: 900,
     title: "Total Profit",
     icon: "payments",
     color: "cyan",
+    length: 3
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3
   },
 ]);
 const columns = ref([

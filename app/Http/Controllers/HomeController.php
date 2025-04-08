@@ -519,7 +519,7 @@ class HomeController extends Controller
             [
                 'title' => 'Sales Order',
                 'total' => number_format($totalSales),
-                'icon' => 'fa fa-shopping-cart',
+                'icon' => 'point_of_sale',
                 'color' => 'primary'
             ],
             [

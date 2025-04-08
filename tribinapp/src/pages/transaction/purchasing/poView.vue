@@ -34,7 +34,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="dataRo()"
+              @update:model-value="dataPo()"
               debounce="1000"
             >
               <template v-slot:append>
@@ -69,12 +69,33 @@
                 </q-btn>
                 <q-btn
                   flat
-                  color="orange"
+                  :color="props.row.TPCHORD_APPRVDT ? 'grey' : 'orange'"
                   icon="edit"
                   @click="onAddClick(props.row)"
                   dense
+                  :disable="props.row.TPCHORD_APPRVDT !== null"
                 >
-                  <q-tooltip> View detail PO </q-tooltip>
+                <q-tooltip> {{!props.row.TPCHORD_APPRVDT ? 'Edit PO' : 'PO Already approved'}} </q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  :color="props.row.TPCHORD_APPRVDT ? 'grey' : 'red'"
+                  icon="delete"
+                  @click="onDeleteClick(props.row)"
+                  dense
+                  :disable="props.row.TPCHORD_APPRVDT !== null"
+                >
+                  <q-tooltip> {{!props.row.TPCHORD_APPRVDT ? 'Delete PO' : 'PO Already approved'}} </q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  :color="!props.row.TPCHORD_APPRVDT ? 'grey' : 'blue'"
+                  icon="print"
+                  @click="onClickPrintPO(props.row.TPCHORD_PCHCD)"
+                  dense
+                  :disable="!props.row.TPCHORD_APPRVDT"
+                >
+                  <q-tooltip> {{props.row.TPCHORD_APPRVDT ? 'Print PO' : 'PO need approved first'}} </q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -223,6 +244,51 @@ const onAddClick = (data = null) => {
   }).onOk(async (val) => {
     dataPO();
   });
+}
+
+const onClickPrintPO = (po) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to print PO ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+      .get(`PDF/purchase-order/${btoa(po)}`)
+      .then((response) => {
+        loading.value = false;
+        let pdfWindow = window.open("");
+        pdfWindow.document.write(
+          "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+            encodeURI(response.data) +
+            "'></iframe>"
+        );
+      })
+      .catch((e) => {
+        loading.value = false;
+      });
+  });
+};
+
+const onDeleteClick = (data) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to delete this po no ${data.TPCHORD_PCHCD} ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    await api_web
+    .delete(`purchase-order/po/${btoa(data.TPCHORD_PCHCD)}`)
+    .then((response) => {
+      loading.value = false;
+      dataPO()
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+  })
 }
 
 function exportReport() {

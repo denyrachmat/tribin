@@ -191,6 +191,7 @@
                 map-options
                 :loading="loading"
                 :readonly="props.mode === 'view'"
+                :disable="!isUsingTax"
               />
             </div>
           </div>
@@ -343,11 +344,13 @@ const listSupplier = ref([]);
 const listItems = ref([]);
 const listTaxes = ref([]);
 const listPR = ref([]);
+const isUsingTax = ref(false);
 
 onMounted(async () => {
   await getItem("");
   await getSupplier("");
   await getPR("");
+  getDefaultTax();
 
   if (props.dataHeader && Object.values(props.dataHeader).length > 0) {
     header.value = {
@@ -366,8 +369,8 @@ onMounted(async () => {
 
     await getDetailItem();
   }
+
   await getTaxes();
-  getDefaultTax();
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -541,13 +544,16 @@ const getDefaultTax = async () => {
   loading.value = true;
   await api
     .get(
-      `master/gencode/${btoa("CUST_ACC_LIST")}/${btoa("DEF_SUPP_TAX")}/${getCG}`
+      `master/gencode/${btoa("SUPP_ACC_LIST")}/${btoa("DEF_SUPP_TAX")}/${getCG}`
     )
     .then((val) => {
       loading.value = false;
       console.log(val);
-      if (val.data.CODE_VALUE && !header.value.TAX_CODE) {
-        header.value.TAX_CODE = val.data.CODE_VALUE;
+      if (val.data) {
+        isUsingTax.value = true;
+        if (val.data.CODE_VALUE && !header.value.TAX_CODE) {
+          header.value.TAX_CODE = val.data.CODE_VALUE;
+        }
       }
     })
     .catch((e) => {});

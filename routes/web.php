@@ -430,6 +430,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('approval-document', [PurchaseController::class, 'loadPOByIdApproval']);
             Route::put('items/{id}', [PurchaseController::class, 'updatePODetail']);
             Route::delete('items/{id}', [PurchaseController::class, 'updatePODetail']);
+            Route::delete('po/{id}', [PurchaseController::class, 'deletePO']);
+            Route::get('assignPOEmptyTax', [PurchaseController::class, 'assignPOEmptyTax']);
         });
 
         Route::prefix('purchase-status')->group(function () {

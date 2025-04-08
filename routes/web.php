@@ -510,6 +510,7 @@ Route::group(['middleware' => 'cors'], function () {
 
         #Terkait Dasbor
         Route::get('dashboard-resource', [HomeController::class, 'supportDashboard']);
+        Route::get('dashboardInformation', [HomeController::class, 'dashboardInformation']);
 
         #Terkait Service
         Route::resource('servicesAdmin', ServiceAdminController::class);

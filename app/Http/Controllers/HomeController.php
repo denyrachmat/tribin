@@ -469,4 +469,85 @@ class HomeController extends Controller
 
         return $hasil;
     }
+
+    function dashboardInformation() {
+        $getCG = CompanyGroup::select('connection')->get()->pluck('connection')->toArray();
+        $data = [];
+        $totalSales = 0;
+        $totalPO = 0;
+        $totalAmountPO = 0;
+        $totalAmountSales = 0;
+        $totalCustomer = 0;
+        foreach ($getCG as $key => $valueCG) {
+            $dataSales = DB::connection($valueCG)->table('T_SLOHEAD')
+                ->selectRaw("COUNT(*) as TOTAL")
+                // ->whereNull('deleted_at')
+                // ->where('TSLO_BRANCH', Auth::user()->branch)
+                ->first();
+
+            $totalSales += $dataSales->TOTAL;
+
+            $dataPO = DB::connection($valueCG)->table('T_PCHORDHEAD')
+                ->selectRaw("COUNT(*) as TOTAL")
+                // ->whereNull('deleted_at')
+                // ->where('TPCHORD_BRANCH', Auth::user()->branch)
+                ->first();
+
+            $totalPO += $dataPO->TOTAL;
+
+            $totalCustomer = DB::connection($valueCG)->table('M_CUS')
+                ->selectRaw("COUNT(*) as TOTAL")
+                // ->whereNull('deleted_at')
+                // ->where('MCUS_BRANCH', Auth::user()->branch)
+                ->first();
+            $totalCustomer = $totalCustomer->TOTAL;
+
+            $totalAmountPO += DB::connection($valueCG)->table('T_PCHORDHEAD')
+                ->selectRaw("SUM(TPCHORDDETA_ITMQT * TPCHORDDETA_ITMPRC_PER) as TOTAL")
+                ->join('T_PCHORDDETA', 'TPCHORD_PCHCD', '=', 'TPCHORDDETA_PCHCD')
+                ->where('TPCHORDDETA_ITMPRC_PER', '!=', 0)
+                ->first()->TOTAL;
+
+            $totalAmountSales += DB::connection($valueCG)->table('T_SLOHEAD')
+                ->selectRaw("SUM(TSLODETA_ITMQT * TSLODETA_PRC) as TOTAL")
+                ->join('T_SLODETA', 'TSLO_SLOCD', '=', 'TSLODETA_SLOCD')
+                ->where('TSLODETA_PRC', '!=', 0)
+                ->first()->TOTAL;
+        }
+
+        $data = [
+            [
+                'title' => 'Sales Order',
+                'total' => number_format($totalSales),
+                'icon' => 'fa fa-shopping-cart',
+                'color' => 'bg-primary'
+            ],
+            [
+                'title' => 'Purchase Order',
+                'total' => number_format($totalPO),
+                'icon' => 'shopping_bag',
+                'color' => 'bg-success'
+            ],
+            [
+                'title' => 'Customer',
+                'total' => number_format($totalCustomer),
+                'icon' => 'group',
+                'color' => 'bg-warning'
+            ],
+            [
+                'title' => 'Sales Amount',
+                'total' => number_format($totalAmountSales, 2),
+                'icon' => 'payments',
+                'color' => 'bg-danger'
+            ],
+            [
+                'title' => 'PO Amount',
+                'total' => number_format($totalAmountPO, 2),
+                'icon' => 'payments',
+                'color' => 'bg-danger'
+            ]
+        ];
+
+        return $data;
+    }
 }

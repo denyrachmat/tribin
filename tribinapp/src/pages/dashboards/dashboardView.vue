@@ -170,16 +170,23 @@ const columns = ref([
 const rows = ref([]);
 const loading = ref(false)
 const intervalnya = ref(null)
+const intervalnya2 = ref(null)
 
 onMounted(async () => {
   const test = await getDataApproval()
   if (test) {
     intervalnya.value = setInterval(getDataApproval, 10000);
   }
+
+  const test2 = await getDataDashboard()
+  if (test2) {
+    intervalnya2.value = setInterval(getDataDashboard, 10000);
+  }
 });
 
 onMounted(() => {
   clearInterval(intervalnya.value)
+  clearInterval(intervalnya2.value)
 })
 
 const getDataApproval = async () => {
@@ -189,6 +196,20 @@ const getDataApproval = async () => {
     .then((response) => {
       loading.value = false
       rows.value = response.data;
+
+      return response.data
+    }).catch((e) => {
+      loading.value = false
+    });
+};
+
+const getDataDashboard = async () => {
+  loading.value = true
+  return await api_web
+    .get("/dashboardInformation")
+    .then((response) => {
+      loading.value = false
+      listDashboard.value = response.data;
 
       return response.data
     }).catch((e) => {

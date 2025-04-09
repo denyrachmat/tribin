@@ -70,6 +70,7 @@ trait gencodeTraits
                 $gencode = M_GENCODE::updateOrCreate([
                     'MGECD_CODE' => $value['MGECD_CODE'],
                     'MGECD_VALUE' => $value['MGECD_VALUE'],
+                    'MGECD_CG' => isset($value['MGECD_CG']) ? Crypt::decryptString($value['MGECD_CG']) : null,
                 ], [
                     'MGECD_CODE' => $value['MGECD_CODE'],
                     'MGECD_VALUE' => $value['MGECD_VALUE'],

@@ -445,13 +445,13 @@ class HomeController extends Controller
                     ->whereNull("TPCHORD_REJCTBY")
                     ->groupBy('TPCHORD_PCHCD', 'MSUP_SUPNM', 'TPCHORD_BRANCH', 'TPCHORD_REQCD')->get();
 
-                    // return $dataPurchaseOrderTobeUpproved;
+                // return $dataPurchaseOrderTobeUpproved;
                 // SPK Detail
                 $SPK = C_SPK::on($value->connection)->select(DB::raw('CSPK_PIC_AS APP_SBJCT, CSPK_REFF_DOC APP_CD, CSPK_JOBDESK APP_SBJCT'))
                     ->whereNotNull('submitted_at')
                     ->whereNull('CSPK_GA_MGR_APPROVED_AT')->get();
 
-                    // return $SPK;
+                // return $SPK;
                 $hasil[] = [
                     'connection' => $value->connection,
                     'name' => $value->name,
@@ -470,48 +470,79 @@ class HomeController extends Controller
         return $hasil;
     }
 
-    function dashboardInformation() {
+    function dashboardInformation(Request $request)
+    {
         $getCG = CompanyGroup::select('connection')->get()->pluck('connection')->toArray();
         $data = [];
-        $totalSales = 0;
         $totalPO = 0;
         $totalAmountPO = 0;
+        $totalSales = 0;
         $totalAmountSales = 0;
+        $totalQuotation = 0;
+        $totalAmountQuotation = 0;
+        $totalAmountQuotation = 0;
         $totalCustomer = 0;
         foreach ($getCG as $key => $valueCG) {
             $dataSales = DB::connection($valueCG)->table('T_SLOHEAD')
-                ->selectRaw("COUNT(*) as TOTAL")
-                // ->whereNull('deleted_at')
-                // ->where('TSLO_BRANCH', Auth::user()->branch)
-                ->first();
+                ->selectRaw("COUNT(*) as TOTAL");
+
+            if ($request->has('start_date') && $request->has('end_date')) {
+                $dataSales->whereBetween('created_at', [$request->start_date, $request->end_date]);
+            }
+
+            $dataSales = $dataSales->first();
 
             $totalSales += $dataSales->TOTAL;
 
             $dataPO = DB::connection($valueCG)->table('T_PCHORDHEAD')
-                ->selectRaw("COUNT(*) as TOTAL")
-                // ->whereNull('deleted_at')
-                // ->where('TPCHORD_BRANCH', Auth::user()->branch)
-                ->first();
+                ->selectRaw("COUNT(*) as TOTAL");
+
+            if ($request->has('start_date') && $request->has('end_date')) {
+                $dataPO->whereBetween('created_at', [$request->start_date, $request->end_date]);
+            }
+
+            $dataPO = $dataPO->first();
 
             $totalPO += $dataPO->TOTAL;
 
             $totalCustomer = DB::connection($valueCG)->table('M_CUS')
                 ->selectRaw("COUNT(*) as TOTAL")
-                // ->whereNull('deleted_at')
-                // ->where('MCUS_BRANCH', Auth::user()->branch)
                 ->first();
+
             $totalCustomer = $totalCustomer->TOTAL;
 
             $totalAmountPO += DB::connection($valueCG)->table('T_PCHORDHEAD')
                 ->selectRaw("SUM(TPCHORDDETA_ITMQT * TPCHORDDETA_ITMPRC_PER) as TOTAL")
                 ->join('T_PCHORDDETA', 'TPCHORD_PCHCD', '=', 'TPCHORDDETA_PCHCD')
                 ->where('TPCHORDDETA_ITMPRC_PER', '!=', 0)
+                ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
+                    $query->whereBetween('T_PCHORDHEAD.created_at', [$request->start_date, $request->end_date]);
+                })
                 ->first()->TOTAL;
 
             $totalAmountSales += DB::connection($valueCG)->table('T_SLOHEAD')
                 ->selectRaw("SUM(TSLODETA_ITMQT * TSLODETA_PRC) as TOTAL")
                 ->join('T_SLODETA', 'TSLO_SLOCD', '=', 'TSLODETA_SLOCD')
                 ->where('TSLODETA_PRC', '!=', 0)
+                ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
+                    $query->whereBetween('T_SLOHEAD.created_at', [$request->start_date, $request->end_date]);
+                })
+                ->first()->TOTAL;
+
+            $totalQuotation += DB::connection($valueCG)->table('T_QUOHEAD')
+                ->selectRaw("COUNT(*) as TOTAL")
+                ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
+                    $query->whereBetween('created_at', [$request->start_date, $request->end_date]);
+                })
+                ->first()->TOTAL;
+
+            $totalAmountQuotation += DB::connection($valueCG)->table('T_QUOHEAD')
+                ->selectRaw("SUM(TQUODETA_ITMQT * TQUODETA_PRC) as TOTAL")
+                ->join('T_QUODETA', 'TQUO_QUOCD', '=', 'TQUODETA_QUOCD')
+                ->where('TQUODETA_PRC', '!=', 0)
+                ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
+                    $query->whereBetween('T_QUOHEAD.created_at', [$request->start_date, $request->end_date]);
+                })
                 ->first()->TOTAL;
         }
 
@@ -531,26 +562,47 @@ class HomeController extends Controller
                 'length' => 3
             ],
             [
+                'title' => 'Quotation',
+                'total' => number_format($totalQuotation),
+                'icon' => 'assignment',
+                'color' => 'purple',
+                'length' => 3
+            ],
+            [
                 'title' => 'Customer',
                 'total' => number_format($totalCustomer),
                 'icon' => 'group',
                 'color' => 'warning',
+                'length' => 3
+            ],
+            [
+                'title' => 'Quotation Amount',
+                'total' => 'Rp ' . number_format($totalAmountQuotation, 2),
+                'icon' => 'payments',
+                'color' => 'pink',
                 'length' => 6
             ],
             [
                 'title' => 'Sales Amount',
-                'total' => 'Rp '.number_format($totalAmountSales, 2),
+                'total' => 'Rp ' . number_format($totalAmountSales, 2),
                 'icon' => 'payments',
-                'color' => 'red',
+                'color' => 'cyan',
                 'length' => 6
             ],
             [
-                'title' => 'PO Amount',
-                'total' => 'Rp '.number_format($totalAmountPO, 2),
+                'title' => 'Quot. Unrealization Balance',
+                'total' => 'Rp ' . number_format($totalAmountQuotation - $totalAmountSales, 2),
                 'icon' => 'payments',
-                'color' => 'orange',
-                'length' => 6
-            ]
+                'color' => 'red',
+                'length' => 12
+            ],
+            // [
+            //     'title' => 'PO Amount',
+            //     'total' => 'Rp ' . number_format($totalAmountPO, 2),
+            //     'icon' => 'payments',
+            //     'color' => 'orange',
+            //     'length' => 6
+            // ]
         ];
 
         return $data;

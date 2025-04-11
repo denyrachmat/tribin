@@ -950,8 +950,10 @@ class InvoiceController extends Controller
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 10);
             $this->fpdf->MultiCell(55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM, 0, 'L');
+            $this->fpdf->SetFont('Arial', '', 5);
             $this->fpdf->SetXY(150, 15);
             $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
+            $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 20);
             $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_REFF_MKT, 0, 'L');
             $this->fpdf->SetXY(150, 30);
@@ -1035,7 +1037,7 @@ class InvoiceController extends Controller
                 } else {
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
-                    // $Y += 5;
+                    $Y += 5;
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
                     $Y += 5;
@@ -1277,13 +1279,14 @@ class InvoiceController extends Controller
                 ],
                 [
                     'left_label' => 'Genset',
-                    'left_value' => $valueDet->MITM_ITMNM,
+                    'left_value' => $valueDet->MITM_ITMNM. ' ('.$valueDet->TDLVORDDETA_ITMCD_ACT.')',
                     'right_label' => 'Sales',
                     'right_value' => $valueDet->name
                 ],
                 [
                     'left_label' => 'Lokasi',
-                    'left_value' => $RSHeader->MCUS_ADDR1,
+                    // 'left_value' => $RSHeader->MCUS_ADDR1,
+                    'left_value' => $RSHeader->TDLVORD_REMARK,
                     'right_label' => 'Supir',
                     'right_value' => $getDriver
                 ],

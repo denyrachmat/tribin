@@ -9,6 +9,8 @@ class T_PCHORDHEAD extends Model
 {
     use HasFactory;
     protected $table = 'T_PCHORDHEAD';
+    protected $primaryKey = 'TPCHORD_PCHCD';
+    public $incrementing = false;
     protected $fillable = [
         'TPCHORD_PCHCD',
         'TPCHORD_ATTN',

@@ -1,8 +1,84 @@
 <template>
   <div class="q-pa-md bg-grey-5 window-height">
     <div class="row">
+      <div class="col q-pa-sm">
+        <q-card>
+          <q-card-section>
+            <q-input
+              filled
+              v-model="frDate"
+              dense
+              label="From Date"
+              readonly
+            >
+              <template v-slot:append>
+                <q-icon
+                  name="event"
+                  class="cursor-pointer"
+                >
+                  <q-popup-proxy
+                    cover
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-date v-model="frDate" mask="YYYY-MM-DD">
+                      <div class="row items-center justify-end">
+                        <q-btn
+                          v-close-popup
+                          label="Close"
+                          color="primary"
+                          flat
+                        />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col q-pa-sm">
+        <q-card>
+          <q-card-section>
+            <q-input
+              filled
+              v-model="toDate"
+              dense
+              label="To Date"
+              readonly
+            >
+              <template v-slot:append>
+                <q-icon
+                  name="event"
+                  class="cursor-pointer"
+                >
+                  <q-popup-proxy
+                    cover
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-date v-model="toDate" mask="YYYY-MM-DD">
+                      <div class="row items-center justify-end">
+                        <q-btn
+                          v-close-popup
+                          label="Close"
+                          color="primary"
+                          flat
+                        />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+    <div class="row">
       <div
-        :class="`col-3 q-pa-sm`"
+        :class="`col-${card.length} q-pa-sm`"
         v-for="(card, idx) in listDashboard"
         :key="idx"
       >
@@ -10,8 +86,10 @@
           <q-card-section>
             <div class="row">
               <div class="col">
-                <div class="text-h3 text-cyan">{{ card.total }}</div>
-                <div class="text-subtitle2 text-cyan">{{ card.title }}</div>
+                <div :class="`text-h5 text-${card.color}`">{{ card.total }}</div>
+                <div :class="`text-subtitle2 text-${card.color}`">
+                  {{ card.title }}
+                </div>
               </div>
               <div class="col text-right">
                 <q-icon :name="card.icon" size="4.4em" :color="card.color" />
@@ -34,7 +112,7 @@
         >
           <!-- For header -->
           <template v-slot:top-right>
-            <q-btn flat icon="refresh" color="cyan" @click="getDataApproval"/>
+            <q-btn flat icon="refresh" color="cyan" @click="getDataApproval" />
           </template>
 
           <template v-slot:header="props">
@@ -62,7 +140,11 @@
                     color="blue"
                     v-if="col.value > 0"
                     @click="
-                      onClickApprovalNumber(props.row[col.name.split('_')[0]], col.name, props.row.connection)
+                      onClickApprovalNumber(
+                        props.row[col.name.split('_')[0]],
+                        col.name,
+                        props.row.connection
+                      )
                     "
                     ><b>{{ col.value }}</b></q-btn
                   >
@@ -93,48 +175,56 @@ const listDashboard = ref([
     title: "Total Sales",
     icon: "shopping_cart",
     color: "cyan",
+    length: 3,
   },
   {
     total: 900,
     title: "Total Purchase",
     icon: "shopping_bag",
     color: "cyan",
+    length: 3,
   },
   {
     total: 900,
     title: "Total Profit",
     icon: "payments",
     color: "cyan",
+    length: 3,
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3,
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3,
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3,
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3,
   },
   {
     total: 15,
     title: "Total Customer",
     icon: "group",
     color: "cyan",
+    length: 3,
   },
 ]);
 const columns = ref([
@@ -168,31 +258,59 @@ const columns = ref([
   },
 ]);
 const rows = ref([]);
-const loading = ref(false)
-const intervalnya = ref(null)
+const loading = ref(false);
+const intervalnya = ref(null);
+const intervalnya2 = ref(null);
+const frDate = ref(new Date(new Date().getFullYear(), 0, 2).toISOString().split('T')[0]);
+const toDate = ref(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().split('T')[0]);
 
 onMounted(async () => {
-  const test = await getDataApproval()
+  const test = await getDataApproval();
   if (test) {
     intervalnya.value = setInterval(getDataApproval, 10000);
+  }
+
+  const test2 = await getDataDashboard();
+  if (test2) {
+    intervalnya2.value = setInterval(getDataDashboard, 10000);
   }
 });
 
 onMounted(() => {
-  clearInterval(intervalnya.value)
-})
+  clearInterval(intervalnya.value);
+  clearInterval(intervalnya2.value);
+});
 
 const getDataApproval = async () => {
-  loading.value = true
+  loading.value = true;
   return await api_web
     .get("/approval/notificationsAPI/top-user")
     .then((response) => {
-      loading.value = false
+      loading.value = false;
       rows.value = response.data;
 
-      return response.data
-    }).catch((e) => {
-      loading.value = false
+      return response.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const getDataDashboard = async () => {
+  loading.value = true;
+  return await api_web
+    .post(`/dashboardInformation`, {
+      start_date: frDate.value,
+      end_date: toDate.value,
+    })
+    .then((response) => {
+      loading.value = false;
+      listDashboard.value = response.data;
+
+      return response.data;
+    })
+    .catch((e) => {
+      loading.value = false;
     });
 };
 
@@ -202,14 +320,14 @@ const onClickApprovalNumber = (data, typeAPI, conn) => {
     componentProps: {
       listApprv: data,
       typeAPI: typeAPI,
-      conn: conn
+      conn: conn,
     },
     // persistent: true,
   }).onOk(async (val) => {
     quotationGroupConditions.value = val.MCONDITION_RPT_STAT;
     quotationConditions.value = val.group;
 
-    getDataApproval()
+    getDataApproval();
   });
 };
 </script>

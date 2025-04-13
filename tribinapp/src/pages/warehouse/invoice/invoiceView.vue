@@ -137,8 +137,15 @@ const columns = ref([
   },
   {
     name: "TSLO_QUOCD",
-    label: "Sales Order",
+    label: "Quotation",
     field: "TSLO_QUOCD",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "TSLO_SLOCD",
+    label: "Sales Order",
+    field: "TSLO_SLOCD",
     sortable: true,
     align: "left",
   },

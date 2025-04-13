@@ -89,7 +89,13 @@ class ItemController extends Controller
             // 'MITM_ITMCD' => 'required',
             // 'MITM_ITMCD' => [
             //     Rule::unique($this->dedicatedConnection . '.M_ITM', 'MITM_ITMCD')->where('MITM_BRANCH', Auth::user()->branch)
-            // ],
+            'MITM_ITMCD' => [
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($value === $request->MITM_ITMNM) {
+                        $fail('The ' . $attribute . ' cannot be the same as MITM_ITMNM.');
+                    }
+                },
+            ],
             'MITM_ITMNM' => 'required',
             'MITM_STKUOM' => 'required',
             'MITM_ITMTYPE' => 'required',

@@ -131,19 +131,17 @@ const onClickSave = () => {
     console.log(datanya);
 
     datanya.map((v) => {
-      if (v.valueChoosed) {
-        hasil.push({
-          MGECD_CODE: v.value,
-          MGECD_VALUE: v.valueChoosed,
-          MGECD_DESC: `${v.label} - ${v.valueChoosed}`,
-          MGECD_ACTIVE: 1,
-          MGECD_CG:
-            document.cookie
-              .split("; ")
-              .find((row) => row.startsWith("CGID="))
-              ?.split("=")[1] || "",
-        });
-      }
+      hasil.push({
+        MGECD_CODE: v.value,
+        MGECD_VALUE: v.valueChoosed,
+        MGECD_DESC: `${v.label} - ${v.valueChoosed}`,
+        MGECD_ACTIVE: 1,
+        MGECD_CG:
+          document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("CGID="))
+            ?.split("=")[1] || "",
+      });
     });
 
     await api

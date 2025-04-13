@@ -65,16 +65,24 @@ trait gencodeTraits
     public function saveGencode(Request $request)
     {
         foreach ($request->data as $key => $value) {
-            $gencode = M_GENCODE::updateOrCreate([
-                'MGECD_CODE' => $value['MGECD_CODE'],
-                'MGECD_VALUE' => $value['MGECD_VALUE'],
-            ], [
-                'MGECD_CODE' => $value['MGECD_CODE'],
-                'MGECD_VALUE' => $value['MGECD_VALUE'],
-                'MGECD_DESC' => $value['MGECD_DESC'],
-                'MGECD_DESC2' => $value['MGECD_DESC2'],
-                'MGECD_ACTIVE' => $value['MGECD_ACTIVE'],
-            ]);
+            if (!empty($value['MGECD_VALUE'])) {
+
+                $gencode = M_GENCODE::updateOrCreate([
+                    'MGECD_CODE' => $value['MGECD_CODE'],
+                    'MGECD_VALUE' => $value['MGECD_VALUE'],
+                    'MGECD_CG' => isset($value['MGECD_CG']) ? Crypt::decryptString($value['MGECD_CG']) : null,
+                ], [
+                    'MGECD_CODE' => $value['MGECD_CODE'],
+                    'MGECD_VALUE' => $value['MGECD_VALUE'],
+                    'MGECD_DESC' => $value['MGECD_DESC'],
+                    'MGECD_DESC2' => isset($value['MGECD_DESC2']) ? $value['MGECD_DESC2'] : null,
+                    'MGECD_ACTIVE' => $value['MGECD_ACTIVE'],
+                    'MGECD_CG' => isset($value['MGECD_CG']) ? Crypt::decryptString($value['MGECD_CG']) : null,
+                ]);
+            } else {
+                $gencode = M_GENCODE::where('MGECD_CODE', $value['MGECD_CODE'])
+                    ->delete();
+            }
         }
 
         return "Data Berhasil Disimpan";

@@ -430,6 +430,13 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('approval-document', [PurchaseController::class, 'loadPOByIdApproval']);
             Route::put('items/{id}', [PurchaseController::class, 'updatePODetail']);
             Route::delete('items/{id}', [PurchaseController::class, 'updatePODetail']);
+            Route::delete('po/{id}', [PurchaseController::class, 'deletePO']);
+            Route::get('assignPOEmptyTax', [PurchaseController::class, 'assignPOEmptyTax']);
+        });
+
+        Route::prefix('purchase-status')->group(function () {
+            Route::get('form', [PurchaseController::class, 'poReportView']);
+            Route::post('searchAPI', [PurchaseController::class, 'fetchPurchaseReport']);
         });
 
         # Terkait Sales Order Draft Transaction
@@ -503,6 +510,7 @@ Route::group(['middleware' => 'cors'], function () {
 
         #Terkait Dasbor
         Route::get('dashboard-resource', [HomeController::class, 'supportDashboard']);
+        Route::post('dashboardInformation', [HomeController::class, 'dashboardInformation']);
 
         #Terkait Service
         Route::resource('servicesAdmin', ServiceAdminController::class);

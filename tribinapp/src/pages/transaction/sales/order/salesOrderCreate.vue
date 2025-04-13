@@ -189,6 +189,7 @@
                 emit-value
                 map-options
                 :loading="loading"
+                :disable="!isUsingTax"
               />
             </div>
           </div>
@@ -506,6 +507,7 @@ const listItems = ref([]);
 const listCustomers = ref([]);
 const loading = ref(false);
 const quotationType = ref(1);
+const isUsingTax = ref(false);
 
 const quotDetail = ref([]);
 const listUsage = ref([]);
@@ -788,6 +790,7 @@ const getDefaultTax = async () => {
       loading.value = false;
       console.log(val)
       if (val.data.CODE_VALUE && !forms.value.TAX_CODE) {
+        isUsingTax.value = true;
         forms.value.TAX_CODE = val.data.CODE_VALUE;
       }
     })

@@ -321,6 +321,7 @@ class PurchaseController extends Controller
                 ->whereNull("TPCHORD_REQCD")
                 ->where('TPCHREQ_BRANCH', Auth::user()->branch)
                 ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
+                ->orderBy('TPCHREQ_ISSUDT', 'desc')
                 ->get();
         } else {
             $RS = T_PCHREQHEAD::on($this->dedicatedConnection)->select([
@@ -339,9 +340,15 @@ class PurchaseController extends Controller
                         ->on('TPCHREQ_BRANCH', '=', 'MSUP_BRANCH');
                 })
                 ->where('TPCHREQ_BRANCH', Auth::user()->branch)
-                ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
-                ->get();
+                // ->where($request->searchBy, 'like', '%' . $request->searchValue . '%')
+                ->orderBy('TPCHREQ_ISSUDT', 'desc')
+                ->orderBy('TPCHREQ_PCHCD', 'desc');
+            if (!empty($request->searchBy) && !empty($request->searchValue)) {
+                $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+            }
+                $RS = $RS->get();
         }
+
         return ['data' => $RS];
     }
 

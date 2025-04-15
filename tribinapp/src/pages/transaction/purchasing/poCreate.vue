@@ -553,6 +553,8 @@ const getDefaultTax = async () => {
         isUsingTax.value = true;
         if (val.data.CODE_VALUE && !header.value.TAX_CODE) {
           header.value.TAX_CODE = val.data.CODE_VALUE;
+        } else {
+          isUsingTax.value = false;
         }
       }
     })

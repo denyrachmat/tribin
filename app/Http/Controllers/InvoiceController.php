@@ -287,18 +287,18 @@ class InvoiceController extends Controller
                 'M_ITM.MITM_MODEL',
                 'TDLVORD_REMARK'
             )->groupBy(
-                    'T_DLVORDDETA.id',
-                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                    'T_DLVORDDETA.TDLVORDDETA_PRC',
-                    'M_ITM_GRP.MITM_ITMNM',
-                    'M_ITM_GRP.MITM_ITMNMREAL',
-                    'M_ITM.MITM_BRAND',
-                    'M_ITM.MITM_MODEL',
-                    'TDLVORD_REMARK'
-                )
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL',
+                'TDLVORD_REMARK'
+            )
                 ->join(
                     'T_DLVORDHEAD',
                     DB::raw(
@@ -367,7 +367,7 @@ class InvoiceController extends Controller
         $total = 0;
         $dlvDetParse = [];
         $cek = [];
-        $getSLOByItem=[];
+        $getSLOByItem = [];
 
 
         $taxes = $this->getTaxes($request->TSLO_SLOCD, $this->dedicatedConnection);
@@ -392,7 +392,6 @@ class InvoiceController extends Controller
                     $getSLOByItem = array_values(array_filter($getSLOByItemxx['sloDet'], function ($f) use ($value) {
                         return $f['TSLODETA_ITMCD'] == $value['TDLVORDDETA_ITMCD'];
                     }));
-
                 }
 
                 $cek[] = $getSLOByItem;
@@ -730,15 +729,20 @@ class InvoiceController extends Controller
                 'TDLVORD_TYPE',
                 'TDLVORD_LINE',
                 'TQUO_PROJECT_LOCATION',
-                'TSLODETA_PERIOD_FR',
-                'TSLODETA_PERIOD_TO',
+                DB::raw('MIN(TSLODETA_PERIOD_FR) AS TSLODETA_PERIOD_FR'),
+                DB::raw('MAX(TSLODETA_PERIOD_TO) AS TSLODETA_PERIOD_TO'),
                 'TSLODETA_PRC',
                 'TSLODETA_ITMQT',
                 'TDLVSJDETA_TYPE',
                 'TDLVSJDETA_STARTDT',
                 'TDLVSJDETA_ENDDT',
                 'TDLVORD_CONDGRP',
-                DB::raw("TDLVORD_DLVCD"),
+                DB::raw(
+                    "CASE WHEN TDLVORD_TYPE = 4
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                ),
                 'TDLVOR_ISSPLITSJ'
             )
             ->leftJoin('M_CUS', function ($join) {
@@ -778,8 +782,12 @@ class InvoiceController extends Controller
                 'dlvsj'
             ])
             ->groupBy(
-                'TDLVORD_DLVCD',
-                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
+                DB::raw(
+                    "CASE WHEN TDLVORD_TYPE = 4
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                END"
+                ),
                 'TDLVORD_ISSUDT',
                 'MCUS_CUSNM',
                 'MCUS_ADDR1',
@@ -789,8 +797,6 @@ class InvoiceController extends Controller
                 'TDLVORD_TYPE',
                 'TDLVORD_LINE',
                 'TQUO_PROJECT_LOCATION',
-                'TSLODETA_PERIOD_FR',
-                'TSLODETA_PERIOD_TO',
                 'TSLODETA_PRC',
                 'TSLODETA_ITMQT',
                 'TDLVSJDETA_TYPE',
@@ -810,33 +816,20 @@ class InvoiceController extends Controller
             'TDLVORDDETA_ITMQT',
             'MITM_ITMNM',
             'MITM_STKUOM',
-            'created_by',
+            'T_DLVORDDETA.created_by',
             'TDLVORDDETA_SLOCD',
             'MITM_ITMNM',
             'MITM_MODEL',
             'MITM_BRAND',
             'MITM_ITMCAT',
             'TDLVORD_REMARK',
-            'TDLVORD_TYPE'
+            'TDLVORD_TYPE',
+            DB::raw('MIN(TSLODETA_PERIOD_FR) AS TSLODETA_PERIOD_FR'),
+            DB::raw('MAX(TSLODETA_PERIOD_TO) AS TSLODETA_PERIOD_TO')
         )
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
             })
-            // ->join(
-            //     'T_DLVORDHEAD',
-            //     DB::raw(
-            //         "CASE WHEN TDLVORD_TYPE = 4
-            //         THEN TDLVORD_DLVCD
-            //         ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-            //     END"
-            //     ),
-            //     DB::raw(
-            //         "CASE WHEN TDLVORD_TYPE = 4
-            //         THEN TDLVORDDETA_DLVCD
-            //         ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-            //     END"
-            //     )
-            // )
             ->join(
                 'T_DLVORDHEAD',
                 'TDLVORD_DLVCD',
@@ -848,7 +841,28 @@ class InvoiceController extends Controller
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"
             ), $doc)
-            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)->get();
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->join('T_SLODETA', function ($j) {
+                $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
+                $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
+            })
+            ->groupBy(
+                'TDLVORDDETA_ITMCD',
+                'TDLVORDDETA_DLVCD',
+                'TDLVORDDETA_ITMCD_ACT',
+                'TDLVORDDETA_ITMQT',
+                'MITM_ITMNM',
+                'MITM_STKUOM',
+                'T_DLVORDDETA.created_by',
+                'TDLVORDDETA_SLOCD',
+                'MITM_ITMNM',
+                'MITM_MODEL',
+                'MITM_BRAND',
+                'MITM_ITMCAT',
+                'TDLVORD_REMARK',
+                'TDLVORD_TYPE',
+            )
+            ->get();
 
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
             'name',
@@ -895,15 +909,19 @@ class InvoiceController extends Controller
                 'TSLODETA_PRC',
                 'TSLODETA_OPRPRC',
                 'TSLODETA_MOBDEMOB',
-                'TSLODETA_PERIOD_FR',
-                'TSLODETA_PERIOD_TO',
             )
                 ->where('TSLODETA_SLOCD', $r->TDLVORDDETA_SLOCD)
                 ->where('TSLODETA_ITMCD', $r->TDLVORDDETA_ITMCD)
                 ->where('TSLODETA_BRANCH', Auth::user()->branch)
+                ->groupBy(
+                    'TSLODETA_USAGE_DESCRIPTION',
+                    'TSLODETA_PRC',
+                    'TSLODETA_OPRPRC',
+                    'TSLODETA_MOBDEMOB'
+                )
                 ->first();
 
-                // return $r;
+            // return $r;
             if ($r->TDLVORD_TYPE < 3) {
                 $HargaSewa = ($Usage->TSLODETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
                 $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
@@ -1026,9 +1044,9 @@ class InvoiceController extends Controller
                 $this->fpdf->SetXY(100, $Y);
                 $this->fpdf->Cell(29, 5, "{$qtyNya} {$r->MITM_STKUOM}", 0, 0, 'L');
                 $this->fpdf->SetXY(120, $Y);
-                $this->fpdf->Cell(29, 5, empty($RSHeader->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_FR)), 0, 0, 'L');
+                $this->fpdf->Cell(29, 5, empty($RSDetail[$i]->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_FR)), 0, 0, 'L');
                 $this->fpdf->SetXY(145, $Y);
-                $this->fpdf->Cell(29, 5, empty($RSHeader->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSHeader->TSLODETA_PERIOD_TO)), 0, 0, 'L');
+                $this->fpdf->Cell(29, 5, empty($RSDetail[$i]->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_TO)), 0, 0, 'L');
                 if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                     $this->fpdf->SetXY(170, $Y);
                     $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
@@ -1204,9 +1222,9 @@ class InvoiceController extends Controller
             'MITM_MODEL',
             'MITM_BRAND',
             'MITM_ITMCAT',
-            'TSLODETA_PERIOD_FR',
-            'TSLODETA_PERIOD_TO',
-            'name'
+            'name',
+            DB::raw('MIN(TSLODETA_PERIOD_FR) AS TSLODETA_PERIOD_FR'),
+            DB::raw('MAX(TSLODETA_PERIOD_TO) AS TSLODETA_PERIOD_TO'),
         )
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
@@ -1220,6 +1238,21 @@ class InvoiceController extends Controller
             ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             // ->where('MITM_ITMCAT', 'GENSET')
+            ->groupBy(
+                'TDLVORDDETA_ITMCD',
+                'TDLVORDDETA_DLVCD',
+                'TDLVORDDETA_ITMCD_ACT',
+                'TDLVORDDETA_ITMQT',
+                'MITM_ITMNM',
+                'MITM_STKUOM',
+                'T_DLVORDDETA.created_by',
+                'TDLVORDDETA_SLOCD',
+                'MITM_ITMNM',
+                'MITM_MODEL',
+                'MITM_BRAND',
+                'MITM_ITMCAT',
+                'name',
+            )
             ->get();
 
         $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
@@ -1279,7 +1312,7 @@ class InvoiceController extends Controller
                 ],
                 [
                     'left_label' => 'Genset',
-                    'left_value' => $valueDet->MITM_ITMNM. ' ('.$valueDet->TDLVORDDETA_ITMCD_ACT.')',
+                    'left_value' => $valueDet->MITM_ITMNM . ' (' . $valueDet->TDLVORDDETA_ITMCD_ACT . ')',
                     'right_label' => 'Sales',
                     'right_value' => $valueDet->name
                 ],

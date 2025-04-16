@@ -121,9 +121,9 @@ trait LocationTraits
                 'CITRN_ISSUDT' => $date,
                 'CITRN_FORM' => $formout,
                 'CITRN_ITMCD' => $item,
-                'CITRN_ITMQT' => $qty * -1,
-                'CITRN_PRCPER' => $price,
-                'CITRN_PRCAMT' => $price * $qty,
+                'CITRN_ITMQT' => (float)$qty * -1,
+                'CITRN_PRCPER' => (float)$price,
+                'CITRN_PRCAMT' => (float)$price * (float)$qty,
                 'created_by' => $userHead['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
@@ -138,9 +138,9 @@ trait LocationTraits
                 'CITRN_ISSUDT' => $date,
                 'CITRN_FORM' => $forminc,
                 'CITRN_ITMCD' => $item,
-                'CITRN_ITMQT' => $qty,
-                'CITRN_PRCPER' => $price,
-                'CITRN_PRCAMT' => $price * $qty,
+                'CITRN_ITMQT' => (float)$qty,
+                'CITRN_PRCPER' => (float)$price,
+                'CITRN_PRCAMT' => (float)$price * (float)$qty,
                 'created_by' => $userHead['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
                 'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
@@ -153,8 +153,8 @@ trait LocationTraits
         ], [
             'id_header' => $idHeader,
             'item_code' => $item,
-            'quantity' => $qty,
-            'unit_price' => $price,
+            'quantity' => (float)$qty,
+            'unit_price' => (float)$price,
             'created_by' => $userHead['nick_name'],
             'created_at' => date('Y-m-d H:i:s'),
             'branch' => $userHead['branch'],
@@ -167,7 +167,7 @@ trait LocationTraits
             'TRCVBC_BCCD' => empty($cekStock) ? $bc : $cekStock->id_reff,
         ], [
             'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
-            'TRCVBC_BCQT' => $qty,
+            'TRCVBC_BCQT' => (float)$qty,
             'TRCVBC_DETID' => $createDet->id
         ]);
     }

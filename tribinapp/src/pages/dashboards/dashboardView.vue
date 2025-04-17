@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-md bg-grey-5 window-height">
+  <div class="q-pa-md bg-grey-5 window-height" style="overflow: auto;">
     <div class="row">
       <div class="col q-pa-sm">
         <q-card>

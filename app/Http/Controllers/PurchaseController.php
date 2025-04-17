@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\taxesTraits;
 use App\Traits\gencodeTraits;
@@ -45,6 +46,7 @@ class PurchaseController extends Controller
         date_default_timezone_set('Asia/Jakarta');
         $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
         $this->fpdf = new Fpdf;
+        $this->fpdf->SetAutoPageBreak(true, 20);
     }
 
     public function save(Request $request)
@@ -346,7 +348,7 @@ class PurchaseController extends Controller
             if (!empty($request->searchBy) && !empty($request->searchValue)) {
                 $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
             }
-                $RS = $RS->get();
+            $RS = $RS->get();
         }
 
         return ['data' => $RS];
@@ -653,7 +655,7 @@ class PurchaseController extends Controller
         $RSCG = CompanyGroup::select('name', 'address', 'phone', 'fax', 'flg_ppn')
             ->where('connection', $this->dedicatedConnection)
             ->first();
-        $RSHeader = T_PCHORDHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG')
+        $RSHeader = T_PCHORDHEAD::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('T_PCHORDHEAD.created_by', 'TPCHORD_ISSUDT', 'TPCHORD_APPRVBY', 'MSUP_SUPNM', 'MSUP_ADDR1', 'MSUP_TELNO', 'MSUP_TAXREG', 'TPCHORD_REQCD')
             ->leftJoin('M_SUP', function ($join) {
                 $join->on('TPCHORD_SUPCD', '=', 'MSUP_SUPCD')
                     ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
@@ -668,6 +670,7 @@ class PurchaseController extends Controller
         $MSUP_ADDR1 = '';
         $MSUP_TELNO = '';
         $MSUP_TAXREG = '';
+        $TPCHORD_REQCD = '';
         foreach ($RSHeader as $r) {
             $created_by = $r['created_by'];
             $_ISSUDT = date_create($r['TPCHORD_ISSUDT']);
@@ -677,6 +680,7 @@ class PurchaseController extends Controller
             $MSUP_ADDR1 = $r['MSUP_ADDR1'];
             $MSUP_TELNO = $r['MSUP_TELNO'];
             $MSUP_TAXREG = $r['MSUP_TAXREG'];
+            $TPCHORD_REQCD = $r['TPCHORD_REQCD'];
         }
         $RSUserWhoPrepare = User::select('name')->whereIn('nick_name', [$created_by])->first();
         $RSUserApproved = User::select('name')->whereIn('nick_name', [$TPCHORD_APPRVBY])->first();
@@ -690,200 +694,204 @@ class PurchaseController extends Controller
             ->where("TPCHORDDETA_PCHCD", $doc)
             ->get()->toArray();
 
-        $this->fpdf->SetFont('Arial', 'B', 18);
-        $this->fpdf->AddPage("L", 'A5');
-        $this->fpdf->SetXY(7, 5);
-        $this->fpdf->Cell(0, 8, $RSCG->name, 0, 0, 'C');
-        $this->fpdf->SetFont('Arial', '', 11);
-        $this->fpdf->SetXY(3, 12);
-        $this->fpdf->MultiCell(0, 4, $RSCG->address, 0, 'C');
-        $this->fpdf->SetXY(3, 17);
-        $this->fpdf->MultiCell(0, 4, 'Telp.' . $RSCG->phone . ' - Fax ' . $RSCG->fax, 0, 'C');
-        $this->fpdf->Line(3, 22, 205, 22);
+        $chunkedRSDetail = array_chunk($RSDetail, 3);
 
-        $this->fpdf->SetFont('Arial', 'BU', 12);
-        $this->fpdf->SetXY(3, 24);
-        $this->fpdf->MultiCell(0, 4, 'Purchase Order', 0, 'C');
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(3, 28);
-        $this->fpdf->MultiCell(0, 4, 'PO No. : ' . $doc, 0, 'C');
+        foreach ($chunkedRSDetail as $chunk) {
+            $this->fpdf->SetFont('Arial', 'B', 18);
+            $this->fpdf->AddPage("L", 'A5');
+            $this->fpdf->SetXY(7, 5);
+            $this->fpdf->Cell(0, 8, $RSCG->name, 0, 0, 'C');
+            $this->fpdf->SetFont('Arial', '', 11);
+            $this->fpdf->SetXY(3, 12);
+            $this->fpdf->MultiCell(0, 4, $RSCG->address, 0, 'C');
+            $this->fpdf->SetXY(3, 17);
+            $this->fpdf->MultiCell(0, 4, 'Telp.' . $RSCG->phone . ' - Fax ' . $RSCG->fax, 0, 'C');
+            $this->fpdf->Line(3, 22, 205, 22);
 
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(3, 32);
-        $this->fpdf->MultiCell(19, 4, 'Vendor', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(22, 32);
-        $this->fpdf->MultiCell(100, 4, ': ' . $MSUP_SUPNM, 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(3, 36);
-        $this->fpdf->MultiCell(19, 4, 'Address', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(22, 36);
-        $this->fpdf->MultiCell(100, 4, ': ' . $MSUP_ADDR1, 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(3, 40);
-        $this->fpdf->MultiCell(19, 4, 'Phone/fax', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(22, 40);
-        $this->fpdf->MultiCell(100, 4, ': ' . $MSUP_TELNO, 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(3, 44);
-        $this->fpdf->MultiCell(19, 4, 'Attn', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(22, 44);
-        $this->fpdf->MultiCell(100, 4, ': -', 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(123, 32);
-        $this->fpdf->MultiCell(25, 4, 'Date', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(123 + 25, 32);
-        $this->fpdf->MultiCell(50, 4, ': ' . $TPCHORD_ISSUDT, 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(123, 36);
-        $this->fpdf->MultiCell(25, 4, 'PR. No', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(123 + 25, 36);
-        $this->fpdf->MultiCell(50, 4, ': ', 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(123, 40);
-        $this->fpdf->MultiCell(25, 4, 'Delivery Date', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(123 + 25, 40);
-        $this->fpdf->MultiCell(50, 4, ': ', 0);
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(123, 44);
-        $this->fpdf->MultiCell(25, 4, 'NPWP', 0);
-        $this->fpdf->SetFont('Arial', '', 10);
-        $this->fpdf->SetXY(123 + 25, 44);
-        $this->fpdf->MultiCell(50, 4, ': ' . $MSUP_TAXREG, 0);
-
-
-        $this->fpdf->SetFont('Arial', 'B', 10);
-        $this->fpdf->SetXY(3, 50);
-        $this->fpdf->Cell(10, 5, 'No', 1, 0, 'L');
-        $this->fpdf->Cell(85, 5, 'Item Description', 1, 0, 'L');
-        $this->fpdf->Cell(15, 5, 'Qty', 1, 0, 'C');
-        $this->fpdf->Cell(15, 5, 'Unit', 1, 0, 'C');
-        $this->fpdf->Cell(35, 5, 'Unit Price', 1, 0, 'C');
-        $this->fpdf->Cell(35, 5, 'Line Total', 1, 0, 'C');
-
-        $y = 55;
-        $nomor = 1;
-        $grandTotal = 0;
-        $subTotal = 0;
-        $this->fpdf->SetFont('Arial', '', 8);
-        foreach ($RSDetail as $r) {
-            $lineTotal = $r['TPCHORDDETA_ITMPRC_PER'] * $r['TPCHORDDETA_ITMQT'];
-            $this->fpdf->SetXY(3, $y);
-            $this->fpdf->Cell(10, 5, $nomor++, 1, 0, 'L');
-            $this->fpdf->Cell(85, 5, $r['MITM_ITMNM'], 1, 0, 'L');
-            $this->fpdf->Cell(15, 5, $r['TPCHORDDETA_ITMQT'], 1, 0, 'C');
-            $this->fpdf->Cell(15, 5, $r['MITM_STKUOM'], 1, 0, 'C');
-            $this->fpdf->Cell(35, 5, number_format($r['TPCHORDDETA_ITMPRC_PER']), 1, 0, 'R');
-            $this->fpdf->Cell(35, 5, number_format($lineTotal), 1, 0, 'R');
-            $subTotal += $lineTotal;
-            $y += 5;
-        }
-        $totalTax = 0;
-        $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
-        if (count($taxes) > 0) {
-            foreach ($taxes as $keyTaxes => $valueTaxes) {
-                $totalTax += $valueTaxes['TTAXM_TAXAMT'];
-            }
-        }
-
-        $vat = strlen($MSUP_TAXREG) !== 0 ? 11 / 100 : 0;
-        // $vatValue = $subTotal * $vat;
-
-        $vatValue = 0;
-        $grandTotal = $vatValue + $subTotal;
-        $this->fpdf->SetXY(3, $y);
-        $this->fpdf->SetFont('Arial', 'I', 10);
-        $this->fpdf->MultiCell(125, 10, ucwords($this->numberToSentence($grandTotal + $totalTax)), 1);
-
-        // if ($RSCG->flg_ppn == 1) {
-        //     // $y += 5;
-        //     // $this->fpdf->SetXY(128, $y);
-        //     // $this->fpdf->Cell(35, 5, 'VAT/PPN', 1, 0);
-        //     // $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
-        // }
-
-        if (count($taxes) > 0) {
+            $this->fpdf->SetFont('Arial', 'BU', 12);
+            $this->fpdf->SetXY(3, 24);
+            $this->fpdf->MultiCell(0, 4, 'Purchase Order', 0, 'C');
             $this->fpdf->SetFont('Arial', '', 10);
-            $this->fpdf->SetXY(128, $y);
-            $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
-            $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
+            $this->fpdf->SetXY(3, 28);
+            $this->fpdf->MultiCell(0, 4, 'PO No. : ' . $doc, 0, 'C');
 
-            foreach ($taxes as $keyTaxes => $valueTaxes2) {
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(3, 32);
+            $this->fpdf->MultiCell(19, 4, 'Vendor', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(22, 32);
+            $this->fpdf->MultiCell(100, 4, ': ' . $MSUP_SUPNM, 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(3, 36);
+            $this->fpdf->MultiCell(19, 4, 'Address', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(22, 36);
+            $this->fpdf->MultiCell(100, 4, ': ' . $MSUP_ADDR1, 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(3, 40);
+            $this->fpdf->MultiCell(19, 4, 'Phone/fax', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(22, 40);
+            $this->fpdf->MultiCell(100, 4, ': ' . $MSUP_TELNO, 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(3, 44);
+            $this->fpdf->MultiCell(19, 4, 'Attn', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(22, 44);
+            $this->fpdf->MultiCell(100, 4, ': -', 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(123, 32);
+            $this->fpdf->MultiCell(25, 4, 'Date', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(123 + 25, 32);
+            $this->fpdf->MultiCell(50, 4, ': ' . $TPCHORD_ISSUDT, 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(123, 36);
+            $this->fpdf->MultiCell(25, 4, 'PR. No', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(123 + 25, 36);
+            $this->fpdf->MultiCell(50, 4, ': '. $TPCHORD_REQCD, 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(123, 40);
+            $this->fpdf->MultiCell(25, 4, 'Delivery Date', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(123 + 25, 40);
+            $this->fpdf->MultiCell(50, 4, ': ', 0);
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(123, 44);
+            $this->fpdf->MultiCell(25, 4, 'NPWP', 0);
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->SetXY(123 + 25, 44);
+            $this->fpdf->MultiCell(50, 4, ': ' . $MSUP_TAXREG, 0);
+
+
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetXY(3, 50);
+            $this->fpdf->Cell(10, 5, 'No', 1, 0, 'L');
+            $this->fpdf->Cell(85, 5, 'Item Description', 1, 0, 'L');
+            $this->fpdf->Cell(15, 5, 'Qty', 1, 0, 'C');
+            $this->fpdf->Cell(15, 5, 'Unit', 1, 0, 'C');
+            $this->fpdf->Cell(35, 5, 'Unit Price', 1, 0, 'C');
+            $this->fpdf->Cell(35, 5, 'Line Total', 1, 0, 'C');
+
+            $y = 55;
+            $nomor = 1;
+            $grandTotal = 0;
+            $subTotal = 0;
+            $this->fpdf->SetFont('Arial', '', 8);
+            foreach ($chunk as $r) {
+                $lineTotal = $r['TPCHORDDETA_ITMPRC_PER'] * $r['TPCHORDDETA_ITMQT'];
+                $this->fpdf->SetXY(3, $y);
+                $this->fpdf->Cell(10, 5, $nomor++, 1, 0, 'L');
+                $this->fpdf->Cell(85, 5, $r['MITM_ITMNM'], 1, 0, 'L');
+                $this->fpdf->Cell(15, 5, $r['TPCHORDDETA_ITMQT'], 1, 0, 'C');
+                $this->fpdf->Cell(15, 5, $r['MITM_STKUOM'], 1, 0, 'C');
+                $this->fpdf->Cell(35, 5, number_format($r['TPCHORDDETA_ITMPRC_PER']), 1, 0, 'R');
+                $this->fpdf->Cell(35, 5, number_format($lineTotal), 1, 0, 'R');
+                $subTotal += $lineTotal;
                 $y += 5;
-                $this->fpdf->SetXY(128, $y);
-                $this->fpdf->Cell(35, 5, $valueTaxes2['MTAX_DESC'], 1, 0);
-                $this->fpdf->Cell(35, 5, number_format($valueTaxes2['TTAXM_TAXAMT']), 1, 0, 'R');
             }
+            $totalTax = 0;
+            $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
+            if (count($taxes) > 0) {
+                foreach ($taxes as $keyTaxes => $valueTaxes) {
+                    $totalTax += $valueTaxes['TTAXM_TAXAMT'];
+                }
+            }
+
+            $vat = strlen($MSUP_TAXREG) !== 0 ? 11 / 100 : 0;
+            // $vatValue = $subTotal * $vat;
+
+            $vatValue = 0;
+            $grandTotal = $vatValue + $subTotal;
+            $this->fpdf->SetXY(3, $y);
+            $this->fpdf->SetFont('Arial', 'I', 10);
+            $this->fpdf->MultiCell(125, 10, ucwords($this->numberToSentence($grandTotal + $totalTax)), 1);
+
+            // if ($RSCG->flg_ppn == 1) {
+            //     // $y += 5;
+            //     // $this->fpdf->SetXY(128, $y);
+            //     // $this->fpdf->Cell(35, 5, 'VAT/PPN', 1, 0);
+            //     // $this->fpdf->Cell(35, 5, number_format($vatValue), 1, 0, 'R');
+            // }
+
+            if (count($taxes) > 0) {
+                $this->fpdf->SetFont('Arial', '', 10);
+                $this->fpdf->SetXY(128, $y);
+                $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
+                $this->fpdf->Cell(35, 5, number_format($subTotal), 1, 0, 'R');
+
+                foreach ($taxes as $keyTaxes => $valueTaxes2) {
+                    $y += 5;
+                    $this->fpdf->SetXY(128, $y);
+                    $this->fpdf->Cell(35, 5, $valueTaxes2['MTAX_DESC'], 1, 0);
+                    $this->fpdf->Cell(35, 5, number_format($valueTaxes2['TTAXM_TAXAMT']), 1, 0, 'R');
+                }
+            }
+
+            $y += 5;
+            $this->fpdf->SetXY(128, $y);
+            $this->fpdf->Cell(35, 5, 'Total', 1, 0);
+            $this->fpdf->Cell(35, 5, number_format($grandTotal + $totalTax), 1, 0, 'R');
+            $y += 5;
+            $this->fpdf->SetXY(3, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(10, 5, 'Note', 0);
+            $y += 5;
+            $this->fpdf->SetXY(3 + 10, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(150, 5, '1. Semua pengiriman barang harus disertakan nota/faktur/kwitansi', 0);
+            $y += 5;
+            $this->fpdf->SetXY(3 + 10, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(150, 5, '2. Barang akan kami kembalikan apabila tidak sesuai pesanan', 0);
+            $y += 5;
+            $this->fpdf->SetXY(3 + 10, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(150, 5, '3. Nomor Purchase Order (PO) harus dicantumkan dalam nota/faktur/kwitansi', 0);
+
+            $y += 5;
+            $this->fpdf->SetXY(90, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(27, 5, 'Order By', 1, 'C');
+            $this->fpdf->SetXY(90 + 27, $y);
+            $this->fpdf->MultiCell(27, 5, 'Prepared By', 1, 'C');
+            $this->fpdf->SetXY(90 + 27 + 27, $y);
+            $this->fpdf->MultiCell(27, 5, 'Approved By', 1, 'C');
+            $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
+            $this->fpdf->MultiCell(27, 5, 'Confirmed By', 1, 'C');
+
+            $y += 5;
+            $this->fpdf->SetXY(90, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(27, 15, '', 1, 'C');
+            $this->fpdf->SetXY(90 + 27, $y);
+            $this->fpdf->MultiCell(27, 15, '', 1, 'C');
+            $this->fpdf->SetXY(90 + 27 + 27, $y);
+            $this->fpdf->MultiCell(27, 15, '', 1, 'C');
+            $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
+            $this->fpdf->MultiCell(27, 15, '', 1, 'C');
+
+            $y += 15;
+            $this->fpdf->SetXY(90, $y);
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->MultiCell(27, 5, '', 1, 'C');
+            $this->fpdf->SetXY(90 + 27, $y);
+            $this->fpdf->MultiCell(27, 5, $RSUserWhoPrepare->name, 1, 'C');
+            $this->fpdf->SetXY(90 + 27 + 27, $y);
+            $this->fpdf->SetFont('Arial', '', 6);
+            $this->fpdf->MultiCell(27, 5, $RSUserApproved->name, 1, 'C');
+            $this->fpdf->SetFont('Arial', '', 8);
+            $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
+            $this->fpdf->MultiCell(27, 5, '', 1, 'C');
         }
-
-        $y += 5;
-        $this->fpdf->SetXY(128, $y);
-        $this->fpdf->Cell(35, 5, 'Total', 1, 0);
-        $this->fpdf->Cell(35, 5, number_format($grandTotal + $totalTax), 1, 0, 'R');
-        $y += 5;
-        $this->fpdf->SetXY(3, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(10, 5, 'Note', 0);
-        $y += 5;
-        $this->fpdf->SetXY(3 + 10, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(150, 5, '1. Semua pengiriman barang harus disertakan nota/faktur/kwitansi', 0);
-        $y += 5;
-        $this->fpdf->SetXY(3 + 10, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(150, 5, '2. Barang akan kami kembalikan apabila tidak sesuai pesanan', 0);
-        $y += 5;
-        $this->fpdf->SetXY(3 + 10, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(150, 5, '3. Nomor Purchase Order (PO) harus dicantumkan dalam nota/faktur/kwitansi', 0);
-
-        $y += 5;
-        $this->fpdf->SetXY(90, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(27, 5, 'Order By', 1, 'C');
-        $this->fpdf->SetXY(90 + 27, $y);
-        $this->fpdf->MultiCell(27, 5, 'Prepared By', 1, 'C');
-        $this->fpdf->SetXY(90 + 27 + 27, $y);
-        $this->fpdf->MultiCell(27, 5, 'Approved By', 1, 'C');
-        $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
-        $this->fpdf->MultiCell(27, 5, 'Confirmed By', 1, 'C');
-
-        $y += 5;
-        $this->fpdf->SetXY(90, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-        $this->fpdf->SetXY(90 + 27, $y);
-        $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-        $this->fpdf->SetXY(90 + 27 + 27, $y);
-        $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-        $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
-        $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-
-        $y += 15;
-        $this->fpdf->SetXY(90, $y);
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->MultiCell(27, 5, '', 1, 'C');
-        $this->fpdf->SetXY(90 + 27, $y);
-        $this->fpdf->MultiCell(27, 5, $RSUserWhoPrepare->name, 1, 'C');
-        $this->fpdf->SetXY(90 + 27 + 27, $y);
-        $this->fpdf->SetFont('Arial', '', 6);
-        $this->fpdf->MultiCell(27, 5, $RSUserApproved->name, 1, 'C');
-        $this->fpdf->SetFont('Arial', '', 8);
-        $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
-        $this->fpdf->MultiCell(27, 5, '', 1, 'C');
 
         // $this->fpdf->Output('purchase order ' . $doc . '.pdf', 'I');
 
@@ -1270,7 +1278,7 @@ class PurchaseController extends Controller
             'TPCHORD_BRANCH',
             'TPCHORD_REMARK',
             DB::raw('SUM(TPCHORDDETA_ITMQT) as total_qty'),
-            DB::raw('SUM(T_RCV_DETAIL.quantity) as total_rcv_qty'),
+            DB::raw('COALESCE(SUM(T_RCV_DETAIL.quantity), 0) as total_rcv_qty'),
             DB::raw('SUM(TPCHORDDETA_ITMQT * TPCHORDDETA_ITMPRC_PER) as total_price'),
             'TTAXM_TYPE AS TAX_CODE'
         )
@@ -1365,5 +1373,83 @@ class PurchaseController extends Controller
         }
 
         return ['msg' => 'OK'];
+    }
+
+    public function downloadReportPO($fdate, $ldate)
+    {
+        $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
+
+        $data = T_PCHORDHEAD::on($this->dedicatedConnection)
+            ->select(
+                'TPCHORD_PCHCD',
+                'TPCHORD_ISSUDT',
+                'TPCHORD_APPRVDT',
+                'TPCHORD_REJCTDT',
+                'TPCHORD_SUPCD',
+                'TPCHORD_REQCD',
+                'TPCHORD_ATTN',
+                'MSUP_SUPNM',
+                'TPCHORDDETA_PCHCD',
+                'TPCHORDDETA_ITMCD',
+                'TPCHORDDETA_ITMQT',
+                'TPCHORDDETA_ITMPRC_PER',
+                'TPCHORD_BRANCH',
+                'TPCHORD_REMARK',
+                'MITM_ITMNM',
+                DB::raw("(
+                    SELECT
+                        CASE WHEN MTAX_TYPE = 'PERCENT'
+                            THEN SUM(TPCHORDDETA_ITMQT * TPCHORDDETA_ITMPRC_PER) * (MTAX_AMT / 100)
+                            ELSE MTAX_AMT
+                        END
+                    FROM jatpower_tribin.T_TAX_MAP
+                    INNER JOIN jatpower_tribin.M_TAX ON TTAXM_TYPE = MTAX_CODE
+                    WHERE TTAXM_DOCNO = TPCHORD_PCHCD
+                    AND TTAXM_CG = '" . $this->dedicatedConnection . "'
+                    AND deleted_at IS NULL
+                ) AS totalTax")
+            )
+            ->leftJoin('M_SUP', function ($join) {
+                $join->on('TPCHORD_SUPCD', '=', 'MSUP_SUPCD')
+                    ->on('TPCHORD_BRANCH', '=', 'MSUP_BRANCH');
+            })
+            ->leftJoin('T_PCHORDDETA', function ($join) {
+                $join->on('TPCHORD_PCHCD', '=', 'TPCHORDDETA_PCHCD')
+                    ->on('TPCHORD_BRANCH', '=', 'TPCHORDDETA_BRANCH');
+            })
+            ->join('M_ITM', function ($join) {
+                $join->on('TPCHORDDETA_ITMCD', '=', 'MITM_ITMCD')
+                    ->on('TPCHORD_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->whereBetween('T_PCHORDHEAD.TPCHORD_ISSUDT', [$fdate, $ldate])
+            ->orderBy('T_PCHORDHEAD.TPCHORD_ISSUDT', 'desc')
+            ->groupBy(
+                'TPCHORD_PCHCD',
+                'TPCHORD_ISSUDT',
+                'TPCHORD_APPRVDT',
+                'TPCHORD_REJCTDT',
+                'TPCHORD_SUPCD',
+                'TPCHORD_REQCD',
+                'TPCHORD_ATTN',
+                'MSUP_SUPNM',
+                'TPCHORDDETA_PCHCD',
+                'TPCHORDDETA_ITMCD',
+                'TPCHORDDETA_ITMQT',
+                'TPCHORDDETA_ITMPRC_PER',
+                'TPCHORD_BRANCH',
+                'TPCHORD_REMARK',
+                'MITM_ITMNM',
+            )
+            ->get();
+
+        $pdf = Pdf::loadView('transaction.po_report', [
+            'data' => $data,
+            'fdate' => $fdate,
+            'ldate' => $ldate,
+            'companyGroupData' => $companyGroupData,
+        ]);
+        $pdf->setPaper('A4', 'landscape');
+
+        return base64_encode($pdf->output());
     }
 }

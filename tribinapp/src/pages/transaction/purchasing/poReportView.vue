@@ -1,6 +1,20 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="text-h4">Purchase Status Report</div>
+    <div class="row">
+      <div class="col">
+        <div class="text-h4">Purchase Status Report</div>
+      </div>
+      <div class="col text-right">
+        <q-btn
+          icon="file_download"
+          color="cyan"
+          flat
+          @click="exportReport()"
+          class="q-ml-md"
+          label="Export Report"
+        />
+      </div>
+    </div>
 
     <div class="row q-pt-md">
       <div class="col">
@@ -109,8 +123,7 @@ import { onMounted, ref } from "vue";
 import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 
-import poCreate from "./poCreate.vue";
-import { format } from "v-money3";
+import poDownloadReport from "./poDownloadReport.vue";
 
 const $q = useQuasar();
 
@@ -179,11 +192,11 @@ const columns = [
     label: "Status Receive",
     align: "left",
     field: (row) =>
-      row.total_qty === row.total_rcv_qty
+      row.total_rcv_qty === 0
+        ? "Not Received"
+        : row.total_qty === row.total_rcv_qty
         ? "Received"
-        : row.total_qty > 0 && row.total_qty > row.total_rcv_qty
-        ? "Partially Received"
-        : "Not Received",
+        : "Partially Received",
     sortable: true,
   },
 ];
@@ -227,8 +240,17 @@ const onClickView = (data) => {
 };
 
 function exportReport() {
-  console.log("Exporting report...");
   // Add export logic here
+  $q.dialog({
+    component: poDownloadReport,
+    // componentProps: {
+    //   dataHeader: data,
+    //   mode: "view",
+    // },
+    // persistent: true,
+  }).onOk(async (val) => {
+    dataPO();
+  });
 }
 </script>
 

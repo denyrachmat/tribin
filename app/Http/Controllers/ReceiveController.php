@@ -448,7 +448,8 @@ class ReceiveController extends Controller
                 "MCUS_CUSNM",
                 "MCUS_CURCD",
                 "TRCV_SUBMITTED_AT"
-            );
+            )
+            ->orderBy('id', 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

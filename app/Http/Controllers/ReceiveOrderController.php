@@ -1076,7 +1076,7 @@ class ReceiveOrderController extends Controller
 
                 $getTotalAmount = 0;
                 foreach ($getDetail as $keyDetail => $valueDetail) {
-                    $getTotalAmount += $valueDetail->TSLODETA_ITMQT * $valueDetail->TSLODETA_PRC;
+                    $getTotalAmount += (float)$valueDetail->TSLODETA_ITMQT * $valueDetail->TSLODETA_PRC;
                 }
 
                 $getDefault = $this->getGencode(base64_encode('CUST_ACC_LIST'), base64_encode('DEF_CUST_TAX'), $_COOKIE['CGID']);

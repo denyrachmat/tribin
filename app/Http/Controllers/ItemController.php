@@ -92,7 +92,7 @@ class ItemController extends Controller
             'MITM_ITMCD' => [
                 function ($attribute, $value, $fail) use ($request) {
                     if ($value === $request->MITM_ITMNM) {
-                        $fail('The ' . $attribute . ' cannot be the same as MITM_ITMNM.');
+                        $fail('Item code cannot be the same as Item Name.');
                     }
                 },
             ],
@@ -443,8 +443,8 @@ class ItemController extends Controller
     function deleteItem($id)
     {
         $affectedRow = M_ITM::on($this->dedicatedConnection)
-            ->where('MITM_ITMCD', $id)
-            ->delete();
+            ->where('MITM_ITMCD','=', $id)
+            ->forceDelete();
 
         return ['msg' => $affectedRow ? 'Item Deleted !!' : 'No changes'];
 

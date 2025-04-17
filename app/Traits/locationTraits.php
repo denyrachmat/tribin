@@ -113,62 +113,64 @@ trait LocationTraits
             ->where('CITRN_DOCNO', $header->TRCV_DOCNO)
             ->first();
 
-        if (!empty($frWH)) {
-            C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => $userHead['branch'],
-                'CITRN_LOCCD' => $frWH,
-                'CITRN_DOCNO' => $header->TRCV_DOCNO,
-                'CITRN_ISSUDT' => $date,
-                'CITRN_FORM' => $formout,
-                'CITRN_ITMCD' => $item,
-                'CITRN_ITMQT' => (float)$qty * -1,
-                'CITRN_PRCPER' => (float)$price,
-                'CITRN_PRCAMT' => (float)$price * (float)$qty,
+        if ($qty > 0) {
+            if (!empty($frWH)) {
+                C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
+                    'CITRN_BRANCH' => $userHead['branch'],
+                    'CITRN_LOCCD' => $frWH,
+                    'CITRN_DOCNO' => $header->TRCV_DOCNO,
+                    'CITRN_ISSUDT' => $date,
+                    'CITRN_FORM' => $formout,
+                    'CITRN_ITMCD' => $item,
+                    'CITRN_ITMQT' => (float) $qty * -1,
+                    'CITRN_PRCPER' => (float) $price,
+                    'CITRN_PRCAMT' => (float) $price * (float) $qty,
+                    'created_by' => $userHead['nick_name'],
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
+                ]);
+            }
+
+            if (!empty($toWH)) {
+                C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
+                    'CITRN_BRANCH' => $userHead['branch'],
+                    'CITRN_LOCCD' => $toWH,
+                    'CITRN_DOCNO' => $header->TRCV_DOCNO,
+                    'CITRN_ISSUDT' => $date,
+                    'CITRN_FORM' => $forminc,
+                    'CITRN_ITMCD' => $item,
+                    'CITRN_ITMQT' => (float) $qty,
+                    'CITRN_PRCPER' => (float) $price,
+                    'CITRN_PRCAMT' => (float) $price * (float) $qty,
+                    'created_by' => $userHead['nick_name'],
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
+                ]);
+            }
+
+            $createDet = T_RCV_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)->updateOrCreate([
+                'id_header' => $idHeader,
+                'item_code' => $item,
+            ], [
+                'id_header' => $idHeader,
+                'item_code' => $item,
+                'quantity' => (float) $qty,
+                'unit_price' => (float) $price,
                 'created_by' => $userHead['nick_name'],
                 'created_at' => date('Y-m-d H:i:s'),
-                'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
+                'branch' => $userHead['branch'],
+                'po_number' => ''
+            ]);
+
+            // Save to be incoming barcode
+            T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)->updateOrCreate([
+                'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
+                'TRCVBC_BCCD' => empty($cekStock) ? $bc : $cekStock->id_reff,
+            ], [
+                'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
+                'TRCVBC_BCQT' => (float) $qty,
+                'TRCVBC_DETID' => $createDet->id
             ]);
         }
-
-        if (!empty($toWH)) {
-            C_ITRN::on(!empty($conn) ? $conn : $this->dedicatedConnection)->create([
-                'CITRN_BRANCH' => $userHead['branch'],
-                'CITRN_LOCCD' => $toWH,
-                'CITRN_DOCNO' => $header->TRCV_DOCNO,
-                'CITRN_ISSUDT' => $date,
-                'CITRN_FORM' => $forminc,
-                'CITRN_ITMCD' => $item,
-                'CITRN_ITMQT' => (float)$qty,
-                'CITRN_PRCPER' => (float)$price,
-                'CITRN_PRCAMT' => (float)$price * (float)$qty,
-                'created_by' => $userHead['nick_name'],
-                'created_at' => date('Y-m-d H:i:s'),
-                'id_reff' => empty($cekStock) ? $bc : $cekStock->id_reff,
-            ]);
-        }
-
-        $createDet = T_RCV_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)->updateOrCreate([
-            'id_header' => $idHeader,
-            'item_code' => $item,
-        ], [
-            'id_header' => $idHeader,
-            'item_code' => $item,
-            'quantity' => (float)$qty,
-            'unit_price' => (float)$price,
-            'created_by' => $userHead['nick_name'],
-            'created_at' => date('Y-m-d H:i:s'),
-            'branch' => $userHead['branch'],
-            'po_number' => ''
-        ]);
-
-        // Save to be incoming barcode
-        T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)->updateOrCreate([
-            'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
-            'TRCVBC_BCCD' => empty($cekStock) ? $bc : $cekStock->id_reff,
-        ], [
-            'TRCVBC_DOCNO' => $header->TRCV_DOCNO,
-            'TRCVBC_BCQT' => (float)$qty,
-            'TRCVBC_DETID' => $createDet->id
-        ]);
     }
 }

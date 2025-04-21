@@ -824,74 +824,75 @@ class ReceiveOrderController extends Controller
         }
 
         foreach ($listCat as $key => $value) {
-            $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
-                ->select(
-                    'TSLO_SLOCD',
-                    'MITM_ITMCD',
-                    'MITM_ITMNM',
-                    'TQUO_PROJECT_LOCATION',
-                    'CSPK_PIC_AS',
-                    'CSPK_PIC_NAME',
-                    'MCUS_CUSNM',
-                    DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
-                    DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQTORI'),
-                    'name',
-                    'T_SLOHEAD.created_by',
-                    DB::raw('MIN(TSLODETA_PERIOD_FR) TSLODETA_PERIOD_FR'),
-                    DB::raw('MAX(TSLODETA_PERIOD_TO) TSLODETA_PERIOD_TO'),
-                    'MUSAGE_ALIAS',
-                    'TDLVORDDETA_DLVCD',
-                    DB::raw("(
-                        SELECT
-                            CASE WHEN MTAX_TYPE = 'PERCENT'
-                                THEN SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) * (MTAX_AMT / 100)
-                                ELSE MTAX_AMT
-                            END
-                        FROM jatpower_tribin.T_TAX_MAP
-                        INNER JOIN jatpower_tribin.M_TAX ON TTAXM_TYPE = MTAX_CODE
-                        WHERE TTAXM_DOCNO = TSLO_SLOCD
-                        AND TTAXM_CG = '".$this->dedicatedConnection."'
-                        AND deleted_at IS NULL
-                    ) AS totalTax")
-                )
-                ->join('T_SLODETA', function ($j) {
-                    $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
-                    $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
-                })
-                ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
-                ->join('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
-                ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
-                ->join('M_CUS', 'MCUS_CUSCD', 'TSLO_CUSCD')
-                ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
-                ->leftJoin('M_USAGE', 'M_USAGE.id', DB::raw('CAST(TSLODETA_USAGE_DESCRIPTION AS INTEGER)'))
-                ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
+            // $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
+            //     ->select(
+            //         'TSLO_SLOCD',
+            //         'MITM_ITMCD',
+            //         'MITM_ITMNM',
+            //         'TQUO_PROJECT_LOCATION',
+            //         'CSPK_PIC_AS',
+            //         'CSPK_PIC_NAME',
+            //         'MCUS_CUSNM',
+            //         DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
+            //         DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQTORI'),
+            //         'name',
+            //         'T_SLOHEAD.created_by',
+            //         DB::raw('MIN(TSLODETA_PERIOD_FR) TSLODETA_PERIOD_FR'),
+            //         DB::raw('MAX(TSLODETA_PERIOD_TO) TSLODETA_PERIOD_TO'),
+            //         'MUSAGE_ALIAS',
+            //         'TDLVORDDETA_DLVCD',
+            //         DB::raw("(
+            //             SELECT
+            //                 CASE WHEN MTAX_TYPE = 'PERCENT'
+            //                     THEN SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) * (MTAX_AMT / 100)
+            //                     ELSE MTAX_AMT
+            //                 END
+            //             FROM jatpower_tribin.T_TAX_MAP
+            //             INNER JOIN jatpower_tribin.M_TAX ON TTAXM_TYPE = MTAX_CODE
+            //             WHERE TTAXM_DOCNO = TSLO_SLOCD
+            //             AND TTAXM_CG = '".$this->dedicatedConnection."'
+            //             AND deleted_at IS NULL
+            //         ) AS totalTax")
+            //     )
+            //     ->join('T_SLODETA', function ($j) {
+            //         $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
+            //         $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
+            //     })
+            //     ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
+            //     ->join('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
+            //     ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
+            //     ->join('M_CUS', 'MCUS_CUSCD', 'TSLO_CUSCD')
+            //     ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
+            //     ->leftJoin('M_USAGE', 'M_USAGE.id', DB::raw('CAST(TSLODETA_USAGE_DESCRIPTION AS INTEGER)'))
+            //     ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
+            //     ->where('MITM_ITMCAT', $value)
+            //     ->whereBetween('T_SLODETA.created_at', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"])
+            //     ->groupBy(
+            //         'TSLO_SLOCD',
+            //         'MITM_ITMCD',
+            //         'MITM_ITMNM',
+            //         'TQUO_PROJECT_LOCATION',
+            //         'CSPK_PIC_AS',
+            //         'CSPK_PIC_NAME',
+            //         'MCUS_CUSNM',
+            //         'name',
+            //         'T_SLOHEAD.created_by',
+            //         // 'TSLODETA_PERIOD_FR',
+            //         // 'TSLODETA_PERIOD_TO',
+            //         'MUSAGE_ALIAS',
+            //         'TDLVORDDETA_DLVCD',
+            //         'TDLVORDDETA_ITMQT',
+            //         'TDLVORDDETA_PRC'
+            //     );
+            $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
                 ->where('MITM_ITMCAT', $value)
-                ->whereBetween('T_SLODETA.created_at', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"])
-                ->groupBy(
-                    'TSLO_SLOCD',
-                    'MITM_ITMCD',
-                    'MITM_ITMNM',
-                    'TQUO_PROJECT_LOCATION',
-                    'CSPK_PIC_AS',
-                    'CSPK_PIC_NAME',
-                    'MCUS_CUSNM',
-                    'name',
-                    'T_SLOHEAD.created_by',
-                    // 'TSLODETA_PERIOD_FR',
-                    // 'TSLODETA_PERIOD_TO',
-                    'MUSAGE_ALIAS',
-                    'TDLVORDDETA_DLVCD',
-                    'TDLVORDDETA_ITMQT',
-                    'TDLVORDDETA_PRC'
-                );
+                ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
 
             if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
-                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
+                $RSTemp->where('created_by', Auth::user()->nick_name);
             }
 
-            // return Auth::user();
-
-            $cekTotalData = $RSTemp->get()->toArray();
+            $cekTotalData = json_decode(json_encode($RSTemp->get()->toArray()), true);
 
             if (count($cekTotalData) > 0) {
                 $baru = array_values(array_filter($cekTotalData, function ($f) {

@@ -250,6 +250,11 @@ class PurchaseController extends Controller
         }
 
         if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
+            $totalAmount = 0;
+            foreach ($request->det as $key => $value) {
+                $totalAmount += $value['TPCHORDDETA_ITMQT'] * $value['TPCHORDDETA_ITMPRC_PER'];
+            }
+
             $tax = $this->storeTaxes(new Request([
                 'TTAXM_DOCNO' => $newPOCode,
                 'TTAXM_CG' => $this->dedicatedConnection,

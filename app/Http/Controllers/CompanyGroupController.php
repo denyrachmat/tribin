@@ -43,7 +43,13 @@ class CompanyGroupController extends Controller
             ->leftJoin('roles', 'role_name', '=', 'name')
             ->where('nick_name', Auth::user()->nick_name)
             ->where('connection', $dedicatedConnection)
-            ->whereNull('deleted_at')->first();
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (empty($rsCGRole)) {
+            Auth::logout();
+            return redirect()->route('login')->withErrors(['message' => 'Session expired. Please log in again.']);
+        }
 
         return ['code' => $rsCGRole->role_name, 'name' => $rsCGRole->description];
     }

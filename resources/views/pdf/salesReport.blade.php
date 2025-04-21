@@ -162,9 +162,9 @@
                                     <td class="tg-0lax" style="text-align: left;"></td>
                                     <td class="tg-0lax" style="text-align: left;">{{$valueDet['name']}}</td>
                                     <td class="tg-0lax" style="text-align: left;">
-                                        {{date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_FR']))}}</td>
+                                        {{empty($valueDet['TSLODETA_PERIOD_FR']) ? '-' : date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_FR']))}}</td>
                                     <td class="tg-0lax" style="text-align: left;">
-                                        {{date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_TO']))}}</td>
+                                        {{empty($valueDet['TSLODETA_PERIOD_TO']) ? '-' : date('d M Y', strtotime($valueDet['TSLODETA_PERIOD_TO']))}}</td>
                                 </tr>
                             @endforeach
                         @endforeach

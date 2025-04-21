@@ -884,15 +884,19 @@ class ReceiveOrderController extends Controller
             //         'TDLVORDDETA_ITMQT',
             //         'TDLVORDDETA_PRC'
             //     );
+
             $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
-                ->where('MITM_ITMCAT', $value)
-                ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
+            ->where('MITM_ITMCAT', $value)
+            ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
 
             if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
                 $RSTemp->where('created_by', Auth::user()->nick_name);
             }
 
-            $cekTotalData = json_decode(json_encode($RSTemp->get()->toArray()), true);
+            // return Auth::user();
+
+            $cekTotalData = $RSTemp->get()->toArray();
+            $cekTotalData = json_decode(json_encode($cekTotalData), true);
 
             if (count($cekTotalData) > 0) {
                 $baru = array_values(array_filter($cekTotalData, function ($f) {

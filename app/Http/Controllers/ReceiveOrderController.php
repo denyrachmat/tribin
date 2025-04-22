@@ -890,7 +890,7 @@ class ReceiveOrderController extends Controller
             ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
 
             if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
-                $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
+                $RSTemp->where('created_by', Auth::user()->nick_name);
             }
 
             // return Auth::user();

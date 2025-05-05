@@ -243,8 +243,9 @@ class ItemController extends Controller
             $RSHead->where('IS_ITMCD', 1);
         }
 
+        $RS = (clone $RSHead);
         if (!empty($request->searchValue)) {
-            $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%');
+            $RS->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%');
         }
 
         if ($request->has('dataOnly') && $request->dataOnly == 1) {

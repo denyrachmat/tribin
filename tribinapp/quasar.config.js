@@ -50,8 +50,8 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: "hash", // available values: 'hash', 'history'
       env: {
-        API: "https://joss.jatpowerindo.co.id/api/",
-        API_WEB: "https://joss.jatpowerindo.co.id/",
+        API: "https://jos.jatpowerindo.co.id/api/",
+        API_WEB: "https://jos.jatpowerindo.co.id/",
         API_ACC: "https://joss-accounting.ikhsanhamidan.my.id/api/",
         API_KEY_ACC: "imaGrANdSILVwaNH5sTxk8O4f60fuule",
       },

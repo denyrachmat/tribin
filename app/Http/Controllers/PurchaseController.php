@@ -22,10 +22,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\taxesTraits;
 use App\Traits\gencodeTraits;
+use App\Traits\accTraits;
 
 class PurchaseController extends Controller
 {
-    use taxesTraits, gencodeTraits;
+    use taxesTraits, gencodeTraits, accTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];

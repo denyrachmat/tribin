@@ -68,22 +68,50 @@
         </div>
         <div class="row q-pt-xs" style="height: 30vh">
           <div class="col bg-white vertical-middle">
+            <!-- style="height: 20vh" -->
+            <template v-if="isUsingTax">
+              <div class="row">
+                <div class="col q-pa-sm">
+                  <div class="text-h6 text-bold">
+                    Subtotal : Rp. {{ getTotal.toLocaleString() }}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col q-pa-sm">
+                  <div class="text-h6 text-bold">
+                    Tax : Rp. {{ getTotalTax.toLocaleString() }}
+                  </div>
+                </div>
+              </div>
+            </template>
             <div class="row">
-              <div class="col q-pa-sm" style="height: 20vh">
+              <div class="col q-pa-sm">
                 <div class="text-h6 text-bold">
-                  Total : Rp. {{ getTotal.toLocaleString() }}
+                  Total : Rp. {{ (getTotal + getTotalTax).toLocaleString() }}
                 </div>
               </div>
             </div>
             <q-separator />
             <div class="row" style="height: 10vh">
               <div class="col-sm-6 col-12 q-pa-sm">
-                <q-btn color="primary" class="full-width" @click="onSubmited()" :loading="loading" :disable="!TPOS_CUSTCD">
+                <q-btn
+                  color="primary"
+                  class="full-width"
+                  @click="onSubmited()"
+                  :loading="loading"
+                  :disable="!TPOS_CUSTCD"
+                >
                   Submit
                 </q-btn>
               </div>
               <div class="col-sm-6 col-12 q-pa-sm">
-                <q-btn color="red" class="full-width" @click="onCancelSales()" :loading="loading">
+                <q-btn
+                  color="red"
+                  class="full-width"
+                  @click="onCancelSales()"
+                  :loading="loading"
+                >
                   Cancel
                 </q-btn>
               </div>
@@ -137,6 +165,29 @@
                 </q-btn>
               </template>
             </q-select>
+          </div>
+        </div>
+        <div class="row bg-white">
+          <div class="col">
+            <q-select
+              dense
+              filled
+              label="Tax Code"
+              v-model="tax_code"
+              use-input
+              input-debounce="500"
+              :options="listTaxes"
+              @filter="
+                (val, update, abort) => filterFn(val, update, abort, 'tax')
+              "
+              behavior="dialog"
+              option-label="MTAX_DESC"
+              option-value="MTAX_CODE"
+              emit-value
+              map-options
+              :loading="loading"
+              :disable="!isUsingTax"
+            />
           </div>
         </div>
         <div
@@ -223,10 +274,15 @@ const loading = ref(false);
 const page = ref(0);
 const searchItem = ref("");
 const refreshIdx = ref(0);
+const isUsingTax = ref(false);
+const tax_code = ref("");
+const listTaxes = ref([]);
 
-onMounted(() => {
-  getItem("");
-  getCustomer("");
+onMounted(async () => {
+  await getItem("");
+  await getCustomer("");
+  await getTaxes();
+  await getDefaultTax();
 });
 
 const getTotal = computed(() =>
@@ -237,6 +293,16 @@ const getTotal = computed(() =>
       )
     : 0
 );
+
+const getTotalTax = computed(() =>
+  listTaxes.value.length > 0
+    ? listTaxes.value.reduce(
+        (acc, cur) => cur.MTAX_CODE === tax_code.value ? acc + parseFloat(cur.MTAX_RATE) : acc + 0,
+        0
+      )
+    : 0
+);
+
 
 const getItem = async (val) => {
   loading.value = true;
@@ -276,7 +342,7 @@ const getCustomer = async (val, cols = "MCUS_CUSNM") => {
     .post("customer/searchAPI", {
       searchValue: val,
       searchCol: cols,
-      type: [1]
+      type: [1],
     })
     .then((response) => {
       loading.value = false;
@@ -329,9 +395,9 @@ const onAddCustClick = () => {
     component: customerView,
     componentProps: {
       CustType: 1,
-      Groups: 'POS_CUST',
-      Curr: 'IDR',
-    }
+      Groups: "POS_CUST",
+      Curr: "IDR",
+    },
     // persistent: true,
   }).onOk(async (val) => {
     await getCustomer("");
@@ -347,7 +413,7 @@ const onLoad = async (index, done) => {
 const onInputSearch = (val) => {
   page.value = 0;
   if (!val) {
-    listItems.value = []
+    listItems.value = [];
   }
   getItem(val);
 };
@@ -425,7 +491,7 @@ const onSubmited = () => {
     await api_web
       .post("pos", {
         TPOS_CUSTCD: TPOS_CUSTCD.value,
-        det: listItems.value
+        det: listItems.value,
       })
       .then((response) => {
         loading.value = false;
@@ -435,6 +501,46 @@ const onSubmited = () => {
         loading.value = false;
       });
   });
+};
+
+const getTaxes = async (val) => {
+  loading.value = true;
+  await api_web
+    .post("taxes/searchAPI", {
+      searchBy: "MTAX_DESC",
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listTaxes.value = response.data.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
+
+const getDefaultTax = async () => {
+  const getCG =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("CGID="))
+      ?.split("=")[1] || "";
+  loading.value = true;
+  await api
+    .get(
+      `master/gencode/${btoa("CUST_ACC_LIST")}/${btoa(
+        "DEF_CUST_TAXPOS"
+      )}/${getCG}`
+    )
+    .then((val) => {
+      loading.value = false;
+      console.log(val);
+      if (val.data.CODE_VALUE && !tax_code.value) {
+        isUsingTax.value = true;
+        tax_code.value = val.data.CODE_VALUE;
+      }
+    })
+    .catch((e) => {});
 };
 </script>
 

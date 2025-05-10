@@ -109,13 +109,26 @@ const listPOType = ref([]);
 const loading = ref(false);
 const listCOA = ref([]);
 const listCOASupp = ref([]);
+const CGData = ref("");
 
 const $q = useQuasar();
 
 onMounted(() => {
   getTransTypeList();
   getTransSuppTypeList();
+  getNowCG();
 });
+
+const getNowCG = async () => {
+  await api_web
+    .get(`companies/nowCG`)
+    .then((val) => {
+      console.log(val);
+      CGData.value = val.data;
+      loading.value = false;
+    })
+    .catch((e) => {});
+};
 
 const onClickSave = () => {
   $q.dialog({
@@ -175,6 +188,7 @@ const getTransTypeList = async () => {
           valueChoosed: v.CODE_VALUE,
         });
 
+        listCOA.value.push([]);
         if (v.MGECD_DESC2 === "acc") {
           getCOAList(idx);
         } else {
@@ -205,6 +219,7 @@ const getTransSuppTypeList = async () => {
           valueChoosed: v.CODE_VALUE,
         });
 
+        listCOASupp.value.push([]);
         if (v.MGECD_DESC2 === "acc") {
           getCOAListSupp(idx);
         } else {
@@ -217,42 +232,60 @@ const getTransSuppTypeList = async () => {
 
 const getCOAList = async (idx) => {
   loading.value = true;
+  const getCG =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("CGID="))
+      ?.split("=")[1] || "";
+
   await api_acc
-    .get(`feature-list?cg_code=CG&start=0&length=10`, {
+    .get(`account?cg_code=${CGData.value}&start=0&;length=10`, {
       headers: {
         "X-API-KEY": process.env.API_KEY_ACC,
       },
     })
     .then((val) => {
       loading.value = false;
-      listCOA[idx].value = [];
+      console.log(val);
+      console.log(listCOA);
+      listCOA.value[idx] = [];
+
       val.data.data.map((v) => {
-        listCOA[idx].value.push({
+        listCOA.value[idx].push({
           label: v.name,
           value: v.code,
         });
       });
     })
-    .catch((e) => {});
+    .catch((e) => {
+      console.log(e);
+    });
 };
 
 const getCOAListSupp = async (idx) => {
   loading.value = true;
+  const getCG =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("CGID="))
+      ?.split("=")[1] || "";
+
   await api_acc
-    .get(`feature-list?cg_code=CG&start=0&length=10`, {
+    .get(`account?cg_code=${CGData.value}&start=0&;length=10`, {
       headers: {
         "X-API-KEY": process.env.API_KEY_ACC,
       },
     })
     .then((val) => {
       loading.value = false;
-      listCOASupp[idx].value = [];
-      val.data.data.map((v) => {
-        listCOASupp[idx].value.push({
-          label: v.name,
-          value: v.code,
+      console.log(listCOASupp);
+      listCOASupp.value[idx] = [];
+        val.data.data.map((v) => {
+          listCOASupp.value[idx].push({
+            label: v.name,
+            value: v.code,
+          });
         });
-      });
     })
     .catch((e) => {});
 };

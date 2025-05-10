@@ -27,10 +27,11 @@ use App\Models\BranchPaymentAccount;
 
 use App\Traits\gencodeTraits;
 use App\Traits\taxesTraits;
+use App\Traits\accTraits;
 
 class ReceiveOrderController extends Controller
 {
-    use gencodeTraits, taxesTraits;
+    use gencodeTraits, taxesTraits, accTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -384,9 +385,21 @@ class ReceiveOrderController extends Controller
             ]);
         }
 
-        // Check for default account
-        $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
-        $hasilAPI = [];
+        // Send to ACC System
+        $cekInvoiceAcc = $this->getGencode(
+            base64_encode('DEF_CUST_INVOICE'),
+            '',
+            $_COOKIE['CGID']
+        );
+
+        $hasilAPI = $this->sendACC(
+            $this->dedicatedConnection,
+            date('Y-m-d'),
+            $newDocumentCode,
+            count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['MGECD_VALUE'] : '',
+            'Sales Order ' . $newDocumentCode,
+            $getTotalAmnt
+        );
 
 
         $tax = null;
@@ -886,8 +899,8 @@ class ReceiveOrderController extends Controller
             //     );
 
             $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
-            ->where('MITM_ITMCAT', $value)
-            ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
+                ->where('MITM_ITMCAT', $value)
+                ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
 
             if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
                 $RSTemp->where('created_by', Auth::user()->nick_name);
@@ -1081,7 +1094,7 @@ class ReceiveOrderController extends Controller
 
                 $getTotalAmount = 0;
                 foreach ($getDetail as $keyDetail => $valueDetail) {
-                    $getTotalAmount += (float)$valueDetail->TSLODETA_ITMQT * $valueDetail->TSLODETA_PRC;
+                    $getTotalAmount += (float) $valueDetail->TSLODETA_ITMQT * $valueDetail->TSLODETA_PRC;
                 }
 
                 $getDefault = $this->getGencode(base64_encode('CUST_ACC_LIST'), base64_encode('DEF_CUST_TAX'), $_COOKIE['CGID']);

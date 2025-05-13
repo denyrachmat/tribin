@@ -9,10 +9,9 @@
           row-key="name"
           :loading="loading"
           dense
-          :pagination="{
-            rowsPerPage: 20,
-          }"
+          v-model:pagination="pagination"
           class="my-sticky-header-column-table"
+          @request="onRequest"
         >
           <template v-slot:top-right>
             <q-select
@@ -69,7 +68,9 @@
                 </q-btn>
                 <q-btn
                   flat
-                  :color="condButton('gensetharian', props.row) ? 'grey' : 'purple'"
+                  :color="
+                    condButton('gensetharian', props.row) ? 'grey' : 'purple'
+                  "
                   icon="print"
                   dense
                   @click="printDailyGenset(props.row.TDLVORD_DLVCD)"
@@ -182,39 +183,58 @@ const columns = ref([
 const loading = ref(false);
 const filterCol = ref("");
 const filter = ref("");
+const pagination = ref({
+  rowsPerPage: 20,
+  page: 1,
+  rowsNumber: 20,
+  sortBy: "TDLVORD_DLVCD",
+  descending: true,
+});
 
 onMounted(() => {
   getConfirmedData();
 });
 
 const condButton = (btn, data) => {
-  if (btn === 'gensetharian') {
-    return !data.dlvsj || !data.TDLVORD_CONDGRP || !data.TDLVORD_CONDGRP.toLowerCase().includes('genset')
+  if (btn === "gensetharian") {
+    return (
+      !data.dlvsj ||
+      !data.TDLVORD_CONDGRP ||
+      !data.TDLVORD_CONDGRP.toLowerCase().includes("genset")
+    );
   }
 
-  if (btn === 'invoice') {
-    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && !data.dlvsj)
+  if (btn === "invoice") {
+    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && !data.dlvsj);
   }
 
-  if (btn === 'receipt') {
-    return data.TDLVORD_TYPE === 3 || data.TDLVORD_TYPE !== 4 && !data.dlvsj
+  if (btn === "receipt") {
+    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && !data.dlvsj);
   }
 
-  if (btn === 'sj') {
-    return data.TDLVORD_TYPE !== 4 && !data.dlvsj
+  if (btn === "sj") {
+    return data.TDLVORD_TYPE !== 4 && !data.dlvsj;
   }
-}
+};
 
-const getConfirmedData = async () => {
+const onRequest = (props) => {
+  getConfirmedData(props.pagination)
+};
+
+const getConfirmedData = async (paginate = null) => {
   loading.value = true;
   await api_web
     .post("invoices/search", {
       searchBy: filterCol.value,
       searchValue: filter.value,
+      pagination: paginate ?? pagination.value,
     })
     .then((response) => {
       loading.value = false;
       rows.value = response.data.data;
+      pagination.value.rowsNumber = response.data.total;
+      pagination.value.page = response.data.current_page;
+      pagination.value.rowsPerPage = response.data.per_page;
     })
     .catch((e) => {
       loading.value = false;
@@ -283,10 +303,10 @@ const onClickPrintSJ = (spk, val) => {
       cancel: true,
       persistent: true,
     }).onOk(async () => {
-      printSJ(val)
+      printSJ(val);
     });
   } else {
-    printSJ(val)
+    printSJ(val);
   }
 };
 
@@ -321,5 +341,5 @@ const printDailyGenset = async (val) => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 </script>

@@ -239,7 +239,7 @@ const getCOAList = async (idx) => {
       ?.split("=")[1] || "";
 
   await api_acc
-    .get(`account?cg_code=${CGData.value}&start=0&;length=10`, {
+    .get(`feature-list?cg_code=${CGData.value}`, {
       headers: {
         "X-API-KEY": process.env.API_KEY_ACC,
       },
@@ -271,7 +271,7 @@ const getCOAListSupp = async (idx) => {
       ?.split("=")[1] || "";
 
   await api_acc
-    .get(`account?cg_code=${CGData.value}&start=0&;length=10`, {
+    .get(`feature-list?cg_code=${CGData.value}`, {
       headers: {
         "X-API-KEY": process.env.API_KEY_ACC,
       },

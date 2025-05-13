@@ -1,18 +1,24 @@
 {
-  "private": true,
-  "scripts": {
-    "dev": "cd ./tribinapp && yarn quasar dev",
-    "build": "cd ./tribinapp && yarn quasar build && cd .. && npx mix"
-  },
-  "devDependencies": {
-    "axios": "^1.1.2",
-    "clean-webpack-plugin": "^4.0.0",
-    "laravel-vite-plugin": "^0.7.2",
-    "vite": "^4.0.0"
-  },
-  "dependencies": {
-    "@quasar/cli": "^2.3.0",
-    "laravel-mix": "^6.0.49",
-    "v-money": "^0.8.1"
-  }
+    "private": true,
+    "scripts": {
+        "dev": "cd ./tribinapp && yarn quasar dev",
+        "build": "cd ./tribinapp && yarn quasar build && cd .. && npx mix"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.2.4",
+        "axios": "^1.1.2",
+        "clean-webpack-plugin": "^4.0.0",
+        "laravel-vite-plugin": "^0.7.2",
+        "vite": "^6.3.5"
+    },
+    "dependencies": {
+        "@quasar/cli": "^2.5.0",
+        "laravel-mix": "^6.0.49",
+        "v-money": "^0.8.1"
+    },
+    "workspaces": [
+        "packages/*",
+        "tribinapp"
+    ],
+    "packageManager": "yarn@3.6.1+sha512.de524adec81a6c3d7a26d936d439d2832e351cdfc5728f9d91f3fc85dd20b04391c038e9b4ecab11cae2b0dd9f0d55fd355af766bc5c1a7f8d25d96bb2a0b2ca"
 }

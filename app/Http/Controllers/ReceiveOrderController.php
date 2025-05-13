@@ -401,7 +401,6 @@ class ReceiveOrderController extends Controller
             $getTotalAmnt
         );
 
-
         $tax = null;
         if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
             $tax = $this->storeTaxes(new Request([
@@ -580,47 +579,14 @@ class ReceiveOrderController extends Controller
 
         $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
 
-        $hasilApi = [];
-        // if (count($cekInvoiceAcc) > 0 && !$isDeleteOnly) {
-        //     try {
-        //         $client = new \GuzzleHttp\Client();
-        //         $response = $client->request('POST', env('ACC_URL').'api/post-journal', [
-        //             'body' => json_encode([
-        //                 'cg_code' => $this->dedicatedConnection,
-        //                 'date' => date('Y-m-d'),
-        //                 'reference_number' => base64_decode($id),
-        //                 'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
-        //                 'description' => 'Sales Order ' . base64_decode($id) . ' Revise',
-        //                 'amount' => $totalAmount * - 1,
-        //             ]),
-        //             'headers' => [
-        //                 'Content-Type' => 'application/json',
-        //                 'X-API-KEY' => env('ACC_KEY'),
-        //             ]
-        //         ]);
-
-        //         if ($response->getStatusCode() != 201) {
-        //             return $response->getBody();
-        //         }
-
-        //         $hasilAPI = json_decode($response->getBody(), true);
-        //     } catch (\GuzzleHttp\Exception\RequestException $e) {
-        //         return response()->json([
-        //             'error' => 'Failed to post data to API',
-        //             'message' => $e->getMessage(),
-        //             'param' => [
-        //                 'cg_code' => $this->dedicatedConnection,
-        //                 'date' => date('Y-m-d'),
-        //                 'reference_number' => base64_decode($id),
-        //                 'journal_code' => $cekInvoiceAcc[0]->MGECD_VALUE,
-        //                 'description' => 'Sales Order ' . base64_decode($id) . ' Revise',
-        //                 'amount' => $totalAmount * - 1,
-        //             ]
-        //         ], 500);
-        //     }
-
-        //     $hasilApi = json_decode($response->getBody()->getContents());
-        // }
+        $hasilAPI = $this->sendACC(
+            $this->dedicatedConnection,
+            date('Y-m-d'),
+            base64_decode($id),
+            count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['MGECD_VALUE'] : '',
+            'Sales Order Cancel :' . base64_decode($id),
+            $totalAmount * -1
+        );
 
         $headerDelete = T_SLOHEAD::on($this->dedicatedConnection)
             ->where('TSLO_SLOCD', base64_decode($id))
@@ -636,7 +602,7 @@ class ReceiveOrderController extends Controller
             'msg' => 'Delete OK',
             'quotationHeader' => $headerDelete,
             'quotationDetail' => $getDeletedDetail2,
-            'hasilApi' => $hasilApi,
+            'hasilApi' => $hasilAPI,
             'taxes' => $taxes
         ];
     }

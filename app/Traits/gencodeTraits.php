@@ -22,11 +22,12 @@ trait gencodeTraits
             ->where('mg.MGECD_ACTIVE', 1);
 
         if (!empty($value)) {
-            $hasil = (clone $dataHead)->where('mg.MGECD_VALUE', base64_decode($value))->whereNull('mg.MGECD_CG')->first();
+            $hasil = (clone $dataHead)->where('mg.MGECD_VALUE', base64_decode($value));
             if ($cg != '') {
                 $conn = Crypt::decryptString($cg);
-                $dataByCG = (clone $dataHead)->where('mg.MGECD_CG', $conn)->first();
-                $hasil = $dataByCG;
+                $hasil = $hasil->where('mg.MGECD_CG', $conn)->first();
+            } else {
+               $hasil = $hasil->first();
             }
         } else {
             $hasil = (clone $dataHead)->whereNull('mg.MGECD_CG')->get()->toArray();

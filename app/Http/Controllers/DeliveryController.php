@@ -587,7 +587,7 @@ class DeliveryController extends Controller
                     ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
-            ->orderBy('T_DLVORDHEAD.created_at', 'desc')
+            ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc')
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
                 'TDLVORDDETA_ITMCD_ACT',
@@ -1931,7 +1931,7 @@ class DeliveryController extends Controller
             // ->where('MITM_ITMTYPE', '!=', '3')
             ->groupBy(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
             // ->whereNull('CITRN_DOCNO')
-            ->orderBy('T_DLVORDHEAD.created_at', 'desc');
+            ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
             $Data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

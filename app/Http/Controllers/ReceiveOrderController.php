@@ -577,7 +577,12 @@ class ReceiveOrderController extends Controller
             $totalAmount += $value->TSLODETA_ITMQT * $value->TSLODETA_PRC;
         }
 
-        $cekInvoiceAcc = $this->getGencode(base64_encode('DEF_CUST_INVOICE'));
+        // Send to ACC System
+        $cekInvoiceAcc = $this->getGencode(
+            base64_encode('DEF_CUST_INVOICE'),
+            '',
+            $_COOKIE['CGID']
+        );
 
         $hasilAPI = $this->sendACC(
             $this->dedicatedConnection,

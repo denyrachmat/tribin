@@ -63,55 +63,80 @@
                   icon="list"
                   dense
                   @click="updateSuratJalan(props.row)"
+                  :loading="props.loading"
                 >
                   <q-tooltip>Update Surat Jalan</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
                   :color="
-                    condButton('gensetharian', props.row) ? 'grey' : 'purple'
+                    condButton('gensetharian', props.row) || props.loading
+                      ? 'grey'
+                      : 'purple'
                   "
                   icon="print"
                   dense
                   @click="printDailyGenset(props.row.TDLVORD_DLVCD)"
-                  :disable="condButton('gensetharian', props.row)"
+                  :disable="
+                    condButton('gensetharian', props.row) || props.loading
+                  "
+                  :loading="props.loading"
                 >
                   <q-tooltip>Print Form Genset Harian</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="condButton('invoice', props.row) ? 'grey' : 'green'"
+                  :color="
+                    condButton('invoice', props.row) || props.loading
+                      ? 'grey'
+                      : 'green'
+                  "
                   icon="print"
                   dense
                   @click="printInvoice(props.row)"
-                  :disable="condButton('invoice', props.row)"
+                  :disable="condButton('invoice', props.row) || props.loading"
+                  :loading="props.loading"
                 >
                   <q-tooltip>Print Invoice</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="condButton('receipt', props.row) ? 'grey' : 'indigo'"
+                  :color="
+                    condButton('receipt', props.row) || props.loading
+                      ? 'grey'
+                      : 'indigo'
+                  "
                   icon="print"
                   dense
                   @click="printKwitansi(props.row.TDLVORD_DLVCD)"
-                  :disable="condButton('receipt', props.row)"
+                  :disable="condButton('receipt', props.row) || props.loading"
+                  :loading="props.loading"
                 >
                   <q-tooltip>Print Receipt</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
-                  :color="condButton('sj', props.row) ? 'grey' : 'orange'"
+                  :color="
+                    condButton('sj', props.row) || props.loading
+                      ? 'grey'
+                      : 'orange'
+                  "
                   icon="print"
                   dense
                   @click="
                     onClickPrintSJ(props.row.spk, props.row.TDLVORD_DLVCD)
                   "
-                  :disable="condButton('sj', props.row)"
+                  :disable="condButton('sj', props.row) || props.loading"
+                  :loading="props.loading"
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
               </q-td>
             </q-tr>
+          </template>
+
+          <template v-slot:loading>
+            <q-inner-loading showing color="primary" />
           </template>
         </q-table>
       </div>
@@ -192,7 +217,7 @@ const pagination = ref({
 });
 
 onMounted(() => {
-  getConfirmedData();
+  getConfirmedData(pagination.value);
 });
 
 const condButton = (btn, data) => {
@@ -218,16 +243,17 @@ const condButton = (btn, data) => {
 };
 
 const onRequest = (props) => {
-  getConfirmedData(props.pagination)
+  console.log(props);
+  getConfirmedData(props.pagination);
 };
 
-const getConfirmedData = async (paginate = null) => {
+const getConfirmedData = async (paginate = {}) => {
   loading.value = true;
   await api_web
     .post("invoices/search", {
       searchBy: filterCol.value,
       searchValue: filter.value,
-      pagination: paginate ?? pagination.value,
+      pagination: paginate,
     })
     .then((response) => {
       loading.value = false;

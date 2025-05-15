@@ -20,6 +20,9 @@ use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\T_DLVSJDETA;
 use App\Models\CompanyGroup;
 use App\Models\T_DLVPAYDETA;
+use App\Models\T_DLVACCESSORY;
+use App\Models\M_COND_GROUP;
+use App\Models\C_SPK;
 use App\Traits\taxesTraits;
 
 class InvoiceController extends Controller
@@ -148,202 +151,139 @@ class InvoiceController extends Controller
 
     public function search(Request $request)
     {
-        $data = T_DLVORDHEAD::on($this->dedicatedConnection)
-            ->select(
-                DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')') AS LABEL"),
-                'TDLVORD_INVCD',
-                DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END as TDLVORD_DLVCD"),
-                // 'TDLVORD_DLVCD',
-                DB::raw('max(TDLVORD_ISSUDT) as TDLVORD_ISSUDT'),
-                'TDLVORD_REC_NO',
-                'TDLVORDDETA_SLOCD',
-                'TDLVORD_CUSCD',
-                DB::raw('CASE WHEN TDLVORD_TYPE = 3
-                    THEN MSUP_SUPNM
-                    ELSE MCUS_CUSNM
-                END AS MCUS_CUSNM'),
-                DB::raw("CASE WHEN TDLVORD_TYPE = 1
-                    THEN 'Sales'
-                    ELSE CASE WHEN TDLVORD_TYPE = 2
-                        THEN 'Combined'
-                        ELSE CASE WHEN TDLVORD_TYPE = 3
-                            THEN 'Return PO'
-                            ELSE 'Internal Service'
-                        END
-                    END
-                END AS DLV_TYPE"),
-                'MCUS_TELNO',
-                'MCUS_PIC_TELNO',
-                'MCUS_ADDR1',
-                'TSLO_QUOCD',
-                'TSLO_SLOCD',
-                'TSLO_POCD',
-                'TQUO_SBJCT',
-                'TQUO_ATTN',
-                'TDLVORD_CONDGRP',
-                'TDLVORD_REMARK',
-                'TDLVOR_ISSPLITSJ',
-                'TDLVORD_TYPE',
-            )
-            ->with([
-                'dlvacc',
-                'payment' => function ($f) {
-                    $f->select(
-                        '*',
-                        DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
-                        DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1) as TDLVPAYDETA_DLVCD")
-                    );
-                },
-                'condition' => function ($f) {
-                    $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
-                },
-                'spk' => function ($f) {
-                    $f->where('CSPK_PIC_AS', 'DRIVER');
-                }
-            ])
-            ->leftjoin('T_DLVORDDETA', function ($join) {
-                $join->on(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), '=', DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"));
-            })
-            ->leftjoin('M_CUS', function ($join) {
-                $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
-            })
-            ->leftjoin('M_SUP', function ($join) {
-                $join->on('TDLVORD_CUSCD', '=', 'MSUP_SUPCD')->on('TDLVORD_BRANCH', '=', 'MSUP_BRANCH');
-            })
-            ->leftJoin('T_SLOHEAD', 'TSLO_SLOCD', 'TDLVORDDETA_SLOCD')
-            ->leftJoin('T_QUOHEAD', 'TQUO_QUOCD', 'TSLO_QUOCD')
-            ->where(DB::raw('RTRIM(TDLVORDDETA_ITMCD_ACT)'), '<>', '')
-            ->groupBy(
-                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
-                // 'TDLVORD_DLVCD',
-                DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"),
-                DB::raw("CONCAT(SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1), ' (', MCUS_CUSNM, ' - ', TQUO_ATTN, ')')"),
-                'TDLVORD_INVCD',
-                'TDLVORD_REC_NO',
-                'TDLVORD_CUSCD',
-                'TDLVORDDETA_SLOCD',
-                'MCUS_CUSNM',
-                'MSUP_SUPNM',
-                'MCUS_TELNO',
-                'MCUS_PIC_TELNO',
-                'MCUS_ADDR1',
-                'TSLO_SLOCD',
-                'TSLO_QUOCD',
-                'TSLO_POCD',
-                'TQUO_SBJCT',
-                'TQUO_ATTN',
-                'TDLVORD_CONDGRP',
-                'TDLVORD_REMARK',
-                'TDLVOR_ISSPLITSJ',
-                'TDLVORD_TYPE',
-            )
-            ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc');
+        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA');
 
         if (!empty($request->searchBy)) {
             $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
         if ($request->has('pagination') && !empty($request->pagination)) {
-            $listData = $data->paginate($request->pagination['rowsPerPage'], ['*'], 'page', $request->pagination['page'] - 1);
+            $listData = $data->paginate($request->pagination['rowsPerPage'], ['*'], 'page', $request->pagination['page']);
             // $listData = $listData->getCollection();
+            // ->with([
+            //     'dlvacc',
+            //     'payment' => function ($f) {
+            //         $f->select(
+            //             '*',
+            //             DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+            //             DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1) as TDLVPAYDETA_DLVCD")
+            //         );
+            //     },
+            //     'condition' => function ($f) {
+            //         $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
+            //     },
+            //     'spk' => function ($f) {
+            //         $f->where('CSPK_PIC_AS', 'DRIVER');
+            //     }
+            // ])
 
             $listData->getCollection()->transform(function ($dlv) {
+                $dlv->dlvacc = T_DLVACCESSORY::on($this->dedicatedConnection)->where('TDLVACCESSORY_DLVCD', $dlv->TDLVORD_DLVCD)->get();
+                $dlv->payment = T_DLVPAYDETA::on($this->dedicatedConnection)
+                    ->select(
+                        'branch_payment_accounts.*',
+                        DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+                        DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
+                    )
+                    ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
+                    ->where('TDLVPAYDETA_DLVCD', $dlv->TDLVORD_DLVCD)
+                    ->get();
+                $dlv->condition = M_COND_GROUP::on($this->dedicatedConnection)->where('MCOND_GRPNM', $dlv->TDLVORD_CONDGRP)->get();
+                $dlv->spk = C_SPK::on($this->dedicatedConnection)
+                    ->where('CSPK_REFF_DOC', $dlv->TDLVORD_DLVCD)
+                    ->where('CSPK_BRANCH', Auth::user()->branch)
+                    ->where('CSPK_PIC_AS', 'DRIVER')
+                    ->get();
                 $dlv->dlvsj = T_DLVSJDETA::on($this->dedicatedConnection)
-                        ->join(
-                            'T_DLVORDHEAD',
-                            DB::raw(
-                                "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
-                            ),
-                            DB::raw(
-                                "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVSJDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
-                END"
-                            )
+                    ->join(
+                        'T_DLVORDHEAD',
+                        DB::raw(
+                            "CASE WHEN TDLVORD_TYPE = 4
+                                    THEN TDLVORD_DLVCD
+                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                                END"
+                        ),
+                        DB::raw(
+                            "CASE WHEN TDLVORD_TYPE = 4
+                                    THEN TDLVSJDETA_DLVCD
+                                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
+                                END"
                         )
-                        ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                    )
+                    ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"), '=', $dlv->TDLVORD_DLVCD)
-                        ->first();
+                    ->first();
 
-                    $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
-                        'T_DLVORDDETA.id',
-                        'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                        'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                        'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                        'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                        'T_DLVORDDETA.TDLVORDDETA_PRC',
-                        'M_ITM_GRP.MITM_ITMNM',
-                        'M_ITM_GRP.MITM_ITMNMREAL',
-                        'M_ITM.MITM_BRAND',
-                        'M_ITM.MITM_MODEL',
-                        'TDLVORD_REMARK'
-                    )->groupBy(
-                            'T_DLVORDDETA.id',
-                            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                            'T_DLVORDDETA.TDLVORDDETA_PRC',
-                            'M_ITM_GRP.MITM_ITMNM',
-                            'M_ITM_GRP.MITM_ITMNMREAL',
-                            'M_ITM.MITM_BRAND',
-                            'M_ITM.MITM_MODEL',
-                            'TDLVORD_REMARK'
-                        )
-                        ->join(
-                            'T_DLVORDHEAD',
-                            DB::raw(
-                                "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
-                            ),
-                            DB::raw(
-                                "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"
-                            )
-                        )
-                        ->leftJoin("M_ITM_GRP", function ($join) {
-                            $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-                                ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
-                        })
-                        ->leftJoin("M_ITM", function ($join) {
-                            $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
-                                ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
-                        })
-                        ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
-                            $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
-                                ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
-                        })
-                        ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"), '=', $dlv->TDLVORD_DLVCD)
-                        ->get();
+                $dlv->dlvdet = [];
+                //     $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+                //         'T_DLVORDDETA.id',
+                //         'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                //         'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                //         'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                //         'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                //         'T_DLVORDDETA.TDLVORDDETA_PRC',
+                //         'M_ITM_GRP.MITM_ITMNM',
+                //         'M_ITM_GRP.MITM_ITMNMREAL',
+                //         'M_ITM.MITM_BRAND',
+                //         'M_ITM.MITM_MODEL',
+                //         'TDLVORD_REMARK'
+                //     )->groupBy(
+                //             'T_DLVORDDETA.id',
+                //             'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                //             'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                //             'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                //             'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                //             'T_DLVORDDETA.TDLVORDDETA_PRC',
+                //             'M_ITM_GRP.MITM_ITMNM',
+                //             'M_ITM_GRP.MITM_ITMNMREAL',
+                //             'M_ITM.MITM_BRAND',
+                //             'M_ITM.MITM_MODEL',
+                //             'TDLVORD_REMARK'
+                //         )
+                //         ->join(
+                //             'T_DLVORDHEAD',
+                //             DB::raw(
+                //                 "CASE WHEN TDLVORD_TYPE = 4
+                //                     THEN TDLVORD_DLVCD
+                //                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                //                 END"
+                //             ),
+                //             DB::raw(
+                //                 "CASE WHEN TDLVORD_TYPE = 4
+                //                 THEN TDLVORDDETA_DLVCD
+                //                 ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                //             END"
+                //             )
+                //         )
+                //         ->leftJoin("M_ITM_GRP", function ($join) {
+                //             $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                //                 ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
+                //         })
+                //         ->leftJoin("M_ITM", function ($join) {
+                //             $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
+                //                 ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
+                //         })
+                //         ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+                //             $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+                //                 ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+                //         })
+                //         ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                //     THEN TDLVORDDETA_DLVCD
+                //     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                // END"), '=', $dlv->TDLVORD_DLVCD)
+                //         ->get();
 
-                    $dlv->sloDet = T_SLODETA::on($this->dedicatedConnection)
-                        ->where('TSLODETA_SLOCD', $dlv->TDLVORDDETA_SLOCD)
-                        ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
-                        ->get();
+                $dlv->sloDet = T_SLODETA::on($this->dedicatedConnection)
+                    ->where('TSLODETA_SLOCD', $dlv->TDLVORDDETA_SLOCD)
+                    ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
+                    ->get();
 
                 return $dlv;
             });
         } else {
-            $listData = $data->get();
-
+            return $data->get();
         }
 
         return $listData;
@@ -382,7 +322,71 @@ class InvoiceController extends Controller
 
         $taxes = $this->getTaxes($request->TSLO_SLOCD, $this->dedicatedConnection);
         $total = 0;
-        foreach ($request->dlvdet as $key => $value) {
+
+        if (count($request->dlvdet) > 0) {
+            $dataDet = $request->dlvdet;
+        } else {
+            $dataDet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL',
+                'TDLVORD_REMARK'
+            )->groupBy(
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'T_DLVORDDETA.TDLVORDDETA_PRC',
+                    'M_ITM_GRP.MITM_ITMNM',
+                    'M_ITM_GRP.MITM_ITMNMREAL',
+                    'M_ITM.MITM_BRAND',
+                    'M_ITM.MITM_MODEL',
+                    'TDLVORD_REMARK'
+                )
+                ->join(
+                    'T_DLVORDHEAD',
+                    DB::raw(
+                        "CASE WHEN TDLVORD_TYPE = 4
+                                    THEN TDLVORD_DLVCD
+                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                                END"
+                    ),
+                    DB::raw(
+                        "CASE WHEN TDLVORD_TYPE = 4
+                                THEN TDLVORDDETA_DLVCD
+                                ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                            END"
+                    )
+                )
+                ->leftJoin("M_ITM_GRP", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
+                })
+                ->leftJoin("M_ITM", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
+                })
+                ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+                    $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+                        ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+                })
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"), '=', $request->TDLVORD_DLVCD)
+                ->get()
+                ->toArray();
+        }
+
+        foreach ($dataDet as $key => $value) {
             if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {
                 $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']);
                 $total += $getTotalPrice;

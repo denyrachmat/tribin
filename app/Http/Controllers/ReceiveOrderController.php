@@ -387,19 +387,23 @@ class ReceiveOrderController extends Controller
 
         // Send to ACC System
         $cekInvoiceAcc = $this->getGencode(
-            base64_encode('DEF_CUST_INVOICE'),
+            base64_encode('DEF_CUST_SO'),
             '',
             $_COOKIE['CGID']
         );
 
-        $hasilAPI = $this->sendACC(
-            $this->dedicatedConnection,
-            date('Y-m-d'),
-            $newDocumentCode,
-            count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['MGECD_VALUE'] : '',
-            'Sales Order ' . $newDocumentCode,
-            $getTotalAmnt
-        );
+        if (count($cekInvoiceAcc) > 0) {
+            $hasilAPI = $this->sendACC(
+                $this->dedicatedConnection,
+                date('Y-m-d'),
+                $newDocumentCode,
+                count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['MGECD_VALUE'] : '',
+                'Sales Order ' . $newDocumentCode,
+                $getTotalAmnt
+            );
+        } else {
+            $hasilAPI = null;
+        }
 
         $tax = null;
         if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
@@ -572,26 +576,36 @@ class ReceiveOrderController extends Controller
             ->where('TSLODETA_SLOCD', base64_decode($id))
             ->get();
 
-        $totalAmount = 0;
-        foreach ($getDeletedDetail as $key => $value) {
-            $totalAmount += $value->TSLODETA_ITMQT * $value->TSLODETA_PRC;
-        }
-
-        // Send to ACC System
         $cekInvoiceAcc = $this->getGencode(
-            base64_encode('DEF_CUST_INVOICE'),
+            base64_encode('DEF_CUST_SO'),
             '',
             $_COOKIE['CGID']
         );
 
-        $hasilAPI = $this->sendACC(
-            $this->dedicatedConnection,
-            date('Y-m-d'),
-            base64_decode($id),
-            count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['MGECD_VALUE'] : '',
-            'Sales Order Cancel :' . base64_decode($id),
-            $totalAmount * -1
-        );
+        $hasilAPI = null;
+        if (count($cekInvoiceAcc) > 0) {
+            $hasilAPI = $this->deleteACC(
+                $this->dedicatedConnection,
+                base64_decode($id),
+            );
+
+            // return $hasilAPI;
+            if (is_object($hasilAPI) && method_exists($hasilAPI, 'getData')) {
+                $hasilAPIData = $hasilAPI->getData(true);
+                if (isset($hasilAPIData['status']) && $hasilAPIData['status'] == false) {
+                    return response()->json([[$hasilAPIData['error']]], 406);
+                    return response()->json($hasilAPIData, 406);
+                }
+            } elseif (is_array($hasilAPI) && isset($hasilAPI['status']) && $hasilAPI['status'] == false) {
+                return response()->json([[$hasilAPI['error']]], 406);
+                return response()->json($hasilAPI, 406);
+            }
+        }
+
+        $totalAmount = 0;
+        foreach ($getDeletedDetail as $key => $value) {
+            $totalAmount += $value->TSLODETA_ITMQT * $value->TSLODETA_PRC;
+        }
 
         $headerDelete = T_SLOHEAD::on($this->dedicatedConnection)
             ->where('TSLO_SLOCD', base64_decode($id))

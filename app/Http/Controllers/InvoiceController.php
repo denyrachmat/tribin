@@ -24,10 +24,11 @@ use App\Models\T_DLVACCESSORY;
 use App\Models\M_COND_GROUP;
 use App\Models\C_SPK;
 use App\Traits\taxesTraits;
+use App\Traits\accTraits;
 
 class InvoiceController extends Controller
 {
-    use taxesTraits;
+    use taxesTraits, accTraits;
     protected $dedicatedConnection;
 
     protected $fpdf;
@@ -151,7 +152,7 @@ class InvoiceController extends Controller
 
     public function search(Request $request)
     {
-        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA');
+        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA')->orderBy('TDLVORD_DLVCD', 'desc');
 
         if (!empty($request->searchBy)) {
             $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -217,63 +218,6 @@ class InvoiceController extends Controller
                     ->first();
 
                 $dlv->dlvdet = [];
-                //     $dlv->dlvdet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
-                //         'T_DLVORDDETA.id',
-                //         'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                //         'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                //         'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                //         'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                //         'T_DLVORDDETA.TDLVORDDETA_PRC',
-                //         'M_ITM_GRP.MITM_ITMNM',
-                //         'M_ITM_GRP.MITM_ITMNMREAL',
-                //         'M_ITM.MITM_BRAND',
-                //         'M_ITM.MITM_MODEL',
-                //         'TDLVORD_REMARK'
-                //     )->groupBy(
-                //             'T_DLVORDDETA.id',
-                //             'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                //             'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                //             'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                //             'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                //             'T_DLVORDDETA.TDLVORDDETA_PRC',
-                //             'M_ITM_GRP.MITM_ITMNM',
-                //             'M_ITM_GRP.MITM_ITMNMREAL',
-                //             'M_ITM.MITM_BRAND',
-                //             'M_ITM.MITM_MODEL',
-                //             'TDLVORD_REMARK'
-                //         )
-                //         ->join(
-                //             'T_DLVORDHEAD',
-                //             DB::raw(
-                //                 "CASE WHEN TDLVORD_TYPE = 4
-                //                     THEN TDLVORD_DLVCD
-                //                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                //                 END"
-                //             ),
-                //             DB::raw(
-                //                 "CASE WHEN TDLVORD_TYPE = 4
-                //                 THEN TDLVORDDETA_DLVCD
-                //                 ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                //             END"
-                //             )
-                //         )
-                //         ->leftJoin("M_ITM_GRP", function ($join) {
-                //             $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-                //                 ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
-                //         })
-                //         ->leftJoin("M_ITM", function ($join) {
-                //             $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
-                //                 ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
-                //         })
-                //         ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
-                //             $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
-                //                 ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
-                //         })
-                //         ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                //     THEN TDLVORDDETA_DLVCD
-                //     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                // END"), '=', $dlv->TDLVORD_DLVCD)
-                //         ->get();
 
                 $dlv->sloDet = T_SLODETA::on($this->dedicatedConnection)
                     ->where('TSLODETA_SLOCD', $dlv->TDLVORDDETA_SLOCD)
@@ -287,18 +231,6 @@ class InvoiceController extends Controller
         }
 
         return $listData;
-
-        // foreach ($listData as $key => $value) {
-        //     $hasil[] = array_merge(
-        //         $value,
-        //         [
-        //             'sloDet' => T_SLODETA::on($this->dedicatedConnection)
-        //                 ->where('TSLODETA_SLOCD', $value['TDLVORDDETA_SLOCD'])
-        //                 ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
-        //                 ->get()
-        //         ]
-        //     );
-        // }
     }
 
     public function printInvoice(Request $request)
@@ -1584,5 +1516,53 @@ class InvoiceController extends Controller
         }
 
         return $hasil;
+    }
+
+    function cancelInvoice($doc)
+    {
+        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', base64_decode($doc))->first();
+
+        $cekInvoiceAcc = $this->getGencode(
+            base64_encode('DEF_CUST_INVOICE'),
+            '',
+            $_COOKIE['CGID']
+        );
+        if (count($cekInvoiceAcc) > 0) {
+            $hasilAPI = $this->deleteACC(
+                $this->dedicatedConnection,
+                base64_decode($doc),
+            );
+
+            return $hasilAPI;
+            if (is_object($hasilAPI) && method_exists($hasilAPI, 'getData')) {
+                $hasilAPIData = $hasilAPI->getData(true);
+                if (isset($hasilAPIData['status']) && $hasilAPIData['status'] == false) {
+                    return response()->json([[$hasilAPIData['error']]], 406);
+                    return response()->json($hasilAPIData, 406);
+                }
+            } elseif (is_array($hasilAPI) && isset($hasilAPI['status']) && $hasilAPI['status'] == false) {
+                return response()->json([[$hasilAPI['error']]], 406);
+                return response()->json($hasilAPI, 406);
+            }
+        }
+
+        if ($RSHeader) {
+            T_DLVORDHEAD::on($this->dedicatedConnection)
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))
+                ->update([
+                    'TDLVORD_REC_NO' => ''
+                ]);
+
+            T_DLVORDDETA::on($this->dedicatedConnection)
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($doc))
+                ->update([
+                    'TDLVORDDETA_ITMCD_ACT' => ''
+                ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Invoice is canceled'
+        ]);
     }
 }

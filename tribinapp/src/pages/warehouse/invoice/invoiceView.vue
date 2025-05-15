@@ -131,6 +131,17 @@
                 >
                   <q-tooltip>Print Surat Jalan</q-tooltip>
                 </q-btn>
+                <q-btn
+                  flat
+                  :color="props.loading ? 'grey' : 'red'"
+                  icon="delete"
+                  dense
+                  @click="onCancelInvoice(props.row.TDLVORD_DLVCD)"
+                  :disable="props.loading"
+                  :loading="props.loading"
+                >
+                  <q-tooltip>Print Surat Jalan</q-tooltip>
+                </q-btn>
               </q-td>
             </q-tr>
           </template>
@@ -367,5 +378,26 @@ const printDailyGenset = async (val) => {
     .catch((e) => {
       loading.value = false;
     });
+};
+
+const onCancelInvoice = (val) => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Are you sure want to cancel this invoice ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    // Call your API to cancel the invoice here
+    loading.value = true;
+    api_web.delete(`invoices/${btoa(val)}`).then((response) => {
+      loading.value = false;
+      $q.notify({
+        type: "positive",
+        message: "Invoice cancelled successfully",
+      });
+      getConfirmedData(pagination.value);
+      loading.value = false;
+    });
+  });
 };
 </script>

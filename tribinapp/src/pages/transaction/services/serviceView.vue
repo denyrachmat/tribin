@@ -218,7 +218,7 @@ onMounted(() => {
 
   interval.value = setInterval(() => {
     dataSrv();
-  }, 10000);
+  }, 60000);
 });
 
 const dataSrv = async () => {

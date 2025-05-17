@@ -26,11 +26,13 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
+use App\Traits\accTraits;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DeliveryController extends Controller
 {
+    use accTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -128,8 +130,8 @@ class DeliveryController extends Controller
             })
             ->leftJoinSub($RSDelivery, 'V2', function ($join) {
                 $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
-                    ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH');
-                // ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
+                    ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                    ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             });
 
         if (!empty($request->searchBy)) {
@@ -156,6 +158,7 @@ class DeliveryController extends Controller
             ->whereNull('deleted_at')
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_SLOCD', 'TDLVORDDETA_BRANCH', 'TDLVORDDETA_ITMCD');
+
         $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT, TSLODETA_PRC')
             ->whereNull('deleted_at')
             ->where('TSLODETA_BRANCH', Auth::user()->branch)
@@ -169,7 +172,9 @@ class DeliveryController extends Controller
             "TSLODETA_ITMCD",
             "MITM_ITMNM",
             DB::raw("SUM(SALESQT) - IFNULL(SUM(TTLDLVQT),0) BALQT"),
-            'TSLODETA_PRC'
+            'TSLODETA_PRC',
+            DB::raw("SUM(SALESQT)"),
+            DB::raw("IFNULL(SUM(TTLDLVQT),0)")
         ])
             ->leftJoin("M_CUS", function ($join) {
                 $join->on("TSLO_CUSCD", "=", "MCUS_CUSCD")
@@ -179,7 +184,8 @@ class DeliveryController extends Controller
                 $join->on('TSLO_SLOCD', '=', 'TSLODETA_SLOCD')->on('TSLO_BRANCH', '=', 'TSLODETA_BRANCH');
             })
             ->leftJoinSub($RSDelivery, 'V2', function ($join) {
-                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+                    ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
                     ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD');
             })
             ->leftJoin("M_ITM_GRP", function ($join) {
@@ -189,6 +195,7 @@ class DeliveryController extends Controller
             ->where('TSLO_BRANCH', Auth::user()->branch)
             // ->whereRaw("SALESQT > IFNULL(TTLDLVQT,0)")
             ->groupBy("TSLO_SLOCD", "TSLO_CUSCD", "MCUS_CUSNM", "TSLO_PLAN_DLVDT", "TSLODETA_ITMCD", "MITM_ITMNM", 'TSLODETA_PRC');
+        // ->havingRaw("SUM(SALESQT) - IFNULL(SUM(TTLDLVQT),0) > 0");
         return ['data' => $RS->get()];
     }
 
@@ -1944,6 +1951,7 @@ class DeliveryController extends Controller
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD',
                 'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
                 'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
                 'MITM_ITMNM',
                 'MITM_ITMNMREAL'
             )->groupBy(
@@ -1952,6 +1960,7 @@ class DeliveryController extends Controller
                     'T_DLVORDDETA.TDLVORDDETA_ITMCD',
                     'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
                     'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'T_DLVORDDETA.TDLVORDDETA_PRC',
                     'MITM_ITMNM',
                     'MITM_ITMNMREAL'
                 )
@@ -1967,7 +1976,7 @@ class DeliveryController extends Controller
                 ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
                 ->get();
 
-            if (count($getDet) > 0) {
+            if (count(value: $getDet) > 0) {
                 $dlv->dlvdet = $getDet;
             }
 
@@ -1998,17 +2007,49 @@ class DeliveryController extends Controller
                 }
             }
 
-            // Validation if stock 0
-            // if(count($hasilZero) > 0) {
-            //     return response()->json([
-            //         'status' => false,
-            //         'data' => $hasilZero,
-            //         'msg' => 'Some item stock is empty !'
-            //     ], 406);
-            // }
+            // Start Interface ACC
+            $getTotalAmnt = 0;
+            foreach ($request->data as $rAcc) {
+                $getTotalAmnt += $rAcc['TDLVORDDETA_ITMQT'] * $rAcc['TDLVORDDETA_PRC'];
+            }
+
+            $cekInvoiceAcc = $this->getGencode(
+                base64_encode('DEF_CUST_INVOICE'),
+                '',
+                $_COOKIE['CGID']
+            );
+
+            $getInv = T_DLVORDHEAD::on($this->dedicatedConnection)
+                ->where('TDLVORD_DLVCD', $request->id)
+                ->first();
+
+            if (count($cekInvoiceAcc) > 0) {
+                $hasilAPI = $this->sendACC(
+                    $this->dedicatedConnection,
+                    date('Y-m-d'),
+                    $request->id,
+                    count($cekInvoiceAcc) > 0 ? $cekInvoiceAcc[0]['MGECD_VALUE'] : '',
+                    'Inv : ' . $getInv->TDLVORD_DLVCD,
+                    $getTotalAmnt
+                );
+
+                // return $hasilAPI;
+
+                if (is_object($hasilAPI) && method_exists($hasilAPI, 'getData')) {
+                    $hasilAPIData = $hasilAPI->getData(true);
+                    if (isset($hasilAPIData['status']) && $hasilAPIData['status'] == false) {
+                        return response()->json([[$hasilAPIData['error']]], 406);
+                        return response()->json($hasilAPIData, 406);
+                    }
+                } elseif (is_array($hasilAPI) && isset($hasilAPI['status']) && $hasilAPI['status'] == false) {
+                    return response()->json([[$hasilAPI['error']]], 406);
+                    return response()->json($hasilAPI, 406);
+                }
+            }
+
+            // End Interface ACC
 
             $cek = T_DLVORDHEAD::on($this->dedicatedConnection)
-                // ->where(DB::raw('YEAR(created_at)'), date('Y'))
                 ->orderBy('created_at', 'desc')
                 ->whereNotNull('TDLVORD_REC_NO')
                 ->first();
@@ -2021,6 +2062,7 @@ class DeliveryController extends Controller
                     'TDLVORD_REC_NO' => $IDKwitansi
                 ]);
 
+            $getTotalAmnt = 0;
             foreach ($request->data as $r) {
                 $dataDeta = T_DLVORDDETA::on($this->dedicatedConnection)
                     ->where('id', $r['id'])
@@ -2046,6 +2088,8 @@ class DeliveryController extends Controller
                     'CITRN_PRCAMT' => 0,
                     'created_by' => Auth::user()->nick_name,
                 ]);
+
+                $getTotalAmnt += $r['TDLVORDDETA_ITMQT'] * $r['TDLVORDDETA_PRC'];
             }
         } else {
             return response()->json([['Data cannot empty !!']], 406);

@@ -295,6 +295,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('printGensetHarian/{doc}', [InvoiceController::class, 'printGensetHarian']);
 
             Route::get('cekInv', [InvoiceController::class, 'cekKwitansiNo']);
+
+            Route::delete('{id}', [InvoiceController::class, 'cancelInvoice']);
         });
 
         #Terkait Receive Order

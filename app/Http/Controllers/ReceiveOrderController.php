@@ -925,7 +925,7 @@ class ReceiveOrderController extends Controller
 
         // return $hasil;
 
-        $pdf = Pdf::setPaper('A4', 'landscape')->loadView('pdf.salesReport', [
+        $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReport', [
             'data' => $hasil,
             'dateRange' => [$request->fdate, $request->ldate],
             'header' => $companyGroupData->name,

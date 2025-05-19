@@ -246,7 +246,20 @@ class InvoiceController extends Controller
         if (count($request->dlvdet) > 0) {
             $dataDet = $request->dlvdet;
         } else {
-            $dataDet = $this->dataDetail(base64_encode($request->TDLVORD_DLVCD))['dlvdet'];
+            $dataDet = $this->dataDetail(
+                base64_encode($request->TDLVORD_DLVCD),
+                base64_encode($request->TSLO_SLOCD),
+                base64_encode($request->TDLVORD_CONDGRP),
+                [
+                    'isDlvDet' => true,
+                    'isDlvAcc' => false,
+                    'isPayment' => false,
+                    'isCond' => false,
+                    'isSPK' => false,
+                    'isDlvSJ' => false,
+                    'isSlo' => false
+                ]
+            )['dlvdet'];
         }
 
         foreach ($dataDet as $key => $value) {

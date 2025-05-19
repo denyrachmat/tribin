@@ -294,6 +294,9 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('printSJ/{doc}', [InvoiceController::class, 'printSJ']);
             Route::get('printGensetHarian/{doc}', [InvoiceController::class, 'printGensetHarian']);
 
+            Route::get('getDataDetail/{id}', [InvoiceController::class, 'dataDetail']);
+            Route::post('getDataDetail', [InvoiceController::class, 'postDataDetail']);
+
             Route::get('cekInv', [InvoiceController::class, 'cekKwitansiNo']);
 
             Route::delete('{id}', [InvoiceController::class, 'cancelInvoice']);

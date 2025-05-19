@@ -160,74 +160,62 @@ class InvoiceController extends Controller
 
         if ($request->has('pagination') && !empty($request->pagination)) {
             $listData = $data->paginate($request->pagination['rowsPerPage'], ['*'], 'page', $request->pagination['page']);
-            // $listData = $listData->getCollection();
-            // ->with([
-            //     'dlvacc',
-            //     'payment' => function ($f) {
-            //         $f->select(
-            //             '*',
-            //             DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
-            //             DB::raw("SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, '/', 1) as TDLVPAYDETA_DLVCD")
-            //         );
-            //     },
-            //     'condition' => function ($f) {
-            //         $f->leftjoin('M_CONDITIONS', 'MCOND_ID', 'M_CONDITIONS.id');
-            //     },
-            //     'spk' => function ($f) {
-            //         $f->where('CSPK_PIC_AS', 'DRIVER');
-            //     }
-            // ])
 
             $listData->getCollection()->transform(function ($dlv) {
-                $dlv->dlvacc = T_DLVACCESSORY::on($this->dedicatedConnection)->where('TDLVACCESSORY_DLVCD', $dlv->TDLVORD_DLVCD)->get();
-                $dlv->payment = T_DLVPAYDETA::on($this->dedicatedConnection)
-                    ->select(
-                        'branch_payment_accounts.*',
-                        DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
-                        DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
-                    )
-                    ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
-                    ->where('TDLVPAYDETA_DLVCD', $dlv->TDLVORD_DLVCD)
-                    ->get();
-                $dlv->condition = M_COND_GROUP::on($this->dedicatedConnection)->where('MCOND_GRPNM', $dlv->TDLVORD_CONDGRP)->get();
-                $dlv->spk = C_SPK::on($this->dedicatedConnection)
-                    ->where('CSPK_REFF_DOC', $dlv->TDLVORD_DLVCD)
-                    ->where('CSPK_BRANCH', Auth::user()->branch)
-                    ->where('CSPK_PIC_AS', 'DRIVER')
-                    ->get();
-                $dlv->dlvsj = T_DLVSJDETA::on($this->dedicatedConnection)
-                    ->join(
-                        'T_DLVORDHEAD',
-                        DB::raw(
-                            "CASE WHEN TDLVORD_TYPE = 4
-                                    THEN TDLVORD_DLVCD
-                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                                END"
-                        ),
-                        DB::raw(
-                            "CASE WHEN TDLVORD_TYPE = 4
-                                    THEN TDLVSJDETA_DLVCD
-                                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
-                                END"
-                        )
-                    )
-                    ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVSJDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
-                END"), '=', $dlv->TDLVORD_DLVCD)
-                    ->first();
+                $data = $this->dataDetail(
+                    base64_encode($dlv->TDLVORD_DLVCD),
+                    base64_encode($dlv->TDLVORDDETA_SLOCD),
+                    base64_encode($dlv->TDLVORD_CONDGRP),
+                    [
+                        'isDlvDet' => false,
+                        'isDlvAcc' => true,
+                        'isPayment' => true,
+                        'isCond' => true,
+                        'isSPK' => true,
+                        'isDlvSJ' => true,
+                        'isSlo' => true
+                    ]
+                );
+                $dlv->dlvacc = $data['dlvacc'];
+                $dlv->payment = $data['payment'];
+                $dlv->condition = $data['condition'];
+                $dlv->spk = $data['spk'];
+                $dlv->dlvsj = $data['dlvsj'];
 
                 $dlv->dlvdet = [];
 
-                $dlv->sloDet = T_SLODETA::on($this->dedicatedConnection)
-                    ->where('TSLODETA_SLOCD', $dlv->TDLVORDDETA_SLOCD)
-                    ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
-                    ->get();
+                $dlv->sloDet = $data['sloDet'];
 
                 return $dlv;
             });
         } else {
-            return $data->get();
+            return $data->get()->map(function ($dlv) {
+                $data = $this->dataDetail(
+                    base64_encode($dlv->TDLVORD_DLVCD),
+                    base64_encode($dlv->TDLVORDDETA_SLOCD),
+                    base64_encode($dlv->TDLVORD_CONDGRP),
+                    [
+                        'isDlvDet' => false,
+                        'isDlvAcc' => false,
+                        'isPayment' => false,
+                        'isCond' => false,
+                        'isSPK' => false,
+                        'isDlvSJ' => false,
+                        'isSlo' => false
+                    ]
+                );
+                $dlv->dlvacc = $data['dlvacc'];
+                $dlv->payment = $data['payment'];
+                $dlv->condition = $data['condition'];
+                $dlv->spk = $data['spk'];
+                $dlv->dlvsj = $data['dlvsj'];
+
+                $dlv->dlvdet = [];
+
+                $dlv->sloDet = $data['sloDet'];
+
+                return $dlv;
+            });
         }
 
         return $listData;
@@ -258,64 +246,7 @@ class InvoiceController extends Controller
         if (count($request->dlvdet) > 0) {
             $dataDet = $request->dlvdet;
         } else {
-            $dataDet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
-                'T_DLVORDDETA.id',
-                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                'T_DLVORDDETA.TDLVORDDETA_PRC',
-                'M_ITM_GRP.MITM_ITMNM',
-                'M_ITM_GRP.MITM_ITMNMREAL',
-                'M_ITM.MITM_BRAND',
-                'M_ITM.MITM_MODEL',
-                'TDLVORD_REMARK'
-            )->groupBy(
-                    'T_DLVORDDETA.id',
-                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                    'T_DLVORDDETA.TDLVORDDETA_PRC',
-                    'M_ITM_GRP.MITM_ITMNM',
-                    'M_ITM_GRP.MITM_ITMNMREAL',
-                    'M_ITM.MITM_BRAND',
-                    'M_ITM.MITM_MODEL',
-                    'TDLVORD_REMARK'
-                )
-                ->join(
-                    'T_DLVORDHEAD',
-                    DB::raw(
-                        "CASE WHEN TDLVORD_TYPE = 4
-                                    THEN TDLVORD_DLVCD
-                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                                END"
-                    ),
-                    DB::raw(
-                        "CASE WHEN TDLVORD_TYPE = 4
-                                THEN TDLVORDDETA_DLVCD
-                                ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                            END"
-                    )
-                )
-                ->leftJoin("M_ITM_GRP", function ($join) {
-                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
-                })
-                ->leftJoin("M_ITM", function ($join) {
-                    $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
-                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
-                })
-                ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
-                    $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
-                        ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
-                })
-                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"), '=', $request->TDLVORD_DLVCD)
-                ->get()
-                ->toArray();
+            $dataDet = $this->dataDetail(base64_encode($request->TDLVORD_DLVCD))['dlvdet'];
         }
 
         foreach ($dataDet as $key => $value) {
@@ -386,6 +317,159 @@ class InvoiceController extends Controller
         );
 
         return base64_encode($pdf->output());
+    }
+
+    public function postDataDetail(Request $request) {
+        $data = $this->dataDetail(
+            base64_encode($request->TDLVORD_DLVCD),
+            base64_encode($request->TSLO_SLOCD),
+            base64_encode($request->TDLVORD_CONDGRP),
+            $request->opt
+        );
+
+        return $data;
+    }
+
+    public function dataDetail(
+        $id,
+        $slo = '',
+        $condGroup = '',
+        $opt = [
+            'isDlvDet' => false,
+            'isDlvAcc' => false,
+            'isPayment' => false,
+            'isCond' => false,
+            'isSPK' => false,
+            'isDlvSJ' => false,
+            'isSlo' => false
+        ]
+    ) {
+        $dlvdet = isset($opt['isDlvDet']) && $opt['isDlvDet'] == true ? T_DLVORDDETA::on($this->dedicatedConnection)->select(
+            'T_DLVORDDETA.id',
+            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+            'T_DLVORDDETA.TDLVORDDETA_PRC',
+            'M_ITM_GRP.MITM_ITMNM',
+            'M_ITM_GRP.MITM_ITMNMREAL',
+            'M_ITM.MITM_BRAND',
+            'M_ITM.MITM_MODEL',
+            'TDLVORD_REMARK'
+        )->groupBy(
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL',
+                'TDLVORD_REMARK'
+            )
+            ->join(
+                'T_DLVORDHEAD',
+                DB::raw(
+                    "CASE WHEN TDLVORD_TYPE = 4
+                                    THEN TDLVORD_DLVCD
+                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                                END"
+                ),
+                DB::raw(
+                    "CASE WHEN TDLVORD_TYPE = 4
+                                THEN TDLVORDDETA_DLVCD
+                                ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                            END"
+                )
+            )
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                    ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
+            })
+            ->leftJoin("M_ITM", function ($join) {
+                $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
+                    ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
+            })
+            ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+                $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+                    ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+            })
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                    THEN TDLVORDDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                END"), '=', base64_decode($id))
+            ->get()
+            ->toArray() : [];
+
+        $dlvacc = isset($opt['isDlvAcc']) && $opt['isDlvAcc'] === true
+            ? T_DLVACCESSORY::on($this->dedicatedConnection)->where('TDLVACCESSORY_DLVCD', base64_decode($id))->get()
+            : [];
+        $payment = isset($opt['isPayment']) && $opt['isPayment'] === true
+            ? T_DLVPAYDETA::on($this->dedicatedConnection)
+                ->select(
+                    'branch_payment_accounts.*',
+                    DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+                    DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
+                )
+                ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
+                ->where('TDLVPAYDETA_DLVCD', base64_decode($id))
+                ->get()
+            : [];
+
+        $condition = !empty($condGroup) && isset($opt['isCond']) && $opt['isCond'] === true
+            ? M_COND_GROUP::on($this->dedicatedConnection)->where('MCOND_GRPNM', base64_decode($condGroup))->get()
+            : [];
+
+        $spk = isset($opt['isSPK']) && $opt['isSPK'] === true
+            ? C_SPK::on($this->dedicatedConnection)
+                ->where('CSPK_REFF_DOC', base64_decode($id))
+                ->where('CSPK_BRANCH', Auth::user()->branch)
+                ->where('CSPK_PIC_AS', 'DRIVER')
+                ->get()
+            : [];
+
+        $dlvsj = isset($opt['isDlvSJ']) && $opt['isDlvSJ'] === true
+            ? T_DLVSJDETA::on($this->dedicatedConnection)
+                ->join(
+                    'T_DLVORDHEAD',
+                    DB::raw(
+                        "CASE WHEN TDLVORD_TYPE = 4
+                                    THEN TDLVORD_DLVCD
+                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
+                                END"
+                    ),
+                    DB::raw(
+                        "CASE WHEN TDLVORD_TYPE = 4
+                                    THEN TDLVSJDETA_DLVCD
+                                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
+                                END"
+                    )
+                )
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                    THEN TDLVSJDETA_DLVCD
+                    ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
+                END"), '=', base64_decode($id))
+                ->first()
+            : [];
+
+        $sloDet = !empty($slo) && isset($opt['isSlo']) && $opt['isSlo'] === true
+            ? T_SLODETA::on($this->dedicatedConnection)
+                ->where('TSLODETA_SLOCD', base64_decode($slo))
+                ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
+                ->get()
+            : [];
+
+        return [
+            'dlvdet' => $dlvdet,
+            'dlvacc' => $dlvacc,
+            'payment' => $payment,
+            'condition' => $condition,
+            'spk' => $spk,
+            'dlvsj' => $dlvsj,
+            'sloDet' => $sloDet
+        ];
     }
 
     public function numberToSentence($nilai)

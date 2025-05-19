@@ -117,7 +117,7 @@ class ReceiveBarcodeController extends Controller
             ->leftjoin('M_SUP', 'MSUP_SUPCD', 'TRCV_SUPCD');
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
-            $RS->where($request->searchBy, 'like', '%{ $request->searchValue }%');
+            $RS->where($request->searchBy, 'like', "%{ $request->searchValue }%");
         }
 
         return ['data' => $RS->orderBy('T_RCV_BC_DETAIL.created_at', 'desc')->get()];

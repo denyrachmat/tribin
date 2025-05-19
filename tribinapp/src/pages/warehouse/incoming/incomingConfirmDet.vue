@@ -254,18 +254,18 @@
               </div>
               <div class="col-12 col-sm-1 text-center">
                 <q-btn
-                    icon="check"
-                    :color="items.IS_CONFIRMED == 1 ? 'grey' : 'indigo'"
-                    flat
-                    @click="onConfirmation(idx)"
-                    :disable="items.IS_CONFIRMED == 1"
-                  >
-                    <q-tooltip>{{
-                      items.IS_CONFIRMED == 1
-                        ? "Already confirmed"
-                        : "Not confirmed yet, click to confirm."
-                    }}</q-tooltip>
-                  </q-btn>
+                  icon="check"
+                  :color="items.IS_CONFIRMED == 1 ? 'grey' : 'indigo'"
+                  flat
+                  @click="onConfirmation(idx)"
+                  :disable="items.IS_CONFIRMED == 1"
+                >
+                  <q-tooltip>{{
+                    items.IS_CONFIRMED == 1
+                      ? "Already confirmed"
+                      : "Not confirmed yet, click to confirm."
+                  }}</q-tooltip>
+                </q-btn>
               </div>
             </div>
           </template>
@@ -485,8 +485,29 @@ const onConfirmation = (id) => {
     cancel: true,
     persistent: true,
   }).onOk((datas) => {
-    listDet.value[id].IS_CONFIRMED = 1;
-    listDet.value[id].CONFIRMED_QTY = datas;
+    $q.dialog({
+      dark: true,
+      title: "Barcode Asignment",
+      message: `Input barcode ID if needed (Optional)`,
+      prompt: {
+        model: listDet.value[id].BARCODE,
+        type: "text", // optional
+      },
+      cancel: true,
+      persistent: true,
+    })
+      .onOk((datasbc) => {
+        listDet.value[id].BARCODE = datasbc;
+
+        listDet.value[id].IS_CONFIRMED = 1;
+        listDet.value[id].CONFIRMED_QTY = datas;
+      })
+      .onCancel(() => {
+        listDet.value[id].BARCODE = "";
+
+        listDet.value[id].IS_CONFIRMED = 1;
+        listDet.value[id].CONFIRMED_QTY = datas;
+      });
   });
 };
 

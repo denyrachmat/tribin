@@ -662,11 +662,15 @@ class ReceiveController extends Controller
                 ->first();
 
             if (empty($cek) && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
-                $bc = '';
-                if (empty($cekLatestBarcode)) {
-                    $bc = 'BC' . date('Ymd') . '0001';
+                if (!empty($value['BARCODE'])) {
+                    $bc = $value['BARCODE'];
                 } else {
-                    $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
+                    $bc = '';
+                    if (empty($cekLatestBarcode)) {
+                        $bc = 'BC' . date('Ymd') . '0001';
+                    } else {
+                        $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
+                    }
                 }
 
                 C_ITRN::on($this->dedicatedConnection)->create([

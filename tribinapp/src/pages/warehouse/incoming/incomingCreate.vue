@@ -240,7 +240,9 @@
                       emit-value
                       map-options
                       :loading="loading"
-                      :disable="items.IS_CONFIRMED == 1 || header.TRCV_RCVCD !== ''"
+                      :disable="
+                        items.IS_CONFIRMED == 1 || header.TRCV_RCVCD !== ''
+                      "
                     />
                   </q-item-label>
                 </q-item-section>
@@ -274,7 +276,11 @@
                     @click="onClickDeleteLines(idx)"
                     :disable="items.IS_CONFIRMED == 1"
                   >
-                    <q-tooltip>{{ items.IS_CONFIRMED == 1 ? 'Cannot delete, already confirmed line' : 'Delete line' }}</q-tooltip>
+                    <q-tooltip>{{
+                      items.IS_CONFIRMED == 1
+                        ? "Cannot delete, already confirmed line"
+                        : "Delete line"
+                    }}</q-tooltip>
                   </q-btn>
                 </q-item-section>
               </q-item>
@@ -346,15 +352,15 @@ onMounted(async () => {
       TRCV_DOCNO: props.dataHeader.TRCV_DOCNO,
     };
 
-    inctype.value = props.dataHeader.RCV_STATE
+    inctype.value = props.dataHeader.RCV_STATE;
 
-    props.dataHeader.det.map(val => {
+    props.dataHeader.det.map((val) => {
       listDet.value.push({
         item_code: val.item_code,
         quantity: val.quantity,
         unit_price: val.unit_price,
-      })
-    })
+      });
+    });
   }
 });
 
@@ -485,7 +491,7 @@ const getInvoice = async (val, cols = "TDLVORD_DLVCD") => {
     })
     .then((response) => {
       loading.value = false;
-      listInvoice.value = response.data.data;
+      listInvoice.value = response.data;
     })
     .catch((e) => {
       loading.value = false;
@@ -508,31 +514,64 @@ const onSelectPO = (val) => {
   }
 };
 
-const onSelectDN = (val) => {
+const onSelectDN = async (val) => {
   let selDN = listInvoice.value.filter((fil) => fil.TDLVORD_DLVCD == val);
 
   listDet.value = [];
   if (selDN.length > 0) {
     header.value.TRCV_SUPCD = selDN[0].TDLVORD_CUSCD;
 
-    // Accesories
-    selDN[0].dlvacc.map((accVal) => {
-      listDet.value.push({
-        item_code: accVal.TDLVORDDETA_ITMCD_ACT,
-        quantity: accVal.TDLVACCESSORY_ITMQT,
-        unit_price: 0,
+    const getDetailData = await getDataDetailDN(selDN[0].TDLVORD_DLVCD, selDN[0].TSLO_SLOCD, selDN[0].TDLVORD_CONDGRP);
+    console.log(getDetailData);
+    console.log(selDN[0]);
+    if (getDetailData) {
+      // Accesories
+      getDetailData.dlvacc.map((accVal) => {
+        listDet.value.push({
+          item_code: accVal.TDLVORDDETA_ITMCD_ACT,
+          quantity: accVal.TDLVACCESSORY_ITMQT,
+          unit_price: 0,
+        });
       });
-    });
 
-    // Item Detail
-    selDN[0].dlvdet.map((detVal) => {
-      listDet.value.push({
-        item_code: detVal.TDLVORDDETA_ITMCD,
-        quantity: detVal.TDLVORDDETA_ITMQT,
-        unit_price: detVal.TDLVORDDETA_PRC,
+      // Item Detail
+      getDetailData.dlvdet.map((detVal) => {
+        listDet.value.push({
+          item_code: detVal.TDLVORDDETA_ITMCD,
+          quantity: detVal.TDLVORDDETA_ITMQT,
+          unit_price: detVal.TDLVORDDETA_PRC,
+        });
       });
-    });
+    }
   }
+};
+
+const getDataDetailDN = async (dlv, slo, cond) => {
+  loading.value = true;
+  return await api_web
+    .post(`invoices/getDataDetail`, {
+      TDLVORD_DLVCD: dlv,
+      TSLO_SLOCD: slo,
+      TDLVORD_CONDGRP: cond,
+      opt: {
+        isDlvDet: true,
+        isDlvAcc: true,
+        isPayment: true,
+        isCond: true,
+        isSPK: true,
+        isDlvSJ: true,
+        isSlo: true,
+      }
+    })
+    .then((response) => {
+      loading.value = false;
+      return response.data;
+    })
+    .catch(() => {
+      loading.value = false;
+
+      return false;
+    });
 };
 
 const onSubmitData = () => {

@@ -1445,7 +1445,8 @@ class QuotationController extends Controller
                 'TQUODETA_OPRPRC',
                 'TQUODETA_MOBDEMOB',
                 'MITM_STKUOM',
-                'TQUODETA_ELECTRICITY'
+                'TQUODETA_ELECTRICITY',
+                'T_QUODETA.id'
             )
             ->orderBy('T_QUODETA.id')
             ->get()

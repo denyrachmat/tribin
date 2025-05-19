@@ -11,8 +11,29 @@ trait accTraits
     public function sendACC($conn, $date, $reference_number, $journal_code, $description, $amount)
     {
         try {
-            $checkRef = $this->getACC($conn, $reference_number);
+            if ($amount < 1) {
+                return response()->json([
+                    'status' => true,
+                    'error' => 'Acc won\'t accept 0 or negative amount, the transaction not posted !',
+                    'param' => [
+                        'cg_code' => $conn,
+                        'date' => $date,
+                        'reference_number' => $reference_number,
+                        'journal_code' => $journal_code,
+                        'description' => $description,
+                        'amount' => $amount,
+                    ],
+                    'data' => [],
+                ], 200);
+            }
+            $checkRef = $this->getACC($conn, $reference_number, false);
 
+            // If $checkRef is a JsonResponse, get the original data
+            if ($checkRef instanceof \Illuminate\Http\JsonResponse) {
+                $checkRef = $checkRef->getData(true);
+            }
+
+            // return $checkRef;
             $filterClose = array_filter($checkRef['data'], function ($item) {
                 return $item['is_closed'] == 1;
             });
@@ -77,6 +98,7 @@ trait accTraits
                 'status' => false,
                 'error' => 'Interface ACC Err: Failed to post data to API',
                 'message' => $e->getMessage(),
+                'code' => $e->getCode(),
                 'param' => [
                     'cg_code' => $conn,
                     'date' => $date,
@@ -89,7 +111,7 @@ trait accTraits
         }
     }
 
-    public function getACC($conn, $reference_number)
+    public function getACC($conn, $reference_number, $shouldExists = true)
     {
         try {
             $client = new \GuzzleHttp\Client();
@@ -104,15 +126,28 @@ trait accTraits
                 ]
             ]);
 
-            return json_decode($response->getBody(), true);
         } catch (\GuzzleHttp\Exception\RequestException $e) {
+
+            if ($shouldExists === false && $e->getCode() == 422) {
+                return response()->json([
+                    'status' => true,
+                    'error' => 'Interface ACC Err: Reference number not found',
+                    'param' => [
+                        'cg_code' => $conn,
+                        'reference_number' => $reference_number,
+                    ],
+                    'data' => [],
+                ], 200);
+            }
             return response()->json([
                 'error' => 'Failed to get data from API',
                 'message' => $e->getMessage(),
+                'code' => $e->getCode(),
                 'param' => [
                     'cg_code' => $conn,
                     'reference_number' => $reference_number,
-                ]
+                ],
+                'data' => [],
             ], 500);
         }
     }
@@ -121,6 +156,11 @@ trait accTraits
     {
         try {
             $checkRef = $this->getACC($conn, $reference_number);
+
+            if ($checkRef instanceof \Illuminate\Http\JsonResponse) {
+                $checkRef = $checkRef->getData(true);
+            }
+
             $filterClose = array_filter($checkRef['data'], function ($item) {
                 return $item['is_closed'] == 1;
             });
@@ -158,20 +198,20 @@ trait accTraits
                 }
             } else {
                 return response()->json([
-                    'status' => false,
-                    'error' => 'Interface ACC Err: Reference number already voided',
+                    'status' => true,
+                    'error' => 'Interface ACC Err: Reference number already voided or not found',
                     'param' => [
                         'cg_code' => $conn,
                         'reference_number' => $reference_number,
                     ],
                     'data' => $filterUnvoid,
-                ], 400);
+                ], 200);
             }
-
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             return response()->json([
                 'error' => 'Failed to delete data from API',
                 'message' => $e->getMessage(),
+                'code' => $e->getCode(),
                 'param' => [
                     'cg_code' => $conn,
                     'reference_number' => $reference_number,

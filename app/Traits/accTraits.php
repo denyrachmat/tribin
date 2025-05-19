@@ -125,7 +125,11 @@ trait accTraits
                     'X-API-KEY' => env('ACC_KEY'),
                 ]
             ]);
-
+            if ($shouldExists) {
+                return json_decode($response->getBody(), true);
+            } else {
+                return json_decode($response->getBody(), true)['data'];
+            }
         } catch (\GuzzleHttp\Exception\RequestException $e) {
 
             if ($shouldExists === false && $e->getCode() == 422) {

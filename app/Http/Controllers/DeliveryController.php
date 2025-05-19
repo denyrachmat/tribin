@@ -2020,7 +2020,7 @@ class DeliveryController extends Controller
             );
 
             $getInv = T_DLVORDHEAD::on($this->dedicatedConnection)
-                ->where('TDLVORD_DLVCD', $request->id)
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $request->id)
                 ->first();
 
             if (count($cekInvoiceAcc) > 0) {

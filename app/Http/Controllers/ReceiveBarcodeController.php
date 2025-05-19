@@ -120,7 +120,7 @@ class ReceiveBarcodeController extends Controller
             $RS->where($request->searchBy, 'like', "%{ $request->searchValue }%");
         }
 
-        return ['data' => $RS->orderBy('T_RCV_BC_DETAIL.created_at', 'desc')->get()];
+        return ['data' => $RS->orderBy('T_RCV_BC_DETAIL.created_at', 'desc')->get(), 'sql' => (clone $RS)->toSql()];
     }
 
     public function printBarcode(Request $request)

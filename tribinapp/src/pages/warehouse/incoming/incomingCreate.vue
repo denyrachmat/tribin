@@ -537,7 +537,7 @@ const onSelectDN = async (val) => {
       // Item Detail
       getDetailData.dlvdet.map((detVal) => {
         listDet.value.push({
-          item_code: detVal.TDLVORDDETA_ITMCD,
+          item_code: detVal.TDLVORDDETA_ITMCD_ACT,
           quantity: detVal.TDLVORDDETA_ITMQT,
           unit_price: detVal.TDLVORDDETA_PRC,
         });

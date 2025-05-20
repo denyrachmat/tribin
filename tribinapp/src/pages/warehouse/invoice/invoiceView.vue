@@ -31,7 +31,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="getConfirmedData()"
+              @update:model-value="getConfirmedData(pagination.value)"
               debounce="1000"
             >
               <template v-slot:append>
@@ -358,7 +358,7 @@ const updateSuratJalan = (val) => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getConfirmedData();
+    getConfirmedData(pagination.value);
   });
 };
 

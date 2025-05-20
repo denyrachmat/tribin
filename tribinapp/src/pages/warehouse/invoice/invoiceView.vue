@@ -31,7 +31,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="getConfirmedData(pagination.value)"
+              @update:model-value="getConfirmedData(pagination)"
               debounce="1000"
             >
               <template v-slot:append>

@@ -12,7 +12,7 @@
         font-family: Arial, sans-serif;
         font-size: 10px;
         overflow: hidden;
-        padding: 10px 5px;
+        padding: 5px 5px;
         word-break: normal;
     }
 
@@ -24,7 +24,7 @@
         font-size: 10px;
         font-weight: normal;
         overflow: hidden;
-        padding: 10px 5px;
+        padding: 5px 5px;
         word-break: normal;
     }
 
@@ -40,7 +40,7 @@
         font-family: Arial, sans-serif;
         font-size: 15px;
         overflow: hidden;
-        padding: 10px 5px;
+        padding: 5px 5px;
         word-break: normal;
         font-style: bold;
     }
@@ -53,19 +53,20 @@
         font-size: 15px;
         font-weight: normal;
         overflow: hidden;
-        padding: 10px 5px;
+        padding: 5px 5px;
         word-break: normal;
     }
 
     .tg .tg-0lax {
         text-align: left;
+        font-size: 7px;
         vertical-align: top
     }
 
     .tg .tg-0laxa {
         text-align: left;
         vertical-align: top;
-        font-size: 12px;
+        font-size: 10px;
         font-style: bold;
     }
 
@@ -172,9 +173,9 @@
                             <td class="tg-0laxa" style="text-align: left;" colspan="7">
                                 Subtotal
                             </td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal)}}</td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotalTax)}}</td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotal)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotalTax)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
                             <td class="tg-0laxa" style="text-align: center;" colspan="4">
                             </td>
                         </tr>
@@ -183,9 +184,9 @@
                 <td class="tg-0laxa" style="text-align: left;" colspan="7">
                     Grand Total
                 </td>
-                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total)}}</td>
-                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($totalTax)}}</td>
-                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total + $totalTax)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($totalTax)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total + $totalTax)}}</td>
                 <td class="tg-0laxa" style="text-align: center;" colspan="4">
                 </td>
             </tr>
@@ -275,9 +276,9 @@
                             <td class="tg-0laxa" style="text-align: left;" colspan="7">
                                 Subtotal
                             </td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal)}}</td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotalTax)}}</td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotal)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotalTax)}}</td>
+                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
                             <td class="tg-0laxa" style="text-align: center;" colspan="4">
                             </td>
                         </tr>
@@ -286,9 +287,9 @@
                 <td class="tg-0laxa" style="text-align: left;" colspan="7">
                     Grand Total
                 </td>
-                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total)}}</td>
-                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($totalTax)}}</td>
-                <td class="tg-0laxa" style="text-align: right; font-size:9px">Rp {{number_format($total + $totalTax)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($totalTax)}}</td>
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total + $totalTax)}}</td>
                 <td class="tg-0laxa" style="text-align: center;" colspan="4">
                 </td>
             </tr>

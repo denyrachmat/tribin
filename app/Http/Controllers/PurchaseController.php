@@ -406,21 +406,21 @@ class PurchaseController extends Controller
                         DB::raw('COALESCE(itrn.TOTAL, 0) as itn')
                     )
                         ->leftjoin(DB::raw('(
-                        SELECT
-                            T_RCV_HEAD.id,
-                            id_header,
-                            item_code,
-                            TRCV_REFFNO,
-                            COALESCE(SUM(quantity), 0) AS TOTAL
-                        FROM T_RCV_HEAD
-                        LEFT JOIN T_RCV_DETAIL ON T_RCV_HEAD.id = id_header
-                        WHERE T_RCV_HEAD.deleted_at is null
-                        group by
-                            T_RCV_HEAD.id,
-                            id_header,
-                            TRCV_REFFNO,
-                            item_code
-                    ) itrn'), function ($j) {
+                            SELECT
+                                T_RCV_HEAD.id,
+                                id_header,
+                                item_code,
+                                TRCV_REFFNO,
+                                COALESCE(SUM(quantity), 0) AS TOTAL
+                            FROM T_RCV_HEAD
+                            LEFT JOIN T_RCV_DETAIL ON T_RCV_HEAD.id = id_header
+                            WHERE T_RCV_HEAD.deleted_at is null
+                            group by
+                                T_RCV_HEAD.id,
+                                id_header,
+                                TRCV_REFFNO,
+                                item_code
+                        ) itrn'), function ($j) {
                             $j->on('TPCHORDDETA_PCHCD', 'TRCV_REFFNO');
                             $j->on('itrn.item_code', 'TPCHORDDETA_ITMCD');
                         })
@@ -761,7 +761,7 @@ class PurchaseController extends Controller
             $this->fpdf->MultiCell(25, 4, 'PR. No', 0);
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(123 + 25, 36);
-            $this->fpdf->MultiCell(50, 4, ': '. $TPCHORD_REQCD, 0);
+            $this->fpdf->MultiCell(50, 4, ': ' . $TPCHORD_REQCD, 0);
 
             $this->fpdf->SetFont('Arial', 'B', 10);
             $this->fpdf->SetXY(123, 40);
@@ -1317,6 +1317,7 @@ class PurchaseController extends Controller
                 'TPCHORDDETA_PCHCD',
                 'TPCHORD_BRANCH',
                 'TPCHORD_REMARK',
+                'TTAXM_TYPE'
             );
 
         if (!empty($request->searchBy) && !empty($request->searchValue)) {
@@ -1413,7 +1414,8 @@ class PurchaseController extends Controller
                     WHERE TTAXM_DOCNO = TPCHORD_PCHCD
                     AND TTAXM_CG = '" . $this->dedicatedConnection . "'
                     AND deleted_at IS NULL
-                ) AS totalTax")
+                ) AS totalTax"),
+                 'itrn.TOTAL'
             )
             ->leftJoin('M_SUP', function ($join) {
                 $join->on('TPCHORD_SUPCD', '=', 'MSUP_SUPCD')
@@ -1427,7 +1429,27 @@ class PurchaseController extends Controller
                 $join->on('TPCHORDDETA_ITMCD', '=', 'MITM_ITMCD')
                     ->on('TPCHORD_BRANCH', '=', 'MITM_BRANCH');
             })
+            ->leftjoin(DB::raw('(
+                            SELECT
+                                T_RCV_HEAD.id,
+                                id_header,
+                                item_code,
+                                TRCV_REFFNO,
+                                COALESCE(SUM(quantity), 0) AS TOTAL
+                            FROM T_RCV_HEAD
+                            LEFT JOIN T_RCV_DETAIL ON T_RCV_HEAD.id = id_header
+                            WHERE T_RCV_HEAD.deleted_at is null
+                            group by
+                                T_RCV_HEAD.id,
+                                id_header,
+                                TRCV_REFFNO,
+                                item_code
+                        ) itrn'), function ($j) {
+                $j->on('TPCHORDDETA_PCHCD', 'TRCV_REFFNO');
+                $j->on('itrn.item_code', 'TPCHORDDETA_ITMCD');
+            })
             ->whereBetween('T_PCHORDHEAD.TPCHORD_ISSUDT', [$fdate, $ldate])
+            ->whereRaw('itrn.TOTAL = TPCHORDDETA_ITMQT')
             ->orderBy('T_PCHORDHEAD.TPCHORD_ISSUDT', 'desc')
             ->groupBy(
                 'TPCHORD_PCHCD',
@@ -1445,9 +1467,11 @@ class PurchaseController extends Controller
                 'TPCHORD_BRANCH',
                 'TPCHORD_REMARK',
                 'MITM_ITMNM',
+                 'itrn.TOTAL'
             )
             ->get();
 
+        // return $data;
         $pdf = Pdf::loadView('transaction.po_report', [
             'data' => $data,
             'fdate' => $fdate,

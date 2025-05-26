@@ -352,7 +352,7 @@
                         (fil) => fil.STOCK_BENGKEL > 0
                       ).length !== submitedItems[idx].listFixDet.length
                         ? "No stock on service location, please request stock to warehouse."
-                        : "Mark this problem as done"
+                        : submitedItems[idx].TSRVD_FLGSTS === 2 ? 'Confirm used sparepart' : "Mark this problem as done"
                     }}
                   </q-tooltip>
                   <q-badge

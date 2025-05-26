@@ -188,6 +188,25 @@ const cols = ref([
     align: "left",
   },
   {
+    name: "TRCV_REFFNO",
+    label: "Reff. No",
+    field: "TRCV_REFFNO",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "RCV_STATE",
+    label: "Type",
+    field: "RCV_STATE",
+    sortable: true,
+    align: "left",
+    format: (val) => {
+      if (val == 1) return "PO Receive";
+      else if (val == 2) return "Return Sales";
+      else return "Unknown";
+    },
+  },
+  {
     name: "MSUP_SUPNM",
     label: "Supplier Name",
     field: "MSUP_SUPNM",

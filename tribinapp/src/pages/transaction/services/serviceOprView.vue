@@ -198,7 +198,7 @@ const onClickPreview = (val, mode) => {
       mode: mode,
     },
     // persistent: true,
-  }).onOk(async (val) => {
+  }).onDismiss(async (val) => {
     dataSrv();
   });
 };

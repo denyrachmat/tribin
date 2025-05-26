@@ -178,51 +178,7 @@ class ServiceAdminController extends Controller
             ->where('TSRVH_ID', base64_decode($id))
             ->get();
 
-        $listForDODet = [];
-        foreach ($dataDet as $key => $value) {
-            $this->updateByDet(new Request($request->all()), base64_encode($value->id));
-
-            if ($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1) {
-                $getFixedDet = T_SRV_FIXDET::on($this->dedicatedConnection)
-                    ->where('TSRVD_ID', $value->id)
-                    ->get();
-
-                foreach ($getFixedDet as $key => $valueFixedDet) {
-                    $listForDODet[] = [
-                        'TSLODETA_ITMCD' => $valueFixedDet->TSRVF_ITMCD,
-                        'BALQT' => $valueFixedDet->TSRVF_QTY,
-                        'TSLODETA_PRC' => $valueFixedDet->TSRVF_PRC,
-                        'TDLVORDDETA_ITMCD_ACT' => $valueFixedDet->TSRVF_ITMCD,
-                    ];
-                }
-            }
-        }
-
-        $postToDelivery = [];
-        if ($request->has('TSRVD_FLGSTS') && $request->TSRVD_FLGSTS == 1 && $dataHead->SRVH_ISINT == 1) {
-            $createReq = new Request([
-                'TDLVORD_DLVCD' => $dataHead->SRVH_DOCNO,
-                'TDLVORD_CUSCD' => $dataHead->SRVH_CUSCD,
-                'TDLVORD_ISSUDT' => $dataHead->SRVH_ISSDT,
-                'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
-                'typeOutgoing' => 4,
-                'SO_DET' => $listForDODet,
-            ]);
-
-            foreach ($listForDODet as $key => $valueItem) {
-                $this->transferLoc(new Request([
-                    'LOCFROM' => 'WH-SRV-DONE',
-                    'LOCTO' => '',
-                    'ITMCD' => $valueItem['TSLODETA_ITMCD'],
-                    'QTY' => $valueItem['BALQT'],
-                    'DOC' => $dataHead->SRVH_DOCNO
-                ]));
-            }
-
-            $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
-        }
-
-        return ['msg' => 'Data has been updated', 'dataHead' => $dataHead, 'data' => $postToDelivery];
+        return ['msg' => 'Data has been updated', 'dataHead' => $dataHead];
     }
 
     public function confirmDoneItem(Request $request, string $id)
@@ -265,6 +221,32 @@ class ServiceAdminController extends Controller
                         'QTY' => $valueDet['TSRVF_QTY'],
                         'DOC' => "{$doc->SRVH_DOCNO}-" . base64_decode($id)
                     ]));
+                }
+
+                $listForDODet = [];
+                $getFixedDet = (clone $hasil)->get();
+                foreach ($getFixedDet as $key => $valueFixedDet) {
+                    $listForDODet[] = [
+                        'TSLODETA_ITMCD' => $valueFixedDet->TSRVF_ITMCD,
+                        'BALQT' => $valueFixedDet->TSRVF_QTY,
+                        'TSLODETA_PRC' => $valueFixedDet->TSRVF_PRC,
+                        'TDLVORDDETA_ITMCD_ACT' => $valueFixedDet->TSRVF_ITMCD,
+                    ];
+                }
+
+                $postToDelivery = [];
+                if ($doc->SRVH_ISINT == 1) {
+                    $createReq = new Request([
+                        'TDLVORD_DLVCD' => $doc->SRVH_DOCNO,
+                        'TDLVORD_CUSCD' => $doc->SRVH_CUSCD,
+                        'TDLVORD_ISSUDT' => $doc->SRVH_ISSDT,
+                        'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
+                        'typeOutgoing' => 4,
+                        'SO_DET' => $listForDODet,
+                        'splitSJ' => 1,
+                    ]);
+
+                    $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
                 }
 
                 // Set to done

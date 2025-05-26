@@ -332,7 +332,8 @@ class InvoiceController extends Controller
         return base64_encode($pdf->output());
     }
 
-    public function postDataDetail(Request $request) {
+    public function postDataDetail(Request $request)
+    {
         $data = $this->dataDetail(
             base64_encode($request->TDLVORD_DLVCD),
             base64_encode($request->TSLO_SLOCD),
@@ -370,18 +371,18 @@ class InvoiceController extends Controller
             'M_ITM.MITM_MODEL',
             'TDLVORD_REMARK'
         )->groupBy(
-                'T_DLVORDDETA.id',
-                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                'T_DLVORDDETA.TDLVORDDETA_PRC',
-                'M_ITM_GRP.MITM_ITMNM',
-                'M_ITM_GRP.MITM_ITMNMREAL',
-                'M_ITM.MITM_BRAND',
-                'M_ITM.MITM_MODEL',
-                'TDLVORD_REMARK'
-            )
+            'T_DLVORDDETA.id',
+            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+            'T_DLVORDDETA.TDLVORDDETA_PRC',
+            'M_ITM_GRP.MITM_ITMNM',
+            'M_ITM_GRP.MITM_ITMNMREAL',
+            'M_ITM.MITM_BRAND',
+            'M_ITM.MITM_MODEL',
+            'TDLVORD_REMARK'
+        )
             ->join(
                 'T_DLVORDHEAD',
                 DB::raw(
@@ -421,14 +422,14 @@ class InvoiceController extends Controller
             : [];
         $payment = isset($opt['isPayment']) && $opt['isPayment'] === true
             ? T_DLVPAYDETA::on($this->dedicatedConnection)
-                ->select(
-                    'branch_payment_accounts.*',
-                    DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
-                    DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
-                )
-                ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
-                ->where('TDLVPAYDETA_DLVCD', base64_decode($id))
-                ->get()
+            ->select(
+                'branch_payment_accounts.*',
+                DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+                DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
+            )
+            ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
+            ->where('TDLVPAYDETA_DLVCD', base64_decode($id))
+            ->get()
             : [];
 
         $condition = !empty($condGroup) && isset($opt['isCond']) && $opt['isCond'] === true
@@ -437,41 +438,41 @@ class InvoiceController extends Controller
 
         $spk = isset($opt['isSPK']) && $opt['isSPK'] === true
             ? C_SPK::on($this->dedicatedConnection)
-                ->where('CSPK_REFF_DOC', base64_decode($id))
-                ->where('CSPK_BRANCH', Auth::user()->branch)
-                ->where('CSPK_PIC_AS', 'DRIVER')
-                ->get()
+            ->where('CSPK_REFF_DOC', base64_decode($id))
+            ->where('CSPK_BRANCH', Auth::user()->branch)
+            ->where('CSPK_PIC_AS', 'DRIVER')
+            ->get()
             : [];
 
         $dlvsj = isset($opt['isDlvSJ']) && $opt['isDlvSJ'] === true
             ? T_DLVSJDETA::on($this->dedicatedConnection)
-                ->join(
-                    'T_DLVORDHEAD',
-                    DB::raw(
-                        "CASE WHEN TDLVORD_TYPE = 4
+            ->join(
+                'T_DLVORDHEAD',
+                DB::raw(
+                    "CASE WHEN TDLVORD_TYPE = 4
                                     THEN TDLVORD_DLVCD
                                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                                 END"
-                    ),
-                    DB::raw(
-                        "CASE WHEN TDLVORD_TYPE = 4
+                ),
+                DB::raw(
+                    "CASE WHEN TDLVORD_TYPE = 4
                                     THEN TDLVSJDETA_DLVCD
                                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                                 END"
-                    )
                 )
-                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+            )
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"), '=', base64_decode($id))
-                ->first()
+            ->first()
             : [];
 
         $sloDet = !empty($slo) && isset($opt['isSlo']) && $opt['isSlo'] === true
             ? T_SLODETA::on($this->dedicatedConnection)
-                ->where('TSLODETA_SLOCD', base64_decode($slo))
-                ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
-                ->get()
+            ->where('TSLODETA_SLOCD', base64_decode($slo))
+            ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
+            ->get()
             : [];
 
         return [
@@ -781,10 +782,10 @@ class InvoiceController extends Controller
                 'TDLVSJDETA_ENDDT',
                 'TDLVORD_CONDGRP',
                 DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
+                    "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
                 ),
                 'TDLVOR_ISSPLITSJ'
             )
@@ -794,26 +795,28 @@ class InvoiceController extends Controller
             ->leftJoin(
                 'T_DLVORDDETA',
                 DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
+                    "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
                 ),
                 DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"
+                    "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
                 )
             )
             ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
             ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
             ->leftJoin('T_DLVSJDETA', DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"))
-            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                THEN TDLVORD_DLVCD
-                ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-            END"), $doc)
+            ->where(DB::raw(
+                "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
+            ), $doc)
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->with([
                 'condition' => function ($f) {
@@ -826,10 +829,10 @@ class InvoiceController extends Controller
             ])
             ->groupBy(
                 DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                END"
+                    "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
                 ),
                 'TDLVORD_ISSUDT',
                 'MCUS_CUSNM',
@@ -849,8 +852,6 @@ class InvoiceController extends Controller
                 'TDLVOR_ISSPLITSJ'
             )
             ->first();
-
-        // return $RSHeader;
 
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'TDLVORDDETA_ITMCD',
@@ -879,9 +880,9 @@ class InvoiceController extends Controller
                 'TDLVORDDETA_DLVCD'
             )
             ->where(DB::raw(
-                "CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
+                "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING(TDLVORDDETA_DLVCD, 1, LENGTH(TDLVORDDETA_DLVCD) - LOCATE('/', REVERSE(TDLVORDDETA_DLVCD)))
                 END"
             ), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
@@ -926,7 +927,6 @@ class InvoiceController extends Controller
         $Usage = NULL;
         $HargaSewa = NULL;
 
-        return $doc;
         foreach ($RSDetail as $r) {
             $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
             $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')
@@ -987,12 +987,12 @@ class InvoiceController extends Controller
 
         $perulangan = 1;
         $getDO = $doc;
-        if ((!empty($RSHeader->TDLVORD_TYPE) && $RSHeader->TDLVORD_TYPE !== 4) && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
+        if (!empty($RSHeader->TDLVORD_TYPE) && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
             $perulangan = count($RSDetail);
         }
 
         for ($i = 0; $i < $perulangan; $i++) {
-            if ((!empty($RSHeader->TDLVORD_TYPE) && $RSHeader->TDLVORD_TYPE !== 4) && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
+            if (!empty($RSHeader->TDLVORD_TYPE) && $RSHeader->TDLVOR_ISSPLITSJ == 1) {
                 $getDO = $RSDetail[$i]->TDLVORDDETA_DLVCD;
             }
 

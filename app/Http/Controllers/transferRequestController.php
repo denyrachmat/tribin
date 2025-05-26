@@ -199,10 +199,12 @@ class transferRequestController extends Controller
             $hasil[] = array_merge($value, [
                 'detail' => T_LOC_REQ::on($this->dedicatedConnection)
                     ->select(
+                        'id',
                         'TLOCREQ_DOCNO',
                         'TLOCREQ_FRLOC',
                         'TLOCREQ_TOLOC',
                         'TLOCREQ_ITMCD',
+                        'TLOCREQ_ISREP',
                         DB::raw('SUM(TLOCREQ_QTY) as TLOCREQ_QTY'),
                     )
                     ->where('TLOCREQ_DOCNO', $value['TLOCREQ_DOCNO'])
@@ -213,10 +215,12 @@ class transferRequestController extends Controller
                     //     AND CITRN_LOCCD = 'WH-SRV'
                     // ) > 0")
                     ->groupBy(
+                        'id',
                         'TLOCREQ_DOCNO',
                         'TLOCREQ_FRLOC',
                         'TLOCREQ_TOLOC',
-                        'TLOCREQ_ITMCD'
+                        'TLOCREQ_ITMCD',
+                        'TLOCREQ_ISREP',
                     )
                     // ->where('TLOCREQ_ISREP', $value['TLOCREQ_ISREP'])
                     ->get()

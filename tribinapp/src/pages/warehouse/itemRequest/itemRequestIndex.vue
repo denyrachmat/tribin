@@ -136,15 +136,39 @@
                 </q-select>
               </div>
 
-              <div :class="addMoreItems && !list.SAVED_DATA ? 'col-12 col-sm-2' : 'col-12 col-sm-3'">
+              <div
+                :class="
+                  addMoreItems && !list.SAVED_DATA
+                    ? 'col-12 col-sm-2'
+                    : 'col-12 col-sm-3'
+                "
+              >
                 <q-input label="Qty" dense filled v-model="list.TLOCREQ_QTY" />
               </div>
 
-              <div :class="addMoreItems && !list.SAVED_DATA ? 'col-12 col-sm-2' : 'col-12 col-sm-3'" v-if="addMoreItems && !list.SAVED_DATA">
-                <q-input label="Price" dense filled v-model="list.TLOCREQ_PRC" />
+              <div
+                :class="
+                  addMoreItems && !list.SAVED_DATA
+                    ? 'col-12 col-sm-2'
+                    : 'col-12 col-sm-3'
+                "
+                v-if="addMoreItems && !list.SAVED_DATA"
+              >
+                <q-input
+                  label="Price"
+                  dense
+                  filled
+                  v-model="list.TLOCREQ_PRC"
+                />
               </div>
 
-              <div :class="addMoreItems && !list.SAVED_DATA ? 'col-12 col-sm-1' : 'col-12 col-sm-2'">
+              <div
+                :class="
+                  addMoreItems && !list.SAVED_DATA
+                    ? 'col-12 col-sm-1'
+                    : 'col-12 col-sm-2'
+                "
+              >
                 <q-checkbox
                   v-model="list.TLOCREQ_ISREP"
                   color="teal"
@@ -186,6 +210,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api, api_web } from "boot/axios";
+import { list } from "vue";
 
 const $q = useQuasar();
 
@@ -211,10 +236,19 @@ const addMoreItems = ref(false);
 onMounted(async () => {
   console.log(props);
   await getLocation("");
-  await getItem("");
 
   header.value = props.dataHeader;
   listDet.value = props.dataDet;
+
+  if (listDet.value.length === 0) {
+    await getItem("");
+  } else {
+    listDet.value.map(async (valDet) => {
+      if (valDet.TLOCREQ_ITMCD) {
+        await getItem(valDet.TLOCREQ_ITMCD);
+      }
+    });
+  }
 });
 
 const filterFn = (val, update, abort, fun) => {
@@ -274,7 +308,11 @@ const onClickDeleteLines = (idx) => {
 const onSubmitData = () => {
   $q.dialog({
     title: "Confirmation",
-    message: `Are you sure want to send this request ? ${addMoreItems.value ? ' You add more item, this service request will need manager approval & cust. approval, Continue ?' : null}`,
+    message: `Are you sure want to send this request ? ${
+      addMoreItems.value
+        ? " You add more item, this service request will need manager approval & cust. approval, Continue ?"
+        : null
+    }`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
@@ -308,7 +346,7 @@ const onAddItems = () => {
     TLOCREQ_ITMCD: "",
     TLOCREQ_QTY: 0,
     TLOCREQ_ISREP: 0,
-    SAVED_DATA: 0
+    SAVED_DATA: 0,
   });
 };
 

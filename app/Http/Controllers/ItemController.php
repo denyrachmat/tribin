@@ -257,49 +257,106 @@ class ItemController extends Controller
 
     function searchAPITBL(Request $request)
     {
-        $columnMap = [
-            DB::raw('MITM_ITMNM as MITM_ITMCD'),
-            'MITM_ITMNMREAL',
-            DB::raw("MITM_ITMNMREAL as MITM_ITMNM"),
-            'MITM_SPEC',
-            'MITM_MODEL',
-            'MITM_STKUOM',
-            'MITM_ITMCAT',
-            'MITM_ITMTYPE',
-            'MITM_BRAND',
-            'LATEST_PRC',
-            DB::raw("CASE WHEN (
-                SELECT TDLVORDDETA_DLVCD
-                FROM T_DLVORDDETA
-                where TDLVORDDETA_ITMCD_ACT = MITM_ITMNM
-                LIMIT 1
-            ) IS NOT NULL
-                THEN 1
-                ELSE 0
-            END AS DLV_STAT"),
-            'STOCK'
-        ];
-
-        $DataSet = DB::connection($this->dedicatedConnection);
-        $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
-            ->where('MITM_BRANCH', Auth::user()->branch)
-            ->where('IS_ITMCD', 1);
-
-        if ($request->has('isITMCD') && $request->isITMCD == 1) {
-            $RSHead->where('IS_ITMCD', 1);
+        if ($request->has('withStock') && $request->withStock == 1) {
+            $columnMap = [
+                'MITM_ITMCD',
+                // 'MITM_ITMNM',
+                DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' ) as MITM_ITMNM"),
+                'MITM_SPEC',
+                'MITM_MODEL',
+                'MITM_STKUOM',
+                'MITM_ITMCAT',
+                'MITM_ITMTYPE',
+                'MITM_BRAND',
+                DB::raw('0 as LATEST_PRC'),
+                DB::raw("1 AS DLV_STAT"),
+                DB::raw("(
+                    SELECT COALESCE(SUM(CITRN_ITMQT), 0)
+                    FROM C_ITRN
+                    WHERE CITRN_ITMCD = MITM_ITMCD
+                    AND CITRN_LOCCD = 'WH1'
+                ) as STOCK"),
+                DB::raw("'tester1' AS STOCK_test"),
+            ];
+        } else {
+            $columnMap = [
+                'MITM_ITMCD',
+                // 'MITM_ITMNM',
+                DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' ) as MITM_ITMNM"),
+                'MITM_SPEC',
+                'MITM_MODEL',
+                'MITM_STKUOM',
+                'MITM_ITMCAT',
+                'MITM_ITMTYPE',
+                'MITM_BRAND',
+                DB::raw('0 as LATEST_PRC'),
+                DB::raw("1 AS DLV_STAT"),
+                DB::raw("0 AS STOCK"),
+                DB::raw("'tester2' AS STOCK_test"),
+            ];
         }
+        $RSHead = M_ITM::on($this->dedicatedConnection)
+            ->select($columnMap)
+            ->where('MITM_BRANCH', Auth::user()->branch)
+            // ->join('C_ITRN', 'MITM_ITMNM', '=', 'CITRN_ITMCD')
+            ->groupBy(
+                'MITM_ITMCD',
+                'MITM_ITMNM',
+                'MITM_SPEC',
+                'MITM_MODEL',
+                'MITM_STKUOM',
+                'MITM_ITMCAT',
+                'MITM_ITMTYPE',
+                'MITM_BRAND'
+            );
 
         if ($request->has('isForServ') && $request->isForServ == 1) {
             $RSHead->where('MITM_ITMTYPE', 3);
         }
 
         if (!empty($request->searchValue)) {
-            $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%')->get();
+            $RS = (clone $RSHead)->where('MITM_ITMCD', 'like', '%' . $request->searchValue . '%')->get();
         } else {
-            $RS = (clone $RSHead)->get();
+            $RS = (clone $RSHead)->limit(10)->get();
         }
 
         return ['data' => $RS];
+
+        // $columnMap = [
+        //     DB::raw('MITM_ITMNM as MITM_ITMCD'),
+        //     'MITM_ITMNMREAL',
+        //     DB::raw("MITM_ITMNMREAL as MITM_ITMNM"),
+        //     'MITM_SPEC',
+        //     'MITM_MODEL',
+        //     'MITM_STKUOM',
+        //     'MITM_ITMCAT',
+        //     'MITM_ITMTYPE',
+        //     'MITM_BRAND',
+        //     'LATEST_PRC',
+        //     DB::raw("1 AS DLV_STAT"),
+        //     'STOCK'
+        // ];
+
+        // $DataSet = DB::connection($this->dedicatedConnection);
+        // $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
+        //     ->where('MITM_BRANCH', Auth::user()->branch)
+        //     ->where('IS_ITMCD', 1);
+
+        // if ($request->has('isITMCD') && $request->isITMCD == 1) {
+        //     $RSHead->where('IS_ITMCD', 1);
+        // }
+
+        // if ($request->has('isForServ') && $request->isForServ == 1) {
+        //     $RSHead->where('MITM_ITMTYPE', 3);
+        // }
+
+        // if (!empty($request->searchValue)) {
+        //     $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%')->get();
+        // } else {
+        //     $RS = (clone $RSHead)->limit(10)->get();
+        // }
+
+        // return ['data' => $RS];
     }
 
     function searchItemDyn(Request $request)
@@ -437,17 +494,14 @@ class ItemController extends Controller
         );
     }
 
-    function getLatestItemServiceCode()
-    {
-    }
+    function getLatestItemServiceCode() {}
 
     function deleteItem($id)
     {
         $affectedRow = M_ITM::on($this->dedicatedConnection)
-            ->where('MITM_ITMCD','=', $id)
+            ->where('MITM_ITMCD', '=', $id)
             ->forceDelete();
 
         return ['msg' => $affectedRow ? 'Item Deleted !!' : 'No changes'];
-
     }
 }

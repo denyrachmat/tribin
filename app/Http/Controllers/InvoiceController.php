@@ -885,7 +885,7 @@ class InvoiceController extends Controller
                 END"
             ), $doc)
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-            ->join('T_SLODETA', function ($j) {
+            ->leftjoin('T_SLODETA', function ($j) {
                 $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
                 $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
             })
@@ -926,7 +926,7 @@ class InvoiceController extends Controller
         $Usage = NULL;
         $HargaSewa = NULL;
 
-        // return $RSDetail;
+        return $doc;
         foreach ($RSDetail as $r) {
             $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
             $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')

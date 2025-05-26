@@ -163,6 +163,12 @@ class transferRequestController extends Controller
                 'TLOCREQ_FRLOC',
                 'TLOCREQ_TOLOC',
                 // 'TLOCREQ_APPRVBY',
+                DB::raw('SUM(TLOCREQ_QTY) as TLOCREQ_QTY'),
+                DB::raw("(
+                    SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
+                    WHERE CITRN_DOCNO = TLOCREQ_DOCNO
+                    AND CITRN_LOCCD = 'WH-SRV'
+                ) as checkstock"),
                 DB::raw('(select max(TLOCREQ_ISREP) from T_LOC_REQ tlr where tlr.TLOCREQ_DOCNO = TLOCREQ_DOCNO limit 1) as TLOCREQ_ISREP'),
                 DB::raw("SUM(TLOCREQ_QTY) - (
                     SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
@@ -192,8 +198,26 @@ class transferRequestController extends Controller
         foreach ($data->get()->toArray() as $key => $value) {
             $hasil[] = array_merge($value, [
                 'detail' => T_LOC_REQ::on($this->dedicatedConnection)
+                    ->select(
+                        'TLOCREQ_DOCNO',
+                        'TLOCREQ_FRLOC',
+                        'TLOCREQ_TOLOC',
+                        'TLOCREQ_ITMCD',
+                        DB::raw('SUM(TLOCREQ_QTY) as TLOCREQ_QTY'),
+                    )
                     ->where('TLOCREQ_DOCNO', $value['TLOCREQ_DOCNO'])
-                    ->whereNull('TLOCREQ_APPRVDT')
+                    // ->whereNull('TLOCREQ_APPRVDT')
+                    // ->havingRaw("SUM(TLOCREQ_QTY) - (
+                    //     SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
+                    //     WHERE CITRN_DOCNO = TLOCREQ_DOCNO
+                    //     AND CITRN_LOCCD = 'WH-SRV'
+                    // ) > 0")
+                    ->groupBy(
+                        'TLOCREQ_DOCNO',
+                        'TLOCREQ_FRLOC',
+                        'TLOCREQ_TOLOC',
+                        'TLOCREQ_ITMCD'
+                    )
                     // ->where('TLOCREQ_ISREP', $value['TLOCREQ_ISREP'])
                     ->get()
             ]);

@@ -120,7 +120,7 @@
                 />
               </div>
 
-              <div class="col-12 col-sm-2">
+              <div class="col-12 col-sm-1">
                 <q-input
                   label="Qty"
                   dense
@@ -133,6 +133,7 @@
                         checkItemList(list.TLOCREQ_ITMCD).STOCK
                       }`,
                   ]"
+                  :hint="`Stock is ${checkItemList(list.TLOCREQ_ITMCD).STOCK}`"
                 />
               </div>
 
@@ -193,16 +194,14 @@ const addMoreItems = ref(false);
 onMounted(async () => {
   console.log(props);
   await getLocation("");
-  await getItem("");
 
   header.value = props.dataHeader;
-  props.dataDet.map((val) => {
+  props.dataDet.map(async (val) => {
+    await getItem(val.TLOCREQ_ITMCD, 1);
     listDet.value.push({
       ...val,
-      TLOCREQ_QTY:
-        checkItemList(val.TLOCREQ_ITMCD).STOCK >= val.TLOCREQ_QTY
-          ? val.TLOCREQ_QTY
-          : checkItemList(val.TLOCREQ_ITMCD).STOCK,
+      // REQ_QTY: val.TLOCREQ_QTY,
+      TLOCREQ_QTY: val.TLOCREQ_QTY,
       IS_STOCK_EX:
         checkItemList(val.TLOCREQ_ITMCD).STOCK >= val.TLOCREQ_QTY,
     });
@@ -249,15 +248,26 @@ const getLocation = async (val, cols = "MSUP_SUPNM") => {
     });
 };
 
-const getItem = async (val) => {
+const getItem = async (val, withStock = 0) => {
   loading.value = true;
   await api_web
     .post("item/searchAPITBL", {
       searchValue: val,
+      withStock: withStock,
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = response.data.data;
+      // Merge response.data.data into listItems.value, avoiding duplicates by MITM_ITMCD
+      const newItems = Array.isArray(response.data.data)
+        ? response.data.data
+        : [response.data.data];
+      newItems.forEach(item => {
+        if (!listItems.value.some(i => i.MITM_ITMCD === item.MITM_ITMCD)) {
+          listItems.value.push(item);
+        }
+      });
+
+      console.log(listItems.value);
     })
     .catch(() => {
       loading.value = false;

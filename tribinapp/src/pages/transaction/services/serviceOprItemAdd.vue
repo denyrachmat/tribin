@@ -189,15 +189,18 @@ const $q = useQuasar();
 const props = defineProps({
   mode: String,
   dataItem: Array,
-  header: Object
+  header: Object,
 });
 
 onMounted(async () => {
-  console.log(props)
+  console.log(props);
   if (props.dataItem.listFixDet) {
     listItemsSel.value = props.dataItem.listFixDet;
 
-    await getItem();
+    console.log(listItemsSel.value);
+    listItemsSel.value.map(async (valDet) => {
+      await getItem(valDet.TSRVF_ITMCD);
+    });
   }
 });
 
@@ -227,6 +230,7 @@ const getItem = async (val) => {
   await api_web
     .post("item/searchAPITBL", {
       searchValue: val,
+      isITMCD: 1,
     })
     .then((response) => {
       loading.value = false;
@@ -273,31 +277,30 @@ const getTotal = (data) => {
 };
 
 const onSelectItem = (val, idx) => {
-  const getItemData = listItems.value.filter(fil => fil.MITM_ITMCD === val)
+  const getItemData = listItems.value.filter((fil) => fil.MITM_ITMCD === val);
   if (getItemData.length > 0) {
     if (getItemData[0].STOCK > 0) {
-      listItemsSel.value[idx].TSRVF_PRC = getItemData[0].LATEST_PRC
-      listItemsSel.value[idx].STOCK = getItemData[0].STOCK
+      listItemsSel.value[idx].TSRVF_PRC = getItemData[0].LATEST_PRC;
+      listItemsSel.value[idx].STOCK = getItemData[0].STOCK;
     } else {
       // listItemsSel.value[idx].TSRVF_ITMCD = ''
 
       $q.notify({
-        color:'warning',
-        message: `Stock item ${val} (${getItemData[0].MITM_ITMNM}) is 0, You might be can't use this item !`
-      })
+        color: "warning",
+        message: `Stock item ${val} (${getItemData[0].MITM_ITMNM}) is 0, You might be can't use this item !`,
+      });
     }
   }
-}
+};
 
 const onInputQty = (val, idx) => {
-  if(val > listItemsSel.value[idx].STOCK) {
+  if (val > listItemsSel.value[idx].STOCK) {
     $q.notify({
-      color:'warning',
-      message: `Stock item ${listItemsSel.value[idx].TSRVF_ITMCD} is 0, You might be can't use this item !`
-    })
+      color: "warning",
+      message: `Stock item ${listItemsSel.value[idx].TSRVF_ITMCD} is 0, You might be can't use this item !`,
+    });
 
     // listItemsSel.value[idx].TSRVF_QTY = 0
   }
-}
-
+};
 </script>

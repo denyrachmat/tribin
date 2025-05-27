@@ -315,7 +315,7 @@ class ItemController extends Controller
         }
 
         if (!empty($request->searchValue)) {
-            $RS = (clone $RSHead)->where('MITM_ITMCD', 'like', '%' . $request->searchValue . '%')->get();
+            $RS = (clone $RSHead)->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%')->get();
         } else {
             $RS = (clone $RSHead)->limit(10)->get();
         }

@@ -371,18 +371,18 @@ class InvoiceController extends Controller
             'M_ITM.MITM_MODEL',
             'TDLVORD_REMARK'
         )->groupBy(
-            'T_DLVORDDETA.id',
-            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-            'T_DLVORDDETA.TDLVORDDETA_PRC',
-            'M_ITM_GRP.MITM_ITMNM',
-            'M_ITM_GRP.MITM_ITMNMREAL',
-            'M_ITM.MITM_BRAND',
-            'M_ITM.MITM_MODEL',
-            'TDLVORD_REMARK'
-        )
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL',
+                'TDLVORD_REMARK'
+            )
             ->join(
                 'T_DLVORDHEAD',
                 DB::raw(
@@ -422,14 +422,14 @@ class InvoiceController extends Controller
             : [];
         $payment = isset($opt['isPayment']) && $opt['isPayment'] === true
             ? T_DLVPAYDETA::on($this->dedicatedConnection)
-            ->select(
-                'branch_payment_accounts.*',
-                DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
-                DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
-            )
-            ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
-            ->where('TDLVPAYDETA_DLVCD', base64_decode($id))
-            ->get()
+                ->select(
+                    'branch_payment_accounts.*',
+                    DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+                    DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
+                )
+                ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
+                ->where('TDLVPAYDETA_DLVCD', base64_decode($id))
+                ->get()
             : [];
 
         $condition = !empty($condGroup) && isset($opt['isCond']) && $opt['isCond'] === true
@@ -438,41 +438,41 @@ class InvoiceController extends Controller
 
         $spk = isset($opt['isSPK']) && $opt['isSPK'] === true
             ? C_SPK::on($this->dedicatedConnection)
-            ->where('CSPK_REFF_DOC', base64_decode($id))
-            ->where('CSPK_BRANCH', Auth::user()->branch)
-            ->where('CSPK_PIC_AS', 'DRIVER')
-            ->get()
+                ->where('CSPK_REFF_DOC', base64_decode($id))
+                ->where('CSPK_BRANCH', Auth::user()->branch)
+                ->where('CSPK_PIC_AS', 'DRIVER')
+                ->get()
             : [];
 
         $dlvsj = isset($opt['isDlvSJ']) && $opt['isDlvSJ'] === true
             ? T_DLVSJDETA::on($this->dedicatedConnection)
-            ->join(
-                'T_DLVORDHEAD',
-                DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
+                ->join(
+                    'T_DLVORDHEAD',
+                    DB::raw(
+                        "CASE WHEN TDLVORD_TYPE = 4
                                     THEN TDLVORD_DLVCD
                                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                                 END"
-                ),
-                DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
+                    ),
+                    DB::raw(
+                        "CASE WHEN TDLVORD_TYPE = 4
                                     THEN TDLVSJDETA_DLVCD
                                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                                 END"
+                    )
                 )
-            )
-            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"), '=', base64_decode($id))
-            ->first()
+                ->first()
             : [];
 
         $sloDet = !empty($slo) && isset($opt['isSlo']) && $opt['isSlo'] === true
             ? T_SLODETA::on($this->dedicatedConnection)
-            ->where('TSLODETA_SLOCD', base64_decode($slo))
-            ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
-            ->get()
+                ->where('TSLODETA_SLOCD', base64_decode($slo))
+                ->join('M_USAGE', 'M_USAGE.id', 'TSLODETA_USAGE_DESCRIPTION')
+                ->get()
             : [];
 
         return [
@@ -785,9 +785,10 @@ class InvoiceController extends Controller
                     "CASE WHEN TDLVOR_ISSPLITSJ <> 1
                         THEN TDLVORD_DLVCD
                         ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
-                    END"
+                    END as TDLVORD_DLVCD"
                 ),
-                'TDLVOR_ISSPLITSJ'
+                'TDLVOR_ISSPLITSJ',
+                'TQUO_QUOCD'
             )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -796,8 +797,8 @@ class InvoiceController extends Controller
                 'T_DLVORDDETA',
                 DB::raw(
                     "CASE WHEN TDLVOR_ISSPLITSJ <> 1
-                        THEN TDLVORD_DLVCD
-                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                        THEN TDLVORDDETA_DLVCD
+                        ELSE SUBSTRING(TDLVORDDETA_DLVCD, 1, LENGTH(TDLVORDDETA_DLVCD) - LOCATE('/', REVERSE(TDLVORDDETA_DLVCD)))
                     END"
                 ),
                 DB::raw(
@@ -810,7 +811,17 @@ class InvoiceController extends Controller
             ->leftJoin('T_SLOHEAD', 'TDLVORDDETA_SLOCD', 'TSLO_SLOCD')
             ->leftJoin('T_SLODETA', 'TSLO_SLOCD', 'TSLODETA_SLOCD')
             ->leftJoin('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
-            ->leftJoin('T_DLVSJDETA', DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"))
+            ->leftJoin('T_DLVSJDETA', DB::raw(
+                "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVSJDETA_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVSJDETA_DLVCD) - LOCATE('/', REVERSE(TDLVSJDETA_DLVCD)))
+                    END"
+            ), DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw(
+                "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
+            ))
             ->where(DB::raw(
                 "CASE WHEN TDLVOR_ISSPLITSJ <> 1
                         THEN TDLVORD_DLVCD
@@ -849,9 +860,12 @@ class InvoiceController extends Controller
                 'TDLVSJDETA_STARTDT',
                 'TDLVSJDETA_ENDDT',
                 'TDLVORD_CONDGRP',
-                'TDLVOR_ISSPLITSJ'
+                'TDLVOR_ISSPLITSJ',
+                'TQUO_QUOCD'
             )
             ->first();
+
+        // return $RSHeader;
 
         $RSDetail = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'TDLVORDDETA_ITMCD',

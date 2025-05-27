@@ -1068,6 +1068,7 @@ class ReceiveOrderController extends Controller
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->get();
 
+        $hasil = [];
         foreach ($RS as $key => $value) {
             $checkTax = $this->getTaxes($value->TSLO_SLOCD, $this->dedicatedConnection);
 
@@ -1095,6 +1096,6 @@ class ReceiveOrderController extends Controller
             }
         }
 
-        return ['msg' => 'OK'];
+        return ['msg' => 'OK', 'data' => $hasil];
     }
 }

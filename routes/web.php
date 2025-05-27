@@ -264,6 +264,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form', [DeliveryController::class, 'index']);
             Route::get('unconfirmed-form', [DeliveryController::class, 'formUnconfirmed']);
             Route::post('unconfirmed', [DeliveryController::class, 'unconfirmed']);
+            Route::get('getDetailUnconfirm/{dlvid}', [DeliveryController::class, 'getDetailUnconfirm']);
             Route::post('confirm', [DeliveryController::class, 'confirmOutgoing']);
             Route::get('outstanding-warehouse', [DeliveryController::class, 'outstandingWarehouse']);
             Route::post('outstanding-warehouse-api', [DeliveryController::class, 'outstandingWarehouseAPI']);

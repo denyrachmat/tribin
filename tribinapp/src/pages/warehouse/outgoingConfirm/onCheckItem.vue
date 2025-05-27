@@ -16,56 +16,61 @@
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>Item Checker</b>
           </legend>
-          <div
-            :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
-            v-for="(row, idx) in rows"
-            :key="idx"
-          >
-            <div class="col">
-              <q-input
-                filled
-                dense
-                label="Item Request"
-                v-model="row.MITM_ITMNMREAL"
-                readonly
-              />
+          <template v-if="!loading">
+            <div
+              :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
+              v-for="(row, idx) in rows"
+              :key="idx"
+            >
+              <div class="col">
+                <q-input
+                  filled
+                  dense
+                  label="Item Request"
+                  v-model="row.MITM_ITMNMREAL"
+                  readonly
+                />
+              </div>
+              <div class="col q-pl-md">
+                <q-input
+                  filled
+                  dense
+                  label="Qty"
+                  v-model="row.TDLVORDDETA_ITMQT"
+                  readonly
+                />
+              </div>
+              <div class="col q-pl-md">
+                <q-select
+                  dense
+                  filled
+                  label="Item Code Confirmation"
+                  v-model="row.TDLVORDDETA_ITMCD_ACT"
+                  use-input
+                  input-debounce="500"
+                  :options="listItems"
+                  @filter="
+                    (val, update, abort) =>
+                      filterFn(
+                        val ? val : row.MITM_ITMNMREAL,
+                        update,
+                        abort,
+                        'item'
+                      )
+                  "
+                  behavior="dialog"
+                  option-label="MITM_ITMNM"
+                  option-value="MITM_ITMCD"
+                  emit-value
+                  map-options
+                  :loading="loading"
+                >
+                </q-select>
+              </div>
             </div>
-            <div class="col q-pl-md">
-              <q-input
-                filled
-                dense
-                label="Qty"
-                v-model="row.TDLVORDDETA_ITMQT"
-                readonly
-              />
-            </div>
-            <div class="col q-pl-md">
-              <q-select
-                dense
-                filled
-                label="Item Code Confirmation"
-                v-model="row.TDLVORDDETA_ITMCD_ACT"
-                use-input
-                input-debounce="500"
-                :options="listItems"
-                @filter="
-                  (val, update, abort) =>
-                    filterFn(
-                      val ? val : row.MITM_ITMNMREAL,
-                      update,
-                      abort,
-                      'item'
-                    )
-                "
-                behavior="dialog"
-                option-label="MITM_ITMNM"
-                option-value="MITM_ITMCD"
-                emit-value
-                map-options
-                :loading="loading"
-              >
-              </q-select>
-            </div>
+          </template>
+          <div v-else class="text-center">
+            Loading, please wait...
           </div>
         </fieldset>
 
@@ -191,11 +196,23 @@ const listItems = ref([]);
 const listAcc = ref([]);
 const loading = ref(false);
 
-onMounted(() => {
-  rows.value = props.dataHeader.dlvdet;
-
-  getItem();
+onMounted(async () => {
+  await getDetailData();
+  await getItem();
 });
+
+const getDetailData = async () => {
+  loading.value = true;
+  await api_web
+    .get(`delivery/getDetailUnconfirm/${btoa(props.idHead)}`)
+    .then((response) => {
+      loading.value = false;
+      rows.value = response.data;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
+};
 
 const getItem = async (val) => {
   loading.value = true;

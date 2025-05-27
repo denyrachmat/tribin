@@ -16,7 +16,7 @@
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>Item Checker</b>
           </legend>
-          <template v-if="!loading">
+          <template v-if="!loadingData">
             <div
               :class="`row ${idx > 0 ? 'q-pt-md' : ''}`"
               v-for="(row, idx) in rows"
@@ -195,6 +195,7 @@ const rows = ref([]);
 const listItems = ref([]);
 const listAcc = ref([]);
 const loading = ref(false);
+const loadingData = ref(false)
 
 onMounted(async () => {
   await getDetailData();
@@ -202,15 +203,15 @@ onMounted(async () => {
 });
 
 const getDetailData = async () => {
-  loading.value = true;
+  loadingData.value = true;
   await api_web
     .get(`delivery/getDetailUnconfirm/${btoa(props.idHead)}`)
     .then((response) => {
-      loading.value = false;
+      loadingData.value = false;
       rows.value = response.data;
     })
     .catch(() => {
-      loading.value = false;
+      loadingData.value = false;
     });
 };
 

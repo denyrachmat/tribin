@@ -114,9 +114,13 @@ class UserController extends Controller
             'email',
             'name',
         ];
-        $RS = User::select('*')
-            ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')->get();
-        return ['data' => $RS];
+        $RS = User::select('*');
+
+        if (isset($columnMap[$request->searchBy]) && !empty($request->searchValue)) {
+            $RS->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%');
+        }
+
+        return ['data' => $RS->orderBy('name')->get()];
     }
 
     function getPerCompanyGroup()
@@ -131,6 +135,7 @@ class UserController extends Controller
         if ($activeRole['code'] !== 'root') {
             $RS->where('role_name', '!=', 'root');
         }
+
         return ['data' => $RS->get()];
     }
 

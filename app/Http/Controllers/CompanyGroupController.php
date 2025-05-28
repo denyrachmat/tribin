@@ -16,8 +16,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Schema;
 
+use App\Traits\gencodeTraits;
+
 class CompanyGroupController extends Controller
 {
+    use gencodeTraits;
     protected $dedicatedConnection;
 
     public function __construct()
@@ -229,6 +232,19 @@ class CompanyGroupController extends Controller
             $message = 'Updated';
             $id = $request->id;
         }
+
+        if ($request->has('approval')) {
+            foreach ($request->approval as $key => $valueApprv) {
+                $this->saveGencode(new Request([
+                    'MGECD_CODE' => 'APPROVAL_SETUP',
+                    'MGECD_VALUE' => $valueApprv['isOwnApproval'] == true ? 'ownapprove' : $valueApprv['username'],
+                    'MGECD_CG' => $this->dedicatedConnection,
+                    'MGECD_DESC' => $key,
+                    'MGECD_ACTIVE' => 1,
+                ]));
+            }
+        }
+
         return ['msg' => $message, 'id' => $id];
     }
 

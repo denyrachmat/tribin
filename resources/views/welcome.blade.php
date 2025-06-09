@@ -256,7 +256,7 @@
         }
 
         function enter_jat_payroll(pthis) {
-            window.open('https://payroll.jatpowerindo.co.id', '_blank');
+            window.open('https://hrm.jatpowerindo.co.id', '_blank');
         }
     </script>
 

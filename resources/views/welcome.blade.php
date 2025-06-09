@@ -126,7 +126,7 @@
                         <p class="text-body-secondary">JOS stands for JAT Integrated Online System</p>
                         <p>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="enter_jat_power(this)">Bussiness Application</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="enter_jat_power(this)">Bussiness</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="enter_jat_acc(this)">Accounting</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="enter_jat_payroll(this)">Payroll</button>
                         </div>

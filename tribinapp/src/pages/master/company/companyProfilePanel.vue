@@ -76,7 +76,7 @@
               />
             </div>
           </div>
-          <div class="row q-gutter-sm">
+          <div class="row q-gutter-sm" v-if="appr.length > 0">
             <div
               class="col"
               v-for="(quo, idxQuo) in appr"
@@ -90,7 +90,7 @@
                     label="Own Approve ?"
                   />
                 </div>
-                <div class="col text-right">
+                <div class="col text-right q-pa-sm">
                   <div>
                     <q-btn
                       flat
@@ -118,6 +118,9 @@
               >
               </q-select>
             </div>
+          </div>
+          <div class="row" v-else>
+            <div class="col text-center">No data, please add first on upper right</div>
           </div>
         </fieldset>
       </div>
@@ -148,8 +151,8 @@ const forms = ref({
   letter_head: "",
   approval: {
     quotation: [],
-    proformaInv: [],
-    inv: [],
+    proforma_invoice: [],
+    invoice: [],
     receipt: [],
     sj: [],
   },
@@ -163,7 +166,7 @@ onMounted(() => {
 });
 
 const safeCapitalize = (str) =>
-  str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+  str ? str.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()) : "";
 
 const onClickSave = () => {
   $q.dialog({

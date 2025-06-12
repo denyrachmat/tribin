@@ -61,8 +61,8 @@
           <legend style="margin-left: 1em; padding: 0.2em 0.8em">
             <b>{{ safeCapitalize(idx) }} Approval</b>
           </legend>
-          <div class="row">
-            <div class="col text-right q-px-md">
+          <div class="row q-pa-md">
+            <div class="col text-right">
               <q-btn
                 icon="add"
                 color="primary"
@@ -73,21 +73,23 @@
                     username: '',
                   })
                 "
+                outline
               />
             </div>
           </div>
-          <div class="row q-gutter-sm" v-if="appr.length > 0">
-            <div
-              class="col"
-              v-for="(quo, idxQuo) in appr"
-              :key="idxQuo"
-            >
+          <div class="row q-gutter-sm">
+            <div class="col" v-for="(quo, idxQuo) in appr" :key="idxQuo">
               <div class="row">
                 <div class="col">
                   <q-toggle
                     v-model="quo.isOwnApproval"
                     color="green"
                     label="Own Approve ?"
+                  />
+                  <q-toggle
+                    v-model="quo.isEmptyApproval"
+                    color="green"
+                    label="Empty Approval ?"
                   />
                 </div>
                 <div class="col text-right q-pa-sm">
@@ -96,31 +98,41 @@
                       flat
                       icon="delete"
                       color="red"
-                      @click="
-                        appr.splice(idxQuo, 1)
-                      "
+                      @click="appr.splice(idxQuo, 1)"
                     />
                   </div>
                 </div>
               </div>
-              <q-select
-                dense
-                filled
-                :label="`Approval ${idxQuo + 1}`"
-                v-model="quo.username"
-                :options="listUsername"
-                :loading="loading"
-                emit-value
-                map-options
-                :disable="quo.isOwnApproval"
-                option-value="id"
-                option-label="name"
-              >
-              </q-select>
+              <div class="row">
+                <div class="col">
+                  <q-input
+                    v-model="quo.remarks"
+                    label="Approval Remarks"
+                    dense
+                    filled
+                    :loading="loading"
+                  ></q-input>
+                </div>
+              </div>
+              <div class="row q-pt-sm">
+                <div class="col">
+                  <q-select
+                    dense
+                    filled
+                    :label="`Approval ${idxQuo + 1}`"
+                    v-model="quo.username"
+                    :options="listUsername"
+                    :loading="loading"
+                    emit-value
+                    map-options
+                    :disable="quo.isOwnApproval"
+                    option-value="id"
+                    option-label="name"
+                  >
+                  </q-select>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="row" v-else>
-            <div class="col text-center">No data, please add first on upper right</div>
           </div>
         </fieldset>
       </div>
@@ -200,9 +212,9 @@ const getProfileData = async () => {
       loading.value = false;
       const datanya = response.data;
 
-      console.log(forms.value)
-      forms.value = {...forms.value, ...datanya};
-      console.log(forms.value)
+      console.log(forms.value);
+      forms.value = { ...forms.value, ...datanya };
+      console.log(forms.value);
     })
     .catch((e) => {
       loading.value = false;

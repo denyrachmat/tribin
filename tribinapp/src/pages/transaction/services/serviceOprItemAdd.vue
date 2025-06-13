@@ -276,12 +276,13 @@ const getTotal = (data) => {
   return hasil.toLocaleString();
 };
 
-const onSelectItem = (val, idx) => {
+const onSelectItem = async (val, idx) => {
   const getItemData = listItems.value.filter((fil) => fil.MITM_ITMCD === val);
   if (getItemData.length > 0) {
-    if (getItemData[0].STOCK > 0) {
+    const checkStock = await checkStockItem(val);
+    if (checkStock && checkStock > 0) {
       listItemsSel.value[idx].TSRVF_PRC = getItemData[0].LATEST_PRC;
-      listItemsSel.value[idx].STOCK = getItemData[0].STOCK;
+      listItemsSel.value[idx].STOCK = checkStock;
     } else {
       // listItemsSel.value[idx].TSRVF_ITMCD = ''
 
@@ -292,6 +293,21 @@ const onSelectItem = (val, idx) => {
     }
   }
 };
+
+const checkStockItem = async (item) => {
+  loading.value = true;
+  return await api_web
+    .get(`inventory/viewStockByItemLoc/${btoa(item)}`)
+    .then((response) => {
+      loading.value = false;
+      return response.data;
+    })
+    .catch(() => {
+      loading.value = false;
+
+      return false
+    });
+}
 
 const onInputQty = (val, idx) => {
   if (val > listItemsSel.value[idx].STOCK) {

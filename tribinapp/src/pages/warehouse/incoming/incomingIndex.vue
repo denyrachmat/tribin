@@ -128,7 +128,7 @@
                       : "Confirm Data"
                   }}</q-tooltip>
                 </q-btn>
-                <q-btn
+                <!-- <q-btn
                   flat
                   :color="props.row.bc.length == 0 ? 'grey' : 'indigo'"
                   icon="print"
@@ -140,6 +140,20 @@
                     props.row.bc.length == 0
                       ? "No Barcode has been created, please confirm first!"
                       : "Barcode Print"
+                  }}</q-tooltip>
+                </q-btn> -->
+                <q-btn
+                  flat
+                  :color="props.row.bc.length == 0 && props.row.RCV_STATE == 1 ? 'grey' : 'indigo'"
+                  icon="print"
+                  @click="onPrintSJAmbil(props.row.TRCV_REFFNO)"
+                  dense
+                  :disable="props.row.bc.length == 0 && props.row.RCV_STATE == 1"
+                >
+                  <q-tooltip>{{
+                    props.row.bc.length == 0
+                      ? "Cannot print, please confirm first!"
+                      : "Print Surat jalan ambil"
                   }}</q-tooltip>
                 </q-btn>
                 <q-btn
@@ -366,6 +380,24 @@ const onPrintBarcode = (data) => {
     });
   });
 };
+
+const onPrintSJAmbil = async (val) => {
+  loading.value = true;
+  await api_web
+    .get(`invoices/printSJ/${btoa(val)}/inc`)
+    .then((response) => {
+      loading.value = false;
+      let pdfWindow = window.open("");
+      pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+          encodeURI(response.data) +
+          "'></iframe>"
+      );
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+}
 
 const printLabel = async (data, listData) => {
   return qz.printers.find(data).then(async (printer) => {

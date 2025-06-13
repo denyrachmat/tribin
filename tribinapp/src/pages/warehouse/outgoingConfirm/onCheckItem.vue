@@ -22,6 +22,14 @@
               v-for="(row, idx) in rows"
               :key="idx"
             >
+              <div class="col q-pl-md">
+                <q-input
+                  filled
+                  dense
+                  label="Barcode"
+                  v-model="row.BC"
+                />
+              </div>
               <div class="col">
                 <q-input
                   filled
@@ -69,9 +77,7 @@
               </div>
             </div>
           </template>
-          <div v-else class="text-center">
-            Loading, please wait...
-          </div>
+          <div v-else class="text-center">Loading, please wait...</div>
         </fieldset>
 
         <fieldset
@@ -116,6 +122,15 @@
               :key="idx"
             >
               <div class="col">
+                <q-input
+                  filled
+                  dense
+                  label="Barcode"
+                  v-model="acc.BC"
+                />
+              </div>
+
+              <div class="col q-pl-md">
                 <q-select
                   dense
                   filled
@@ -195,7 +210,7 @@ const rows = ref([]);
 const listItems = ref([]);
 const listAcc = ref([]);
 const loading = ref(false);
-const loadingData = ref(false)
+const loadingData = ref(false);
 
 onMounted(async () => {
   await getDetailData();
@@ -223,7 +238,10 @@ const getItem = async (val) => {
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = response.data.data;
+      listItems.value = response.data.data.map((item) => ({
+        ...item,
+        BC: ``,
+      }));
     })
     .catch(() => {
       loading.value = false;

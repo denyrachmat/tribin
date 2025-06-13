@@ -757,7 +757,7 @@ class InvoiceController extends Controller
         // exit;
     }
 
-    public function printSJ($doc)
+    public function printSJ($doc, $type = 'out')
     {
         $doc = base64_decode($doc);
 
@@ -1043,10 +1043,10 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(3, 30);
-            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami kirimkan barang-barang di bawah ini :' : ''), 0, 0, 'L');
+            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami '.($type == 'out' ? 'kirimkan' : 'ambil').' barang-barang di bawah ini :' : ''), 0, 0, 'L');
             if (count($RSHeader->spk) == 0) {
                 $this->fpdf->SetXY(70, 30);
-                $this->fpdf->Cell(29, 5, ', kami kirimkan barang-barang di bawah ini :', 0, 0, 'L');
+                $this->fpdf->Cell(29, 5, ', kami '.($type == 'out' ? 'kirimkan' : 'ambil').' barang-barang di bawah ini :', 0, 0, 'L');
             }
             $this->fpdf->SetXY(150, 30);
             // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');

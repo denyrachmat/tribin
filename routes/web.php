@@ -292,7 +292,7 @@ Route::group(['middleware' => 'cors'], function () {
 
             Route::post('printInvoice', [InvoiceController::class, 'printInvoice']);
             Route::get('printKwitansi/{doc}', [InvoiceController::class, 'printKwitansi']);
-            Route::get('printSJ/{doc}', [InvoiceController::class, 'printSJ']);
+            Route::get('printSJ/{doc}/{type?}', [InvoiceController::class, 'printSJ']);
             Route::get('printGensetHarian/{doc}', [InvoiceController::class, 'printGensetHarian']);
 
             Route::get('getDataDetail/{id}', [InvoiceController::class, 'dataDetail']);
@@ -477,7 +477,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('printHandoverPDF', [InventoryController::class, 'printHandoverPDF']);
             Route::get('uploadStockTakeView', [InventoryController::class, 'uploadStockTakeView']);
             Route::post('uploadStockTake', [InventoryController::class, 'uploadStockTake']);
-            Route::get('viewStockByItemLoc/{item}/{loc}', [InventoryController::class, 'viewStockByItemLoc']);
+            Route::get('viewStockByItemLoc/{item}/{loc?}', [InventoryController::class, 'viewStockByItemLoc']);
             Route::prefix('transferRequest')->group(function () {
                 Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);
                 Route::get('approve/{id}', [transferRequestController::class, 'approveData']);

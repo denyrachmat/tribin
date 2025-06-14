@@ -1633,29 +1633,30 @@ class InvoiceController extends Controller
     {
         $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', base64_decode($doc))->first();
 
-        $cekInvoiceAcc = $this->getGencode(
-            base64_encode('DEF_CUST_INVOICE'),
-            '',
-            $_COOKIE['CGID']
-        );
-        if (count($cekInvoiceAcc) > 0) {
-            $hasilAPI = $this->deleteACC(
-                $this->dedicatedConnection,
-                base64_decode($doc),
-            );
+        // $cekInvoiceAcc = $this->getGencode(
+        //     base64_encode('DEF_CUST_INVOICE'),
+        //     '',
+        //     $_COOKIE['CGID']
+        // );
 
-            return $hasilAPI;
-            if (is_object($hasilAPI) && method_exists($hasilAPI, 'getData')) {
-                $hasilAPIData = $hasilAPI->getData(true);
-                if (isset($hasilAPIData['status']) && $hasilAPIData['status'] == false) {
-                    return response()->json([[$hasilAPIData['error']]], 406);
-                    return response()->json($hasilAPIData, 406);
-                }
-            } elseif (is_array($hasilAPI) && isset($hasilAPI['status']) && $hasilAPI['status'] == false) {
-                return response()->json([[$hasilAPI['error']]], 406);
-                return response()->json($hasilAPI, 406);
-            }
-        }
+        // if (count($cekInvoiceAcc) > 0) {
+        //     $hasilAPI = $this->deleteACC(
+        //         $this->dedicatedConnection,
+        //         base64_decode($doc),
+        //     );
+
+        //     // return $hasilAPI;
+        //     if (is_object($hasilAPI) && method_exists($hasilAPI, 'getData')) {
+        //         $hasilAPIData = $hasilAPI->getData(true);
+        //         if (isset($hasilAPIData['status']) && $hasilAPIData['status'] == false) {
+        //             return response()->json([[$hasilAPIData['error']]], 406);
+        //             return response()->json($hasilAPIData, 406);
+        //         }
+        //     } elseif (is_array($hasilAPI) && isset($hasilAPI['status']) && $hasilAPI['status'] == false) {
+        //         return response()->json([[$hasilAPI['error']]], 406);
+        //         return response()->json($hasilAPI, 406);
+        //     }
+        // }
 
         if ($RSHeader) {
             T_DLVORDHEAD::on($this->dedicatedConnection)

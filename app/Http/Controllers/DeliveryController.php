@@ -2036,7 +2036,7 @@ class DeliveryController extends Controller
                 $cekStock = C_ITRN::on($this->dedicatedConnection)
                     ->selectRaw('SUM(CITRN_ITMQT) as STOCK')
                     ->where('CITRN_BRANCH', Auth::user()->branch)
-                    ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
+                    ->where('CITRN_ITMCD', $rCheck['TDLVORDDETA_ITMCD_ACT'])
                     ->havingRaw('SUM(CITRN_ITMQT) > 0');
 
                 if (isset($rCheck['BC']) && !empty($rCheck['BC'])) {

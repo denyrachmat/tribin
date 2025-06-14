@@ -1447,8 +1447,8 @@ class DeliveryController extends Controller
 
             if (
                 T_PCHORDHEAD::on($this->dedicatedConnection)
-                    ->where('TPCHORD_BRANCH', Auth::user()->branch)
-                    ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
+                ->where('TPCHORD_BRANCH', Auth::user()->branch)
+                ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
             ) {
                 return true;
             }
@@ -1992,37 +1992,38 @@ class DeliveryController extends Controller
         ];
     }
 
-    function getDetailUnconfirm($dlvcd) {
+    function getDetailUnconfirm($dlvcd)
+    {
         $getDet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
-                'T_DLVORDDETA.id',
-                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                'T_DLVORDDETA.TDLVORDDETA_PRC',
-                'MITM_ITMNM',
-                'MITM_ITMNMREAL'
-            )->groupBy(
-                    'T_DLVORDDETA.id',
-                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-                    'T_DLVORDDETA.TDLVORDDETA_PRC',
-                    'MITM_ITMNM',
-                    'MITM_ITMNMREAL'
-                )
-                ->leftJoin("M_ITM_GRP", function ($join) {
-                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-                        ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
-                })
-                ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
-                    $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
-                        ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
-                })
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', base64_decode($dlvcd))
-                ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
-                ->get();
+            'T_DLVORDDETA.id',
+            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+            'T_DLVORDDETA.TDLVORDDETA_PRC',
+            'MITM_ITMNM',
+            'MITM_ITMNMREAL'
+        )->groupBy(
+            'T_DLVORDDETA.id',
+            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+            'T_DLVORDDETA.TDLVORDDETA_PRC',
+            'MITM_ITMNM',
+            'MITM_ITMNMREAL'
+        )
+            ->join("M_ITM_GRP", function ($join) {
+                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                    ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+                $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+                    ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+            })
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', base64_decode($dlvcd))
+            ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
+            ->get();
 
         return $getDet;
     }
@@ -2032,11 +2033,19 @@ class DeliveryController extends Controller
         if (count($request->data) > 0) {
             $hasilZero = [];
             foreach ($request->data as $rCheck) {
-                $cekStock = DB::connection($this->dedicatedConnection)->table('M_ITM_GRP')
+                $cekStock = C_ITRN::on($this->dedicatedConnection)
+                    ->selectRaw('SUM(CITRN_ITMQT) as STOCK')
+                    ->where('CITRN_BRANCH', Auth::user()->branch)
                     ->where('MITM_ITMNM', $rCheck['TDLVORDDETA_ITMCD_ACT'])
-                    ->first();
+                    ->havingRaw('SUM(CITRN_ITMQT) > 0');
 
-                if ($cekStock->STOCK == 0) {
+                if (isset($rCheck['BC']) && !empty($rCheck['BC'])) {
+                    $cekStock->where('id_reff', $rCheck['BC']);
+                }
+
+                $cekStock = $cekStock->first();
+
+                if ($cekStock && $cekStock->STOCK == 0) {
                     $hasilZero[] = $cekStock->STOCK;
                 }
             }

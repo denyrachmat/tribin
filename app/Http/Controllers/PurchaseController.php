@@ -463,7 +463,8 @@ class PurchaseController extends Controller
                 "TPCHORD_ISSUDT",
                 "TPCHORD_DLVDT",
                 "TPCHORD_REQCD"
-            );
+            )
+            ->orderBy('TPCHORD_ISSUDT', 'desc');
 
         if (!empty($request->searchCol) && !empty($request->searchValue)) {
             $RS->where(DB::raw("CONCAT(TPCHORD_PCHCD, ' ( ',MSUP_SUPNM,' )', ' ( ',TPCHORD_ISSUDT,' )')"), 'like', '%' . $request->searchValue . '%');

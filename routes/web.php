@@ -478,6 +478,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('uploadStockTakeView', [InventoryController::class, 'uploadStockTakeView']);
             Route::post('uploadStockTake', [InventoryController::class, 'uploadStockTake']);
             Route::get('viewStockByItemLoc/{item}/{loc?}', [InventoryController::class, 'viewStockByItemLoc']);
+            Route::get('findStockByBarcode/{barcode}', [InventoryController::class, 'findStockByBarcode']);
             Route::prefix('transferRequest')->group(function () {
                 Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);
                 Route::get('approve/{id}', [transferRequestController::class, 'approveData']);

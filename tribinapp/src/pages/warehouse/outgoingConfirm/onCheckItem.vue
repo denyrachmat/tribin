@@ -22,15 +22,17 @@
               v-for="(row, idx) in rows"
               :key="idx"
             >
-              <div class="col q-pl-md">
+              <div class="col">
                 <q-input
                   filled
                   dense
                   label="Barcode"
                   v-model="row.BC"
+                  @update:model-value="onInputBC"
+                  :debounce="500"
                 />
               </div>
-              <div class="col">
+              <div class="col q-pl-md">
                 <q-input
                   filled
                   dense
@@ -121,16 +123,11 @@
               v-for="(acc, idx) in listAcc"
               :key="idx"
             >
-              <div class="col">
-                <q-input
-                  filled
-                  dense
-                  label="Barcode"
-                  v-model="acc.BC"
-                />
-              </div>
+              <!-- <div class="col">
+                <q-input filled dense label="Barcode" v-model="acc.BC" />
+              </div> -->
 
-              <div class="col q-pl-md">
+              <div class="col">
                 <q-select
                   dense
                   filled
@@ -252,6 +249,36 @@ const filterFn = (val, update, abort, fun) => {
   update(async () => {
     if (fun === "item") {
       await getItem(val);
+    }
+  });
+};
+
+const onInputBC = async (val) => {
+  if (!val) return;
+  loading.value = true;
+  await api_web.get(`inventory/findStockByBarcode/${val}`).then((response) => {
+    loading.value = false;
+    if (response.data.length > 0) {
+      const item = response.data[0];
+      const row = rows.value.find((r) => r.BC === val);
+      if (row) {
+        row.TDLVORDDETA_ITMCD_ACT = item.CITRN_ITMCD;
+        row.TDLVORDDETA_ITMQT = item.STOCK;
+      } else {
+        rows.value.push({
+          BC: val,
+          TDLVORDDETA_ITMCD_ACT: item.CITRN_ITMCD,
+          MITM_ITMNMREAL: item.MITM_ITMNM,
+          TDLVORDDETA_ITMQT: item.STOCK,
+        });
+      }
+
+      getItem(item.CITRN_ITMCD);
+    } else {
+      $q.notify({
+        color: "negative",
+        message: `Barcode ${val} not found in stock !!`,
+      });
     }
   });
 };

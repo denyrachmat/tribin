@@ -144,11 +144,11 @@
                 </q-btn> -->
                 <q-btn
                   flat
-                  :color="props.row.bc.length == 0 && props.row.RCV_STATE == 1 ? 'grey' : 'indigo'"
+                  :color="props.row.bc.length == 0 || props.row.RCV_STATE == 1 ? 'grey' : 'indigo'"
                   icon="print"
                   @click="onPrintSJAmbil(props.row.TRCV_REFFNO)"
                   dense
-                  :disable="props.row.bc.length == 0 && props.row.RCV_STATE == 1"
+                  :disable="props.row.bc.length == 0 || props.row.RCV_STATE == 1"
                 >
                   <q-tooltip>{{
                     props.row.bc.length == 0

@@ -176,7 +176,7 @@ class ServiceAdminController extends Controller
 
         $dataDet = T_SRV_DET::on($this->dedicatedConnection)
             ->where('TSRVH_ID', base64_decode($id))
-            ->get();
+            ->update(['TSRVD_FLGSTS' => $request->TSRVD_FLGSTS]);
 
         return ['msg' => 'Data has been updated', 'dataHead' => $dataHead];
     }

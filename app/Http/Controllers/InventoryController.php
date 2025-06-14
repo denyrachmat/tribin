@@ -561,4 +561,21 @@ class InventoryController extends Controller
 
         return ['msg' => 'Upload Success'];
     }
+
+    function findStockByBarcode($bc) {
+        $data = C_ITRN::on($this->dedicatedConnection)
+            ->select(
+                'CITRN_ITMCD',
+                'CITRN_LOCCD',
+                DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK')
+            )
+            ->where('id_reff', $bc)
+            ->groupBy('CITRN_ITMCD', 'CITRN_LOCCD')
+            ->get();
+        if ($data->isEmpty()) {
+            return response()->json(['msg' => 'Barcode not found'], 404);
+        } else {
+            return response()->json($data, 200);
+        }
+    }
 }

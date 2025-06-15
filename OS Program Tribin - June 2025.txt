@@ -1,0 +1,21 @@
+Service and sparepart
+
+1. receive order pilih item lama
+2. incoming pilih item lama
+3. Error di print PO Status Export
+4. Filter by type gak bisa di menu Invoice
+5. Add PO terakhir & Supplier di menu item master report
+6. Di buat maximalkan surat jalan jangan di split
+7. TTD, Operator Hapus,  Adm. Stok => Kepala Gudang, Warna2 di Bawah hilangkan
+8. Tanggal Awal, Tanggal Akhir, Keterangan header kolom surat jalan hilangkan
+9. Invoice, Receipt tidak muncul di print
+10. External & Internal service semua memakai surat jalan
+11. Sales Report By Date belum munculin service
+12. Di Sparepart TTD manager sparepart bukan manager acc
+
+Marketing :
+1. Add filter by item number di menu Incoming
+
+LINK LEMOT
+https://jos.jatpowerindo.co.id/receive/searchAPI (di sparepart)
+https://jos.jatpowerindo.co.id/item/searchAPI

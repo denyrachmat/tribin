@@ -112,7 +112,9 @@ class ServiceAdminController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id) {}
+    public function show(string $id)
+    {
+    }
 
     /**
      * Show the form for editing the specified resource.
@@ -203,9 +205,12 @@ class ServiceAdminController extends Controller
                     }
                 }
 
-                return response(['msg' => count(array_filter($cekData, function ($f) {
-                    return !$f['status'];
-                })) > 0 ? 'Some item not updated !' : 'Some item has been updated !', 'data' => $cekData]);
+                return response([
+                    'msg' => count(array_filter($cekData, function ($f) {
+                        return !$f['status'];
+                    })) > 0 ? 'Some item not updated !' : 'Some item has been updated !',
+                    'data' => $cekData
+                ]);
             } else {
                 $cekDataAll = (clone $hasil)->get()->toArray();
                 $doc = T_SRV_HEAD::on($this->dedicatedConnection)->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
@@ -235,19 +240,17 @@ class ServiceAdminController extends Controller
                 }
 
                 $postToDelivery = [];
-                if ($doc->SRVH_ISINT == 1) {
-                    $createReq = new Request([
-                        'TDLVORD_DLVCD' => $doc->SRVH_DOCNO,
-                        'TDLVORD_CUSCD' => $doc->SRVH_CUSCD,
-                        'TDLVORD_ISSUDT' => $doc->SRVH_ISSDT,
-                        'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
-                        'typeOutgoing' => 4,
-                        'SO_DET' => $listForDODet,
-                        'splitSJ' => 1,
-                    ]);
+                $createReq = new Request([
+                    'TDLVORD_DLVCD' => $doc->SRVH_DOCNO,
+                    'TDLVORD_CUSCD' => $doc->SRVH_CUSCD,
+                    'TDLVORD_ISSUDT' => $doc->SRVH_ISSDT,
+                    'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
+                    'typeOutgoing' => 4,
+                    'SO_DET' => $listForDODet,
+                    'splitSJ' => 1,
+                ]);
 
-                    $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
-                }
+                $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
 
                 // Set to done
                 T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->update([

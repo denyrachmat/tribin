@@ -2093,7 +2093,7 @@ class DeliveryController extends Controller
             // End Interface ACC
 
             $cek = T_DLVORDHEAD::on($this->dedicatedConnection)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('updated_at', 'desc')
                 ->whereNotNull('TDLVORD_REC_NO')
                 ->first();
 

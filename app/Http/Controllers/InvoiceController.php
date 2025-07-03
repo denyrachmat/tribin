@@ -262,7 +262,7 @@ class InvoiceController extends Controller
             );
         }
 
-        return $dataDet;
+        // return $dataDet;
 
         foreach ($dataDet as $key => $value) {
             if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {

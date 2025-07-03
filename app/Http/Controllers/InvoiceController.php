@@ -259,8 +259,10 @@ class InvoiceController extends Controller
                     'isDlvSJ' => false,
                     'isSlo' => false
                 ]
-            )['dlvdet'];
+            );
         }
+
+        return $dataDet;
 
         foreach ($dataDet as $key => $value) {
             if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {
@@ -386,16 +388,18 @@ class InvoiceController extends Controller
             ->join(
                 'T_DLVORDHEAD',
                 DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
-                                    THEN TDLVORD_DLVCD
-                                    ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
-                                END"
-                ),
-                DB::raw(
-                    "CASE WHEN TDLVORD_TYPE = 4
-                                THEN TDLVORDDETA_DLVCD
-                                ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                            END"
+                    "case
+                    when (TDLVOR_ISSPLITSJ <> 1)
+                                then TDLVORD_DLVCD
+                                else substr(TDLVORD_DLVCD, 1, (length(TDLVORD_DLVCD) - locate('/', reverse(TDLVORD_DLVCD))))
+                        end"
+                    ),
+                    DB::raw(
+                        "case
+                        when (TDLVOR_ISSPLITSJ <> 1)
+                                then TDLVORDDETA_DLVCD
+                            else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
+                    end"
                 )
             )
             ->leftJoin("M_ITM_GRP", function ($join) {
@@ -406,14 +410,15 @@ class InvoiceController extends Controller
                 $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
                     ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
             })
-            ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
-                $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
-                    ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
-            })
-            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
-                    THEN TDLVORDDETA_DLVCD
-                    ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
-                END"), '=', base64_decode($id))
+            // ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+            //     $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+            //         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+            // })
+            ->where(DB::raw("case
+                    when (TDLVOR_ISSPLITSJ <> 1)
+                    then TDLVORDDETA_DLVCD
+                    else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
+            end"), '=', base64_decode($id))
             ->get()
             ->toArray() : [];
 
@@ -461,7 +466,7 @@ class InvoiceController extends Controller
                                 END"
                     )
                 )
-                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 5
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"), '=', base64_decode($id))
@@ -788,11 +793,18 @@ class InvoiceController extends Controller
                     END as TDLVORD_DLVCD"
                 ),
                 'TDLVOR_ISSPLITSJ',
-                'TQUO_QUOCD'
+                'TQUO_QUOCD',
+                'TRCV_ISSUDT'
             )
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
+            ->leftJoin('T_RCV_HEAD', DB::raw(
+                "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        THEN TDLVORD_DLVCD
+                        ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                    END"
+            ), 'TRCV_REFFNO')
             ->leftJoin(
                 'T_DLVORDDETA',
                 DB::raw(
@@ -817,11 +829,11 @@ class InvoiceController extends Controller
                         ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVSJDETA_DLVCD) - LOCATE('/', REVERSE(TDLVSJDETA_DLVCD)))
                     END"
             ), DB::raw("SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)"), DB::raw(
-                "CASE WHEN TDLVOR_ISSPLITSJ <> 1
+                        "CASE WHEN TDLVOR_ISSPLITSJ <> 1
                         THEN TDLVORD_DLVCD
                         ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
                     END"
-            ))
+                    ))
             ->where(DB::raw(
                 "CASE WHEN TDLVOR_ISSPLITSJ <> 1
                         THEN TDLVORD_DLVCD
@@ -861,7 +873,8 @@ class InvoiceController extends Controller
                 'TDLVSJDETA_ENDDT',
                 'TDLVORD_CONDGRP',
                 'TDLVOR_ISSPLITSJ',
-                'TQUO_QUOCD'
+                'TQUO_QUOCD',
+                'TRCV_ISSUDT'
             )
             ->first();
 
@@ -1021,12 +1034,12 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 5);
-            $this->fpdf->Cell(45, 5, $Branch->MBRANCH_NM . ', ' . $DOIssuDate, 0, 0, 'L');
+            $this->fpdf->Cell(45, 5, $Branch->MBRANCH_NM . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 10);
             $this->fpdf->MultiCell(55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 5);
-            $this->fpdf->SetXY(150, 15);
+            $this->fpdf->SetXY(150, 17);
             $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 20);
@@ -1043,10 +1056,10 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(3, 30);
-            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami '.($type == 'out' ? 'kirimkan' : 'ambil').' barang-barang di bawah ini :' : ''), 0, 0, 'L');
+            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami ' . ($type == 'out' ? 'kirimkan' : 'ambil') . ' barang-barang di bawah ini :' : ''), 0, 0, 'L');
             if (count($RSHeader->spk) == 0) {
                 $this->fpdf->SetXY(70, 30);
-                $this->fpdf->Cell(29, 5, ', kami '.($type == 'out' ? 'kirimkan' : 'ambil').' barang-barang di bawah ini :', 0, 0, 'L');
+                $this->fpdf->Cell(29, 5, ', kami ' . ($type == 'out' ? 'kirimkan' : 'ambil') . ' barang-barang di bawah ini :', 0, 0, 'L');
             }
             $this->fpdf->SetXY(150, 30);
             // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');

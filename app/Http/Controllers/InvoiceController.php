@@ -259,7 +259,7 @@ class InvoiceController extends Controller
                     'isDlvSJ' => false,
                     'isSlo' => false
                 ]
-            );
+            )['dlvdet'];
         }
 
         // return $dataDet;

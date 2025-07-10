@@ -486,6 +486,7 @@ const getInvoice = async (val, cols = "TDLVORD_DLVCD") => {
   loading.value = true;
   await api_web
     .post("invoices/search", {
+      rcv: 1,
       searchBy: cols,
       searchValue: val,
     })

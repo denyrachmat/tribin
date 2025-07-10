@@ -247,7 +247,7 @@ class ServiceAdminController extends Controller
                     'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
                     'typeOutgoing' => 4,
                     'SO_DET' => $listForDODet,
-                    'splitSJ' => 1,
+                    'splitSJ' => 0,
                 ]);
 
                 $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);

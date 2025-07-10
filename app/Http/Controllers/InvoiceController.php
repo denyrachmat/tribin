@@ -154,6 +154,16 @@ class InvoiceController extends Controller
     {
         $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA')->orderBy('TDLVORD_DLVCD', 'desc');
 
+        if($request->has('rcv') && $request->rcv === 1) {
+            $data->leftjoin('T_RCV_HEAD', function ($join) {
+                $join->on(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                    THEN TDLVORD_DLVCD
+                    ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
+                END"), '=', 'TRCV_REFFNO');
+            })
+            ->whereNull('TRCV_REFFNO');
+        }
+
         if (!empty($request->searchBy)) {
             $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
@@ -799,12 +809,12 @@ class InvoiceController extends Controller
             ->leftJoin('M_CUS', function ($join) {
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
-            ->leftJoin('T_RCV_HEAD', DB::raw(
+            ->leftJoin(DB::raw('(SELECT * FROM T_RCV_HEAD WHERE deleted_at is NULL) T_RCV_HEAD'), DB::raw(
                 "CASE WHEN TDLVOR_ISSPLITSJ <> 1
                         THEN TDLVORD_DLVCD
                         ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
                     END"
-            ), 'TRCV_REFFNO')
+            ), '=','TRCV_REFFNO')
             ->leftJoin(
                 'T_DLVORDDETA',
                 DB::raw(

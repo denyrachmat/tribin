@@ -34,7 +34,7 @@ trait accTraits
             }
 
             // return $checkRef;
-            $filterClose = array_filter($checkRef['data'], function ($item) {
+            $filterClose = array_filter($checkRef, function ($item) {
                 return $item['is_closed'] == 1;
             });
 
@@ -56,11 +56,11 @@ trait accTraits
             }
 
             // Validate check if reference number already exists
-            $filterUnvoid = array_filter($checkRef['data'], function ($item) {
+            $filterUnvoid = array_filter($checkRef, function ($item) {
                 return empty($item['voided_at']);
             });
 
-            if (isset($checkRef['data']) && count($filterUnvoid) > 0) {
+            if (isset($checkRef) && count($filterUnvoid) > 0) {
                 return response()->json([
                     'status' => false,
                     'error' => 'Interface ACC Err: Reference number already exists',
@@ -166,7 +166,7 @@ trait accTraits
                 $checkRef = $checkRef->getData(true);
             }
 
-            $filterClose = array_filter($checkRef['data'], function ($item) {
+            $filterClose = array_filter($checkRef, function ($item) {
                 return $item['is_closed'] == 1;
             });
 
@@ -183,12 +183,12 @@ trait accTraits
                 ], 400);
             }
 
-            $filterUnvoid = array_filter($checkRef['data'], function ($item) {
+            $filterUnvoid = array_filter($checkRef, function ($item) {
                 return empty($item['voided_at']);
             });
 
             // Validate check if reference number not voided yet
-            if (isset($checkRef['data']) && count($filterUnvoid) > 0) {
+            if (isset($checkRef) && count($filterUnvoid) > 0) {
                 // return $filterUnvoid;
                 foreach ($filterUnvoid as $key => $value) {
                     $client = new \GuzzleHttp\Client();

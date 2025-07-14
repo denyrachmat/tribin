@@ -35,7 +35,7 @@ trait accTraits
 
             // return $checkRef;
             $filterClose = array_filter($checkRef, function ($item) {
-                return $item['is_closed'] == 1;
+                return isset($item['is_closed']) && $item['is_closed'] == 1;
             });
 
             // Validate Closing

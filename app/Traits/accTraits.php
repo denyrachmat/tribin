@@ -33,47 +33,49 @@ trait accTraits
                 $checkRef = $checkRef->getData(true);
             }
 
-            // return $checkRef;
-            $filterClose = array_filter($checkRef, function ($item) {
-                return isset($item['is_closed']) && $item['is_closed'] == 1;
-            });
+            if ($checkRef['data']) {
+                // return $checkRef;
+                $filterClose = array_filter($checkRef['data'], function ($item) {
+                    return $item['is_closed'] == 1;
+                });
 
-            // Validate Closing
-            if (count($filterClose) > 0) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Interface ACC Err: Reference number already closed',
-                    'param' => [
-                        'cg_code' => $conn,
-                        'date' => $date,
-                        'reference_number' => $reference_number,
-                        'journal_code' => $journal_code,
-                        'description' => $description,
-                        'amount' => $amount,
-                    ],
-                    'data' => $filterClose,
-                ], 400);
-            }
+                // Validate Closing
+                if (count($filterClose) > 0) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Interface ACC Err: Reference number already closed',
+                        'param' => [
+                            'cg_code' => $conn,
+                            'date' => $date,
+                            'reference_number' => $reference_number,
+                            'journal_code' => $journal_code,
+                            'description' => $description,
+                            'amount' => $amount,
+                        ],
+                        'data' => $filterClose,
+                    ], 400);
+                }
 
-            // Validate check if reference number already exists
-            $filterUnvoid = array_filter($checkRef, function ($item) {
-                return empty($item['voided_at']);
-            });
+                // Validate check if reference number already exists
+                $filterUnvoid = array_filter($checkRef['data'], function ($item) {
+                    return empty($item['voided_at']);
+                });
 
-            if (isset($checkRef) && count($filterUnvoid) > 0) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Interface ACC Err: Reference number already exists',
-                    'param' => [
-                        'cg_code' => $conn,
-                        'date' => $date,
-                        'reference_number' => $reference_number,
-                        'journal_code' => $journal_code,
-                        'description' => $description,
-                        'amount' => $amount,
-                    ],
-                    'data' => $filterUnvoid,
-                ], 400);
+                if (isset($checkRef['data']) && count($filterUnvoid) > 0) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Interface ACC Err: Reference number already exists',
+                        'param' => [
+                            'cg_code' => $conn,
+                            'date' => $date,
+                            'reference_number' => $reference_number,
+                            'journal_code' => $journal_code,
+                            'description' => $description,
+                            'amount' => $amount,
+                        ],
+                        'data' => $filterUnvoid,
+                    ], 400);
+                }
             }
 
             $client = new \GuzzleHttp\Client();
@@ -166,7 +168,7 @@ trait accTraits
                 $checkRef = $checkRef->getData(true);
             }
 
-            $filterClose = array_filter($checkRef, function ($item) {
+            $filterClose = array_filter($checkRef['data'], function ($item) {
                 return $item['is_closed'] == 1;
             });
 
@@ -183,12 +185,12 @@ trait accTraits
                 ], 400);
             }
 
-            $filterUnvoid = array_filter($checkRef, function ($item) {
+            $filterUnvoid = array_filter($checkRef['data'], function ($item) {
                 return empty($item['voided_at']);
             });
 
             // Validate check if reference number not voided yet
-            if (isset($checkRef) && count($filterUnvoid) > 0) {
+            if (isset($checkRef['data']) && count($filterUnvoid) > 0) {
                 // return $filterUnvoid;
                 foreach ($filterUnvoid as $key => $value) {
                     $client = new \GuzzleHttp\Client();

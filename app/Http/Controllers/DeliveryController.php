@@ -403,15 +403,12 @@ class DeliveryController extends Controller
             ];
         }
 
+        $getData = [];
         foreach ($dataDLVHead as $keyHeader => $valueHeader) {
             foreach ($valueHeader['DET'] as $keySODet => $valueSODet) {
                 $sloCD = isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : '';
-                $getDataSLO = T_SLODETA::on($this->dedicatedConnection)
-                    ->where('TSLODETA_SLOCD', $sloCD)
-                    ->where('TSLODETA_ITMCD', $valueSODet['TSLODETA_ITMCD'])
-                    ->first();
 
-                T_DLVORDDETA::on($this->dedicatedConnection)->insert([
+                $getData[] = T_DLVORDDETA::on($this->dedicatedConnection)->create([
                     'TDLVORDDETA_DLVCD' => $valueHeader['HEAD']->TDLVORD_DLVCD,
                     'TDLVORDDETA_ITMCD' => $valueSODet['TSLODETA_ITMCD'],
                     'TDLVORDDETA_ITMQT' => $valueSODet['BALQT'],
@@ -419,10 +416,18 @@ class DeliveryController extends Controller
                     'created_by' => Auth::user()->nick_name,
                     'created_at' => date('Y-m-d H:i:s'),
                     'TDLVORDDETA_BRANCH' => Auth::user()->branch,
-                    'TDLVORDDETA_SLOCD' => isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : '',
+                    'TDLVORDDETA_SLOCD' => $sloCD,
                     'TDLVORDDETA_ITMCD_ACT' => isset($valueSODet['TDLVORDDETA_ITMCD_ACT']) && !empty($valueSODet['TDLVORDDETA_ITMCD_ACT']) ? $valueSODet['TDLVORDDETA_ITMCD_ACT'] : ''
                 ]);
             }
+        }
+
+        if ($request->typeOutgoing == 3) {
+            $this->confirmOutgoing(new Request([
+                'data' => $getData,
+                'id' => $newQuotationCode,
+                'acc' => []
+            ]));
         }
 
         return [
@@ -615,7 +620,69 @@ class DeliveryController extends Controller
         // return $RSTemp->get()->toArray();
 
         foreach ($RSTemp->get()->toArray() as $keySODet => $valueSODet) {
-            $itemDet = T_DLVORDDETA::on($this->dedicatedConnection)
+            $itemDet = [];
+            // $itemDet = T_DLVORDDETA::on($this->dedicatedConnection)
+            //     ->select(
+            //         DB::raw('T_DLVORDDETA.id as id'),
+            //         DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1) as TDLVORDDETA_DLVCD"),
+            //         'TDLVORDDETA_BRANCH',
+            //         'TDLVORDDETA_SLOCD',
+            //         DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
+            //         'MITM_ITMNM',
+            //         DB::raw('TDLVORDDETA_ITMQT as ORIQT'),
+            //         DB::raw('TDLVORDDETA_ITMQT as BALQT'),
+            //         DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
+            //     )
+            //     // ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            //     ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $valueSODet['TDLVORD_DLVCD'])
+            //     // ->where(DB::raw("TDLVORDDETA_DLVCD"), $valueSODet['TDLVORD_DLVCD'])
+            //     ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
+            //     ->leftJoin("M_ITM_GRP", function ($join) {
+            //         $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+            //             ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+            //     })
+            //     ->leftJoin('T_SLODETA', function ($join) {
+            //         $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+            //             ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+            //             ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD')
+            //             ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
+            //     })
+            //     ->groupBy(
+            //         DB::raw('T_DLVORDDETA.id'),
+            //         'TDLVORDDETA_DLVCD',
+            //         'TDLVORDDETA_BRANCH',
+            //         'TDLVORDDETA_SLOCD',
+            //         'TDLVORDDETA_ITMCD',
+            //         'MITM_ITMNM',
+            //         'TDLVORDDETA_ITMQT',
+            //         'TSLODETA_PRC',
+            //         'TDLVORDDETA_PRC'
+            //     )
+            //     ->get()
+            //     ->toArray();
+
+            if (count($itemDet) > 0) {
+                $hasil[] = array_merge(
+                    $valueSODet,
+                    [
+                        'listItems' => $itemDet
+                    ]
+                );
+            }
+
+            // $hasil[] = array_merge(
+            //     $valueSODet,
+            //     [
+            //         'listItems' => $itemDet
+            //     ]
+            // );
+        }
+
+        return ['data' => $hasil];
+    }
+
+    function getDetailAPI($dlvcd) {
+        $itemDet = T_DLVORDDETA::on($this->dedicatedConnection)
                 ->select(
                     DB::raw('T_DLVORDDETA.id as id'),
                     DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1) as TDLVORDDETA_DLVCD"),
@@ -628,7 +695,7 @@ class DeliveryController extends Controller
                     DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
                 )
                 // ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $valueSODet['TDLVORD_DLVCD'])
+                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $dlvcd)
                 // ->where(DB::raw("TDLVORDDETA_DLVCD"), $valueSODet['TDLVORD_DLVCD'])
                 ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
                 ->leftJoin("M_ITM_GRP", function ($join) {
@@ -655,24 +722,7 @@ class DeliveryController extends Controller
                 ->get()
                 ->toArray();
 
-            if (count($itemDet) > 0) {
-                $hasil[] = array_merge(
-                    $valueSODet,
-                    [
-                        'listItems' => $itemDet
-                    ]
-                );
-            }
-
-            // $hasil[] = array_merge(
-            //     $valueSODet,
-            //     [
-            //         'listItems' => $itemDet
-            //     ]
-            // );
-        }
-
-        return ['data' => $hasil];
+        return $itemDet;
     }
 
     function toPDF(Request $request)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\C_ITRN;
 use App\Models\T_SLODETA;
 use Illuminate\Http\Request;
 use App\Models\T_DLVORDHEAD;
@@ -154,14 +155,14 @@ class InvoiceController extends Controller
     {
         $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA')->orderBy('TDLVORD_DLVCD', 'desc');
 
-        if($request->has('rcv') && $request->rcv === 1) {
+        if ($request->has('rcv') && $request->rcv === 1) {
             $data->leftjoin('T_RCV_HEAD', function ($join) {
                 $join->on(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
                 END"), '=', 'TRCV_REFFNO');
             })
-            ->whereNull('TRCV_REFFNO');
+                ->whereNull('TRCV_REFFNO');
         }
 
         if (!empty($request->searchBy)) {
@@ -403,9 +404,9 @@ class InvoiceController extends Controller
                                 then TDLVORD_DLVCD
                                 else substr(TDLVORD_DLVCD, 1, (length(TDLVORD_DLVCD) - locate('/', reverse(TDLVORD_DLVCD))))
                         end"
-                    ),
-                    DB::raw(
-                        "case
+                ),
+                DB::raw(
+                    "case
                         when (TDLVOR_ISSPLITSJ <> 1)
                                 then TDLVORDDETA_DLVCD
                             else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
@@ -814,7 +815,7 @@ class InvoiceController extends Controller
                         THEN TDLVORD_DLVCD
                         ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
                     END"
-            ), '=','TRCV_REFFNO')
+            ), '=', 'TRCV_REFFNO')
             ->leftJoin(
                 'T_DLVORDDETA',
                 DB::raw(
@@ -1654,32 +1655,9 @@ class InvoiceController extends Controller
 
     function cancelInvoice($doc)
     {
-        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', base64_decode($doc))->first();
-
-        // $cekInvoiceAcc = $this->getGencode(
-        //     base64_encode('DEF_CUST_INVOICE'),
-        //     '',
-        //     $_COOKIE['CGID']
-        // );
-
-        // if (count($cekInvoiceAcc) > 0) {
-        //     $hasilAPI = $this->deleteACC(
-        //         $this->dedicatedConnection,
-        //         base64_decode($doc),
-        //     );
-
-        //     // return $hasilAPI;
-        //     if (is_object($hasilAPI) && method_exists($hasilAPI, 'getData')) {
-        //         $hasilAPIData = $hasilAPI->getData(true);
-        //         if (isset($hasilAPIData['status']) && $hasilAPIData['status'] == false) {
-        //             return response()->json([[$hasilAPIData['error']]], 406);
-        //             return response()->json($hasilAPIData, 406);
-        //         }
-        //     } elseif (is_array($hasilAPI) && isset($hasilAPI['status']) && $hasilAPI['status'] == false) {
-        //         return response()->json([[$hasilAPI['error']]], 406);
-        //         return response()->json($hasilAPI, 406);
-        //     }
-        // }
+        $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->where('TDLVORD_DLVCD', base64_decode($doc))
+            ->first();
 
         if ($RSHeader) {
             T_DLVORDHEAD::on($this->dedicatedConnection)
@@ -1693,6 +1671,16 @@ class InvoiceController extends Controller
                 ->update([
                     'TDLVORDDETA_ITMCD_ACT' => ''
                 ]);
+
+            if ($RSHeader->TDLVORD_TYPE == 3) {
+                C_ITRN::on($this->dedicatedConnection)
+                    ->where(DB::raw("CITRN_DOCNO"), base64_decode($doc))
+                    ->delete();
+                T_DLVORDDETA::on($this->dedicatedConnection)
+                    ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($doc))->delete();
+                T_DLVORDHEAD::on($this->dedicatedConnection)
+                    ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))->delete();
+            }
         }
 
         return response()->json([

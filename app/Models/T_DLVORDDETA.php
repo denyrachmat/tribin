@@ -10,8 +10,18 @@ class T_DLVORDDETA extends Model
     use HasFactory;
     protected $table = 'T_DLVORDDETA';
     protected $fillable = [
-        'created_by', 'deleted_at', 'deleted_by', 'TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH',
-        'TDLVORDDETA_ITMCD', 'TDLVORDDETA_ITMQT', 'TDLVORDDETA_PRC', 'updated_by', 'TDLVORDDETA_ITMCD_ACT', 'TDLVSJDETA_CONDGRP'
+        'created_by',
+        'deleted_by',
+        'TDLVORDDETA_DLVCD',
+        'TDLVORDDETA_BRANCH',
+        'TDLVORDDETA_ITMCD',
+        'TDLVORDDETA_ITMQT',
+        'TDLVORDDETA_PRC',
+        'updated_by',
+        'TDLVORDDETA_SLOCD',
+        'TDLVORDDETA_ITMCD_ACT',
+        'returned_at',
+        'TDLVORDDETA_CONDGRP',
     ];
 
     public function sloHead() {

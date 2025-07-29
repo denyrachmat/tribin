@@ -463,7 +463,7 @@ class ReceiveController extends Controller
         $RS = T_RCV_HEAD::on($this->dedicatedConnection)->select([
             "T_RCV_HEAD.id",
             "TRCV_RCVCD",
-            DB::raw("CONCAT(TRCV_RCVCD, ' - ', TRCV_ISSUDT) AS LABEL"),
+            DB::raw("CONCAT(TRCV_RCVCD, ' - ', TRCV_ISSUDT, ' - ', TRCV_REFFNO) AS LABEL"),
             "TRCV_ISSUDT",
             "TRCV_REFFNO",
             "TRCV_DOCNO",

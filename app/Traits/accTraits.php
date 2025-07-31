@@ -33,7 +33,7 @@ trait accTraits
                 $checkRef = $checkRef->getData(true);
             }
 
-            if ($checkRef['data']) {
+            if (isset($checkRef['data']) && count($checkRef['data']) > 0) {
                 // return $checkRef;
                 $filterClose = array_filter($checkRef['data'], function ($item) {
                     return $item['is_closed'] == 1;

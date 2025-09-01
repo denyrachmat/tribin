@@ -462,7 +462,7 @@ class InvoiceController extends Controller
             end"))
                     ->on('RCV.item_code', '=', 'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT');
             })
-                ->where(DB::raw('COALESCE(TOT_RCV_QTY, 0)'), '<=', DB::raw('T_DLVORDDETA.TDLVORDDETA_ITMQT'))
+                ->where(DB::raw('COALESCE(TOT_RCV_QTY, 0)'), '<', DB::raw('T_DLVORDDETA.TDLVORDDETA_ITMQT'))
                 ->get()
                 ->toArray();
         } else {

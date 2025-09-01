@@ -155,8 +155,8 @@ class InvoiceController extends Controller
 
     public function search(Request $request)
     {
-        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA_DEV')
-            ->select('V_INVOICE_DATA_DEV.*')->orderBy('TDLVORD_DLVCD', 'desc');
+        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA')
+            ->select('V_INVOICE_DATA.*')->orderBy('TDLVORD_DLVCD', 'desc');
 
         if ($request->has('rcv') && $request->rcv === 1) {
             $data->leftjoin(DB::raw('(

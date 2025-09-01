@@ -382,6 +382,10 @@ const filterFn = (val, update, abort, fun) => {
     if (fun === "pr") {
       await getPR(val);
     }
+
+    if (fun === "item") {
+      await getItem(val);
+    }
   });
 };
 

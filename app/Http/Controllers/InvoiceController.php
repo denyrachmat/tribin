@@ -36,6 +36,8 @@ class InvoiceController extends Controller
     public function __construct()
     {
         date_default_timezone_set('Asia/Jakarta');
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
         $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
         $this->fpdf = new Fpdf;
     }
@@ -153,17 +155,26 @@ class InvoiceController extends Controller
 
     public function search(Request $request)
     {
-        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA')->orderBy('TDLVORD_DLVCD', 'desc');
+        $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA_DEV')
+            ->select('V_INVOICE_DATA_DEV.*')->orderBy('TDLVORD_DLVCD', 'desc');
 
         if ($request->has('rcv') && $request->rcv === 1) {
-            $data->leftjoin('T_RCV_HEAD', function ($join) {
+            $data->leftjoin(DB::raw('(
+                SELECT SUM(quantity) as RCV_QT, TRCV_REFFNO
+                FROM T_RCV_HEAD
+                INNER JOIN T_RCV_DETAIL ON T_RCV_HEAD.id = T_RCV_DETAIL.id_header
+                group by T_RCV_HEAD.id, TRCV_REFFNO, T_RCV_DETAIL.id_header
+            ) as rcv'
+            ), function ($join) {
                 $join->on(DB::raw("CASE WHEN TDLVORD_TYPE = 4
                     THEN TDLVORD_DLVCD
-                    ELSE SUBSTRING(TDLVORD_DLVCD, 1, LENGTH(TDLVORD_DLVCD) - LOCATE('/', REVERSE(TDLVORD_DLVCD)))
-                END"), '=', 'TRCV_REFFNO');
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), '=', 'rcv.TRCV_REFFNO');
             })
-                ->whereNull('TRCV_REFFNO');
+               ->where(DB::raw('COALESCE(RCV_QT, 0)'), '<', DB::raw('COALESCE(TOT_DLV, 0)'));
         }
+
+        // return $data->toSql();
 
         if (!empty($request->searchBy)) {
             $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -368,10 +379,11 @@ class InvoiceController extends Controller
             'isCond' => false,
             'isSPK' => false,
             'isDlvSJ' => false,
-            'isSlo' => false
+            'isSlo' => false,
+            'osRcvOnly' => false
         ]
     ) {
-        $dlvdet = isset($opt['isDlvDet']) && $opt['isDlvDet'] == true ? T_DLVORDDETA::on($this->dedicatedConnection)->select(
+        $dlvdetInit = T_DLVORDDETA::on($this->dedicatedConnection)->select(
             'T_DLVORDDETA.id',
             'T_DLVORDDETA.TDLVORDDETA_DLVCD',
             'T_DLVORDDETA.TDLVORDDETA_ITMCD',
@@ -429,9 +441,33 @@ class InvoiceController extends Controller
                     when (TDLVOR_ISSPLITSJ <> 1)
                     then TDLVORDDETA_DLVCD
                     else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
-            end"), '=', base64_decode($id))
-            ->get()
-            ->toArray() : [];
+            end"), '=', base64_decode($id));
+
+        if (isset($opt['osRcvOnly']) && $opt['osRcvOnly'] === true) {
+            $dlvdet = $dlvdetInit->leftJoin(DB::raw('(
+                SELECT
+                    trd.item_code,
+                    trh.TRCV_REFFNO,
+                    SUM(trd.quantity) as TOT_RCV_QTY
+                FROM T_RCV_DETAIL trd
+                inner join T_RCV_HEAD trh ON trd.id_header = trh.id
+                GROUP BY
+                    trd.item_code,
+                    trh.TRCV_REFFNO
+            ) RCV'), function ($join) {
+                $join->on('RCV.TRCV_REFFNO', '=', DB::raw("case
+                    when (TDLVOR_ISSPLITSJ <> 1)
+                    then TDLVORDDETA_DLVCD
+                    else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
+            end"))
+                    ->on('RCV.item_code', '=', 'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT');
+            })
+                ->where(DB::raw('COALESCE(TOT_RCV_QTY, 0)'), '<=', DB::raw('T_DLVORDDETA.TDLVORDDETA_ITMQT'))
+                ->get()
+                ->toArray();
+        } else {
+            $dlvdet = isset($opt['isDlvDet']) && $opt['isDlvDet'] == true ? $dlvdetInit->get()->toArray() : [];
+        }
 
         $dlvacc = isset($opt['isDlvAcc']) && $opt['isDlvAcc'] === true
             ? T_DLVACCESSORY::on($this->dedicatedConnection)->where('TDLVACCESSORY_DLVCD', base64_decode($id))->get()

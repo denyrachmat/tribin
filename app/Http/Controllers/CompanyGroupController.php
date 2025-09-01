@@ -235,13 +235,21 @@ class CompanyGroupController extends Controller
 
         if ($request->has('approval')) {
             foreach ($request->approval as $key => $valueApprv) {
-                $this->saveGencode(new Request([
-                    'MGECD_CODE' => 'APPROVAL_SETUP',
-                    'MGECD_VALUE' => $valueApprv['isOwnApproval'] == true ? 'ownapprove' : $valueApprv['username'],
-                    'MGECD_CG' => $this->dedicatedConnection,
-                    'MGECD_DESC' => $key,
-                    'MGECD_ACTIVE' => 1,
-                ]));
+                if (!empty($valueApprv) && is_array($valueApprv) && count($valueApprv) > 0) {
+                    foreach ($valueApprv as $keyApprv => $valueApprvDet) {
+                        $this->saveGencode(new Request([
+                            'data' => [
+                                [
+                                    'MGECD_CODE' => 'APPROVAL_SETUP',
+                                    'MGECD_VALUE' => $valueApprvDet['isOwnApproval'] == true ? 'ownapprove' : $valueApprvDet['username'],
+                                    'MGECD_CG' => $_COOKIE['CGID'],
+                                    'MGECD_DESC' => json_encode($valueApprvDet),
+                                    'MGECD_ACTIVE' => 1,
+                                ]
+                            ]
+                        ]));
+                    }
+                }
             }
         }
 

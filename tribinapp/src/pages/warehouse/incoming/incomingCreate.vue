@@ -562,6 +562,7 @@ const getDataDetailDN = async (dlv, slo, cond) => {
         isSPK: true,
         isDlvSJ: true,
         isSlo: true,
+        osRcvOnly: true
       }
     })
     .then((response) => {

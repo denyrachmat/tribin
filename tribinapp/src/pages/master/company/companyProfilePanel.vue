@@ -69,7 +69,9 @@
                 @click="
                   appr.push({
                     isOwnApproval: false,
-                    isOwnApproval: false,
+                    isEmptyApproval: false,
+                    isSupplierOrCustApproval: false,
+                    remarks: '',
                     username: '',
                   })
                 "
@@ -90,6 +92,11 @@
                     v-model="quo.isEmptyApproval"
                     color="green"
                     label="Empty Approval ?"
+                  />
+                  <q-toggle
+                    v-model="quo.isSupplierOrCustApproval"
+                    color="green"
+                    label="Supplier/Customer Approval ?"
                   />
                 </div>
                 <div class="col text-right q-pa-sm">
@@ -125,7 +132,7 @@
                     :loading="loading"
                     emit-value
                     map-options
-                    :disable="quo.isOwnApproval"
+                    :disable="quo.isOwnApproval || quo.isEmptyApproval || quo.isSupplierOrCustApproval"
                     option-value="id"
                     option-label="name"
                   >
@@ -154,6 +161,7 @@ import { onMounted, ref } from "vue";
 import { api, api_web } from "boot/axios";
 import { useQuasar } from "quasar";
 
+const $q = useQuasar();
 const forms = ref({
   id: "-",
   name: "",

@@ -239,7 +239,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv', 'manager'])) {
+        if (in_array($activeRole['code'], ['root', 'ga', 'ga_manager', 'ga_spv', 'manager'])) {
             $SPK = C_SPK::on($this->dedicatedConnection)->select('CSPK_PIC_AS', 'CSPK_REFF_DOC', 'CSPK_JOBDESK')
                 ->whereNotNull('submitted_at');
             if ($activeRole['code'] === 'ga_manager') {

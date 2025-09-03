@@ -228,7 +228,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'driver'])) {
+        if (in_array($activeRole['code'], ['root', 'ga', 'driver'])) {
             $dataDeliveryOrderUndelivered = T_DLVORDHEAD::on($this->dedicatedConnection)->select('MCUS_CUSNM')
                 ->leftJoin('M_CUS', function ($join) {
                     $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -239,7 +239,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga', 'ga_manager', 'ga_spv', 'manager'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv', 'manager'])) {
             $SPK = C_SPK::on($this->dedicatedConnection)->select('CSPK_PIC_AS', 'CSPK_REFF_DOC', 'CSPK_JOBDESK')
                 ->whereNotNull('submitted_at');
             if ($activeRole['code'] === 'ga_manager') {

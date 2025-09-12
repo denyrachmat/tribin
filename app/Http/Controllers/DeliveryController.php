@@ -1224,32 +1224,34 @@ class DeliveryController extends Controller
         ]);
     }
 
-    function numberToSentence($nilai)
+    public function numberToSentence($nilai)
     {
         $nilai = round(abs($nilai));
         $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
         $temp = "";
+
         if ($nilai < 12) {
             $temp = " " . $huruf[$nilai];
         } else if ($nilai < 20) {
             $temp = $this->numberToSentence($nilai - 10) . " belas";
         } else if ($nilai < 100) {
-            $temp = $this->numberToSentence($nilai / 10) . " puluh" . $this->numberToSentence($nilai % 10);
+            $temp = $this->numberToSentence(floor($nilai / 10)) . " puluh" . $this->numberToSentence($nilai % 10);
         } else if ($nilai < 200) {
             $temp = " seratus" . $this->numberToSentence($nilai - 100);
         } else if ($nilai < 1000) {
-            $temp = $this->numberToSentence($nilai / 100) . " ratus" . $this->numberToSentence($nilai % 100);
+            $temp = $this->numberToSentence(floor($nilai / 100)) . " ratus" . $this->numberToSentence($nilai % 100);
         } else if ($nilai < 2000) {
             $temp = " seribu" . $this->numberToSentence($nilai - 1000);
         } else if ($nilai < 1000000) {
-            $temp = $this->numberToSentence($nilai / 1000) . " ribu" . $this->numberToSentence($nilai % 1000);
+            $temp = $this->numberToSentence(floor($nilai / 1000)) . " ribu" . $this->numberToSentence($nilai % 1000);
         } else if ($nilai < 1000000000) {
-            $temp = $this->numberToSentence($nilai / 1000000) . " juta" . $this->numberToSentence($nilai % 1000000);
+            $temp = $this->numberToSentence(floor($nilai / 1000000)) . " juta" . $this->numberToSentence($nilai % 1000000);
         } else if ($nilai < 1000000000000) {
-            $temp = $this->numberToSentence($nilai / 1000000000) . " milyar" . $this->numberToSentence(fmod($nilai, 1000000000));
+            $temp = $this->numberToSentence(floor($nilai / 1000000000)) . " milyar" . $this->numberToSentence($nilai % 1000000000);
         } else if ($nilai < 1000000000000000) {
-            $temp = $this->numberToSentence($nilai / 1000000000000) . " trilyun" . $this->numberToSentence(fmod($nilai, 1000000000000));
+            $temp = $this->numberToSentence(floor($nilai / 1000000000000)) . " trilyun" . $this->numberToSentence($nilai % 1000000000000);
         }
+
         return $temp;
     }
 
@@ -1637,6 +1639,7 @@ class DeliveryController extends Controller
         $TotalPrice = $Data->CSPK_UANG_JALAN + $Data->CSPK_UANG_SOLAR + $Data->CSPK_UANG_MAKAN
             + $Data->CSPK_UANG_MANDAH + $Data->CSPK_UANG_PENGINAPAN + $Data->CSPK_UANG_PENGAWALAN
             + $Data->CSPK_UANG_LAIN2;
+
         if ($Data->CSPK_PIC_AS === 'DRIVER') {
             if ($Data->CSPK_SUPPLIER !== 'SPBU') {
                 $resultPurchase = $this->autoPurchaseToSparepart(['QTY' => $Data->CSPK_LITER, 'DOC' => $Data->CSPK_DOCNO]);
@@ -2100,6 +2103,9 @@ class DeliveryController extends Controller
                 }
             }
 
+
+            // return env('ACC_URL');
+
             // Start Interface ACC
             $getTotalAmnt = 0;
             foreach ($request->data as $rAcc) {
@@ -2115,6 +2121,8 @@ class DeliveryController extends Controller
             $getInv = T_DLVORDHEAD::on($this->dedicatedConnection)
                 ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $request->id)
                 ->first();
+
+            // return env('ACC_URL');
 
             if (count($cekInvoiceAcc) > 0) {
                 $hasilAPI = $this->sendACC(

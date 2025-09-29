@@ -843,7 +843,7 @@ class PurchaseController extends Controller
 
                 $this->fpdf->SetXY(3, $y);
                 $this->fpdf->SetFont('Arial', 'I', 8);
-                $this->fpdf->MultiCell(125, 4, ucwords($this->numberToSentence($grandTotal + $totalTax)). ' Rupiah', 1);
+                $this->fpdf->MultiCell(125, 4, ucwords($this->numberToSentence(round($grandTotal + $totalTax))). ' Rupiah', 1);
 
                 if (count($taxes) > 0) {
                     $this->fpdf->SetFont('Arial', '', 10);
@@ -862,7 +862,7 @@ class PurchaseController extends Controller
                 $y += 5;
                 $this->fpdf->SetXY(128, $y);
                 $this->fpdf->Cell(35, 5, 'Total', 1, 0);
-                $this->fpdf->Cell(35, 5, number_format($grandTotal + $totalTax), 1, 0, 'R');
+                $this->fpdf->Cell(35, 5, number_format(round($grandTotal + $totalTax)), 1, 0, 'R');
                 $y += 5;
                 $this->fpdf->SetXY(3, $y);
                 $this->fpdf->SetFont('Arial', '', 8);

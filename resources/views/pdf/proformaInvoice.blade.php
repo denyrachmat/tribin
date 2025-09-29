@@ -148,7 +148,8 @@
     </div>
 
     <div>
-        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>PROFORMA INVOICE</strong></span>
+        <div style="text-align: center; font-size: 25px;padding-bottom: 15px"><span><strong>PROFORMA
+                    INVOICE</strong></span>
         </div>
     </div>
 
@@ -223,19 +224,20 @@
                         <th class="tg-0lax"><b>Capacity / Model</b></th>
                         <th class="tg-0lax"><b>Pemakaian / Periode</b></th>
                         <th class="tg-0lax"><b>Qty</b></th>
-                        <th class="tg-0lax"><b>{{$TQUO_TYPE > 2 ? 'Total Harga Barang': 'Total Harga Sewa'}}</b></th>
+                        <th class="tg-0lax"><b>{{$TQUO_TYPE > 2 ? 'Total Harga Barang' : 'Total Harga Sewa'}}</b></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($det as $key => $value)
-                    <tr>
-                        <!-- <td class="tg-0lax">{{$value['MITM_BRAND']}}</td> -->
-                        <td class="tg-0lax">{{$value['MITM_ITMNM']}}</td>
-                        <td class="tg-0lax">{{date('d M Y', strtotime($value['TSLODETA_PERIOD_FR']))}} - {{date('d M Y', strtotime($value['TSLODETA_PERIOD_TO']))}}</td>
+                        <tr>
+                            <!-- <td class="tg-0lax">{{$value['MITM_BRAND']}}</td> -->
+                            <td class="tg-0lax">{{$value['MITM_ITMNM']}}</td>
+                            <td class="tg-0lax">{{date('d M Y', strtotime($value['TSLODETA_PERIOD_FR']))}} -
+                                {{date('d M Y', strtotime($value['TSLODETA_PERIOD_TO']))}}</td>
 
-                        <td class="tg-0lax">{{$value['TSLODETA_ITMQT']}}</td>
-                        <td class="tg-0lax">Rp {{number_format($value['TSLODETA_PRC'], 0, ".", ",") }}</td>
-                    </tr>
+                            <td class="tg-0lax">{{$value['TSLODETA_ITMQT']}}</td>
+                            <td class="tg-0lax">Rp {{number_format($value['TSLODETA_PRC'], 0, ".", ",") }}</td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -250,14 +252,14 @@
                     <td><b>Rp {{number_format($total, 0, ".", ",")}}</b></td>
                 </tr>
                 @foreach($taxes as $key => $valueTax)
-                @php
-                $taxSum = is_array($valueTax['TTAXM_TAXAMT']) ? array_sum($valueTax['TTAXM_TAXAMT']) : 0;
-                @endphp
-                <tr>
-                    <td><b>{{$valueTax['MTAX_DESC']}}</b></td>
-                    <td><b>:</b></td>
-                    <td><b>Rp {{number_format($valueTax['TTAXM_TAXAMT'], 0, ".", ",")}}</b></td>
-                </tr>
+                    @php
+                        $taxSum = is_array($valueTax['TTAXM_TAXAMT']) ? array_sum($valueTax['TTAXM_TAXAMT']) : 0;
+                    @endphp
+                    <tr>
+                        <td><b>{{$valueTax['MTAX_DESC']}}</b></td>
+                        <td><b>:</b></td>
+                        <td><b>Rp {{number_format($valueTax['TTAXM_TAXAMT'], 0, ".", ",")}}</b></td>
+                    </tr>
                 @endforeach
                 <tr>
                     <td><b>Total Tagihan</b></td>
@@ -291,11 +293,11 @@
                 </thead>
                 <tbody>
                     @foreach($payment as $key => $valuePayment)
-                    <tr>
-                        <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
-                        <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
-                        <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
-                    </tr>
+                        <tr>
+                            <td class="tg-0lax">{{$valuePayment['bank_name']}}</td>
+                            <td class="tg-0lax">{{$valuePayment['bank_account_name']}}</td>
+                            <td class="tg-0lax">{{$valuePayment['bank_account_number']}}</td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -317,13 +319,15 @@
     </div>
 
     <div class="row" style="font-size: 12px;padding-top: 5em; left: 10em">
-        <div class="col5">
-            Hormat Kami
-        </div>
+        @foreach ($approvalList as $approval)
+            <div class="col5">
+                {{$approval['remarks']}}
 
-        <div class="row" style="padding-top: 7em">
-            (Syapril, S.T)
-        </div>
+                <div class="row" style="padding-top: 7em">
+                    {{ $approval['name'] }}
+                </div>
+            </div>
+        @endforeach
     </div>
 </body>
 

@@ -21,11 +21,13 @@ use Codedge\Fpdf\Fpdf\Fpdf;
 use Illuminate\Support\Facades\Crypt;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use App\Traits\gencodeTraits;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuotationController extends Controller
 {
+    use gencodeTraits;
     protected $fpdf;
     protected $dedicatedConnection;
 
@@ -1457,6 +1459,7 @@ class QuotationController extends Controller
             ->whereNull("deleted_at")
             ->where('TQUOCOND_BRANCH', Auth::user()->branch)
             ->get()->toArray();
+            
         $User = User::where('nick_name', $RSHeader->created_by)->first();
 
         $checkItemTruck = array_filter($RSDetail, function ($f) {
@@ -1495,6 +1498,25 @@ class QuotationController extends Controller
             $branchPaymentAccount = $checkSetupPayment;
         }
 
+        $getApproval = $this->getGencode(
+            base64_encode('APPROVAL_SETUP'),
+            base64_encode('quotation'),
+            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+        );
+
+        $hasilApproval = [];
+        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+            $hasilApproval[] = [
+                'name' => $value['isOwnApproval']
+                    ? $User->name : (
+                        $value['isSupplierOrCustApproval']
+                        ? $RSHeader->MCUS_CUSNM
+                        : User::where('id', $value['username'])->first()->name
+                    ),
+                'remarks' => $value['remarks'],
+            ];
+        }
+
         $pdf = Pdf::loadView('pdf.quotation', [
             'header' => $RSCG->letter_head,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
@@ -1507,7 +1529,8 @@ class QuotationController extends Controller
             'listCondition' => $RSCondition,
             'listQuoDet' => $RSDetail,
             'checkIsTruckCount' => $checkItemTruck,
-            'paymentList' => $branchPaymentAccount
+            'paymentList' => $branchPaymentAccount,
+            'approvalList' => $hasilApproval,
         ]);
 
         return base64_encode($pdf->output());

@@ -208,9 +208,9 @@ const columns = ref([
     align: "left",
   },
   {
-    name: "DLV_TYPE",
+    name: "DLV_TYPE_DESC",
     label: "Type",
-    field: "DLV_TYPE",
+    field: "DLV_TYPE_DESC",
     sortable: true,
     align: "left",
   },

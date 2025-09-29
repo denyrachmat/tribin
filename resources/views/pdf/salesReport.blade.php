@@ -301,9 +301,9 @@
 
 <table class="tg2" style="margin-top: 5em;width:100%;text-align:center;border:0;page-break-inside: avoid;">
     <tr>
-        <td colspan="3">Dibuat Oleh</td>
-        <td>Diperiksa Oleh</td>
-        <td colspan="3">Diketahui Oleh</td>
+        @foreach ($approvalList as $approval)
+            <td colspan="3">{{$approval['remarks']}}</td>
+        @endforeach
     </tr>
     <tr>
         <td colspan="7"></td>
@@ -318,8 +318,8 @@
         <td colspan="7"></td>
     </tr>
     <tr>
-        <td colspan="3">{{Auth::user()->name}}</td>
-        <td>Manager Acc</td>
-        <td colspan="3">Pimpinan</td>
+        @foreach ($approvalList as $approval)
+            <td colspan="3">{{$approval['name']}}</td>
+        @endforeach
     </tr>
 </table>

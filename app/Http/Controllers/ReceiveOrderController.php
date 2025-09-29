@@ -24,6 +24,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
 use App\Models\BranchPaymentAccount;
+use App\Models\User;
 
 use App\Traits\gencodeTraits;
 use App\Traits\taxesTraits;
@@ -808,6 +809,7 @@ class ReceiveOrderController extends Controller
 
     public function marketingReport(Request $request)
     {
+        set_time_limit(600);
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
         $hasilTemp = [
@@ -923,6 +925,21 @@ class ReceiveOrderController extends Controller
 
         $hasil = $hasilTemp;
 
+        $getApproval = $this->getGencode(
+            base64_encode('APPROVAL_SETUP'),
+            base64_encode('marketing_report'),
+            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+        );
+
+        $hasilApproval = [];
+        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+            $hasilApproval[] = [
+                'name' => $value['isOwnApproval']
+                    ? Auth::user()->name : $value['username'],
+                'remarks' => $value['remarks'],
+            ];
+        }
+
         // return $hasil;
 
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReport', [
@@ -930,7 +947,8 @@ class ReceiveOrderController extends Controller
             'dateRange' => [$request->fdate, $request->ldate],
             'header' => $companyGroupData->name,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-            'addr' => $companyGroupData->address
+            'addr' => $companyGroupData->address,
+            'approvalList' => $hasilApproval,
         ]);
 
         return base64_encode($pdf->output());
@@ -1015,6 +1033,20 @@ class ReceiveOrderController extends Controller
                 ->get();
         }
 
+        $getApproval = $this->getGencode(
+            base64_encode('APPROVAL_SETUP'),
+            base64_encode('proforma_invoice'),
+            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+        );
+
+        $hasilApproval = [];
+        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+            $hasilApproval[] = [
+                'name' => User::where('id', $value['username'])->first()->name,
+                'remarks' => $value['remarks'],
+            ];
+        }
+
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.proformaInvoice', array_merge($RS, [
             'header' => $companyGroupData->name,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
@@ -1024,7 +1056,8 @@ class ReceiveOrderController extends Controller
             'totalAll' => $total + $totalTax,
             'taxes' => $taxes,
             'terbilang' => $this->numberToSentence($total + $totalTax),
-            'payment' => $checkSetupPayment
+            'payment' => $checkSetupPayment,
+            'approvalList' => $hasilApproval,
         ]));
 
         return base64_encode($pdf->output());

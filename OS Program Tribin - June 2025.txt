@@ -2,7 +2,7 @@ Service and sparepart
 
 1. receive order pilih item lama
 2. incoming pilih item lama
-3. Error di print PO Status Export
+3. Error di print PO Status Export (Done)
 4. Filter by type gak bisa di menu Invoice
 5. Add PO terakhir & Supplier di menu item master report
 6. Di buat maximalkan surat jalan jangan di split
@@ -15,6 +15,7 @@ Service and sparepart
 
 Marketing :
 1. Add filter by item number di menu Incoming
+2. Add Category on Print Harian Sales
 
 LINK LEMOT
 https://jos.jatpowerindo.co.id/receive/searchAPI (di sparepart)

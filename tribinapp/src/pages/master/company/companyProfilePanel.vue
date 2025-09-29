@@ -85,18 +85,51 @@
                 <div class="col">
                   <q-toggle
                     v-model="quo.isOwnApproval"
+                    @update:model-value="val => {
+                      if (val) {
+                        quo.isEmptyApproval = false;
+                        quo.isSupplierOrCustApproval = false;
+                        quo.isOtherApproval = false;
+                      }
+                    }"
                     color="green"
                     label="Own Approve ?"
                   />
                   <q-toggle
                     v-model="quo.isEmptyApproval"
+                    @update:model-value="val => {
+                      if (val) {
+                        quo.isOwnApproval = false;
+                        quo.isSupplierOrCustApproval = false;
+                        quo.isOtherApproval = false;
+                      }
+                    }"
                     color="green"
                     label="Empty Approval ?"
                   />
                   <q-toggle
                     v-model="quo.isSupplierOrCustApproval"
+                    @update:model-value="val => {
+                      if (val) {
+                        quo.isOwnApproval = false;
+                        quo.isEmptyApproval = false;
+                        quo.isOtherApproval = false;
+                      }
+                    }"
                     color="green"
                     label="Supplier/Customer Approval ?"
+                  />
+                  <q-toggle
+                    v-model="quo.isOtherApproval"
+                    @update:model-value="val => {
+                      if (val) {
+                        quo.isOwnApproval = false;
+                        quo.isEmptyApproval = false;
+                        quo.isSupplierOrCustApproval = false;
+                      }
+                    }"
+                    color="green"
+                    label="Other Approval ?"
                   />
                 </div>
                 <div class="col text-right q-pa-sm">
@@ -135,8 +168,17 @@
                     :disable="quo.isOwnApproval || quo.isEmptyApproval || quo.isSupplierOrCustApproval"
                     option-value="id"
                     option-label="name"
+                    v-if="!quo.isEmptyApproval && !quo.isOwnApproval && !quo.isSupplierOrCustApproval && !quo.isOtherApproval"
                   >
                   </q-select>
+                  <q-input
+                    v-model="quo.username"
+                    label="Approval Name"
+                    dense
+                    filled
+                    :loading="loading"
+                    v-if="quo.isOtherApproval"
+                  ></q-input>
                 </div>
               </div>
             </div>
@@ -175,6 +217,10 @@ const forms = ref({
     invoice: [],
     receipt: [],
     sj: [],
+    sj_return: [],
+    marketing_report: [],
+    purchase_order: [],
+    purchase_history: [],
   },
 });
 const loading = ref(false);

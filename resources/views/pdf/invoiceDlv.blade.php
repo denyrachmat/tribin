@@ -349,7 +349,7 @@
         </div>
     </div>
 
-    <div class="row" style="font-size: 12px;padding-top: 5em; left: 10em">
+    <!-- <div class="row" style="font-size: 12px;padding-top: 5em; left: 10em">
         <div class="col5">
             Hormat Kami
         </div>
@@ -357,6 +357,17 @@
         <div class="row" style="padding-top: 7em">
             (Syapril, S.T)
         </div>
+    </div> -->
+    <div class="row" style="font-size: 12px;padding-top: 5em; left: 10em">
+        @foreach ($approvalList as $approval)
+            <div class="col5">
+                {{$approval['remarks']}}
+
+                <div class="row" style="padding-top: 7em">
+                    {{ $approval['name'] }}
+                </div>
+            </div>
+        @endforeach
     </div>
 </body>
 

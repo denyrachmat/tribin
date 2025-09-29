@@ -18,7 +18,7 @@ trait gencodeTraits
             ) as CODE_VALUE'))
             ->from('M_GENCODE as mg')
             // ->leftjoin('M_GENCODE as mg2', 'mg.MGECD_VALUE', '=', 'mg2.MGECD_CODE')
-            ->where('mg.MGECD_CODE', base64_decode($code))
+            ->where('mg.MGECD_CODE', 'like', base64_decode($code).'%')
             ->where('mg.MGECD_ACTIVE', 1);
 
         if (!empty($value)) {

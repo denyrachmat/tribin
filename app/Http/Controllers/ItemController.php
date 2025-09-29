@@ -179,7 +179,7 @@ class ItemController extends Controller
                 })
                 ->get();
         } else {
-            $RS = (clone $RSHead)->get();
+            $RS = (clone $RSHead)->get(50);
         }
 
         return ['data' => $RS];
@@ -223,33 +223,40 @@ class ItemController extends Controller
         return ['data' => $RS];
     }
 
-    function searchAPIStockAndPriceOnly(Request $request): array
+    function searchAPIStockAndPriceOnly(Request $request)
     {
         $columnMap = [
-            DB::raw('MITM_ITMNM'),
-            DB::raw("MITM_ITMNMREAL"),
+            DB::raw('MITM_ITMCD AS MITM_ITMNM'),
+            DB::raw('MITM_ITMNM AS MITM_ITMNMREAL'),
             // 'MITM_SPEC',
             'LATEST_PRC',
             'STOCK'
         ];
 
         $DataSet = DB::connection($this->dedicatedConnection);
-        $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
+        $RSHead = $DataSet->table('M_ITM')->select($columnMap)
+            ->leftJoin(DB::raw('(
+                SELECT
+                    CITRN_ITMCD, CITRN_PRCPER AS LATEST_PRC, SUM(CITRN_ITMQT) as STOCK
+                FROM C_ITRN
+                GROUP BY CITRN_ITMCD, CITRN_PRCPER
+            ) AS C_ITRN_SUM'), 'MITM_ITMCD', 'C_ITRN_SUM.CITRN_ITMCD')
             ->where('MITM_BRANCH', Auth::user()->branch)
-            ->where('LATEST_PRC', '>', 0)
+            ->where('LATEST_PRC',  '>', 0)
             ->where('STOCK', '>', 0);
 
-        if ($request->has('isITMCD') && $request->isITMCD == 1) {
-            $RSHead->where('IS_ITMCD', 1);
-        }
+        // if ($request->has('isITMCD') && $request->isITMCD == 1) {
+        //     $RSHead->where('IS_ITMCD', 1);
+        // }
 
         $RS = (clone $RSHead);
+
         if (!empty($request->searchValue)) {
             $RS->where('MITM_ITMNM', 'like', '%' . $request->searchValue . '%');
         }
 
         if ($request->has('dataOnly') && $request->dataOnly == 1) {
-            return ['data' => $RS];
+            return ['data' => $RS->get()];
         }
 
         return ['data' => $RS->paginate(50, [], 'page', $request->page)];
@@ -495,7 +502,9 @@ class ItemController extends Controller
         );
     }
 
-    function getLatestItemServiceCode() {}
+    function getLatestItemServiceCode()
+    {
+    }
 
     function deleteItem($id)
     {

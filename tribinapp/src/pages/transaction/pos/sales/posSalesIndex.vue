@@ -192,7 +192,7 @@
         </div>
         <div
           class="row bg-white q-pa-sm"
-          style="height: 67vh; overflow: auto"
+          style="height: 62vh; overflow: auto"
           :key="refreshIdx"
         >
           <div class="col">

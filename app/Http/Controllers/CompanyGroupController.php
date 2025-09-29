@@ -101,6 +101,7 @@ class CompanyGroupController extends Controller
                 'alias_code' => $request->alias_code,
                 'alias_group_code' => $request->alias_group_code,
             ]);
+
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
     }
 
@@ -171,9 +172,24 @@ class CompanyGroupController extends Controller
         $SelectedCompany = COMPANY_BRANCH::on($this->dedicatedConnection)->select('*')
             ->where('connection', $this->dedicatedConnection)
             ->where('BRANCH', Auth::user()->branch)
-            ->first();
+            ->first()
+            ->toArray();
 
-        return $SelectedCompany;
+        $getApprovalList = $this->getGencode(base64_encode('APPROVAL_LIST_MASTER'), '', Crypt::encryptString($this->dedicatedConnection));
+
+        $approval = [];
+        foreach ($getApprovalList as $keyList => $valueList) {
+            $getApproval = $this->getGencode(base64_encode('APPROVAL_SETUP_' . strtoupper($valueList['MGECD_VALUE'])), '', Crypt::encryptString($this->dedicatedConnection));
+            if (!empty($getApproval)) {
+                foreach ($getApproval as $key => $value) {
+                    $approval[$value['MGECD_VALUE']] = json_decode($value['MGECD_DESC'], true);
+                }
+            } else {
+                $approval[$valueList['MGECD_VALUE']] = [];
+            }
+        }
+
+        return array_merge($SelectedCompany, ['approval' => $approval]);
     }
 
     function form()
@@ -188,7 +204,6 @@ class CompanyGroupController extends Controller
             ->where('connection', $this->dedicatedConnection)
             ->where('BRANCH', Auth::user()->branch)
             ->first();
-
 
         return view('tribinapp_layouts', ['routeApp' => 'company']);
 
@@ -233,23 +248,20 @@ class CompanyGroupController extends Controller
             $id = $request->id;
         }
 
+
         if ($request->has('approval')) {
-            foreach ($request->approval as $key => $valueApprv) {
-                if (!empty($valueApprv) && is_array($valueApprv) && count($valueApprv) > 0) {
-                    foreach ($valueApprv as $keyApprv => $valueApprvDet) {
-                        $this->saveGencode(new Request([
-                            'data' => [
-                                [
-                                    'MGECD_CODE' => 'APPROVAL_SETUP',
-                                    'MGECD_VALUE' => $valueApprvDet['isOwnApproval'] == true ? 'ownapprove' : $valueApprvDet['username'],
-                                    'MGECD_CG' => $_COOKIE['CGID'],
-                                    'MGECD_DESC' => json_encode($valueApprvDet),
-                                    'MGECD_ACTIVE' => 1,
-                                ]
-                            ]
-                        ]));
-                    }
-                }
+            foreach (array_keys($request->approval) as $key => $value) {
+                $data = [
+                    'MGECD_CODE' => 'APPROVAL_SETUP_' . strtoupper($value),
+                    'MGECD_VALUE' => $value,
+                    'MGECD_CG' => Crypt::encryptString($request->connection),
+                    'MGECD_DESC' => json_encode($request->approval[$value]),
+                    'MGECD_ACTIVE' => 1,
+                ];
+
+                $this->saveGencode(new Request([
+                    'data' => [$data]
+                ]));
             }
         }
 

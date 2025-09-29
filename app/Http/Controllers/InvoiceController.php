@@ -171,7 +171,7 @@ class InvoiceController extends Controller
                     ELSE substring_index(TDLVORD_DLVCD, '/', 1)
                 END"), '=', 'rcv.TRCV_REFFNO');
             })
-               ->where(DB::raw('COALESCE(RCV_QT, 0)'), '<', DB::raw('COALESCE(TOT_DLV, 0)'));
+                ->where(DB::raw('COALESCE(RCV_QT, 0)'), '<', DB::raw('COALESCE(TOT_DLV, 0)'));
         }
 
         // return $data->toSql();
@@ -331,6 +331,20 @@ class InvoiceController extends Controller
             $totalTax += $valueTaxes['TTAXM_TAXAMT'];
         }
 
+        $getApproval = $this->getGencode(
+            base64_encode('APPROVAL_SETUP'),
+            base64_encode('proforma_invoice'),
+            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+        );
+
+        $hasilApproval = [];
+        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+            $hasilApproval[] = [
+                'name' => User::where('id', $value['username'])->first()->name,
+                'remarks' => $value['remarks'],
+            ];
+        }
+
         $pdf = Pdf::loadView(
             'pdf.invoiceDlv',
             array_merge(
@@ -348,6 +362,7 @@ class InvoiceController extends Controller
                     'dlvDetNew' => $dlvDetParse,
                     'payment' => $request->payment,
                     'subject' => $Subject,
+                    'approvalList' => $hasilApproval,
                 ],
                 $request->all()
             )
@@ -1205,46 +1220,108 @@ class InvoiceController extends Controller
             $this->fpdf->SetFont('Arial', '', 7);
 
             if (count($RSHeader->condition) > 0) {
-                $startCond = 100;
+                $startCond = 98.5;
                 foreach ($RSHeader->condition as $keyCond => $valueCond) {
-                    $this->fpdf->SetXY(3, $startCond);
-                    $this->fpdf->Cell(29, 5, "- " . $valueCond->MCONDITION_DESCRIPTION, 0, 0, 'L');
+                    if (!isset($startCond) || !is_numeric($startCond)) {
+                        $startCond = 98;
+                    }
+                    $this->fpdf->SetXY(1, $startCond);
+                    $cond = str_replace("\n", '', $valueCond->MCONDITION_DESCRIPTION);
 
-                    $startCond = $startCond + 3;
+                    $desc = wordwrap("- " . $cond, 210, "\n", false);
+                    $this->fpdf->MultiCell(210, 3, $desc, 0, 'L');
+                    $startCond = $this->fpdf->GetY();
                 }
             } else {
-                $this->fpdf->SetXY(3, 100);
+                $startCond = 100;
+                $this->fpdf->SetXY(3, $startCond);
                 $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
-                $this->fpdf->SetXY(3, 103);
+                $startCond += 3;
+                $this->fpdf->SetXY(3, $startCond);
                 $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
+                $startCond += 3;
+            }
 
-                $startCond = 103;
+            $getApproval = $this->getGencode(
+                base64_encode('APPROVAL_SETUP'),
+                base64_encode('sj'),
+                empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+            );
+
+            $getApprovalForklift = $this->getGencode(
+                base64_encode('APPROVAL_SETUP'),
+                base64_encode('sj_forklift'),
+                empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+            );
+
+            $hasilApproval = [];
+            foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+                $hasilApproval[] = [
+                    'name' => $value['isOwnApproval']
+                        ? $Dibuat->name : (
+                            $value['isSupplierOrCustApproval']
+                            ? $RSHeader->MCUS_CUSNM
+                            : ''
+                        ),
+                    'remarks' => $value['remarks'],
+                ];
+            }
+
+            $hasilApprovalForklift = [];
+            foreach (json_decode($getApprovalForklift['MGECD_DESC'], true) as $key => $value) {
+                $hasilApprovalForklift[] = [
+                    'name' => $value['isOwnApproval']
+                        ? $Dibuat->name : (
+                            $value['isSupplierOrCustApproval']
+                            ? $RSHeader->MCUS_CUSNM
+                            : ''
+                        ),
+                    'remarks' => $value['remarks'],
+                ];
             }
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(15, $startCond + 3);
             if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
-                $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
-                $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
-                $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
-                $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
+                $startCountF = 52;
+                foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
+                    $this->fpdf->Cell($startCountF, 5, 'Penerima', 0, 0, 'L');
+                }
                 $this->fpdf->SetXY(13, 135);
-                $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
+                foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
+                    if (!empty($valueRemarksForklift['name'])) {
+                        $this->fpdf->Cell($startCountF, 5, '(' . $valueRemarksForklift['name'] . ')', 0, 0, 'L');
+                    } else {
+                        $this->fpdf->Cell($startCountF, 5, '(                   )', 0, 0, 'L');
+                    }
+                }
+                // $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
+                // $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
+                // $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
+                // $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
+                // $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
+                // $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
+                // $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
+                // $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
             } else {
-                $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
-                $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');
-                $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
-                $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
-                $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
+                // $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
+                // $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');
+                // $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
+                // $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
+                // $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
+
+                $startCount = 40;
+                foreach ($hasilApproval as $key => $valueRemarks) {
+                    $this->fpdf->Cell($startCount, 5, $valueRemarks['remarks'], 0, 0, 'L');
+                }
                 $this->fpdf->SetXY(13, 135);
-                $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(40, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(42, 2, '(                   )', 0, 0, 'L');
-                $this->fpdf->Cell(40, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
+                foreach ($hasilApproval as $key => $valueRemarks) {
+                    if (!empty($valueRemarks['name'])) {
+                        $this->fpdf->Cell($startCount, 5, '(' . $valueRemarks['name'] . ')', 0, 0, 'L');
+                    } else {
+                        $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                    }
+                }
             }
 
             $this->fpdf->SetXY(5, 140);

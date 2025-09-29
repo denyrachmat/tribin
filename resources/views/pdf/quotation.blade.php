@@ -414,9 +414,9 @@
                         <td></td>
                     </tr>
                     <tr>
-                        <td>Dibuat Oleh,</td>
-                        <td>Diketahui Oleh,</td>
-                        <td>Disetujui Oleh,</td>
+                        @foreach ($approvalList as $key => $valueApproval)
+                            <td>{{ $valueApproval['remarks'] }}</td>
+                        @endforeach
                     </tr>
                     <tr>
                         <td style="height: 5em;">
@@ -430,9 +430,9 @@
                         <td style="height: 5em;"></td>
                     </tr>
                     <tr>
-                        <td>{{$headerQuo->created_by}}</td>
-                        <td>Syapril, S.T</td> <!-- Harcode sementara -->
-                        <td>{{$headerQuo->TQUO_ATTN}}</td>
+                        @foreach ($approvalList as $key => $valueApproval)
+                            <td>{{ $valueApproval['name'] }}</td>
+                        @endforeach
                     </tr>
                 </table>
             </div>

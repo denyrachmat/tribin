@@ -17,7 +17,7 @@
           clearable
           option-label="MBRANCH_NM"
           option-value="BRANCH"
-          @update:model-value="getGencodeData(selectedBranch)"
+          @update:model-value="getGencodeData"
           :loading="loading"
           dense
         />
@@ -25,7 +25,7 @@
 
       <div class="col-1 text-right">
         <q-btn
-          @click="getGencodeData()"
+          @click="getGencodeData(selectedBranch)"
           icon="refresh"
           color="primary"
           flat
@@ -150,13 +150,6 @@
 
       <div class="row q-pt-md">
         <div class="col">
-          <q-btn
-            @click="getGencodeData(selectedBranch)"
-            label="Cancel"
-            color="warning"
-            outlined
-            :loading="loading"
-          />
           <q-btn
             @click="onClickSave()"
             label="Save"

@@ -76,11 +76,14 @@ class PurchaseController extends Controller
             $newQuotationCode = '';
             if (!$LastLine) {
                 $LastLine = 1;
-                $newQuotationCode = '001/PCR/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                // $newQuotationCode = '001/PCR/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             } else {
                 $LastLine++;
-                $newQuotationCode = substr('00' . $LastLine, -3) . '/PCR/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                // $newQuotationCode = substr('00' . $LastLine, -3) . '/PCR/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             }
+
+            $newQuotationCode = $this->getGencodeData('pr', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
+
             $quotationHeader = [
                 'TPCHREQ_PCHCD' => $newQuotationCode,
                 'TPCHREQ_PURPOSE' => $request->TPCHREQ_PURPOSE,
@@ -178,11 +181,13 @@ class PurchaseController extends Controller
         } else {
             if (!$LastLine) {
                 $LastLine = 1;
-                $newPOCode = '001/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+                // $newPOCode = '001/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
             } else {
                 $LastLine++;
-                $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+                // $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
             }
+
+            $newPOCode = $this->getGencodeData('po', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
         }
 
         $headerTable = [

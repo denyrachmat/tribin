@@ -93,7 +93,10 @@ Route::group(['middleware' => 'cors'], function () {
         Route::get('actionlogout', [LoginController::class, 'actionlogout'])->name('actionlogout');
         Route::prefix('gencode')->group(function () {
             Route::get('get/{id}', [gencodeController::class, 'getGencode']);
+            Route::post('getGencodeList/{branch}', [gencodeController::class, 'getGencodeList']);
+            Route::post('storeGencodeData', [gencodeController::class, 'storeGencodeData']);
             Route::post('getDynamicsGencode', [gencodeController::class, 'getDynamicsGencode']);
+            Route::get('getGencodeData/{code}/{cg}', [gencodeController::class, 'getGencodeData']);
         });
         # Terkait Company Group
         Route::prefix('companies')->group(function () {
@@ -273,6 +276,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::put('items-actual/{id}', [DeliveryController::class, 'updateDODetailActual']);
             Route::post('', [DeliveryController::class, 'save']);
             Route::post('searchAPI', [DeliveryController::class, 'searchAPI']);
+            Route::get('getDetailAPI/{id}', [DeliveryController::class, 'getDetailAPI']);
             Route::get('', [DeliveryController::class, 'search']);
             Route::put('{id}', [DeliveryController::class, 'update']);
             Route::get('document/{id}', [DeliveryController::class, 'loadByDocument']);
@@ -456,6 +460,8 @@ Route::group(['middleware' => 'cors'], function () {
         Route::prefix('branch')->group(function () {
             Route::get('form', [BranchController::class, 'index']);
             Route::post('', [BranchController::class, 'save']);
+            Route::post('showData', [BranchController::class, 'showData']);
+            Route::post('saveBranch', [BranchController::class, 'saveBranch']);
             Route::get('', [BranchController::class, 'search']);
         });
 

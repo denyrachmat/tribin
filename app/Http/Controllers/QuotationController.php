@@ -77,22 +77,25 @@ class QuotationController extends Controller
             ->where('TQUO_BRANCH', Auth::user()->branch)
             ->max('TQUO_LINE');
 
-        $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
-            'quotation_letter_id'
-        )
-            ->where('connection', $this->dedicatedConnection)
-            ->where('BRANCH', Auth::user()->branch)
-            ->first();
+        // $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
+        //     'quotation_letter_id'
+        // )
+        //     ->where('connection', $this->dedicatedConnection)
+        //     ->where('BRANCH', Auth::user()->branch)
+        //     ->first();
 
         $quotationHeader = [];
-        $newQuotationCode = '';
-        if (!$LastLine) {
-            $LastLine = 1;
-            $newQuotationCode = '001/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
-        } else {
-            $LastLine++;
-            $newQuotationCode = substr('00' . $LastLine, -3) . '/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
-        }
+        // $newQuotationCode = '';
+        // if (!$LastLine) {
+        //     $LastLine = 1;
+        //     $newQuotationCode = '001/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+        // } else {
+        //     $LastLine++;
+        //     $newQuotationCode = substr('00' . $LastLine, -3) . '/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+        // }
+
+        // call GencodeController::getGencodeData (if available) to fetch gencode info for this quotation
+        $newQuotationCode = $this->getGencodeData('quot', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
 
         $quotationHeader = [
             'TQUO_QUOCD' => $newQuotationCode,
@@ -351,6 +354,8 @@ class QuotationController extends Controller
                 ->select(["TQUO_QUOCD", "TQUO_CUSCD", "MCUS_CUSNM", "TQUO_ISSUDT", "TQUO_SBJCT", "TQUO_ATTN", 'TQUO_TYPE', 'TQUO_SERVTRANS_COST', 'TQUO_PROJECT_LOCATION', "TQUO_APPRVDT", DB::raw("CONCAT(TQUO_QUOCD, ' (', MCUS_CUSNM, ' - ', TQUO_PROJECT_LOCATION,')') as DESCSEL")])
                 ->leftJoin("M_CUS", "TQUO_CUSCD", "=", "MCUS_CUSCD");
         // ->whereNull("TQUO_APPRVDT");
+
+        // return $activeRole['code'];
 
         if (!in_array($activeRole['code'], ['root', 'director', 'manager', 'general_manager'])) {
             $RSTemp->where('T_QUOHEAD.created_by', Auth::user()->nick_name);
@@ -1559,11 +1564,13 @@ class QuotationController extends Controller
         $newQuotationCode = '';
         if (!$LastLine) {
             $LastLine = 1;
-            $newQuotationCode = '001/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            // $newQuotationCode = '001/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
         } else {
             $LastLine++;
-            $newQuotationCode = substr('00' . $LastLine, -3) . '/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            // $newQuotationCode = substr('00' . $LastLine, -3) . '/' . $Company->quotation_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
         }
+
+        $newQuotationCode = $this->getGencodeData('quot', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
 
         return ['quocode' => $newQuotationCode, 'maxline' => $LastLine];
     }

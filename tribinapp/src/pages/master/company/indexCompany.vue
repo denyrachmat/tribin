@@ -26,6 +26,11 @@
             label="Accounting Setup"
             icon="account_balance_wallet"
           />
+          <q-tab
+            name="gencode"
+            label="Generate Code"
+            icon="format_list_numbered"
+          />
         </q-tabs>
 
         <q-separator />
@@ -42,6 +47,10 @@
           <q-tab-panel name="acc">
             <accIFSetupPanel />
           </q-tab-panel>
+
+          <q-tab-panel name="gencode">
+            <gencodeSetup />
+          </q-tab-panel>
         </q-tab-panels>
       </div>
     </div>
@@ -55,6 +64,7 @@ import { api, api_web } from "boot/axios";
 import companyProfilePanel from "./companyProfilePanel.vue";
 import paymentAccPanel from "./paymentAccPanel.vue";
 import accIFSetupPanel from "./accIFSetupPanel.vue";
+import gencodeSetup from "./gencodeSetup.vue";
 
 const $q = useQuasar();
 

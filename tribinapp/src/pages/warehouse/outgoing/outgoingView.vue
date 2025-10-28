@@ -46,6 +46,7 @@
               placeholder="Search"
               outlined
               @update:model-value="getOutgoingData()"
+              @keyup.enter="getOutgoingData()"
               debounce="1000"
             >
               <template v-slot:append>
@@ -104,7 +105,7 @@ import { useQuasar } from "quasar";
 
 import outgoingCreate from "./outgoingCreate.vue";
 
-const $q = useQuasar()
+const $q = useQuasar();
 
 const rows = ref([]);
 const columns = ref([
@@ -145,15 +146,15 @@ const columns = ref([
   },
 ]);
 const loading = ref(false);
-const filterCol = ref('')
-const filter = ref('')
+const filterCol = ref("");
+const filter = ref("");
 
 onMounted(() => {
-    getOutgoingData()
-})
+  getOutgoingData();
+});
 
 const getOutgoingData = async () => {
-    loading.value = true;
+  loading.value = true;
   await api_web
     .post(`delivery/searchAPI`, {
       searchBy: filterCol.value,
@@ -166,9 +167,27 @@ const getOutgoingData = async () => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
-const onClickNew = (data = []) => {
+const getOutgoingDataDetail = async (id) => {
+  loading.value = true;
+  return await api_web
+    .get(`delivery/getDetailAPI/${id}`)
+    .then((response) => {
+      loading.value = false;
+      return response.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+      return null;
+    });
+};
+
+const onClickNew = async (data = []) => {
+  if (Object.values(data).length > 0) {
+    data.listItems = await getOutgoingDataDetail(data.TDLVORD_DLVCD);
+  }
+  
   $q.dialog({
     component: outgoingCreate,
     componentProps: {
@@ -178,7 +197,7 @@ const onClickNew = (data = []) => {
   }).onOk(async (val) => {
     getOutgoingData();
   });
-}
+};
 
 const onDelete = (id) => {
   $q.dialog({
@@ -193,5 +212,5 @@ const onDelete = (id) => {
       getOutgoingData();
     });
   });
-}
+};
 </script>

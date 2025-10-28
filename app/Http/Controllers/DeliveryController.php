@@ -327,24 +327,27 @@ class DeliveryController extends Controller
 
                 if (empty($LastLine)) {
                     $LastLine = 1;
-                    $newQuotationCode = 'SP-' . date('y') . '-0001';
-                    $newInvoiceCode = $request->TDLVORD_INVCD;
+                    // $newQuotationCode = 'SP-' . date('y') . '-0001';
                 } else {
                     $LastLine++;
-                    $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
-                    $newInvoiceCode = $request->TDLVORD_INVCD;
+                    // $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
                 }
+                $newInvoiceCode = $request->TDLVORD_INVCD;
             } else {
                 if (empty($LastLine)) {
                     $LastLine = 1;
-                    $newQuotationCode = 'SP-' . date('y') . '-0001';
-                    $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                    // $newQuotationCode = 'SP-' . date('y') . '-0001';
+                    // $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
                 } else {
                     $LastLine++;
-                    $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
-                    $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+                    // $newQuotationCode = 'SP-' . date('y') . '-' . substr('000' . $LastLine, -4);
+                    // $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
                 }
+
+                $newInvoiceCode = $this->getGencodeData('inv', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
             }
+
+            $newQuotationCode = $this->getGencodeData('do', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
         } else {
             $newQuotationCode = $request->TDLVORD_DLVCD;
             $newInvoiceCode = $request->TDLVORD_INVCD;
@@ -599,6 +602,7 @@ class DeliveryController extends Controller
                     ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->whereNull('TDLVORD_REC_NO')
             ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc')
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
@@ -661,14 +665,12 @@ class DeliveryController extends Controller
             //     ->get()
             //     ->toArray();
 
-            if (count($itemDet) > 0) {
-                $hasil[] = array_merge(
-                    $valueSODet,
-                    [
-                        'listItems' => $itemDet
-                    ]
-                );
-            }
+            $hasil[] = array_merge(
+                $valueSODet,
+                [
+                    'listItems' => $itemDet
+                ]
+            );
 
             // $hasil[] = array_merge(
             //     $valueSODet,
@@ -681,46 +683,47 @@ class DeliveryController extends Controller
         return ['data' => $hasil];
     }
 
-    function getDetailAPI($dlvcd) {
+    function getDetailAPI($dlvcd)
+    {
         $itemDet = T_DLVORDDETA::on($this->dedicatedConnection)
-                ->select(
-                    DB::raw('T_DLVORDDETA.id as id'),
-                    DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1) as TDLVORDDETA_DLVCD"),
-                    'TDLVORDDETA_BRANCH',
-                    'TDLVORDDETA_SLOCD',
-                    DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
-                    'MITM_ITMNM',
-                    DB::raw('TDLVORDDETA_ITMQT as ORIQT'),
-                    DB::raw('TDLVORDDETA_ITMQT as BALQT'),
-                    DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
-                )
-                // ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $dlvcd)
-                // ->where(DB::raw("TDLVORDDETA_DLVCD"), $valueSODet['TDLVORD_DLVCD'])
-                ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
-                ->leftJoin("M_ITM_GRP", function ($join) {
-                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-                        ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
-                })
-                ->leftJoin('T_SLODETA', function ($join) {
-                    $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
-                        ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
-                        ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD')
-                        ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
-                })
-                ->groupBy(
-                    DB::raw('T_DLVORDDETA.id'),
-                    'TDLVORDDETA_DLVCD',
-                    'TDLVORDDETA_BRANCH',
-                    'TDLVORDDETA_SLOCD',
-                    'TDLVORDDETA_ITMCD',
-                    'MITM_ITMNM',
-                    'TDLVORDDETA_ITMQT',
-                    'TSLODETA_PRC',
-                    'TDLVORDDETA_PRC'
-                )
-                ->get()
-                ->toArray();
+            ->select(
+                DB::raw('T_DLVORDDETA.id as id'),
+                DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1) as TDLVORDDETA_DLVCD"),
+                'TDLVORDDETA_BRANCH',
+                'TDLVORDDETA_SLOCD',
+                DB::raw('TDLVORDDETA_ITMCD as TSLODETA_ITMCD'),
+                'MITM_ITMNM',
+                DB::raw('TDLVORDDETA_ITMQT as ORIQT'),
+                DB::raw('TDLVORDDETA_ITMQT as BALQT'),
+                DB::raw('CASE WHEN TSLODETA_PRC IS NULL THEN TDLVORDDETA_PRC ELSE TSLODETA_PRC END AS TSLODETA_PRC')
+            )
+            // ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), $dlvcd)
+            // ->where(DB::raw("TDLVORDDETA_DLVCD"), $valueSODet['TDLVORD_DLVCD'])
+            ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
+            ->leftJoin("M_ITM_GRP", function ($join) {
+                $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                    ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
+            })
+            ->leftJoin('T_SLODETA', function ($join) {
+                $join->on('TSLODETA_SLOCD', '=', 'TDLVORDDETA_SLOCD')
+                    ->on('TSLODETA_BRANCH', '=', 'TDLVORDDETA_BRANCH')
+                    ->on('TSLODETA_ITMCD', '=', 'TDLVORDDETA_ITMCD')
+                    ->on('TSLODETA_PRC', '=', 'TDLVORDDETA_PRC');
+            })
+            ->groupBy(
+                DB::raw('T_DLVORDDETA.id'),
+                'TDLVORDDETA_DLVCD',
+                'TDLVORDDETA_BRANCH',
+                'TDLVORDDETA_SLOCD',
+                'TDLVORDDETA_ITMCD',
+                'MITM_ITMNM',
+                'TDLVORDDETA_ITMQT',
+                'TSLODETA_PRC',
+                'TDLVORDDETA_PRC'
+            )
+            ->get()
+            ->toArray();
 
         return $itemDet;
     }
@@ -1499,8 +1502,8 @@ class DeliveryController extends Controller
 
             if (
                 T_PCHORDHEAD::on($this->dedicatedConnection)
-                ->where('TPCHORD_BRANCH', Auth::user()->branch)
-                ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
+                    ->where('TPCHORD_BRANCH', Auth::user()->branch)
+                    ->where('TPCHORD_REMARK', $ParamData['DOC'])->count() > 0
             ) {
                 return true;
             }
@@ -1519,11 +1522,12 @@ class DeliveryController extends Controller
             $newPOCode = '';
             if (!$LastLine) {
                 $LastLine = 1;
-                $newPOCode = '001/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+                // $newPOCode = '001/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
             } else {
                 $LastLine++;
-                $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
+                // $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
             }
+            $newPOCode = $this->getGencodeData('po', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
 
             $headerTable = [
                 'TPCHORD_PCHCD' => $newPOCode,
@@ -2057,15 +2061,15 @@ class DeliveryController extends Controller
             'MITM_ITMNM',
             'MITM_ITMNMREAL'
         )->groupBy(
-            'T_DLVORDDETA.id',
-            'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-            'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-            'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-            'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-            'T_DLVORDDETA.TDLVORDDETA_PRC',
-            'MITM_ITMNM',
-            'MITM_ITMNMREAL'
-        )
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'MITM_ITMNM',
+                'MITM_ITMNMREAL'
+            )
             ->join("M_ITM_GRP", function ($join) {
                 $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
                     ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
@@ -2156,7 +2160,9 @@ class DeliveryController extends Controller
                 ->where('TDLVORD_REC_NO', '!=', '')
                 ->first();
 
-            $IDKwitansi = 'A-' . (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -7) + 1));
+            // $IDKwitansi = 'A-' . (empty($cek) ? '0000001' : sprintf('%07d', (int) substr($cek->TDLVORD_REC_NO, -7) + 1));
+            $IDKwitansi = $this->getGencodeData('autoinv', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
+            ;
 
             T_DLVORDHEAD::on($this->dedicatedConnection)
                 ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $request->id)

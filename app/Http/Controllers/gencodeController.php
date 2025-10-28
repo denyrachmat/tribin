@@ -71,7 +71,7 @@ class gencodeController extends Controller
                 ],
                 [
                     'MGECD_DESC' => $gencodeItem['desc'] ?? null,
-                    'MGECD_DESC2' => $value['MGECD_DESC2'] ?? 1,
+                    'MGECD_DESC2' => $request->branch ?? null,
                     'MGECD_ACTIVE' => 1,
                 ]
             );

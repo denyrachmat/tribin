@@ -300,6 +300,7 @@ const onClickSave = async () => {
           .find((row) => row.startsWith("CGID="))
           ?.split("=")[1] || "",
       gencodeData: branchLists.value,
+      branch: selectedBranch.value.BRANCH,
     };
 
     const response = await api_web.post("/gencode/storeGencodeData", payload);

@@ -500,7 +500,12 @@ class InvoiceController extends Controller
             : [];
 
         $condition = !empty($condGroup) && isset($opt['isCond']) && $opt['isCond'] === true
-            ? M_COND_GROUP::on($this->dedicatedConnection)->where('MCOND_GRPNM', base64_decode($condGroup))->get()
+            ? M_COND_GROUP::on($this->dedicatedConnection)->select(
+                'M_COND_GROUP.*',
+                'M_CONDITIONS.MCONDITION_DESCRIPTION'
+            )->where('MCOND_GRPNM', base64_decode($condGroup))
+            ->join('M_CONDITIONS', 'M_COND_GROUP.MCOND_ID', 'M_CONDITIONS.id')
+            ->get()
             : [];
 
         $spk = isset($opt['isSPK']) && $opt['isSPK'] === true

@@ -1975,7 +1975,7 @@ class DeliveryController extends Controller
             ->groupBy('CITRN_DOCNO', 'CITRN_BRANCH');
 
         $Data = T_DLVORDHEAD::on($this->dedicatedConnection)
-            ->select(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
+            ->select(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', DB::raw("SUBSTRING_INDEX(CITRN_DOCNO, '/', 1) as CITRN_DOCNO"), 'CITRN_BRANCH')
             ->join('T_DLVORDDETA', function ($join) {
                 $join->on('TDLVORD_DLVCD', '=', 'TDLVORDDETA_DLVCD')->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH')
                     ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
@@ -1993,7 +1993,7 @@ class DeliveryController extends Controller
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->whereNull('T_DLVORDDETA.deleted_at')
             // ->where('MITM_ITMTYPE', '!=', '3')
-            ->groupBy(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', 'CITRN_DOCNO', 'CITRN_BRANCH')
+            ->groupBy(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', DB::raw("SUBSTRING_INDEX(CITRN_DOCNO, '/', 1)"), 'CITRN_BRANCH')
             // ->whereNull('CITRN_DOCNO')
             ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc');
 

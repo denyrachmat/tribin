@@ -313,13 +313,14 @@ class ReceiveOrderController extends Controller
                 $newDocumentCode = $request->TSLO_SLOCD;
             }
         } else {
-            // if (!$LastLine) {
-            //     $LastLine = 1;
-            //     $newDocumentCode = '001/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
-            // } else {
-            //     $LastLine++;
-            //     $newDocumentCode = substr('00' . $LastLine, -3) . '/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
-            // }
+            if (!$LastLine) {
+                $LastLine = 1;
+                // $newDocumentCode = '001/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            } else {
+                $LastLine++;
+                // $newDocumentCode = substr('00' . $LastLine, -3) . '/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
+            }
+            
             $newDocumentCode = $this->getGencodeData('so', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
         }
 

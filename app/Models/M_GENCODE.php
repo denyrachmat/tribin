@@ -18,6 +18,7 @@ class M_GENCODE extends Model
         'MGECD_DESC2',
         'MGECD_DESC3',
         'MGECD_CG',
-        'MGECD_FLAG'
+        'MGECD_FLAG',
+        'MGECD_BRANCH'
     ];
 }

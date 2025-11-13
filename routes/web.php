@@ -48,6 +48,7 @@ use Illuminate\Support\Facades\Config;
 use App\Http\Controllers\gencodeController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\DiscController;
+use App\Http\Controllers\PriceBuyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,6 +98,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('storeGencodeData', [gencodeController::class, 'storeGencodeData']);
             Route::post('getDynamicsGencode', [gencodeController::class, 'getDynamicsGencode']);
             Route::get('getGencodeData/{code}/{cg}', [gencodeController::class, 'getGencodeData']);
+            Route::post('deleteGencodeData', [gencodeController::class, 'deleteGencodeData']);
         });
         # Terkait Company Group
         Route::prefix('companies')->group(function () {
@@ -635,6 +637,12 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('listTaxes', [TaxController::class, 'listTaxes']);
         });
         Route::resource('disc', DiscController::class);
+        Route::resource('price', PriceBuyController::class);
+        
+        Route::prefix('price')->group(function () {
+            Route::post('search', [PriceBuyController::class, 'search']);
+            Route::post('bulkUpload', [PriceBuyController::class, 'bulkUpload']);
+        });
     });
 });
 

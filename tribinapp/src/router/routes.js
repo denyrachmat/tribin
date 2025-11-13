@@ -13,6 +13,7 @@ const routes = [
       { path: 'customer', component: () => import('pages/master/customers/customerMasterView.vue') },
       { path: 'company', component: () => import('pages/master/company/indexCompany.vue') },
       { path: 'tax', component: () => import('pages/master/tax/taxView.vue') },
+      { path: 'price', component: () => import('pages/master/price/priceIndex.vue') },
       { path: 'dashboard', component: () => import('pages/dashboards/dashboardView.vue') },
       { path: 'po', component: () => import('pages/transaction/purchasing/poView.vue') },
       { path: 'poReport', component: () => import('pages/transaction/purchasing/poReportView.vue') },

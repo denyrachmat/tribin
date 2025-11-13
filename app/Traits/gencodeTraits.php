@@ -17,7 +17,7 @@ trait gencodeTraits
      * @param string $cg
      * @return mixed
      */
-    public function getGencode($code, $value = '', $cg = '')
+    public function getGencode($code, $value = '', $cg = '', $branch = '')
     {
         $dataHead = M_GENCODE::select('mg.*', DB::raw('(
                 SELECT MGECD_VALUE FROM M_GENCODE
@@ -26,9 +26,13 @@ trait gencodeTraits
             ) as CODE_VALUE'))
             ->from('M_GENCODE as mg')
             // ->leftjoin('M_GENCODE as mg2', 'mg.MGECD_VALUE', '=', 'mg2.MGECD_CODE')
-            ->where('mg.MGECD_CODE', 'like', base64_decode($code).'%')
+            ->where('mg.MGECD_CODE', 'like', base64_decode($code) . '%')
             ->where('mg.MGECD_ACTIVE', 1)
             ->orderBy('mg.MGECD_CODE', 'asc');
+
+        if (!empty($branch)) {
+            $dataHead->where('mg.MGECD_BRANCH', $branch);
+        }
 
         if (!empty($value)) {
             $hasil = (clone $dataHead)->where('mg.MGECD_VALUE', base64_decode($value));
@@ -36,7 +40,7 @@ trait gencodeTraits
                 $conn = Crypt::decryptString($cg);
                 $hasil = $hasil->where('mg.MGECD_CG', $conn)->first();
             } else {
-               $hasil = $hasil->first();
+                $hasil = $hasil->first();
             }
         } else {
             $hasil = (clone $dataHead)->whereNull('mg.MGECD_CG')->get()->toArray();
@@ -148,7 +152,7 @@ trait gencodeTraits
                         $value->save();
                     }
                 }
-                
+
                 if ($parts[0] === 'DATE' && count($parts) > 1) {
                     $dateValue = $value->MGECD_VALUE;
                     $formattedValue = $dateValue;
@@ -176,12 +180,22 @@ trait gencodeTraits
                         // Handle 'rom' generically (for y/m/d) and skip switch below
                         if (strtolower($parts[$i]) === 'rom') {
                             $toRoman = static function (int $num): string {
-                                if ($num <= 0) return '0';
+                                if ($num <= 0)
+                                    return '0';
                                 $map = [
-                                    1000 => 'M', 900 => 'CM', 500 => 'D', 400 => 'CD',
-                                    100  => 'C',  90 => 'XC',  50 => 'L',  40 => 'XL',
-                                    10   => 'X',   9 => 'IX',   5 => 'V',   4 => 'IV',
-                                    1    => 'I',
+                                    1000 => 'M',
+                                    900 => 'CM',
+                                    500 => 'D',
+                                    400 => 'CD',
+                                    100 => 'C',
+                                    90 => 'XC',
+                                    50 => 'L',
+                                    40 => 'XL',
+                                    10 => 'X',
+                                    9 => 'IX',
+                                    5 => 'V',
+                                    4 => 'IV',
+                                    1 => 'I',
                                 ];
                                 $res = '';
                                 foreach ($map as $val => $sym) {

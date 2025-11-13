@@ -147,7 +147,9 @@ class ItemController extends Controller
     {
         $columnMap = [
             'M_ITM_GRP.MITM_ITMNM as MITM_ITMNM',
-            'M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL',
+            $request->has('IS_ITMCD') && $request->IS_ITMCD == 1 
+                ? DB::raw("COALESCE(M_ITM_GRP.MITM_ITMNMREAL, ' - ', M_ITM_GRP.MITM_ITMNM) as MITM_ITMNMREAL") 
+                : 'M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL',
             'LATEST_PRC',
             'STOCK'
         ];
@@ -156,7 +158,7 @@ class ItemController extends Controller
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch);
 
-        if ($request->has('isITMCD') && $request->isITMCD == 1) {
+        if ($request->has('IS_ITMCD') && $request->IS_ITMCD == 1) {
             $RSHead->where('IS_ITMCD', 1);
         } else {
             $RSHead->where('IS_ITMCD', 0);
@@ -319,6 +321,16 @@ class ItemController extends Controller
 
         if ($request->has('isForServ') && $request->isForServ == 1) {
             $RSHead->where('MITM_ITMTYPE', 3);
+        }
+
+        if ($request->has('paginate')) {
+            $RS = $RSHead;
+
+            if ($request->paginate['sortBy']) {
+                $RS->orderBy($request->paginate['sortBy']);
+            }
+
+            return $RS->paginate($request->paginate['rowsPerPage'], [], 'page', $request->paginate['page']);
         }
 
         if (!empty($request->searchValue)) {

@@ -49,6 +49,10 @@ const props = defineProps({
   valueCols: String,
   users: Object,
   conn: String,
+  isCloseAfterUpload: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 defineEmits([
@@ -74,6 +78,10 @@ const factoryFn = async (val) => {
   });
 
   if (processed) {
+    console.log("processed", processed);
+    if (props.isCloseAfterUpload) {
+      onDialogOK(processed);
+    }
     return processed;
   }
 };

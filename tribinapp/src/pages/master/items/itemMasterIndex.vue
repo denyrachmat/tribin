@@ -25,10 +25,9 @@
           row-key="MITM_ITMCD"
           :loading="loading"
           dense
-          :pagination="{
-            rowsPerPage: 20,
-          }"
+          v-model:pagination="pagination"
           class="my-sticky-header-column-table"
+          @request="onRequest"
         >
           <template v-slot:top-right>
             <q-select
@@ -48,7 +47,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="getItem()"
+              @update:model-value="getItem(pagination)"
               debounce="1000"
             >
               <template v-slot:append>
@@ -152,22 +151,37 @@ const cols = ref([
 const loading = ref(false);
 const filterCol = ref('')
 const filter = ref('')
+const pagination = ref({
+  rowsPerPage: 20,
+  page: 1,
+  rowsNumber: 20,
+  sortBy: "MITM_ITMCD",
+  descending: true,
+});
 
 onMounted(() => {
-    getItem()
+    getItem(pagination.value);
 })
 
-const getItem = async () => {
+const onRequest = (props) => {
+  getItem(props.pagination);
+};
+
+const getItem = async (paginations) => {
   loading.value = true;
   await api_web
     .post(`item/searchAPITBL`, {
       searchBy: filterCol.value,
       searchValue: filter.value,
-      isITMCD: 1
+      isITMCD: 1,
+      paginate: paginations
     })
     .then((response) => {
       loading.value = false;
       rows.value = response.data.data;
+      pagination.value.rowsNumber = response.data.total;
+      pagination.value.page = response.data.current_page;
+      pagination.value.rowsPerPage = response.data.per_page;
     })
     .catch((e) => {
       loading.value = false;
@@ -186,7 +200,7 @@ const onClickNew = (data = null) => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getItem();
+    getItem(pagination.value);
   });
 }
 
@@ -230,11 +244,11 @@ const onDelete = (data) => {
       .get(`item/deleteItem/${data}`)
       .then((datas) => {
         loading.value = false;
-        getItem()
+        getItem(pagination.value)
       }).catch((e) => {
         console.log(e)
         loading.value = false;
-        getItem()
+        getItem(pagination.value)
       })
     })
 }

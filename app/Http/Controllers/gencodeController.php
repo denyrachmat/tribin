@@ -19,10 +19,11 @@ class gencodeController extends Controller
             base64_encode($request->has('code') ? $request->code : 'GEN_LIST_SETUP'), 
             '', 
             $request->cg, 
-            $branch
+            $branch,
+            $request->has('exactSearch') ? $request->exactSearch : false
         );
 
-        // return $data;
+        // return $request;
         $hasil = [];
         if (count($data) > 0) {
             foreach ($data as $item) {
@@ -37,7 +38,7 @@ class gencodeController extends Controller
         }
 
         return response()->json([
-            'success' => true,
+            'success' => count($hasil) > 0,
             'data' => $hasil
         ]);
     }

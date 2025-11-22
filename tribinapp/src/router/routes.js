@@ -33,6 +33,7 @@ const routes = [
       { path: 'quotation', component: () => import('pages/transaction/sales/quotation/quotationView.vue') },
       { path: 'so', component: () => import('pages/transaction/sales/order/salesOrderView.vue') },
       { path: 'salesReport', component: () => import('pages/transaction/sales/order/salesOrderReportView.vue') },
+      { path: 'salesReportByCust', component: () => import('pages/transaction/sales/order/salesOrderReportByCustView.vue') },
       { path: 'accIF', component: () => import('pages/transaction/accounting/closing/accClosingIndex.vue') },
       { path: 'glReport', component: () => import('pages/transaction/accounting/glReport/glReportIndex.vue') },
       { path: 'journalReport', component: () => import('pages/transaction/accounting/journalReport/journalReportIndex.vue') },

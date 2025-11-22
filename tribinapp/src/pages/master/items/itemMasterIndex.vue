@@ -8,6 +8,18 @@
         <q-btn icon="add" color="blue" @click="onClickNew()">
           <q-tooltip>Create New Item</q-tooltip>
         </q-btn>
+        <q-btn icon="refresh" color="blue" @click="getItem(pagination)" flat>
+          <q-tooltip>Refresh Data</q-tooltip>
+        </q-btn>
+        <q-btn
+          icon="delete"
+          color="red"
+          @click="onBulkDelete()"
+          :disable="selected.length == 0"
+          flat
+        >
+          <q-tooltip>Delete Selected Item(s)</q-tooltip>
+        </q-btn>
         <q-btn icon="download" color="blue" @click="onExportData()" flat>
           <q-tooltip>Export to Excel</q-tooltip>
         </q-btn>
@@ -28,6 +40,8 @@
           v-model:pagination="pagination"
           class="my-sticky-header-column-table"
           @request="onRequest"
+          v-model:selected="selected"
+          selection="multiple"
         >
           <template v-slot:top-right>
             <q-select
@@ -59,6 +73,9 @@
           <!-- For header -->
           <template v-slot:header="props">
             <q-tr :props="props">
+              <q-th auto-width>
+                <q-checkbox v-model="props.selected" dense />
+              </q-th>
               <q-th auto-width>Action</q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
@@ -69,6 +86,9 @@
           <!-- For Body -->
           <template v-slot:body="props">
             <q-tr :props="props">
+              <q-td auto-width>
+                <q-checkbox v-model="props.selected" dense />
+              </q-td>
               <q-td auto-width>
                 <q-btn
                   flat
@@ -87,7 +107,11 @@
                   :disable="props.row.DLV_STAT == 1"
                   dense
                 >
-                  <q-tooltip>{{props.row.DLV_STAT == 1 ? 'This item code is used by delivery, cannot delete.' : 'Delete Data'}}</q-tooltip>
+                  <q-tooltip>{{
+                    props.row.DLV_STAT == 1
+                      ? "This item code is used by delivery, cannot delete."
+                      : "Delete Data"
+                  }}</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -107,7 +131,7 @@ import { useQuasar } from "quasar";
 
 import itemCreate from "./itemCreate.vue";
 
-const $q = useQuasar()
+const $q = useQuasar();
 
 const rows = ref([]);
 const cols = ref([
@@ -146,11 +170,12 @@ const cols = ref([
     sortable: true,
     align: "left",
   },
-])
+]);
 
 const loading = ref(false);
-const filterCol = ref('')
-const filter = ref('')
+const filterCol = ref("");
+const selected = ref([]);
+const filter = ref("");
 const pagination = ref({
   rowsPerPage: 20,
   page: 1,
@@ -160,8 +185,8 @@ const pagination = ref({
 });
 
 onMounted(() => {
-    getItem(pagination.value);
-})
+  getItem(pagination.value);
+});
 
 const onRequest = (props) => {
   getItem(props.pagination);
@@ -174,7 +199,7 @@ const getItem = async (paginations) => {
       searchBy: filterCol.value,
       searchValue: filter.value,
       isITMCD: 1,
-      paginate: paginations
+      paginate: paginations,
     })
     .then((response) => {
       loading.value = false;
@@ -186,26 +211,25 @@ const getItem = async (paginations) => {
     .catch((e) => {
       loading.value = false;
     });
-}
+};
 
 const onClickNew = (data = null) => {
   $q.dialog({
     component: itemCreate,
     componentProps: {
-      ItemCat: '',
-      ItemType: '',
+      ItemCat: "",
+      ItemType: "",
       isAutoCD: false,
       listOpenField: [],
-      dataForUpdate: data
+      dataForUpdate: data,
     },
     // persistent: true,
   }).onOk(async (val) => {
     getItem(pagination.value);
   });
-}
+};
 
 const onExportData = () => {
-
   $q.dialog({
     title: "Confirmation",
     message: `Do you want to export all this item ?`,
@@ -215,7 +239,7 @@ const onExportData = () => {
     loading.value = true;
     await api_web
       .post(`item/exportExcel`, null, {
-        responseType: 'arraybuffer'
+        responseType: "arraybuffer",
       })
       .then((datas) => {
         loading.value = false;
@@ -223,14 +247,16 @@ const onExportData = () => {
         link.download = name;
         // const data = await fetch(datas).then((res) => res.blob());
         link.href = window.URL.createObjectURL(
-          new Blob([datas.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+          new Blob([datas.data], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          })
         );
         link.click();
         link.remove();
         window.URL.revokeObjectURL(link.href);
       });
   });
-}
+};
 
 const onDelete = (data) => {
   $q.dialog({
@@ -244,12 +270,67 @@ const onDelete = (data) => {
       .get(`item/deleteItem/${data}`)
       .then((datas) => {
         loading.value = false;
-        getItem(pagination.value)
-      }).catch((e) => {
-        console.log(e)
-        loading.value = false;
-        getItem(pagination.value)
+        getItem(pagination.value);
       })
-    })
-}
+      .catch((e) => {
+        console.log(e);
+
+        $q.notify({
+          type: "negative",
+          message: e.response?.data?.msg || "An error occurred",
+          position: "top",
+        });
+        loading.value = false;
+        getItem(pagination.value);
+      });
+  });
+};
+
+const onBulkDelete = () => {
+  $q.dialog({
+    title: "Confirmation",
+    message: `Do you want to delete selected ${selected.value.length} item(s) ?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    loading.value = true;
+    const itemCodes = selected.value.map((item) => item.MITM_ITMCD);
+    await api_web
+      .post(`item/bulkDeleteItem`, { ids: itemCodes })
+      .then((datas) => {
+        if (datas.data.status === false) {
+          const failedItems = datas.data.failed || [];
+          const message = failedItems.length > 0 
+            ? `Failed to delete: ${failedItems.join(', ')}`
+            : datas.data.msg || "Some items could not be deleted";
+          
+          $q.notify({
+            type: "warning",
+            message: message,
+            position: "top",
+          });
+        } else {
+          $q.notify({
+            type: "positive",
+            message: "Items deleted successfully",
+            position: "top",
+          });
+        }
+        loading.value = false;
+        selected.value = [];
+        getItem(pagination.value);
+      })
+      .catch((e) => {
+        console.log(e);
+
+        $q.notify({
+          type: "negative",
+          message: e.response?.data?.msg || "An error occurred",
+          position: "top",
+        });
+        loading.value = false;
+        getItem(pagination.value);
+      });
+  });
+};
 </script>

@@ -2,7 +2,7 @@
   <div class="q-pa-md">
     <div class="row">
       <div class="col">
-        <div class="text-h6">Sales Report by Date</div>
+        <div class="text-h6">Sales Report by Category</div>
       </div>
     </div>
     <div class="row q-pt-md">

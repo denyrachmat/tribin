@@ -78,6 +78,7 @@
                   :loading="loading"
                   :readonly="props.mode === 'view'"
                   @update:model-value="(value) => onSelectItem(value, idx)"
+                  @virtual-scroll="onScroll"
                   v-else
                 >
                 </q-select>
@@ -192,6 +193,13 @@ const props = defineProps({
   header: Object,
 });
 
+const paginate = ref({
+  page: 1,
+  rowsPerPage: 50,
+  sortBy: "MITM_ITMCD",
+  descending: false,
+});
+
 onMounted(async () => {
   console.log(props);
   if (props.dataItem.listFixDet) {
@@ -231,10 +239,14 @@ const getItem = async (val) => {
     .post("item/searchAPITBL", {
       searchValue: val,
       isITMCD: 1,
+      paginate: paginate.value,
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = response.data.data;
+      listItems.value = [...listItems.value, ...response.data.data];
+      paginate.value.rowsNumber = response.data.total;
+      paginate.value.page = response.data.current_page;
+      paginate.value.rowsPerPage = response.data.per_page;
     })
     .catch(() => {
       loading.value = false;
@@ -317,6 +329,21 @@ const onInputQty = (val, idx) => {
     });
 
     // listItemsSel.value[idx].TSRVF_QTY = 0
+  }
+};
+
+const onScroll = async ({ to, ref }) => {
+  console.log(to, ref);
+  const scrollElement = ref.$el || ref;
+  console.log(scrollElement);
+
+  if (to === paginate.value.page * paginate.value.rowsPerPage - 1) {
+    // Reached the bottom
+    console.log("Reached the bottom");
+
+    paginate.value.page += 1;
+    await getItem('');
+    // You can load more data here
   }
 };
 </script>

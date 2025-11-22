@@ -46,14 +46,15 @@
                   (val, update, abort) => filterFn(val, update, abort, 'item')
                 "
                 behavior="dialog"
-                option-label="MITM_ITMNMREAL"
-                option-value="MITM_ITMNM"
+                option-label="MITM_ITMNM"
+                option-value="MITM_ITMCD"
                 emit-value
                 map-options
                 :loading="loading"
                 @update:model-value="onSelectItem"
                 :rules="[(val) => !!val || 'Item Code is required']"
                 :disable="!header.MITMBPRC_BRANCH"
+                @virtual-scroll="onScroll"
               >
               </q-select>
             </div>
@@ -221,6 +222,14 @@ const props = defineProps({
   dataHeader: Array,
 });
 
+const paginate = ref({
+  rowsPerPage: 20,
+  page: 1,
+  rowsNumber: 20,
+  sortBy: "MITM_ITMCD",
+  descending: true,
+});
+
 const header = ref({
   MITMBPRC_ITMCD: "",
   MITMBPRC_PRC: 0,
@@ -376,17 +385,36 @@ const getGlobalMargin = async (branch) => {
 const getItem = async (val) => {
   loading.value = true;
   await api_web
-    .post("item/searchAPI", {
+    .post("item/searchAPITBL", {
       searchValue: val,
-      IS_ITMCD: 1,
+      isITMCD: 1,
+      paginate: paginate.value,
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = response.data.data;
+      listItems.value = [...listItems.value, ...response.data.data];
+      paginate.value.rowsNumber = response.data.total;
+      paginate.value.page = response.data.current_page;
+      paginate.value.rowsPerPage = response.data.per_page;
     })
     .catch(() => {
       loading.value = false;
     });
+};
+
+const onScroll = async ({ to, ref }) => {
+  console.log(to, ref);
+  const scrollElement = ref.$el || ref;
+  console.log(scrollElement);
+
+  if (to === paginate.value.page * paginate.value.rowsPerPage - 1) {
+    // Reached the bottom
+    console.log("Reached the bottom");
+
+    paginate.value.page += 1;
+    await getItem("");
+    // You can load more data here
+  }
 };
 
 const onSelectItem = (val) => {

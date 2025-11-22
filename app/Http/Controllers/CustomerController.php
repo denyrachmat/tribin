@@ -206,8 +206,8 @@ class CustomerController extends Controller
         $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*')
             ->where('MCUS_BRANCH', Auth::user()->branch);
 
-        if (isset($request->searchValue) && $request->searchValue !== "") {
-            $RSTemp->where($request->searchBy, 'LIKE', "%{$request->searchValue}%");
+        if (isset($request->searchValue) && $request->searchValue !== "" && $request->searchValue !== "all") {
+            $RSTemp->where($request->searchBy, $request->searchOperator ?? 'LIKE', $request->searchOperator == 'LIKE' || $request->searchOperator == 'not like' ? "%{$request->searchValue}%" : $request->searchValue);
         }
 
         $hasil = [];

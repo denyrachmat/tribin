@@ -43,6 +43,7 @@ class LoginController extends Controller
             foreach ($RSCompany as $r) {
                 $company['connection'] = Crypt::encryptString($r->connection);
                 $company['name'] = $r->name;
+                $company['user_det'] = $user;
             }
             return [
                 'tokennya' => $user->createToken($request->input('inputUserid') . 'bebas')->plainTextToken, 'data' => $company

@@ -25,6 +25,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
 use App\Models\BranchPaymentAccount;
 use App\Models\User;
+use App\Models\M_CUS;
 
 use App\Traits\gencodeTraits;
 use App\Traits\taxesTraits;
@@ -320,8 +321,8 @@ class ReceiveOrderController extends Controller
                 $LastLine++;
                 // $newDocumentCode = substr('00' . $LastLine, -3) . '/PT/SLO/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             }
-            
-            $newDocumentCode = $this->getGencodeData('so', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
+
+            $newDocumentCode = $this->getGencodeData('so', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
         }
 
         if ($request->TSLO_POCD == '') {
@@ -809,6 +810,11 @@ class ReceiveOrderController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'salesReport']);
     }
 
+    public function salesReportByCustForm()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'salesReportByCust']);
+    }
+
     public function marketingReport(Request $request)
     {
         set_time_limit(600);
@@ -818,6 +824,7 @@ class ReceiveOrderController extends Controller
             'BARU' => [],
             'PERPANJANGAN' => []
         ];
+
         $listCat = [];
         if (count($request->itmCat) > 0) {
             $listCat = $request->itmCat;
@@ -826,67 +833,6 @@ class ReceiveOrderController extends Controller
         }
 
         foreach ($listCat as $key => $value) {
-            // $RSTemp = T_DLVORDDETA::on($this->dedicatedConnection)
-            //     ->select(
-            //         'TSLO_SLOCD',
-            //         'MITM_ITMCD',
-            //         'MITM_ITMNM',
-            //         'TQUO_PROJECT_LOCATION',
-            //         'CSPK_PIC_AS',
-            //         'CSPK_PIC_NAME',
-            //         'MCUS_CUSNM',
-            //         DB::raw('SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) AS TSLODETA_ITMQT'),
-            //         DB::raw('SUM(TSLODETA_ITMQT * TSLODETA_PRC) AS TSLODETA_ITMQTORI'),
-            //         'name',
-            //         'T_SLOHEAD.created_by',
-            //         DB::raw('MIN(TSLODETA_PERIOD_FR) TSLODETA_PERIOD_FR'),
-            //         DB::raw('MAX(TSLODETA_PERIOD_TO) TSLODETA_PERIOD_TO'),
-            //         'MUSAGE_ALIAS',
-            //         'TDLVORDDETA_DLVCD',
-            //         DB::raw("(
-            //             SELECT
-            //                 CASE WHEN MTAX_TYPE = 'PERCENT'
-            //                     THEN SUM(TDLVORDDETA_ITMQT * TDLVORDDETA_PRC) * (MTAX_AMT / 100)
-            //                     ELSE MTAX_AMT
-            //                 END
-            //             FROM jatpower_tribin.T_TAX_MAP
-            //             INNER JOIN jatpower_tribin.M_TAX ON TTAXM_TYPE = MTAX_CODE
-            //             WHERE TTAXM_DOCNO = TSLO_SLOCD
-            //             AND TTAXM_CG = '".$this->dedicatedConnection."'
-            //             AND deleted_at IS NULL
-            //         ) AS totalTax")
-            //     )
-            //     ->join('T_SLODETA', function ($j) {
-            //         $j->on('TDLVORDDETA_SLOCD', 'TSLODETA_SLOCD');
-            //         $j->on('TDLVORDDETA_ITMCD', 'TSLODETA_ITMCD');
-            //     })
-            //     ->join('T_SLOHEAD', 'TSLODETA_SLOCD', 'TSLO_SLOCD')
-            //     ->join('T_QUOHEAD', 'TSLO_QUOCD', 'TQUO_QUOCD')
-            //     ->join('M_ITM', 'MITM_ITMCD', 'TDLVORDDETA_ITMCD_ACT')
-            //     ->join('M_CUS', 'MCUS_CUSCD', 'TSLO_CUSCD')
-            //     ->leftjoin('C_SPK', 'CSPK_REFF_DOC', 'TDLVORDDETA_DLVCD')
-            //     ->leftJoin('M_USAGE', 'M_USAGE.id', DB::raw('CAST(TSLODETA_USAGE_DESCRIPTION AS INTEGER)'))
-            //     ->join('jatpower_tribin.users', 'T_SLODETA.created_by', 'nick_name')
-            //     ->where('MITM_ITMCAT', $value)
-            //     ->whereBetween('T_SLODETA.created_at', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"])
-            //     ->groupBy(
-            //         'TSLO_SLOCD',
-            //         'MITM_ITMCD',
-            //         'MITM_ITMNM',
-            //         'TQUO_PROJECT_LOCATION',
-            //         'CSPK_PIC_AS',
-            //         'CSPK_PIC_NAME',
-            //         'MCUS_CUSNM',
-            //         'name',
-            //         'T_SLOHEAD.created_by',
-            //         // 'TSLODETA_PERIOD_FR',
-            //         // 'TSLODETA_PERIOD_TO',
-            //         'MUSAGE_ALIAS',
-            //         'TDLVORDDETA_DLVCD',
-            //         'TDLVORDDETA_ITMQT',
-            //         'TDLVORDDETA_PRC'
-            //     );
-
             $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
                 ->where('MITM_ITMCAT', $value)
                 ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
@@ -923,6 +869,95 @@ class ReceiveOrderController extends Controller
             }
         }
 
+        // Approval Setup
+        $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
+
+        $hasil = $hasilTemp;
+
+        $getApproval = $this->getGencode(
+            base64_encode('APPROVAL_SETUP'),
+            base64_encode('marketing_report'),
+            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+        );
+
+        $hasilApproval = [];
+        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+            $hasilApproval[] = [
+                'name' => $value['isOwnApproval']
+                    ? Auth::user()->name : $value['username'],
+                'remarks' => $value['remarks'],
+            ];
+        }
+        // return [
+        //     'data' => $hasil,
+        //     'dateRange' => [$request->fdate, $request->ldate],
+        //     'header' => $companyGroupData->name,
+        //     'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+        //     'addr' => $companyGroupData->address,
+        //     'approvalList' => $hasilApproval,
+        // ];
+
+        $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReport', [
+            'data' => $hasil,
+            'dateRange' => [$request->fdate, $request->ldate],
+            'header' => $companyGroupData->name,
+            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+            'addr' => $companyGroupData->address,
+            'approvalList' => $hasilApproval,
+        ]);
+
+        return base64_encode($pdf->output());
+    }
+
+    public function marketingReportByCust(Request $request)
+    {
+        set_time_limit(600);
+
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+
+        $listCat = [];
+        if (count($request->cust) > 0) {
+            $listCat = $request->cust;
+        } else {
+            $listCatTemp = M_CUS::on($this->dedicatedConnection)->select('MCUS_CUSCD')
+                ->groupBy('MCUS_CUSCD');
+
+            if ($request->typeCust === 'all') {
+                $listCat = $listCatTemp->get()->pluck('MCUS_CUSCD');
+            } elseif ($request->typeCust == '1') {
+                $listCat = $listCatTemp->where('MCUS_TYPE', '<>', 3)->get()->pluck('MCUS_CUSCD');
+            } elseif ($request->typeCust == '3') {
+                $listCat = $listCatTemp->where('MCUS_TYPE', 3)->get()->pluck('MCUS_CUSCD');
+            }
+        }
+
+        $hasilTemp = [];
+        foreach ($listCat as $key => $value) {
+            $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
+                ->where('MCUS_CUSCD', $value)
+                ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
+
+            if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
+                $RSTemp->where('created_by', Auth::user()->nick_name);
+            }
+
+            // return Auth::user();
+
+            $cekTotalData = $RSTemp->get()->toArray();
+            $cekTotalData = json_decode(json_encode($cekTotalData), true);
+
+            if (count($cekTotalData) > 0) {
+                $getCustName = M_CUS::on($this->dedicatedConnection)->select('MCUS_CUSNM')
+                    ->where('MCUS_CUSCD', $value)
+                    ->first()
+                    ->MCUS_CUSNM;
+                    
+                $hasilTemp[$getCustName][] = $cekTotalData;
+            }
+        }
+
+        // return $hasilTemp;
+
         $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
 
         $hasil = $hasilTemp;
@@ -942,9 +977,7 @@ class ReceiveOrderController extends Controller
             ];
         }
 
-        // return $hasil;
-
-        $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReport', [
+        $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReportByCust', [
             'data' => $hasil,
             'dateRange' => [$request->fdate, $request->ldate],
             'header' => $companyGroupData->name,

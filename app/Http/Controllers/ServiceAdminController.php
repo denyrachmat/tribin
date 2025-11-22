@@ -334,6 +334,8 @@ class ServiceAdminController extends Controller
 
         $head = $RSTemp->get()->toArray();
 
+        // return $head;
+
         $hasil = [];
         foreach ($head as $key => $value) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
@@ -344,10 +346,12 @@ class ServiceAdminController extends Controller
                         // $j->where('TSRVF_ISCONF', 1);
                     },
                 ])
-                ->join('M_ITM', 'MITM_ITMCD', 'TSRVD_ITMCD')
+                ->leftjoin('M_ITM', 'MITM_ITMCD', 'TSRVD_ITMCD')
                 ->where('TSRVH_ID', $value['id'])
                 ->get()
                 ->toArray();
+
+            // return $getDet;
 
             $listPartReq = [];
             foreach ($getDet as $keyDet => $valueDet) {

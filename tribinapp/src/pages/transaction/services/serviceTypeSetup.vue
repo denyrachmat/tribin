@@ -46,8 +46,8 @@
                   v-model="typeData.OPRNAME"
                   :options="listCat"
                   :loading="loading"
-                  option-label="MGECD_DESC"
-                  option-value="MGECD_DESC"
+                  option-label="desc"
+                  option-value="code"
                   emit-value
                   map-options
                   :readonly="props.isView"
@@ -119,8 +119,22 @@ onMounted(() => {
 });
 
 const getTypeListOPR = async () => {
-  await api_web.get(`gencode/get/${btoa("SRV_TYPE")}`).then((response) => {
-    listCat.value = response.data;
+  const getUsersDet =
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("user_det="))
+        ?.split("=")[1] || "";
+  const userDet = getUsersDet ? JSON.parse(decodeURIComponent(getUsersDet)) : {};
+
+  await api_web.post(`gencode/getGencodeList/${userDet.branch ?? '0'}`, {
+    code: 'SRV_TYPE',
+    cg: document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("CGID="))
+        ?.split("=")[1] || "",
+    exactSearch: true,
+  }).then((response) => {
+    listCat.value = response.data.data;
   });
   // listType
 };

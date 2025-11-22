@@ -147,9 +147,9 @@ class ItemController extends Controller
     {
         $columnMap = [
             'M_ITM_GRP.MITM_ITMNM as MITM_ITMNM',
-            $request->has('IS_ITMCD') && $request->IS_ITMCD == 1 
-                ? DB::raw("COALESCE(M_ITM_GRP.MITM_ITMNMREAL, ' - ', M_ITM_GRP.MITM_ITMNM) as MITM_ITMNMREAL") 
-                : 'M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL',
+            $request->has('IS_ITMCD') && $request->IS_ITMCD == 1
+            ? DB::raw("COALESCE(M_ITM_GRP.MITM_ITMNMREAL, ' - ', M_ITM_GRP.MITM_ITMNM) as MITM_ITMNMREAL")
+            : 'M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL',
             'LATEST_PRC',
             'STOCK'
         ];
@@ -158,7 +158,7 @@ class ItemController extends Controller
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch);
 
-        if ($request->has('IS_ITMCD') && $request->IS_ITMCD == 1) {
+        if ($request->has('isITMCD') && $request->isITMCD == 1) {
             $RSHead->where('IS_ITMCD', 1);
         } else {
             $RSHead->where('IS_ITMCD', 0);
@@ -244,7 +244,7 @@ class ItemController extends Controller
                 GROUP BY CITRN_ITMCD, CITRN_PRCPER
             ) AS C_ITRN_SUM'), 'MITM_ITMCD', 'C_ITRN_SUM.CITRN_ITMCD')
             ->where('MITM_BRANCH', Auth::user()->branch)
-            ->where('LATEST_PRC',  '>', 0)
+            ->where('LATEST_PRC', '>', 0)
             ->where('STOCK', '>', 0);
 
         // if ($request->has('isITMCD') && $request->isITMCD == 1) {
@@ -278,7 +278,7 @@ class ItemController extends Controller
                 'MITM_ITMTYPE',
                 'MITM_BRAND',
                 DB::raw('0 as LATEST_PRC'),
-                DB::raw("1 AS DLV_STAT"),
+                DB::raw("0 AS DLV_STAT"),
                 DB::raw("(
                     SELECT COALESCE(SUM(CITRN_ITMQT), 0)
                     FROM C_ITRN
@@ -299,7 +299,7 @@ class ItemController extends Controller
                 'MITM_ITMTYPE',
                 'MITM_BRAND',
                 DB::raw('0 as LATEST_PRC'),
-                DB::raw("1 AS DLV_STAT"),
+                DB::raw("0 AS DLV_STAT"),
                 DB::raw("0 AS STOCK"),
                 DB::raw("'tester2' AS STOCK_test"),
             ];
@@ -341,42 +341,6 @@ class ItemController extends Controller
         }
 
         return ['data' => $RS];
-
-        // $columnMap = [
-        //     DB::raw('MITM_ITMNM as MITM_ITMCD'),
-        //     'MITM_ITMNMREAL',
-        //     DB::raw("MITM_ITMNMREAL as MITM_ITMNM"),
-        //     'MITM_SPEC',
-        //     'MITM_MODEL',
-        //     'MITM_STKUOM',
-        //     'MITM_ITMCAT',
-        //     'MITM_ITMTYPE',
-        //     'MITM_BRAND',
-        //     'LATEST_PRC',
-        //     DB::raw("1 AS DLV_STAT"),
-        //     'STOCK'
-        // ];
-
-        // $DataSet = DB::connection($this->dedicatedConnection);
-        // $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
-        //     ->where('MITM_BRANCH', Auth::user()->branch)
-        //     ->where('IS_ITMCD', 1);
-
-        // if ($request->has('isITMCD') && $request->isITMCD == 1) {
-        //     $RSHead->where('IS_ITMCD', 1);
-        // }
-
-        // if ($request->has('isForServ') && $request->isForServ == 1) {
-        //     $RSHead->where('MITM_ITMTYPE', 3);
-        // }
-
-        // if (!empty($request->searchValue)) {
-        //     $RS = (clone $RSHead)->where('MITM_ITMNMREAL', 'like', '%' . $request->searchValue . '%')->get();
-        // } else {
-        //     $RS = (clone $RSHead)->limit(10)->get();
-        // }
-
-        // return ['data' => $RS];
     }
 
     function searchItemDyn(Request $request)
@@ -518,11 +482,41 @@ class ItemController extends Controller
     {
     }
 
-    function deleteItem($id)
+    function bulkDelete(Request $request)
     {
+        $responses = [];
+        foreach ($request->ids as $id) {
+            $responses[] = $this->deleteItem($id, $request->forceDelete ?? false);
+        }
+
+        $listNotDeleted = array_filter($responses, function ($res) {
+            return $res['msg'] === 'Item Deleted !!';
+        });
+        $allDeleted = count($listNotDeleted) === count($request->ids);
+
+        return [
+            'status' => $allDeleted,
+            'data' => $responses,
+            'msg' => $allDeleted ? 'All items deleted' : 'Some items could not be deleted',
+        ];
+    }
+
+    function deleteItem($id, $force = false)
+    {
+        if (!$force) {
+            $stockExists = DB::connection($this->dedicatedConnection)
+                ->table('C_ITRN')
+                ->where('CITRN_ITMCD', $id)
+                ->sum('CITRN_ITMQT');
+
+            if ($stockExists != 0) {
+                return ['msg' => 'Cannot delete item with existing stock transactions', 'status' => 406];
+            }
+        }
+
         $affectedRow = M_ITM::on($this->dedicatedConnection)
             ->where('MITM_ITMCD', '=', $id)
-            ->forceDelete();
+            ->delete();
 
         return ['msg' => $affectedRow ? 'Item Deleted !!' : 'No changes'];
     }

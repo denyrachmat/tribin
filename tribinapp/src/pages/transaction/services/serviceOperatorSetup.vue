@@ -48,8 +48,8 @@
                   :loading="loading"
                   emit-value
                   map-options
-                  option-label="MGECD_DESC"
-                  option-value="MGECD_DESC"
+                  option-label="desc"
+                  option-value="code"
                   :readonly="props.isView"
                 >
                 </q-select>
@@ -93,6 +93,8 @@
                   :loading="loading"
                   option-label="MGECD_DESC"
                   option-value="MGECD_DESC"
+                  emit-value
+                  map-options
                   v-else-if="!isNewOpr"
                 >
                   <template v-slot:append>
@@ -159,15 +161,15 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
 const $q = useQuasar();
 const props = defineProps({
   detail: Array,
-  isView: Boolean
+  isView: Boolean,
 });
 
-const isViewData = ref(false)
+const isViewData = ref(false);
 const listType = ref([]);
 const isNewOpr = ref(false);
 const loading = ref(false);
 const listOperator = ref([]);
-const listCat = ref([])
+const listCat = ref([]);
 
 onMounted(() => {
   if (props.detail && props.detail.length > 0) {
@@ -175,34 +177,55 @@ onMounted(() => {
   }
   getTypeListOPR();
   getListRegisteredOPR();
-  isViewData.value = props.isView
+  isViewData.value = props.isView;
 });
 
 const getTypeListOPR = async () => {
-  await api_web.get(`gencode/get/${btoa("SRV_OPR_TYPE")}`).then((response) => {
-    listType.value = response.data;
-  });
+  // await api_web.get(`gencode/get/${btoa("SRV_OPR_TYPE")}`).then((response) => {
+  //   listType.value = response.data;
+  // });
+
+  const getUsersDet =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("user_det="))
+      ?.split("=")[1] || "";
+  const userDet = getUsersDet
+    ? JSON.parse(decodeURIComponent(getUsersDet))
+    : {};
+
+  await api_web
+    .post(`gencode/getGencodeList/${userDet.branch ?? "0"}`, {
+      code: "SRV_OPR_TYPE",
+      cg:
+        document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("CGID="))
+          ?.split("=")[1] || "",
+      exactSearch: true,
+    })
+    .then((response) => {
+      listType.value = response.data.data;
+    });
   // listType
 };
 
 const getListRegisteredOPR = async () => {
-  await api_web.post(`gencode/getDynamicsGencode`,{
-    select: [
-      'mg.MGECD_DESC'
-    ],
-    where: [
-      {
-        col: 'mg.MGECD_CODE',
-        opr: 'like',
-        val: 'SRV_OPR_TYPE_%'
-      }
-    ],
-    group: [
-      'mg.MGECD_DESC'
-    ]
-  }).then((response) => {
-    listCat.value = response.data;
-  });
+  await api_web
+    .post(`gencode/getDynamicsGencode`, {
+      select: ["mg.MGECD_DESC"],
+      where: [
+        {
+          col: "mg.MGECD_CODE",
+          opr: "like",
+          val: "SRV_OPR_TYPE_%",
+        },
+      ],
+      group: ["mg.MGECD_DESC"],
+    })
+    .then((response) => {
+      listCat.value = response.data;
+    });
 };
 
 const onClickAddItem = () => {

@@ -147,15 +147,16 @@
                   @click="onClickProceed(props.row)"
                   dense
                   v-if="
+                    props.row.detail.length > 0 &&
                     props.row.detail.filter((fil) => fil.TSRVD_FLGSTS == 1)
                       .length === props.row.detail.length
                   "
                 >
                   <q-tooltip>{{
-                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS > 0)
-                      .length !== props.row.detail.length
-                      ? "Please wait until all item checked"
-                      : "Proceed all item to service"
+                    props.row.detail.filter((fil) => fil.TSRVD_FLGSTS == 1)
+                      .length === props.row.detail.length
+                      ? "Proceed all item to service"
+                      : "Please wait all item to calculate price"
                   }}</q-tooltip>
                 </q-btn>
               </q-td>
@@ -226,7 +227,7 @@ const dataSrv = async () => {
   await api_web
     .post("servicesAdmins/search", {
       searchBy: filterCol.value,
-      searchValue: filter.value
+      searchValue: filter.value,
     })
     .then((response) => {
       loading.value = false;

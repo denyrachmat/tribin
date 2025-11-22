@@ -138,6 +138,9 @@
                         Cookies.set('CGNM', response.data.name, {
                             expires: 365
                         });
+                        Cookies.set('user_det', JSON.stringify(response.data.user_det), {
+                            expires: 365
+                        });
                         location.href = '/home'
                     }
                 },

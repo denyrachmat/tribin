@@ -94,7 +94,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::get('actionlogout', [LoginController::class, 'actionlogout'])->name('actionlogout');
         Route::prefix('gencode')->group(function () {
             Route::get('get/{id}', [gencodeController::class, 'getGencode']);
-            Route::post('getGencodeList/{branch}', [gencodeController::class, 'getGencodeList']);
+            Route::post('getGencodeList/{branch?}', [gencodeController::class, 'getGencodeList']);
             Route::post('storeGencodeData', [gencodeController::class, 'storeGencodeData']);
             Route::post('getDynamicsGencode', [gencodeController::class, 'getDynamicsGencode']);
             Route::get('getGencodeData/{code}/{cg}', [gencodeController::class, 'getGencodeData']);
@@ -220,6 +220,7 @@ Route::group(['middleware' => 'cors'], function () {
 
             Route::get('getLatestItemServiceCode', [ItemController::class, 'getLatestItemServiceCode']);
             Route::get('deleteItem/{id}', [ItemController::class, 'deleteItem']);
+            Route::post('bulkDeleteItem', [ItemController::class, 'bulkDelete']);
             Route::post('exportExcel', [ItemController::class, 'exportExcel']);
         });
 
@@ -320,8 +321,10 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('getData/{id}', [ReceiveOrderController::class, 'getSLOByIDAPI']);
             Route::delete('itemsAPI/{id}', [ReceiveOrderController::class, 'deleteByID']);
             Route::get('salesReportForm', [ReceiveOrderController::class, 'salesReportForm']);
+            Route::get('salesReportByCustForm', [ReceiveOrderController::class, 'salesReportByCustForm']);
 
             Route::post('marketingReport', [ReceiveOrderController::class, 'marketingReport']);
+            Route::post('marketingReportByCustomer', [ReceiveOrderController::class, 'marketingReportByCust']);
             Route::post('proformaInvReport', [ReceiveOrderController::class, 'proformaInvReport']);
 
             Route::delete('items/{id}', [ReceiveOrderController::class, 'deleteItemById']);

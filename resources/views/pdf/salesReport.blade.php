@@ -1,81 +1,36 @@
-<style type="text/css">
-    .tg {
-        border-collapse: collapse;
-        border-spacing: 0;
-        width: 100%;
-    }
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; }
 
-    .tg td {
-        border-color: black;
-        border-style: solid;
-        border-width: 1px;
-        font-family: Arial, sans-serif;
-        font-size: 10px;
-        overflow: hidden;
-        padding: 5px 5px;
-        word-break: normal;
-    }
+  table.tg {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;         /* bantu Dompdf hitung kolom lebih cepat */
+  }
 
-    .tg th {
-        border-color: black;
-        border-style: solid;
-        border-width: 1px;
-        font-family: Arial, sans-serif;
-        font-size: 10px;
-        font-weight: normal;
-        overflow: hidden;
-        padding: 5px 5px;
-        word-break: normal;
-    }
+  .tg th, .tg td {
+    border: 1px solid #000;
+    padding: 4px;
+    vertical-align: top;
+    word-wrap: break-word;
+  }
 
-    .tg2 {
-        border-collapse: collapse;
-        border-spacing: 0;
-    }
+  .text-left  { text-align: left; }
+  .text-right { text-align: right; }
+  .text-center{ text-align: center; }
 
-    .tg2 td {
-        border-color: black;
-        border-style: solid;
-        border-width: 0px;
-        font-family: Arial, sans-serif;
-        font-size: 15px;
-        overflow: hidden;
-        padding: 5px 5px;
-        word-break: normal;
-        font-style: bold;
-    }
+  .group-title {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 6px 0;
+  }
 
-    .tg2 th {
-        border-color: black;
-        border-style: solid;
-        border-width: 0px;
-        font-family: Arial, sans-serif;
-        font-size: 15px;
-        font-weight: normal;
-        overflow: hidden;
-        padding: 5px 5px;
-        word-break: normal;
-    }
+  .tg .tg-0lax { text-align: left; font-size: 7px; vertical-align: top } 
+  .tg .tg-0laxa { text-align: left; vertical-align: top; font-size: 10px; font-style: bold; }
 
-    .tg .tg-0lax {
-        text-align: left;
-        font-size: 7px;
-        vertical-align: top
-    }
-
-    .tg .tg-0laxa {
-        text-align: left;
-        vertical-align: top;
-        font-size: 10px;
-        font-style: bold;
-    }
-
-    @media print {
-      .page-break {
-        page-break-after: always;
-      }
-    }
+  .page-break { page-break-after: always; }
+  thead { display: table-header-group; } /* header tabel ulang tiap page */
 </style>
+
 <div style="text-align: center">
     <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
     <div style="text-align: center; font-size: 16px;padding-bottom: 4px"><strong>{{$subHeader}}</strong></div>
@@ -87,7 +42,7 @@
 </div>
 
 <div style="text-align: center;">
-    <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Sales Report by Day</span>
+    <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Sales Report by Category</span>
     <br>
     <span style="font-family: Arial, sans-serif; font-style: bold">From {{date('d M Y', strtotime($dateRange[0]))}} to
         {{date('d M Y', strtotime($dateRange[1]))}}</span>
@@ -120,14 +75,14 @@
                 <th class="tg-0lax">Tgl Akhir</th>
             </tr>
         </thead>
-        <tbody style="page-break-inside: avoid;">
+        <tbody>
             @php
                 $total = $totalTax = 0;
             @endphp
             @foreach($data['BARU'] as $key => $value)
-                        <tr style="page-break-inside: avoid;">
-                            <td class="tg-0lax" style="text-align: center;" colspan="14">
-                                <h3>{{$key}}</h3>
+                        <tr>
+                            <td class="text-center group-title" colspan="14">
+                                {{$key}}
                             </td>
                         </tr>
                         @php
@@ -135,11 +90,12 @@
                             $subtotalTax = 0;
                         @endphp
                         @foreach($value as $keyUsage => $valueUsage)
-                            <tr style="page-break-inside: avoid;">
-                                <td class="tg-0lax" style="text-align: left;" colspan="14">
-                                    <h3>{{$keyUsage}}</h3>
+                            <tr>
+                                <td class="text-left group-title" colspan="14">
+                                    {{$keyUsage}}
                                 </td>
                             </tr>
+
                             @foreach($valueUsage as $keyDet => $valueDet)
                                 @php
                                     $subtotal += $valueDet['TSLODETA_ITMQT'];
@@ -222,13 +178,13 @@
                 <th class="tg-0lax">Tgl Akhir</th>
             </tr>
         </thead>
-        <tbody style="page-break-inside: avoid;">
+        <tbody>
             @php
                 $total = 0;
                 $totalTax = 0;
             @endphp
             @foreach($data['PERPANJANGAN'] as $key => $value)
-                        <tr style="page-break-inside: avoid;">
+                        <tr>
                             <td class="tg-0lax" style="text-align: center;" colspan="14">
                                 <h3>{{$key}}</h3>
                             </td>
@@ -238,7 +194,7 @@
                             $subtotalTax = 0;
                         @endphp
                         @foreach($value as $keyUsage => $valueUsage)
-                            <tr style="page-break-inside: avoid;">
+                            <tr>
                                 <td class="tg-0lax" style="text-align: left;" colspan="14">
                                     <h3>{{$keyUsage}}</h3>
                                 </td>
@@ -299,10 +255,10 @@
 
 @endif
 
-<table class="tg2" style="margin-top: 5em;width:100%;text-align:center;border:0;page-break-inside: avoid;">
+<table class="tg2 group-title" style="margin-top: 3em;width:100%;text-align:center;border:0;">
     <tr>
         @foreach ($approvalList as $approval)
-            <td colspan="3">{{$approval['remarks']}}</td>
+            <td colspan="3" style="height: 60px">{{$approval['remarks']}}</td>
         @endforeach
     </tr>
     <tr>

@@ -150,7 +150,7 @@
                                     <td class="tg-0lax" style="text-align: left;">{{ $valueDet['CSPK_PIC_NAME'] }} ( {{ $valueDet['CSPK_PIC_AS'] ?? '-' }} )</td>
                                     <td class="tg-0lax" style="text-align: left;">{{ $valueDet['SERVICED_UNIT'] }} ( {{ $valueDet['SERVICED_UNIT_DESC'] ?? '-' }} )</td>
                                     <td class="tg-0lax" style="text-align: left;">{{ $valueDet['TQUO_PROJECT_LOCATION'] }}</td>
-                                    <td class="tg-0lax" style="text-align: left;"></td>
+                                    <td class="tg-0lax" style="text-align: left;">Rp {{number_format($valueDet['BPRICE'])}}</td>
                                 </tr>
                             @endforeach
                         @endforeach

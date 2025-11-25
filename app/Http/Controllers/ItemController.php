@@ -319,8 +319,13 @@ class ItemController extends Controller
                 'MITM_BRAND'
             );
 
-        if ($request->has('isForServ') && $request->isForServ == 1) {
-            $RSHead->where('MITM_ITMTYPE', 3);
+        // if ($request->has('isForServ') && $request->isForServ == 1) {
+        //     $RSHead->where('MITM_ITMTYPE', 3);
+        // }
+
+        if (!empty($request->searchValue)) {
+            $RSHead->where(DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' )"), 'like', '%' . $request->searchValue . '%');
+                // ->orWhere(DB::raw("MITM_ITMCD"), 'like', '%' . $request->searchValue . '%');
         }
 
         if ($request->has('paginate')) {
@@ -330,15 +335,18 @@ class ItemController extends Controller
                 $RS->orderBy($request->paginate['sortBy']);
             }
 
-            return $RS->paginate($request->paginate['rowsPerPage'], [], 'page', $request->paginate['page']);
+            if (!empty($request->searchValue)) {
+                $page = 1;
+                $rowsPerPage = 100;
+            } else {
+                $page = $request->paginate['page'];
+                $rowsPerPage = $request->paginate['rowsPerPage'];
+            }
+
+            return $RS->paginate($rowsPerPage, [], 'page', $page);
         }
 
-        if (!empty($request->searchValue)) {
-            $RS = (clone $RSHead)
-                ->where(DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' )"), 'like', '%' . $request->searchValue . '%')->get();
-        } else {
-            $RS = (clone $RSHead)->limit(10)->get();
-        }
+        $RS = (clone $RSHead)->get();
 
         return ['data' => $RS];
     }

@@ -180,7 +180,7 @@ class PriceBuyController extends Controller
                 return $sellPriceResponse;
             }
         }
-        
+
         $validatedData['MITMBPRC_CG'] = Crypt::decryptString($validatedData['MITMBPRC_CG']);
 
         // Check if item code exists and deactivate existing records
@@ -253,7 +253,14 @@ class PriceBuyController extends Controller
         $conn = $this->getDB(Crypt::decryptString($request->cg))->db;
 
         $query = M_ITMBPRICE::select(
-            'M_ITMBPRICE.*',
+            'M_ITMSPRICE.id as id',
+            'MITMBPRC_ITMCD',
+            'MITMBPRC_PRC',
+            'MITMBPRC_STARTDT',
+            'MITMBPRC_ENDDT',
+            'MITMBPRC_ACTIVE',
+            'MITMBPRC_CG',
+            'MITMBPRC_BRANCH',
             'M_ITMSPRICE.MITMSPRC_PRC',
             'M_ITMSPRICE.MITMSPRC_TYPE',
             'M_ITM.MITM_ITMNM',
@@ -271,7 +278,21 @@ class PriceBuyController extends Controller
                 $join->on('M_ITMSPRICE.MITMSPRC_TYPE', '=', 'MGECD_VALUE')
                     ->where('MGECD_CODE', '=', 'MPRC_TYPE');
             })
-            ->where('M_ITMBPRICE.MITMBPRC_CG', '=', Crypt::decryptString($request->cg));
+            ->where('M_ITMBPRICE.MITMBPRC_CG', '=', Crypt::decryptString($request->cg))
+            ->groupBy(
+                'M_ITMSPRICE.id',
+                'MITMBPRC_ITMCD',
+                'MITMBPRC_PRC',
+                'MITMBPRC_STARTDT',
+                'MITMBPRC_ENDDT',
+                'MITMBPRC_ACTIVE',
+                'MITMBPRC_CG',
+                'M_ITMSPRICE.MITMSPRC_PRC',
+                'M_ITMSPRICE.MITMSPRC_TYPE',
+                'MITMBPRC_BRANCH',
+                'M_ITM.MITM_ITMNM',
+                'typeCode.MGECD_DESC'
+            );
 
         if ($request->has('filter') && !empty($request->filter)) {
             foreach ($request->filter as $key => $valueFilter) {
@@ -291,7 +312,7 @@ class PriceBuyController extends Controller
             'is_preview' => 'nullable|string',
             'file' => 'required|file|mimes:xlsx,xls',
         ]);
-        
+
         if (!$request->hasFile('file')) {
             return response()->json(['message' => 'No file uploaded'], 400);
         }

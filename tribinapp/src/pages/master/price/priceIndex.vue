@@ -4,8 +4,8 @@
       <div class="col text-center text-h6">Price Management</div>
     </div>
 
-    <div class="row q-pt-md q-gutter-md">
-      <div class="col-12">
+    <div class="row q-pt-md items-center">
+      <div class="col">
         <q-select
           v-model="selectedBranch"
           :options="branchOptions"
@@ -18,8 +18,16 @@
           map-options
           :loading="loading"
           dense
-          :rules="[(val) => !!val || 'Branch is required']"
           @update:model-value="getGencodeData"
+        />
+      </div>
+      <div class="col-auto q-pl-md">
+        <q-btn
+          flat
+          icon="refresh"
+          color="primary"
+          @click="getGencodeData(selectedBranch)"
+          :loading="loading"
         />
       </div>
       <div class="col-12">
@@ -54,7 +62,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="getPaymentList()"
+              @update:model-value="getGencodeData(selectedBranch)"
               debounce="1000"
               :disable="!selectedBranch"
             >
@@ -139,7 +147,11 @@
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                {{ col.format ? col.format(props.row[col.field]) : props.row[col.field] }}
+                {{
+                  col.format
+                    ? col.format(props.row[col.field])
+                    : props.row[col.field]
+                }}
               </q-td>
             </q-tr>
           </template>
@@ -207,8 +219,15 @@ const cols = ref([
     sortable: true,
   },
   {
-    name: "MITMSPRC_TYPEDESC",
+    name: "MITMSPRC_TYPE",
     label: "Type Price",
+    field: "MITMSPRC_TYPE",
+    align: "right",
+    sortable: true,
+  },
+  {
+    name: "MITMSPRC_TYPEDESC",
+    label: "Type Price Desc",
     field: "MITMSPRC_TYPEDESC",
     align: "right",
     sortable: true,
@@ -249,7 +268,9 @@ const getPriceList = () => {
                 .split("; ")
                 .find((row) => row.startsWith("CGID="))
                 ?.split("=")[1] || "",
-            [filterCol.value]: filter.value,
+            filter: {
+              [filterCol.value]: filter.value,
+            },
           }
         : {
             cg:
@@ -475,7 +496,7 @@ const deletePrice = async (row) => {
       icon: "report_problem",
     });
   } finally {
-      getPriceList();
+    getPriceList();
     loading.value = false;
   }
 };
@@ -532,7 +553,8 @@ const onClickUpload = () => {
         },
         {
           name: "MITMSPRC_TYPE",
-          label: "Type Price(RTL = Retail, PRM = Promo, WHL = Wholesale / Grosir, ONL = Online, SPC = Special)",
+          label:
+            "Type Price(RTL = Retail, PRM = Promo, WHL = Wholesale / Grosir, ONL = Online, SPC = Special)",
           field: "MITMSPRC_TYPE",
           align: "right",
           sortable: true,

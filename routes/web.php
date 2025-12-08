@@ -640,8 +640,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('listTaxes', [TaxController::class, 'listTaxes']);
         });
         Route::resource('disc', DiscController::class);
-        Route::resource('price', PriceBuyController::class);
-        
+
+        Route::resource('price', PriceBuyController::class);        
         Route::prefix('price')->group(function () {
             Route::post('search', [PriceBuyController::class, 'search']);
             Route::post('bulkUpload', [PriceBuyController::class, 'bulkUpload']);

@@ -100,7 +100,20 @@
                 dense
                 :readonly="props.mode === 'view'"
                 v-else
-              />
+              >
+                <template v-slot:append>
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    icon="search"
+                    @click="onClickSearchPrice(items.TSRVF_ITMCD, idx)"
+                    :disable="!items.TSRVF_ITMCD"
+                  >
+                    <q-tooltip>Search Price</q-tooltip>
+                  </q-btn>
+                </template>
+              </q-input>
             </q-item-section>
 
             <q-item-section>
@@ -182,6 +195,8 @@ import { api, api_web } from "boot/axios";
 import { onMounted, ref } from "vue";
 import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
+import priceChooser from "../../master/price/priceChooser.vue";
+
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
@@ -243,7 +258,13 @@ const getItem = async (val) => {
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = [...listItems.value, ...response.data.data];
+
+      if (val) {
+        listItems.value = response.data.data;
+      } else {
+        listItems.value = [...listItems.value, ...response.data.data];
+      }
+
       paginate.value.rowsNumber = response.data.total;
       paginate.value.page = response.data.current_page;
       paginate.value.rowsPerPage = response.data.per_page;
@@ -303,6 +324,50 @@ const onSelectItem = async (val, idx) => {
         message: `Stock item ${val} (${getItemData[0].MITM_ITMNM}) is 0, You might be can't use this item !`,
       });
     }
+
+    const getPriceList = async () => {
+      loading.value = true;
+      const itemcd = await val;
+      console.log("Item Code:", itemcd);
+
+      if (!itemcd) {
+        return Promise.resolve(0);
+      }
+
+      return api_web
+        .post(
+          "/price/search",
+          itemcd
+            ? {
+                cg:
+                  document.cookie
+                    .split("; ")
+                    .find((row) => row.startsWith("CGID="))
+                    ?.split("=")[1] || "",
+                filter: {
+                  MITMBPRC_ITMCD: itemcd,
+                  MITMSPRC_TYPE: "RTL",
+                },
+              }
+            : {
+                cg:
+                  document.cookie
+                    .split("; ")
+                    .find((row) => row.startsWith("CGID="))
+                    ?.split("=")[1] || "",
+              }
+        )
+        .then((response) =>
+          response.data.data ? response.data.data[0].MITMSPRC_PRC : 0
+        )
+        .finally(() => {
+          loading.value = false;
+        });
+    };
+
+    getPriceList().then((res) => {
+      listItemsSel.value[idx].TSRVF_PRC = res ?? 0;
+    });
   }
 };
 
@@ -317,9 +382,9 @@ const checkStockItem = async (item) => {
     .catch(() => {
       loading.value = false;
 
-      return false
+      return false;
     });
-}
+};
 
 const onInputQty = (val, idx) => {
   if (val > listItemsSel.value[idx].STOCK) {
@@ -342,8 +407,34 @@ const onScroll = async ({ to, ref }) => {
     console.log("Reached the bottom");
 
     paginate.value.page += 1;
-    await getItem('');
+    await getItem("");
     // You can load more data here
   }
+};
+
+const onClickSearchPrice = async (item, idx) => {
+  const getUsersDet =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("user_det="))
+      ?.split("=")[1] || "";
+  const userDet = getUsersDet
+    ? JSON.parse(decodeURIComponent(getUsersDet))
+    : {};
+
+  $q.dialog({
+    component: priceChooser,
+    componentProps: {
+      branch: userDet ? userDet.branch : "",
+      selectedItemName: item,
+      searchPriceParam: {
+        MITMSPRC_TYPE: "RTL",
+      },
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    console.log(val);
+    listItemsSel.value[idx].TSRVF_PRC = val.MITMSPRC_PRC;
+  });
 };
 </script>

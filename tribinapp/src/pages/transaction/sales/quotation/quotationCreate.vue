@@ -272,11 +272,14 @@
                           emit-value
                           map-options
                           :loading="loading"
+                          @update:model-value="(val) => onSelectItem(val, idx)"
                         >
                         </q-select>
                       </q-item-label>
                     </q-item-section>
-                    <q-item-section v-if="quotationType === 1 || quotationType === 2">
+                    <q-item-section
+                      v-if="quotationType === 1 || quotationType === 2"
+                    >
                       <q-item-label>
                         <q-select
                           dense
@@ -307,20 +310,30 @@
                           label="Price"
                           filled
                           v-model="items.price"
-                        />
+                          :loading="loading"
+                        >
+                          <template v-slot:append>
+                            <q-btn
+                              round
+                              dense
+                              flat
+                              icon="search"
+                              @click="onClickSearchPrice(items.item, idx)"
+                            >
+                              <q-tooltip>Search Price</q-tooltip>
+                            </q-btn>
+                          </template>
+                        </q-input>
                       </q-item-label>
                     </q-item-section>
                     <q-item-section>
                       <q-item-label>
-                        <q-input
-                          dense
-                          label="Qty"
-                          filled
-                          v-model="items.qty"
-                        />
+                        <q-input dense label="Qty" filled v-model="items.qty" :loading="loading" />
                       </q-item-label>
                     </q-item-section>
-                    <q-item-section v-if="quotationType === 1 || quotationType === 2">
+                    <q-item-section
+                      v-if="quotationType === 1 || quotationType === 2"
+                    >
                       <q-item-label>
                         <q-input
                           dense
@@ -380,6 +393,8 @@ import { masterDataStore } from "stores/masterDataStore";
 import assignConditionsView from "pages/master/conditions/assignConditionsView.vue";
 import viewAssignedCond from "pages/master/conditions/viewAssignedCond.vue";
 import quotationBankChoose from "./quotationBankChoose.vue";
+import priceManageIndex from "src/pages/master/price/priceManageIndex.vue";
+import priceChooser from "src/pages/master/price/priceChooser.vue";
 
 const $q = useQuasar();
 
@@ -415,7 +430,7 @@ onMounted(async () => {
     await getSavedData(props.quoHeader);
   }
 
-  dataSrv()
+  dataSrv();
 });
 
 const loading = ref(false);
@@ -488,7 +503,7 @@ const getItem = async (val) => {
   await api_web
     .post("item/searchAPI", {
       searchValue: val,
-      IS_ITMCD: 0
+      IS_ITMCD: 0,
     })
     .then((response) => {
       loading.value = false;
@@ -587,7 +602,7 @@ const onClickConditions = () => {
   $q.dialog({
     component: assignConditionsView,
     componentProps: {
-      typeGroup: 'quo'
+      typeGroup: "quo",
     },
     // persistent: true,
   }).onOk(async (val) => {
@@ -600,7 +615,7 @@ const onClickViewListConditions = () => {
   $q.dialog({
     component: viewAssignedCond,
     componentProps: {
-      listCond: quotationConditions.value
+      listCond: quotationConditions.value,
     },
     // persistent: true,
   }).onOk(async (val) => {});
@@ -622,9 +637,9 @@ const dataSrv = async () => {
   loading.value = true;
   await api_web
     .post("servicesAdmins/search", {
-      searchBy: 'TSRVD_FLGSTS',
-      searchValue: '2',
-      onlyShowWoQuo: true
+      searchBy: "TSRVD_FLGSTS",
+      searchValue: "2",
+      onlyShowWoQuo: true,
     })
     .then((response) => {
       loading.value = false;
@@ -691,38 +706,118 @@ const onChangeType = (value) => {
   listSavedItems.value = [];
 };
 
-const onChooseService = async(val) => {
+const onChooseService = async (val) => {
   loading.value = true;
   await api_web
     .post("servicesAdmins/search", {
-      searchBy: 'SRVH_DOCNO',
+      searchBy: "SRVH_DOCNO",
       searchValue: val,
     })
     .then((response) => {
       loading.value = false;
-      const getData = response.data.data[0]
+      const getData = response.data.data[0];
 
-      quotationCustomerCode.value = getData.MCUS_CUSCD
-      quotationSubject.value = `SERVICE - ${val}`
-      let listItems = []
-      getData.detail.map(valMap => {
-        valMap.list_fix_det.map(valMapDet => {
+      quotationCustomerCode.value = getData.MCUS_CUSCD;
+      quotationSubject.value = `SERVICE - ${val}`;
+      let listItems = [];
+      getData.detail.map((valMap) => {
+        valMap.list_fix_det.map((valMapDet) => {
           listSavedItems.value.push({
             item: valMapDet.MITM_ITMCD,
             usage: 0,
             price: valMapDet.TSRVF_PRC,
-            electric: '',
+            electric: "",
             qty: valMapDet.TSRVF_QTY,
           });
-        })
-      })
+        });
+      });
 
-      console.log(getData)
+      console.log(getData);
     })
     .catch((e) => {
       loading.value = false;
     });
-}
+};
+
+const onClickSearchPrice = async (item, idx) => {
+  const getUsersDet =
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("user_det="))
+      ?.split("=")[1] || "";
+  const userDet = getUsersDet
+    ? JSON.parse(decodeURIComponent(getUsersDet))
+    : {};
+
+  $q.dialog({
+    component: priceChooser,
+    componentProps: {
+      branch: userDet ? userDet.branch : "",
+      selectedItemName: item,
+      searchPriceParam: {
+        MITMSPRC_TYPE: quotationType.value === 1 ? "REN" : "",
+      },
+    },
+    // persistent: true,
+  }).onOk(async (val) => {
+    console.log(val);
+    listSavedItems.value[idx].price = val.MITMSPRC_PRC;
+  });
+};
+
+const onSelectItem = (item, idx) => {
+  console.log("Selected Item:", [item, idx]);
+  const getItem = async (val) => {
+    return await api_web
+      .post("item/searchAPITBL", {
+        searchValue: val,
+        isITMCD: 1,
+      })
+      .then((response) => response.data.data ? response.data.data[0].MITM_ITMCD : null);
+  };
+
+  const getPriceList = async () => {
+    loading.value = true;
+    const itemcd = await getItem(item);
+    console.log("Item Code:", itemcd);
+
+    if (!itemcd) {
+      return Promise.resolve(0);
+    }
+
+    return api_web
+      .post(
+        "/price/search",
+        itemcd
+          ? {
+              cg:
+                document.cookie
+                  .split("; ")
+                  .find((row) => row.startsWith("CGID="))
+                  ?.split("=")[1] || "",
+              filter: {
+                MITMBPRC_ITMCD: itemcd,
+                MITMSPRC_TYPE: quotationType.value === 1 ? "REN" : "",
+              },
+            }
+          : {
+              cg:
+                document.cookie
+                  .split("; ")
+                  .find((row) => row.startsWith("CGID="))
+                  ?.split("=")[1] || "",
+            }
+      )
+      .then((response) => response.data.data ? response.data.data[0].MITMSPRC_PRC : 0)
+      .finally(() => {
+        loading.value = false;
+      });
+  };
+
+  getPriceList().then((res) => {
+    listSavedItems.value[idx].price = res ?? 0;
+  });
+};
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

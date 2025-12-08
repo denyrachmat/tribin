@@ -179,7 +179,6 @@ class InventoryController extends Controller
             ->select('V1.CITRN_ITMCD', 'MITM_STKUOM', 'MITM_ITMNM', DB::raw('IFNULL(OPENINGQT,0) OPENINGQT'))
             ->get();
         if ($OpeningAllBalance) {
-
             $DetailTransaction = C_ITRN::on($this->dedicatedConnection)
                 ->where('CITRN_ISSUDT', '>=', $param['date'])
                 ->where('CITRN_ISSUDT', '<=', $param['date2'])

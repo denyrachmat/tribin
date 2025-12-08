@@ -39,7 +39,7 @@ api.interceptors.response.use(function (response) {
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
     console.log(e);
-  let errors
+  let errors;
   if (e.response) {
     if (e.response.status == 422) {
       errors = e.response.data.message;
@@ -117,14 +117,15 @@ api_web.interceptors.response.use(function (response) {
 }, function (e) {
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
-
+  let errorss;
   // console.log(e)
   if (e.response) {
     if (e.response.status == 422) {
-      errors = e.response.data.message;
-      if (errors) {
-        Object.keys(errors).map((val) => {
-          errors[val].map((val_det) => {
+      errorss = e.response.data;
+      console.log(errorss);
+      if (errorss) {
+        Object.keys(errorss.errors).map((val) => {
+          errorss.errors[val].map((val_det) => {
             Notify.create({
               color: "negative",
               message: val_det,
@@ -180,8 +181,10 @@ api_web.interceptors.response.use(function (response) {
         message: "Connection problem, please try again later.",
       });
     }
+
+    return Promise.reject(errorss);
   }
-  // return Promise.reject(error);
+  return Promise.reject(e);
 });
 
 api_acc.interceptors.response.use(function (response) {
@@ -198,7 +201,7 @@ api_acc.interceptors.response.use(function (response) {
 }, function (e) {
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
-
+  let errors;
   // console.log(e)
   if (e.response) {
     if (e.response.status == 422) {

@@ -137,6 +137,7 @@ class PriceSellController extends Controller
             'MITMSPRC_CG' => 'nullable|string',
             'created_by' => 'required|string|max:50',
             'MITMSPRC_BRANCH' => 'required|numeric',
+            'MITMBPRC_ID' => 'required|numeric',
         ]);
 
         $validatedData['MITMSPRC_CG'] = Crypt::decryptString($validatedData['MITMSPRC_CG']);

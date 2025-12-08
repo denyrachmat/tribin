@@ -60,26 +60,32 @@
             </div>
             <div class="col-12 col-md-6">
               <q-input
-                v-model.number="header.MITMBPRC_PRC"
+                v-model="header.MITMBPRC_PRC"
                 label="Base Price"
-                type="number"
                 outlined
                 dense
-                :rules="[(val) => val >= 0 || 'Price must be positive']"
-                :disable="!header.MITMBPRC_BRANCH"
+                :disable="!header.MITMBPRC_BRANCH && !header.MITMBPRC_ITMCD"
                 :loading="loading"
+                mask="#,###,###,###,###"
+                :rules="[(val) => !!val || 'Base Price is required']"
+                reverse-fill-mask
+                input-class="text-right"
+                maxlength="17"
               />
             </div>
             <div class="col-12 col-md-6">
               <q-input
-                v-model.number="header.MITMSPRC_PRC"
+                v-model="header.MITMSPRC_PRC"
                 label="Sell Price"
-                type="number"
                 outlined
                 dense
-                :rules="[(val) => val >= 0 || 'Price must be positive']"
                 :disable="!header.MITMBPRC_BRANCH"
                 :loading="loading"
+                mask="#,###,###,###,###"
+                :rules="[(val) => !!val || 'Sell Price is required']"
+                reverse-fill-mask
+                input-class="text-right"
+                maxlength="17"
               />
             </div>
             <div class="col-12 col-md-6">
@@ -232,8 +238,8 @@ const paginate = ref({
 
 const header = ref({
   MITMBPRC_ITMCD: "",
-  MITMBPRC_PRC: 0,
-  MITMSPRC_PRC: 0,
+  MITMBPRC_PRC: "0",
+  MITMSPRC_PRC: "0",
   MITMBPRC_STARTDT: "",
   MITMBPRC_ENDDT: "",
   MITMBPRC_ACTIVE: "",
@@ -267,11 +273,35 @@ onMounted(async () => {
   fetchBranches();
 });
 
+const hargaNumberB = computed({
+  get() {
+    return Number(header.value.MITMBPRC_PRC.replace(/,/g, "")) || 0;
+  },
+  set(val) {
+    header.value.MITMBPRC_PRC = String(val).replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      ","
+    );
+  },
+});
+
+const hargaNumberS = computed({
+  get() {
+    return Number(header.value.MITMSPRC_PRC.replace(/,/g, "")) || 0;
+  },
+  set(val) {
+    header.value.MITMSPRC_PRC = String(val).replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      ","
+    );
+  },
+});
+
 const clearForm = () => {
   header.value = {
     MITMBPRC_ITMCD: "",
-    MITMBPRC_PRC: 0,
-    MITMSPRC_PRC: 0,
+    MITMBPRC_PRC: "0",
+    MITMSPRC_PRC: "0",
     MITMBPRC_STARTDT: "",
     MITMBPRC_ENDDT: "",
     MITMBPRC_ACTIVE: "",
@@ -392,7 +422,9 @@ const getItem = async (val) => {
     })
     .then((response) => {
       loading.value = false;
-      listItems.value = [...listItems.value, ...response.data.data];
+      listItems.value = !val
+        ? [...listItems.value, ...response.data.data]
+        : response.data.data;
       paginate.value.rowsNumber = response.data.total;
       paginate.value.page = response.data.current_page;
       paginate.value.rowsPerPage = response.data.per_page;
@@ -444,6 +476,10 @@ const saveData = async () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
+    header.value.MITMBPRC_PRC =
+      parseInt(header.value.MITMBPRC_PRC.replace(/,/g, "")) || 0;
+    header.value.MITMSPRC_PRC =
+      parseInt(header.value.MITMSPRC_PRC.replace(/,/g, "")) || 0;
     loading.value = true;
     await api_web
       .post("/price", header.value)
@@ -454,24 +490,6 @@ const saveData = async () => {
         });
 
         clearForm();
-      })
-      .catch((e) => {
-        const errorData = e.response?.data;
-        let errorMessage =
-          errorData?.message || e.message || "Failed to save data";
-
-        // If there are validation errors, append them to the message
-        if (errorData?.errors) {
-          const validationErrors = Object.values(errorData.errors)
-            .flat()
-            .join(", ");
-          errorMessage = validationErrors || errorMessage;
-        }
-
-        $q.notify({
-          type: "negative",
-          message: errorMessage,
-        });
       })
       .finally(() => {
         loading.value = false;

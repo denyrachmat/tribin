@@ -70,7 +70,11 @@ class PriceBuyController extends Controller
                     $startDate = $value;
                     $endDate = $request->MITMBPRC_ENDDT;
 
-                    $overlap = M_ITMBPRICE::where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
+                    $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
+                        $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
+                    })
+                        ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
+                        ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
                         ->where('MITMBPRC_CG', Crypt::decryptString($request->MITMBPRC_CG))
                         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where(function ($query) use ($startDate, $endDate) {
@@ -112,7 +116,11 @@ class PriceBuyController extends Controller
                     $startDate = $request->input('MITMBPRC_STARTDT');
                     $endDate = $value;
 
-                    $overlap = M_ITMBPRICE::where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
+                    $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
+                        $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
+                    })
+                        ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
+                        ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
                         ->where('MITMBPRC_CG', Crypt::decryptString($request->MITMBPRC_CG))
                         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where(function ($query) use ($startDate, $endDate) {
@@ -156,6 +164,25 @@ class PriceBuyController extends Controller
         $validatedData['status'] = true;
         $validatedData['MITMBPRC_ACTIVE'] = $validatedData['MITMBPRC_ACTIVE'] === 'Y' ? 1 : 0;
         $validatedData['created_by'] = Auth::user()->email;
+        $validatedData['MITMBPRC_CG'] = Crypt::decryptString($validatedData['MITMBPRC_CG']);
+
+        // Check if item code exists and deactivate existing records
+        M_ITMBPRICE::where('MITMBPRC_ITMCD', $validatedData['MITMBPRC_ITMCD'])
+            ->where('MITMBPRC_CG', $validatedData['MITMBPRC_CG'])
+            ->where('MITMBPRC_BRANCH', $validatedData['MITMBPRC_BRANCH'])
+            ->update(['MITMBPRC_ACTIVE' => 0]);
+
+        // Create new price record
+        $bprice = M_ITMBPRICE::create([
+            'MITMBPRC_ITMCD' => $validatedData['MITMBPRC_ITMCD'],
+            'MITMBPRC_PRC' => $validatedData['MITMBPRC_PRC'],
+            'MITMBPRC_STARTDT' => $validatedData['MITMBPRC_STARTDT'],
+            'MITMBPRC_ENDDT' => $validatedData['MITMBPRC_ENDDT'],
+            'MITMBPRC_ACTIVE' => $validatedData['MITMBPRC_ACTIVE'],
+            'MITMBPRC_CG' => $validatedData['MITMBPRC_CG'],
+            'MITMBPRC_BRANCH' => $validatedData['MITMBPRC_BRANCH'],
+            'created_by' => $validatedData['created_by'],
+        ]);
 
         if (!empty($request->is_preview) && $request->is_preview) {
             return response()->json(['message' => 'Preview successful', 'data' => $validatedData], 200);
@@ -174,6 +201,7 @@ class PriceBuyController extends Controller
                 'MITMSPRC_CG' => $validatedData['MITMBPRC_CG'],
                 'MITMSPRC_BRANCH' => $validatedData['MITMBPRC_BRANCH'],
                 'created_by' => $validatedData['created_by'],
+                'MITMBPRC_ID' => $bprice->id,
             ]));
 
             if ($sellPriceResponse->status() == 422) {
@@ -181,35 +209,24 @@ class PriceBuyController extends Controller
             }
         }
 
-        $validatedData['MITMBPRC_CG'] = Crypt::decryptString($validatedData['MITMBPRC_CG']);
-
-        // Check if item code exists and deactivate existing records
-        M_ITMBPRICE::where('MITMBPRC_ITMCD', $validatedData['MITMBPRC_ITMCD'])
-            ->where('MITMBPRC_CG', $validatedData['MITMBPRC_CG'])
-            ->where('MITMBPRC_BRANCH', $validatedData['MITMBPRC_BRANCH'])
-            ->update(['MITMBPRC_ACTIVE' => 0]);
-
-        // Create new price record
-        M_ITMBPRICE::create([
-            'MITMBPRC_ITMCD' => $validatedData['MITMBPRC_ITMCD'],
-            'MITMBPRC_PRC' => $validatedData['MITMBPRC_PRC'],
-            'MITMBPRC_STARTDT' => $validatedData['MITMBPRC_STARTDT'],
-            'MITMBPRC_ENDDT' => $validatedData['MITMBPRC_ENDDT'],
-            'MITMBPRC_ACTIVE' => $validatedData['MITMBPRC_ACTIVE'],
-            'MITMBPRC_CG' => $validatedData['MITMBPRC_CG'],
-            'MITMBPRC_BRANCH' => $validatedData['MITMBPRC_BRANCH'],
-            'created_by' => $validatedData['created_by'],
-        ]);
-
         return response()->json(['message' => 'Purchase price created successfully'], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id, Request $request)
     {
-        //
+        $data = $this->search(new Request([
+            'cg' => $request->cg,
+            'filter' => ['id' => $id],
+        ]));
+
+        if (count($data->original['data']) == 0) {
+            return response()->json(['message' => 'Price not found'], 404);
+        }
+
+        return response()->json(['data' => $data->original['data'][0]], 200);
     }
 
     /**
@@ -270,9 +287,7 @@ class PriceBuyController extends Controller
                 $join->on('M_ITMBPRICE.MITMBPRC_ITMCD', '=', 'MITM_ITMCD');
             })
             ->leftJoin('M_ITMSPRICE', function ($join) {
-                $join->on('M_ITMBPRICE.MITMBPRC_ITMCD', '=', 'M_ITMSPRICE.MITMSPRC_ITMCD')
-                    ->on('M_ITMBPRICE.MITMBPRC_CG', '=', 'M_ITMSPRICE.MITMSPRC_CG')
-                    ->on('M_ITMBPRICE.MITMBPRC_BRANCH', '=', 'M_ITMSPRICE.MITMSPRC_BRANCH');
+                $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
             })
             ->leftJoin(DB::raw('M_GENCODE as typeCode'), function ($join) {
                 $join->on('M_ITMSPRICE.MITMSPRC_TYPE', '=', 'MGECD_VALUE')

@@ -113,7 +113,7 @@
                                                         <span class="input-group-text">PIC Name</span>
                                                         <select class="form-select" id="PICName">
                                                             @foreach($PICs as $r)
-                                                            <option value="{{ $r->nick_name }}">{{ $r->name }}</option>
+                                                                <option value="{{ $r->nick_name }}">{{ $r->name }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
@@ -308,6 +308,34 @@
         if (e.target.value !== '-') {
             PICName.focus()
         }
+
+        const selectedPICAs = e.target.value
+        // Store original options if not already stored
+        if (!PICName.dataset.originalOptions) {
+            PICName.dataset.originalOptions = PICName.innerHTML;
+        }
+        
+        // Create temporary select to parse original options
+        const tempSelect = document.createElement('select');
+        tempSelect.innerHTML = PICName.dataset.originalOptions;
+        
+        const filteredOptions = Array.from(tempSelect.options).filter(option => {
+            const picData = @json($PICs);
+            const pic = picData.find(p => p.nick_name === option.value);
+
+            return pic && selectedPICAs === 'DRIVER'
+            ? pic.job_position === 'SUPIR'
+            : selectedPICAs === 'MECHANIC'
+            ? pic.job_position.includes('MEKANIK')
+            : selectedPICAs === 'OPERATOR' 
+                ? pic.job_position.includes('OP')
+                : pic
+        });
+
+        PICName.innerHTML = '';
+        filteredOptions.forEach(option => {
+            PICName.appendChild(option.cloneNode(true));
+        });
     }
 
     function btnSaveLineSaleOnclick(p) {

@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\accTraits;
+use App\Models\hrm\HRMEmployee;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -1260,13 +1261,14 @@ class DeliveryController extends Controller
 
     function formDriverAssignment()
     {
+        $getUsers = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
+            ->whereIn('job_position', ['MEKANIK','MEKANIK CAT & BODY REPAIR','MEKANIK DINAMO','OP BACKHOE LOADER','OP EXCAVATOR','OP FORKLIFT','OP GENSET','SUPIR'])
+            ->get();
+
         return view(
             'transaction.delivery_assignment',
             [
-                'PICs' => User::select('nick_name', 'name')
-                    ->where('branch', Auth::user()->branch)
-                    ->whereIn('role', ['driver', 'mechanic', 'operator'])
-                    ->get()
+                'PICs' => $getUsers
             ]
         );
     }

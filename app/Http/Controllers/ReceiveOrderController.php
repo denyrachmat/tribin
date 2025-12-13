@@ -818,53 +818,141 @@ class ReceiveOrderController extends Controller
     public function marketingReport(Request $request)
     {
         set_time_limit(600);
+
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
-        $hasilTemp = [
-            'BARU' => [],
-            'PERPANJANGAN' => []
-        ];
-
+        // ==== List kategori ====
         $listCat = [];
-        if (count($request->itmCat) > 0) {
+        if (is_array($request->itmCat) && count($request->itmCat) > 0) {
             $listCat = $request->itmCat;
         } else {
-            $listCat = M_ITM::on($this->dedicatedConnection)->select('MITM_ITMCAT')->groupBy('MITM_ITMCAT')->get()->pluck('MITM_ITMCAT');
+            $listCat = M_ITM::on($this->dedicatedConnection)
+                ->select('MITM_ITMCAT')
+                ->groupBy('MITM_ITMCAT')
+                ->pluck('MITM_ITMCAT')
+                ->toArray();
         }
 
-        foreach ($listCat as $key => $value) {
-            $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
-                ->where('MITM_ITMCAT', $value)
-                ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
+        // ==== Output data ====
+        $hasilTemp = [
+            'BARU' => [],
+            'PERPANJANGAN' => [],
+        ];
 
-            if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
-                $RSTemp->where('created_by', Auth::user()->nick_name);
+        // ==== Meta totals (subtotal + grand total) ====
+        $meta = [
+            'BARU' => [
+                'grand' => ['qty' => 0, 'tax' => 0, 'total' => 0, 'qty_fmt' => 'Rp 0', 'tax_fmt' => 'Rp 0', 'total_fmt' => 'Rp 0'],
+            ],
+            'PERPANJANGAN' => [
+                'grand' => ['qty' => 0, 'tax' => 0, 'total' => 0, 'qty_fmt' => 'Rp 0', 'tax_fmt' => 'Rp 0', 'total_fmt' => 'Rp 0'],
+            ],
+            // subtotal: $meta['sub'][SECTION][CAT][USAGE] => qty,tax,total + *_fmt
+            'sub' => [
+                'BARU' => [],
+                'PERPANJANGAN' => [],
+            ],
+        ];
+
+        // ==== 1 query saja ====
+        $q = DB::connection($this->dedicatedConnection)
+            ->table('V_SALES_REPORT')
+            ->whereBetween('SLODET_DATE', [
+                $request->fdate . " 00:00:00",
+                $request->ldate . " 23:59:59",
+            ])
+            ->when(!empty($listCat), function ($qq) use ($listCat) {
+                $qq->whereIn('MITM_ITMCAT', $listCat);
+            })
+            ->when(!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager']), function ($qq) {
+                $qq->where('created_by', Auth::user()->nick_name);
+            })
+            // Ambil kolom seperlunya (tambahkan kalau ada yang dipakai di view)
+            ->select([
+                'MITM_ITMCAT',
+                'MUSAGE_ALIAS',
+                'TSLO_SLOCD',
+                'MITM_ITMCD',
+                'MITM_ITMNM',
+                'TDLVORDDETA_DLVCD',
+                'TQUO_PROJECT_LOCATION',
+                'CSPK_PIC_AS',
+                'CSPK_PIC_NAME',
+                'MCUS_CUSNM',
+                'TSLODETA_ITMQT',
+                'totalTax',
+                'name',
+                'TSLODETA_PERIOD_FR',
+                'TSLODETA_PERIOD_TO',
+            ])
+            ->orderBy('MITM_ITMCAT')
+            ->orderBy('MUSAGE_ALIAS');
+
+        // Safety limit (optional)
+        $maxRows = 10000; // sesuaikan
+        $rowCount = 0;
+
+        foreach ($q->cursor() as $rowObj) {
+            $rowCount++;
+            if ($rowCount > $maxRows)
+                break;
+
+            $row = (array) $rowObj;
+
+            $cat = $row['MITM_ITMCAT'] ?? 'UNKNOWN';
+            $usage = $row['MUSAGE_ALIAS'] ?? 'UNKNOWN';
+
+            $isPerpanjangan = str_contains((string) ($row['TSLO_SLOCD'] ?? ''), '-');
+            $section = $isPerpanjangan ? 'PERPANJANGAN' : 'BARU';
+
+            $qty = (float) ($row['TSLODETA_ITMQT'] ?? 0);
+            $tax = (float) ($row['totalTax'] ?? 0);
+
+            // --- Meta: grand total ---
+            $meta[$section]['grand']['qty'] += $qty;
+            $meta[$section]['grand']['tax'] += $tax;
+
+            // --- Meta: subtotal per cat+usage ---
+            if (!isset($meta['sub'][$section][$cat][$usage])) {
+                $meta['sub'][$section][$cat][$usage] = ['qty' => 0, 'tax' => 0, 'total' => 0, 'qty_fmt' => 'Rp 0', 'tax_fmt' => 'Rp 0', 'total_fmt' => 'Rp 0'];
             }
+            $meta['sub'][$section][$cat][$usage]['qty'] += $qty;
+            $meta['sub'][$section][$cat][$usage]['tax'] += $tax;
 
-            // return Auth::user();
+            // --- Precompute formatting untuk view ---
+            $row['qty_fmt'] = $this->rupiah($qty);
+            $row['tax_fmt'] = $this->rupiah($tax);
+            $row['total_fmt'] = $this->rupiah($qty + $tax);
 
-            $cekTotalData = $RSTemp->get()->toArray();
-            $cekTotalData = json_decode(json_encode($cekTotalData), true);
+            $row['period_fr_fmt'] = !empty($row['TSLODETA_PERIOD_FR'])
+                ? date('d M Y', strtotime($row['TSLODETA_PERIOD_FR']))
+                : '-';
 
-            if (count($cekTotalData) > 0) {
-                $baru = array_values(array_filter($cekTotalData, function ($f) {
-                    if (!str_contains($f['TSLO_SLOCD'], '-')) {
-                        return $f;
-                    }
-                }));
+            $row['period_to_fmt'] = !empty($row['TSLODETA_PERIOD_TO'])
+                ? date('d M Y', strtotime($row['TSLODETA_PERIOD_TO']))
+                : '-';
 
-                foreach ($baru as $keyBaru => $valuebaru) {
-                    $hasilTemp['BARU'][$value][$valuebaru['MUSAGE_ALIAS']][] = array_merge($valuebaru);
-                }
+            $row['driver_name'] = (($row['CSPK_PIC_AS'] ?? '') === 'DRIVER') ? ($row['CSPK_PIC_NAME'] ?? '') : '';
+            $row['operator_name'] = (($row['CSPK_PIC_AS'] ?? '') === 'OPERATOR') ? ($row['CSPK_PIC_NAME'] ?? '') : '';
 
-                $perpanjangan = array_values(array_filter($cekTotalData, function ($f) {
-                    if (str_contains($f['TSLO_SLOCD'], '-')) {
-                        return $f;
-                    }
-                }));
+            // --- Push ke hasil ---
+            $hasilTemp[$section][$cat][$usage][] = $row;
+        }
 
-                foreach ($perpanjangan as $keyBaru => $valuePerpanjangan) {
-                    $hasilTemp['PERPANJANGAN'][$value][$valuePerpanjangan['MUSAGE_ALIAS']][] = array_merge($valuePerpanjangan);
+        // Finalize meta formatting
+        foreach (['BARU', 'PERPANJANGAN'] as $sec) {
+            $meta[$sec]['grand']['total'] = $meta[$sec]['grand']['qty'] + $meta[$sec]['grand']['tax'];
+            $meta[$sec]['grand']['qty_fmt'] = $this->rupiah($meta[$sec]['grand']['qty']);
+            $meta[$sec]['grand']['tax_fmt'] = $this->rupiah($meta[$sec]['grand']['tax']);
+            $meta[$sec]['grand']['total_fmt'] = $this->rupiah($meta[$sec]['grand']['total']);
+
+            foreach (($meta['sub'][$sec] ?? []) as $cat => $usages) {
+                foreach ($usages as $usage => $st) {
+                    $total = ($st['qty'] ?? 0) + ($st['tax'] ?? 0);
+                    $meta['sub'][$sec][$cat][$usage]['total'] = $total;
+                    $meta['sub'][$sec][$cat][$usage]['qty_fmt'] = $this->rupiah((float) ($st['qty'] ?? 0));
+                    $meta['sub'][$sec][$cat][$usage]['tax_fmt'] = $this->rupiah((float) ($st['tax'] ?? 0));
+                    $meta['sub'][$sec][$cat][$usage]['total_fmt'] = $this->rupiah((float) $total);
                 }
             }
         }
@@ -872,42 +960,50 @@ class ReceiveOrderController extends Controller
         // Approval Setup
         $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
 
-        $hasil = $hasilTemp;
-
         $getApproval = $this->getGencode(
             base64_encode('APPROVAL_SETUP'),
             base64_encode('marketing_report'),
-            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+            $_COOKIE['CGID']
         );
 
         $hasilApproval = [];
-        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+        foreach (json_decode($getApproval['MGECD_DESC'], true) as $value) {
             $hasilApproval[] = [
-                'name' => $value['isOwnApproval']
-                    ? Auth::user()->name : $value['username'],
-                'remarks' => $value['remarks'],
+                'name' => !empty($value['isOwnApproval']) && $value['isOwnApproval']
+                    ? Auth::user()->name
+                    : ($value['username'] ?? ''),
+                'remarks' => $value['remarks'] ?? '',
             ];
         }
-        // return [
-        //     'data' => $hasil,
-        //     'dateRange' => [$request->fdate, $request->ldate],
-        //     'header' => $companyGroupData->name,
-        //     'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-        //     'addr' => $companyGroupData->address,
-        //     'approvalList' => $hasilApproval,
-        // ];
 
-        $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReport', [
-            'data' => $hasil,
-            'dateRange' => [$request->fdate, $request->ldate],
-            'header' => $companyGroupData->name,
-            'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-            'addr' => $companyGroupData->address,
-            'approvalList' => $hasilApproval,
-        ]);
+        // PDF render
+        $pdf = Pdf::setPaper('A4', 'portrait')
+            ->loadView('pdf.salesReport', [
+                'data' => $hasilTemp,
+                'meta' => $meta,
+                'dateRange' => [$request->fdate, $request->ldate],
+                'header' => $companyGroupData->name,
+                'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
+                'addr' => $companyGroupData->address,
+                'approvalList' => $hasilApproval,
+
+                // set true kalau mau header tabel ulang tiap page (lebih lambat kalau data banyak)
+                'repeatTableHeader' => false,
+            ])
+            ->setOptions([
+                'isRemoteEnabled' => false,
+                'dpi' => 96,
+                'defaultFont' => 'Helvetica',
+            ]);
 
         return base64_encode($pdf->output());
     }
+
+    private function rupiah(float $n): string
+    {
+        return 'Rp ' . number_format($n, 0, ',', '.');
+    }
+
 
     public function marketingReportByCust(Request $request)
     {
@@ -951,7 +1047,7 @@ class ReceiveOrderController extends Controller
                     ->where('MCUS_CUSCD', $value)
                     ->first()
                     ->MCUS_CUSNM;
-                    
+
                 $hasilTemp[$getCustName][] = $cekTotalData;
             }
         }

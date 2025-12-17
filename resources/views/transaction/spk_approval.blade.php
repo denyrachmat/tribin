@@ -324,6 +324,15 @@
                             doc: arrayItem['CSPK_REFF_DOC'],
                             branch: arrayItem['CSPK_BRANCH']
                         })
+
+                        // Disable approve button if already approved by GA Manager
+                        if (arrayItem['CSPK_GA_MGR_APPROVED_AT']) {
+                            document.querySelector('#quotationModal .dropdown-item').classList.add('disabled')
+                            document.querySelector('#quotationModal .dropdown-item').style.pointerEvents = 'none'
+                        } else {
+                            document.querySelector('#quotationModal .dropdown-item').classList.remove('disabled')
+                            document.querySelector('#quotationModal .dropdown-item').style.pointerEvents = 'auto'
+                        }
                     }
 
                     const elSmalltext = document.createElement('small')

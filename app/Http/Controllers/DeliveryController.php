@@ -1583,7 +1583,10 @@ class DeliveryController extends Controller
         }
 
         $PICMenugaskan = User::where('nick_name', $Data->created_by)->first();
-        $PICDitugaskan = User::where('nick_name', $Data->CSPK_PIC_NAME)->first();
+        // $PICDitugaskan = User::where('nick_name', $Data->CSPK_PIC_NAME)->first();
+        $PICDitugaskan = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
+            ->where('employee_id', $Data->CSPK_PIC_NAME)
+            ->first();
 
         $Tujuan = T_DLVORDDETA::on($this->dedicatedConnection)
             ->leftJoin('T_SLOHEAD', function ($join) {
@@ -1869,6 +1872,7 @@ class DeliveryController extends Controller
         $SPK = C_SPK::on($this->dedicatedConnection)->selectRaw('C_SPK.*, A.name AS USER_PIC_NAME')
             ->leftJoin($currentDBName . '.users AS A', 'C_SPK.CSPK_PIC_NAME', '=', 'A.nick_name')
             ->whereNotNull('submitted_at');
+
         if ($activeRole['code'] === 'ga_manager') {
             $SPK->whereNull('CSPK_GA_MGR_APPROVED_AT');
         }
@@ -1897,6 +1901,7 @@ class DeliveryController extends Controller
             ->get();
 
         foreach ($UnApprovedSPK as &$r) {
+            $r['USER_PIC_NAME'] = HRMEmployee::where('employee_id', $r['CSPK_PIC_NAME'])->value('full_name') ?? $r['USER_PIC_NAME'];
             foreach ($data as $d) {
                 if ($r['CSPK_REFF_DOC'] === $d['TDLVORD_DLVCD']) {
                     $r['MCUS_CUSNM'] = $d['MCUS_CUSNM'];

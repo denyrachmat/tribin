@@ -16,7 +16,8 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Delivery Order : <span id="labelQuotationInModal"></span></h1>
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Delivery Order : <span
+                        id="labelQuotationInModal"></span></h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -29,19 +30,24 @@
                         <div class="col">
                             <nav>
                                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                                    <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab">Item</button>
-                                    <button class="nav-link" id="nav-cost-tab" data-bs-toggle="tab" data-bs-target="#nav-cost" type="button" role="tab">Costs</button>
-                                    <button class="nav-link" id="nav-map-tab" data-bs-toggle="tab" data-bs-target="#nav-map" type="button" role="tab">Map</button>
+                                    <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab"
+                                        data-bs-target="#nav-home" type="button" role="tab">Item</button>
+                                    <button class="nav-link" id="nav-cost-tab" data-bs-toggle="tab"
+                                        data-bs-target="#nav-cost" type="button" role="tab">Costs</button>
+                                    <button class="nav-link" id="nav-map-tab" data-bs-toggle="tab"
+                                        data-bs-target="#nav-map" type="button" role="tab">Map</button>
                                 </div>
                             </nav>
                             <div class="tab-content" id="nav-tabContent">
-                                <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab" tabindex="0">
+                                <div class="tab-pane fade show active" id="nav-home" role="tabpanel"
+                                    aria-labelledby="nav-home-tab" tabindex="0">
                                     <div class="container-fluid mt-2 border-start border-bottom rounded-start">
                                         <div class="row">
                                             <div class="col-md-6 mb-1">
                                                 <label for="quotationCustomer" class="form-label">Customer Name</label>
                                                 <div class="input-group input-group-sm mb-1">
-                                                    <input type="text" id="quotationCustomer" class="form-control" maxlength="50" disabled>
+                                                    <input type="text" id="quotationCustomer" class="form-control"
+                                                        maxlength="50" disabled>
                                                 </div>
                                             </div>
                                         </div>
@@ -49,15 +55,18 @@
                                             <div class="col-md-12 mb-1">
                                                 <label for="quotationCustomer" class="form-label">Address Name</label>
                                                 <div class="input-group input-group-sm mb-1">
-                                                    <input type="text" id="quotationAddressName" class="form-control" disabled>
+                                                    <input type="text" id="quotationAddressName" class="form-control"
+                                                        disabled>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-12 mb-1">
-                                                <label for="quotationCustomer" class="form-label">Address Description</label>
+                                                <label for="quotationCustomer" class="form-label">Address
+                                                    Description</label>
                                                 <div class="input-group input-group-sm mb-1">
-                                                    <textarea id="quotationAddressDescription" class="form-control" disabled>
+                                                    <textarea id="quotationAddressDescription" class="form-control"
+                                                        disabled>
                                                     </textarea>
                                                 </div>
                                             </div>
@@ -65,7 +74,8 @@
                                         <div class="row border-top">
                                             <div class="col-md-12 mb-1">
                                                 <div class="table-responsive" id="quotationTableContainer">
-                                                    <table id="quotationTable" class="table table-sm table-hover table-bordered caption-top">
+                                                    <table id="quotationTable"
+                                                        class="table table-sm table-hover table-bordered caption-top">
                                                         <caption>List of items</caption>
                                                         <thead class="table-light">
                                                             <tr>
@@ -88,7 +98,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="nav-cost" role="tabpanel" aria-labelledby="nav-cost-tab" tabindex="1">
+                                <div class="tab-pane fade" id="nav-cost" role="tabpanel" aria-labelledby="nav-cost-tab"
+                                    tabindex="1">
                                     <div class="container-fluid mt-2 border-start border-bottom rounded-start">
                                         <div class="row">
                                             <div class="col mb-1" id="div-alert-cost">
@@ -100,7 +111,8 @@
                                                 <div class="col-md-6 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">PIC As</span>
-                                                        <select class="form-select" id="PICAs" onchange="PICAsOnChange(event)">
+                                                        <select class="form-select" id="PICAs"
+                                                            onchange="PICAsOnChange(event)">
                                                             <option value="-">-</option>
                                                             <option value="DRIVER">DRIVER</option>
                                                             <option value="MECHANIC">MECHANIC</option>
@@ -123,7 +135,8 @@
                                                 <div class="col-md-12 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">Tugas</span>
-                                                        <input type="text" id="tugas" class="form-control orderInputItem" maxlength="70">
+                                                        <input type="text" id="tugas"
+                                                            class="form-control orderInputItem" maxlength="70">
                                                     </div>
                                                 </div>
                                             </div>
@@ -133,15 +146,20 @@
                                             <div class="row">
                                                 <div class="col-md-3 mb-1">
                                                     <label for="KM" class="form-label">KM</label>
-                                                    <input type="number" id="KM" class="form-control form-control-sm orderInputItem">
+                                                    <input type="number" id="KM"
+                                                        class="form-control form-control-sm orderInputItem">
                                                 </div>
                                                 <div class="col-md-3 mb-1">
                                                     <label for="jenisKendaraan" class="form-label">Jenis</label>
-                                                    <input type="text" id="jenisKendaraan" class="form-control form-control-sm orderInputItem" maxlength="35">
+                                                    <input type="text" id="jenisKendaraan"
+                                                        class="form-control form-control-sm orderInputItem"
+                                                        maxlength="35">
                                                 </div>
                                                 <div class="col-md-3 mb-1">
                                                     <label for="nomorPolisi" class="form-label">Nomor Polisi</label>
-                                                    <input type="text" id="nomorPolisi" class="form-control form-control-sm orderInputItem" maxlength="15">
+                                                    <input type="text" id="nomorPolisi"
+                                                        class="form-control form-control-sm orderInputItem"
+                                                        maxlength="15">
                                                 </div>
                                                 <div class="col-md-3 mb-1">
                                                     <label for="Wheels" class="form-label">Jumlah Roda</label>
@@ -162,11 +180,13 @@
                                                 </div>
                                                 <div class="col-md-4 mb-1">
                                                     <label class="form-label">Liters (Existing)</label>
-                                                    <input type="number" id="litersExisting" class="form-control form-control-sm orderInputItem">
+                                                    <input type="number" id="litersExisting"
+                                                        class="form-control form-control-sm orderInputItem">
                                                 </div>
                                                 <div class="col-md-4 mb-1">
                                                     <label class="form-label">Liters</label>
-                                                    <input type="number" id="liters" class="form-control form-control-sm orderInputItem">
+                                                    <input type="number" id="liters"
+                                                        class="form-control form-control-sm orderInputItem">
                                                 </div>
                                             </div>
                                         </fieldset>
@@ -177,13 +197,15 @@
                                                 <div class="col-md-6 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">Makan</span>
-                                                        <input type="number" id="uangMakan" class="form-control orderInputItem">
+                                                        <input type="number" id="uangMakan"
+                                                            class="form-control orderInputItem">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">Mandah</span>
-                                                        <input type="number" id="uangMandah" class="form-control orderInputItem">
+                                                        <input type="number" id="uangMandah"
+                                                            class="form-control orderInputItem">
                                                     </div>
                                                 </div>
                                             </div>
@@ -191,13 +213,15 @@
                                                 <div class="col-md-6 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">Pengawalan</span>
-                                                        <input type="number" id="uangPengawalan" class="form-control orderInputItem">
+                                                        <input type="number" id="uangPengawalan"
+                                                            class="form-control orderInputItem">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">Penginapan</span>
-                                                        <input type="number" id="uangPenginapan" class="form-control orderInputItem">
+                                                        <input type="number" id="uangPenginapan"
+                                                            class="form-control orderInputItem">
                                                     </div>
                                                 </div>
                                             </div>
@@ -205,7 +229,8 @@
                                                 <div class="col-md-12 mb-1">
                                                     <div class="input-group input-group-sm">
                                                         <span class="input-group-text">Lain<sup>2</sup></span>
-                                                        <input type="number" id="uangLain" class="form-control orderInputItem">
+                                                        <input type="number" id="uangLain"
+                                                            class="form-control orderInputItem">
                                                     </div>
                                                 </div>
                                             </div>
@@ -215,11 +240,13 @@
                                             <div class="row">
                                                 <div class="col-md-6 mb-1">
                                                     <label for="tanggalBerangkat" class="form-label">Berangkat</label>
-                                                    <input type="text" id="tanggalBerangkat" class="form-control" readonly>
+                                                    <input type="text" id="tanggalBerangkat" class="form-control"
+                                                        readonly>
                                                 </div>
                                                 <div class="col-md-6 mb-1">
                                                     <label for="tanggalKembali" class="form-label">Kembali</label>
-                                                    <input type="text" id="tanggalKembali" class="form-control" readonly>
+                                                    <input type="text" id="tanggalKembali" class="form-control"
+                                                        readonly>
                                                 </div>
                                             </div>
                                         </fieldset>
@@ -227,16 +254,23 @@
                                         <div class="row">
                                             <div class="col text-center mb-1">
                                                 <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn btn-outline-secondary" id="btnSaveLineSale" onclick="btnSaveLineSaleOnclick(this)">Save line</button>
-                                                    <button type="button" class="btn btn-outline-secondary" id="btnRemoveLineSale" onclick="btnRemoveLineSaleOnclick(this)">Remove line</button>
-                                                    <button type="button" class="btn btn-outline-secondary" id="btnUpdateLineSale" onclick="btnUpdateLineOnclick(this)">Update line</button>
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                        id="btnSaveLineSale" onclick="btnSaveLineSaleOnclick(this)">Save
+                                                        line</button>
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                        id="btnRemoveLineSale"
+                                                        onclick="btnRemoveLineSaleOnclick(this)">Remove line</button>
+                                                    <button type="button" class="btn btn-outline-secondary"
+                                                        id="btnUpdateLineSale"
+                                                        onclick="btnUpdateLineOnclick(this)">Update line</button>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-12 mb-1">
                                                 <div class="table-responsive" id="costTableContainer">
-                                                    <table id="costTable" class="table table-sm table-hover table-bordered caption-top">
+                                                    <table id="costTable"
+                                                        class="table table-sm table-hover table-bordered caption-top">
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th class="d-none">idLine</th>
@@ -255,7 +289,8 @@
                                                                 <th style="white-space: nowrap;">Uang Mandah</th>
                                                                 <th style="white-space: nowrap;">Penginapan</th>
                                                                 <th style="white-space: nowrap;">Pengawalan</th>
-                                                                <th style="white-space: nowrap;">Biaya Lain<sup>2</sup></th>
+                                                                <th style="white-space: nowrap;">Biaya Lain<sup>2</sup>
+                                                                </th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -314,22 +349,22 @@
         if (!PICName.dataset.originalOptions) {
             PICName.dataset.originalOptions = PICName.innerHTML;
         }
-        
+
         // Create temporary select to parse original options
         const tempSelect = document.createElement('select');
         tempSelect.innerHTML = PICName.dataset.originalOptions;
-        
+
         const filteredOptions = Array.from(tempSelect.options).filter(option => {
             const picData = @json($PICs);
             const pic = picData.find(p => p.nick_name === option.value);
 
             return pic && selectedPICAs === 'DRIVER'
-            ? pic.job_position === 'SUPIR'
-            : selectedPICAs === 'MECHANIC'
-            ? pic.job_position.includes('MEKANIK')
-            : selectedPICAs === 'OPERATOR' 
-                ? pic.job_position.includes('OP')
-                : pic
+                ? pic.job_position === 'SUPIR'
+                : selectedPICAs === 'MECHANIC'
+                    ? pic.job_position.includes('MEKANIK')
+                    : selectedPICAs === 'OPERATOR'
+                        ? pic.job_position.includes('OP')
+                        : pic
         });
 
         PICName.innerHTML = '';
@@ -375,7 +410,7 @@
             url: "SPK",
             data: data,
             dataType: "json",
-            success: function(response) {
+            success: function (response) {
                 PICAs.value = '-'
                 tribinClearTextBoxByClassName('orderInputItem')
                 p.disabled = false
@@ -388,7 +423,7 @@
                     branch: branch.value
                 })
             },
-            error: function(xhr, xopt, xthrow) {
+            error: function (xhr, xopt, xthrow) {
                 p.disabled = false
                 const respon = Object.keys(xhr.responseJSON)
 
@@ -412,7 +447,7 @@
             type: "GET",
             url: "/assignment-driver/data/delivery",
             dataType: "json",
-            success: function(response) {
+            success: function (response) {
                 let innerHTML = ''
                 approvalContainer.innerHTML = ''
                 response.data.forEach((arrayItem) => {
@@ -471,49 +506,47 @@
                     approvalContainer.appendChild(col)
                 })
             },
-            error: function(xhr, xopt, xthrow) {
+            error: function (xhr, xopt, xthrow) {
                 approvalContainer.innerHTML = xthrow
             }
         });
     }
+    
     loadApprovalList()
 
-    function approveQuotation(pthis) {
-        if (confirm('Are you sure ?')) {
-            btnAction.disabled = true
-            $.ajax({
-                type: "PUT",
-                url: `assignment-driver/form/delivery/${btoa(labelQuotationInModal.innerText)}`,
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    TDLVORD_BRANCH: branch.value,
-                    TDLVORD_JALAN_COST: quotationUangJalan.value,
-                    TDLVORD_VEHICLE_REGNUM: quotationVehicleRegistrationNumber.value,
-                },
-                dataType: "json",
-                success: function(response) {
-                    $("#quotationModal").modal('hide')
-                    btnAction.disabled = false
-                    loadApprovalList()
-                    showNotificationToApprove()
-                },
-                error: function(xhr, xopt, xthrow) {
-                    btnAction.disabled = false
-                    const respon = Object.keys(xhr.responseJSON)
-                    const div_alert = document.getElementById('div-alert')
-                    let msg = ''
-                    for (const item of respon) {
-                        msg += `<p>${xhr.responseJSON[item]}</p>`
-                    }
-                    div_alert.innerHTML = `<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    function approveQuotation(uangJalan, regNum) {
+        $.ajax({
+            type: "PUT",
+            url: `assignment-driver/form/delivery/${btoa(labelQuotationInModal.innerText)}`,
+            data: {
+                _token: '{{ csrf_token() }}',
+                TDLVORD_BRANCH: branch.value,
+                TDLVORD_JALAN_COST: uangJalan,
+                TDLVORD_VEHICLE_REGNUM: regNum,
+            },
+            dataType: "json",
+            success: function (response) {
+                $("#quotationModal").modal('hide')
+                btnAction.disabled = false
+                loadApprovalList()
+                showNotificationToApprove()
+            },
+            error: function (xhr, xopt, xthrow) {
+                btnAction.disabled = false
+                const respon = Object.keys(xhr.responseJSON)
+                const div_alert = document.getElementById('div-alert')
+                let msg = ''
+                for (const item of respon) {
+                    msg += `<p>${xhr.responseJSON[item]}</p>`
+                }
+                div_alert.innerHTML = `<div class="alert alert-warning alert-dismissible fade show" role="alert">
                             ${msg}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>`
 
-                    alertify.warning(xthrow);
-                }
-            });
-        }
+                alertify.warning(xthrow);
+            }
+        });
     }
 
     function loadQuotationDetail(data) {
@@ -527,7 +560,7 @@
                 TDLVORDDETA_BRANCH: data.branch
             },
             dataType: "json",
-            success: function(response) {
+            success: function (response) {
                 quotationAddressName.value = response.SalesOrder[0].TSLO_ADDRESS_NAME
                 quotationAddressDescription.value = response.SalesOrder[0].TSLO_ADDRESS_DESCRIPTION
                 frame1.src = response.SalesOrder[0].TSLO_MAP_URL
@@ -595,13 +628,13 @@
                     elemPrint.classList.add('dropdown-item')
                     elemPrint.innerHTML = 'Print'
                     elemPrint.setAttribute('href', '#')
-                    elemPrint.onclick = function() {
+                    elemPrint.onclick = function () {
                         window.open(`PDF/SPK/${btoa(arrayItem['id'])}`, '_blank');
                     }
                     elemSubmit.classList.add('dropdown-item')
 
                     elemSubmit.setAttribute('href', '#')
-                    elemSubmit.onclick = function() {
+                    elemSubmit.onclick = function () {
                         if (confirm('Are you sure ?')) {
                             const div_alert = document.getElementById('div-alert-cost')
                             elemSubmit.innerHTML = 'Please wait'
@@ -613,11 +646,14 @@
                                     _token: '{{ csrf_token() }}'
                                 },
                                 dataType: "json",
-                                success: function(response) {
+                                success: function (response) {
+                                    approveQuotation(arrayItem['CSPK_UANG_JALAN'], arrayItem['CSPK_VEHICLE_REGNUM'])
                                     elemSubmit.innerHTML = 'Submitted'
                                     alertify.message(response.message)
+
+                                    loadApprovalList()
                                 },
-                                error: function(xhr, xopt, xthrow) {
+                                error: function (xhr, xopt, xthrow) {
                                     elemSubmit.innerHTML = 'Submit'
                                     elemSubmit.classList.remove('disabled')
                                     const respon = Object.keys(xhr.responseJSON)
@@ -742,7 +778,7 @@
                 myContainer.innerHTML = ''
                 myContainer.appendChild(myfrag)
             },
-            error: function(xhr, xopt, xthrow) {
+            error: function (xhr, xopt, xthrow) {
                 alertify.warning(xthrow);
                 quotationAddressName.value = ''
                 quotationAddressDescription.value = ''
@@ -782,7 +818,7 @@
                 url: `SPK/${btoa(idRow)}`,
                 data: data,
                 dataType: "json",
-                success: function(response) {
+                success: function (response) {
                     pthis.disabled = false
                     pthis.innerHTML = `Update line`
                     alertify.success(response.msg)
@@ -793,7 +829,7 @@
                         branch: branch.value
                     })
                 },
-                error: function(xhr, xopt, xthrow) {
+                error: function (xhr, xopt, xthrow) {
                     const respon = Object.keys(xhr.responseJSON)
                     let msg = ''
                     for (const item of respon) {
@@ -824,7 +860,7 @@
                     _token: '{{ csrf_token() }}'
                 },
                 dataType: "json",
-                success: function(response) {
+                success: function (response) {
                     pthis.disabled = false
                     pthis.innerHTML = `Remove line`
                     alertify.success(response.message)
@@ -835,7 +871,7 @@
                         branch: branch.value
                     })
                 },
-                error: function(xhr, xopt, xthrow) {
+                error: function (xhr, xopt, xthrow) {
                     const respon = Object.keys(xhr.responseJSON)
                     let msg = ''
                     for (const item of respon) {

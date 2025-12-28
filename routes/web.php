@@ -229,6 +229,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::resource('', locationController::class);
             Route::get('form', [locationController::class, 'index']);
             Route::post('searchAPI', [locationController::class, 'searchAPI']);
+            Route::post('searchAPI/{cg}', [locationController::class, 'searchAPIByCG']);
         });
 
         # Terkait Customer Master

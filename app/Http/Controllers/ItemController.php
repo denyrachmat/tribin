@@ -271,6 +271,7 @@ class ItemController extends Controller
                 'MITM_ITMCD',
                 // 'MITM_ITMNM',
                 DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' ) as MITM_ITMNM"),
+                DB::raw("MITM_ITMNM as MITM_ITMNMREAL"),
                 'MITM_SPEC',
                 'MITM_MODEL',
                 'MITM_STKUOM',
@@ -292,6 +293,7 @@ class ItemController extends Controller
                 'MITM_ITMCD',
                 // 'MITM_ITMNM',
                 DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' ) as MITM_ITMNM"),
+                DB::raw("MITM_ITMNM as MITM_ITMNMREAL"),
                 'MITM_SPEC',
                 'MITM_MODEL',
                 'MITM_STKUOM',
@@ -386,13 +388,14 @@ class ItemController extends Controller
             'MITM_BRAND',
             'MITM_SPEC',
             'MITM_MODEL',
-            'LATEST_PRC',
+            DB::raw('MAX(LATEST_PRC) as LATEST_PRC'),
             'CITRN_LOCCD',
             DB::raw('SUM(CITRN_ITMQT) as STOCK')
         )
             ->where('MITM_BRANCH', Auth::user()->branch)
             ->join('C_ITRN', 'MITM_ITMNM', 'CITRN_ITMCD')
             ->where('IS_ITMCD', 1)
+            ->havingRaw('SUM(CITRN_ITMQT) > 0')
             ->groupBy(
                 'MITM_ITMNM',
                 'MITM_ITMNMREAL',
@@ -403,7 +406,6 @@ class ItemController extends Controller
                 'MITM_BRAND',
                 'MITM_SPEC',
                 'MITM_MODEL',
-                'LATEST_PRC',
                 'CITRN_LOCCD'
             );
 

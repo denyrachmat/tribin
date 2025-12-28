@@ -223,18 +223,20 @@
                         <th class="tg-0lax"><b>Capacity / Model</b></th>
                         <th class="tg-0lax"><b>Pemakaian / Periode</b></th>
                         <th class="tg-0lax"><b>Qty</b></th>
+                        <th class="tg-0lax"><b>Harga Satuan</b></th>
                         <th class="tg-0lax"><b>{{$TDLVORD_TYPE > 2 ? 'Total Harga Barang': 'Total Harga Sewa'}}</b></th>
                     </tr>
                 </thead>
                 <tbody>
                     @if($TDLVORD_TYPE === 3 || $TDLVORD_TYPE === 4)
-                        @foreach($dlvdet as $key => $value)
+                        @foreach($dlvDetNew as $key => $value)
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
-                                <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
+                                <td class="tg-0lax">{{$value['MITM_ITMNMREAL']}} <br> {{$value['MITM_MODEL']}}</td>
                                 <td class="tg-0lax">-</td>
                                 <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
                                 <td class="tg-0lax">Rp {{number_format($value['TDLVORDDETA_PRC'], 0, ".", ",") }}</td>
+                                <td class="tg-0lax">Rp {{number_format($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC'], 0, ".", ",") }}</td>
                             </tr>
                         @endforeach
                     @else
@@ -249,6 +251,7 @@
                                         {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_TO']))}} </td>
                                     <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
                                     <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'], 0, ".", ",") }}</td>
+                                    <td class="tg-0lax">Rp {{number_format($value['TDLVORDDETA_ITMQT'] * $value['totPRCSLO'], 0, ".", ",") }}</td>
                                 </tr>
                             @else
                                 <tr>

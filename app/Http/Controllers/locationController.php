@@ -53,7 +53,7 @@ class locationController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
+        $hasil = M_LOC::where('MLOC_CG', $this->dedicatedConnection)->updateOrCreate([
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
         ],[
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
@@ -94,7 +94,7 @@ class locationController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
+        $hasil = M_LOC::where('MLOC_CG', $this->dedicatedConnection)->updateOrCreate([
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
         ],[
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
@@ -115,7 +115,17 @@ class locationController extends Controller
     }
 
     public function searchAPI(Request $request) {
-        $RS = M_LOC::on($this->dedicatedConnection);
+        $RS = M_LOC::where('MLOC_CG', $this->dedicatedConnection);
+
+        if (!empty($request->searchValue)) {
+            $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        return ['data' => $RS->get()];
+    }
+
+    public function searchAPIByCG(Request $request, $cg) {
+        $RS = M_LOC::where('MLOC_CG', $cg);
 
         if (!empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

@@ -5,8 +5,8 @@
         <span class="text-h4">Transfer Location</span>
       </div>
       <div class="col text-right">
-        <q-radio v-model="transferType" val="loc" label="Location" />
-        <q-radio v-model="transferType" val="cg" label="CG" />
+        <q-radio v-model="transferType" val="loc" label="Location" @update:model-value="LOCFROM = ''; LOCTO = ''"/>
+        <q-radio v-model="transferType" val="cg" label="CG" @update:model-value="LOCFROM = ''; LOCTO = ''"/>
       </div>
     </div>
 
@@ -40,47 +40,8 @@
         </q-select>
       </div>
     </div> -->
-    <div class="row q-col-gutter-md q-pt-md" v-if="transferType === 'loc'">
-      <div class="col-12 col-sm-6">
-        <q-select
-          dense
-          filled
-          label="Transfer From"
-          v-model="LOCFROM"
-          use-input
-          input-debounce="500"
-          :options="listLoc"
-          @filter="(val, update, abort) => filterFn(val, update, abort, 'loc')"
-          behavior="dialog"
-          option-label="MLOC_LOCNM"
-          option-value="MLOC_LOCCD"
-          emit-value
-          map-options
-          :loading="loading"
-          @update:model-value="onChooseLocation"
-        />
-      </div>
-      <div class="col-12 col-sm-6">
-        <q-select
-          dense
-          filled
-          label="Transfer To"
-          v-model="LOCTO"
-          use-input
-          input-debounce="500"
-          :options="listLoc"
-          @filter="(val, update, abort) => filterFn(val, update, abort, 'loc')"
-          behavior="dialog"
-          option-label="MLOC_LOCNM"
-          option-value="MLOC_LOCCD"
-          emit-value
-          map-options
-          :loading="loading"
-        />
-      </div>
-    </div>
 
-    <div class="row q-col-gutter-md q-pt-md" v-else>
+    <div class="row q-col-gutter-md q-pt-md" v-if="transferType === 'cg'">
       <div class="col-6">
         <q-select
           standout
@@ -106,6 +67,49 @@
           emit-value
           map-options
           dense
+          @update:model-value="onChooseCGTo"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-pt-md">
+      <div class="col-12 col-sm-6">
+        <q-select
+          dense
+          filled
+          label="Transfer From"
+          v-model="LOCFROM"
+          use-input
+          input-debounce="500"
+          :options="listLoc"
+          @filter="(val, update, abort) => filterFn(val, update, abort, 'loc')"
+          behavior="dialog"
+          option-label="MLOC_LOCNM"
+          option-value="MLOC_LOCCD"
+          emit-value
+          map-options
+          :loading="loading"
+          @update:model-value="onChooseLocation"
+          :disable="loading"
+        />
+      </div>
+      <div class="col-12 col-sm-6">
+        <q-select
+          dense
+          filled
+          label="Transfer To"
+          v-model="LOCTO"
+          use-input
+          input-debounce="500"
+          :options="listLocTo"
+          @filter="(val, update, abort) => filterFn(val, update, abort, 'locto')"
+          behavior="dialog"
+          option-label="MLOC_LOCNM"
+          option-value="MLOC_LOCCD"
+          emit-value
+          map-options
+          :loading="loading"
+          :disable="loading"
         />
       </div>
     </div>
@@ -184,6 +188,7 @@ const filter = ref('')
 const listItems = ref([]);
 const listCG = ref([]);
 const listLoc = ref([]);
+const listLocTo = ref([]);
 
 const cols = ref([
   {
@@ -233,6 +238,10 @@ const filterFn = (val, update, abort, fun) => {
       await getLocation(val);
     }
 
+    if (fun === "locto") {
+      await getLocationTo(val);
+    }
+
     if (fun === "item") {
       await getItem([
         {
@@ -255,6 +264,28 @@ const getLocation = async (val, cols = "MSUP_SUPNM") => {
     .then((response) => {
       loading.value = false;
       listLoc.value = response.data.data;
+      listLocTo.value = response.data.data;
+    })
+    .catch((e) => {
+      loading.value = false;
+    });
+};
+
+const onChooseCGTo = async (value) => {
+  CGTO.value = value;
+  await getLocationTo("", "MLOC_LOCNM");
+};
+
+const getLocationTo = async (val, cols = "MSUP_SUPNM") => {
+  loading.value = true;
+  await api_web
+    .post(`location/searchAPI/${CGTO.value}`, {
+      searchBy: cols,
+      searchValue: val,
+    })
+    .then((response) => {
+      loading.value = false;
+      listLocTo.value = response.data.data;
     })
     .catch((e) => {
       loading.value = false;

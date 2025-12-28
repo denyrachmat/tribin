@@ -345,6 +345,8 @@ class InvoiceController extends Controller
             ];
         }
 
+        // return $dlvDetParse;
+
         $pdf = Pdf::loadView(
             'pdf.invoiceDlv',
             array_merge(
@@ -504,8 +506,8 @@ class InvoiceController extends Controller
                 'M_COND_GROUP.*',
                 'M_CONDITIONS.MCONDITION_DESCRIPTION'
             )->where('MCOND_GRPNM', base64_decode($condGroup))
-            ->join('M_CONDITIONS', 'M_COND_GROUP.MCOND_ID', 'M_CONDITIONS.id')
-            ->get()
+                ->join('M_CONDITIONS', 'M_COND_GROUP.MCOND_ID', 'M_CONDITIONS.id')
+                ->get()
             : [];
 
         $spk = isset($opt['isSPK']) && $opt['isSPK'] === true
@@ -1144,10 +1146,12 @@ class InvoiceController extends Controller
             $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
             $this->fpdf->SetXY(100, 36.5);
             $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
-            $this->fpdf->SetXY(120, 36.5);
-            $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
-            $this->fpdf->SetXY(145, 36.5);
-            $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
+            if ($RSHeader->TDLVORD_TYPE != 4) {
+                $this->fpdf->SetXY(120, 36.5);
+                $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
+                $this->fpdf->SetXY(145, 36.5);
+                $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
+            }
             $this->fpdf->SetXY(170, 36.5);
             $this->fpdf->Cell(29, 5, 'Keterangan', 0, 0, 'L');
 
@@ -1184,20 +1188,22 @@ class InvoiceController extends Controller
                 $this->fpdf->Cell(29, 5, empty($RSDetail[$i]->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_FR)), 0, 0, 'L');
                 $this->fpdf->SetXY(145, $Y);
                 $this->fpdf->Cell(29, 5, empty($RSDetail[$i]->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_TO)), 0, 0, 'L');
-                if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
-                    $this->fpdf->SetXY(170, $Y);
-                    $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
-                    $this->fpdf->SetXY(170, $Y + 5);
-                    $this->fpdf->Cell(29, 5, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 0, 'L');
-                } else {
-                    $this->fpdf->SetXY(170, $Y);
-                    $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
-                    $Y += 5;
-                    $this->fpdf->SetXY(170, $Y);
-                    $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
-                    $Y += 5;
-                    $this->fpdf->SetXY(170, $Y);
-                    $this->fpdf->Cell(29, 5, 'Solar :', 0, 0, 'L');
+                if ($RSHeader->TDLVORD_TYPE != 4) {
+                    if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
+                        $this->fpdf->SetXY(170, $Y);
+                        $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
+                        $this->fpdf->SetXY(170, $Y + 5);
+                        $this->fpdf->Cell(29, 5, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 0, 'L');
+                    } else {
+                        $this->fpdf->SetXY(170, $Y);
+                        $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
+                        $Y += 5;
+                        $this->fpdf->SetXY(170, $Y);
+                        $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
+                        $Y += 5;
+                        $this->fpdf->SetXY(170, $Y);
+                        $this->fpdf->Cell(29, 5, 'Solar :', 0, 0, 'L');
+                    }
                 }
 
                 if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {

@@ -755,7 +755,7 @@ class InvoiceController extends Controller
         // $this->fpdf->Cell(25, 5, 'Proj. Location:', 0, 0, 'L');
         // $this->fpdf->Cell(15, 5, ': ' . $Subject->TQUO_PROJECT_LOCATION, 0, 0, 'L');
         $this->fpdf->SetXY(7, 35);
-        $this->fpdf->Cell(195, 110, '', 1, 0, 'L');
+        $this->fpdf->Cell(195, 115, '', 1, 0, 'L');
         $this->fpdf->SetXY(10, 40);
         $this->fpdf->Cell(50, 5, 'Sudah terima dari', 0, 0, 'L');
         $this->fpdf->Cell(50, 5, ': ' . $RSHeader->MCUS_CUSNM, 0, 0, 'L');
@@ -820,7 +820,7 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(120, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Syapril, S.T', 0, 0, 'L');
         // $Yfocus += 9;
-        $this->fpdf->SetXY(6, 145);
+        $this->fpdf->SetXY(6, 150);
         $this->fpdf->SetFont('Arial', '', 8);
         $this->fpdf->Cell(50, 5, 'Note: Pembayaran dengan Giro/Cheque/Transfer dianggap sah apabila dan sudah masuk ke rekening kami', 0, 0, 'L');
 

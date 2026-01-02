@@ -117,39 +117,38 @@ trait gencodeTraits
                 $parts = explode('|', $format);
                 // return $parts;
                 // Increment if MGECD_FLAG is 1
-                if ($value->MGECD_FLAG == 1 && $parts[0] === 'INT') {
-                    // Reset sequence when format contains "RET,ym" and the year-month changed
-                    $shouldResetYm = false;
-                    $periodKey = null;
+                if ($value->MGECD_FLAG == 1) {
+                    if ($parts[0] === 'INT') {
+                        // Reset sequence when format contains "RET,ym" and the year-month changed
+                        $shouldResetYm = false;
+                        $periodKey = null;
 
-                    foreach ($parts as $token) {
-                        $clean = strtolower(str_replace(' ', '', $token));
-                        if (strpos($clean, 'ret,') === 0) {
-                            [$ret, $arg] = array_pad(explode(',', $clean, 2), 2, null);
-                            if ($arg === 'ym') {
-                                $periodKey = date('ym'); // current year-month (yyMM)
-                                $lastPeriod = trim((string) ($value->MGECD_DESC2 ?? ''));
-                                $shouldResetYm = ($lastPeriod !== $periodKey);
-                                break;
+                        foreach ($parts as $token) {
+                            $clean = strtolower(str_replace(' ', '', $token));
+                            if (strpos($clean, 'ret,') === 0) {
+                                [$ret, $arg] = array_pad(explode(',', $clean, 2), 2, null);
+                                if ($arg === 'ym') {
+                                    $periodKey = date('ym'); // current year-month (yyMM)
+                                    $lastPeriod = trim((string) ($value->MGECD_DESC2 ?? ''));
+                                    $shouldResetYm = ($lastPeriod !== $periodKey);
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    $currentValue = intval($value->MGECD_VALUE);
-                    $currentValue = $shouldResetYm ? 1 : ($currentValue + 1);
+                        $currentValue = intval($value->MGECD_VALUE);
+                        $currentValue = $shouldResetYm ? 1 : ($currentValue + 1);
 
-                    // Persist current period so next call can compare
-                    if ($periodKey !== null) {
-                        $value->MGECD_DESC2 = $periodKey;
-                    }
+                        // Persist current period so next call can compare
+                        if ($periodKey !== null) {
+                            $value->MGECD_DESC2 = $periodKey;
+                        }
 
-                    // $currentValue = intval($value->MGECD_VALUE);
-                    // $currentValue += 1;
+                        $value->MGECD_VALUE = strval($currentValue);
 
-                    $value->MGECD_VALUE = strval($currentValue);
-
-                    if ($isSaved === true) {
-                        $value->save();
+                        if ($isSaved === true) {
+                            $value->save();
+                        }
                     }
                 }
 
@@ -239,6 +238,11 @@ trait gencodeTraits
                         }
                     }
                     $resultGencode .= $formattedValue . $value->MGECD_DESC;
+
+                    if ($isSaved === true) {
+                        $value->MGECD_VALUE = $formattedValue;
+                        $value->save();
+                    }
                 } elseif ($parts[0] === 'INT' && count($parts) > 1) {
                     $intValue = intval($value->MGECD_VALUE);
 
@@ -257,11 +261,6 @@ trait gencodeTraits
             } else {
                 $resultGencode .= $value->MGECD_VALUE . $value->MGECD_DESC;
             }
-
-            // if ($value->MGECD_FLAG == 1) {
-            //     $currentValue = intval($value->MGECD_VALUE);
-            //     $value->update(['MGECD_VALUE' => $currentValue + 1]);
-            // }
         }
 
         return response()->json([

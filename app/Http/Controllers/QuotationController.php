@@ -1657,7 +1657,7 @@ class QuotationController extends Controller
             'TQUO_QUOCD' => $newQuotationCode['quocode'],
         ], $quotationHeader);
 
-        T_QUODETA::where('TQUODETA_QUOCD', $newQuotationCode['quocode'])->delete();
+        T_QUODETA::on($this->dedicatedConnection)->where('TQUODETA_QUOCD', $newQuotationCode['quocode'])->delete();
         foreach ($request->DET as $key => $value) {
             T_QUODETA::on($this->dedicatedConnection)->create([
                 'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
@@ -1675,7 +1675,7 @@ class QuotationController extends Controller
             ]);
         }
 
-        T_QUOCOND::where('TQUOCOND_QUOCD', $newQuotationCode['quocode'])->delete();
+        T_QUOCOND::on($this->dedicatedConnection)->where('TQUOCOND_QUOCD', $newQuotationCode['quocode'])->delete();
         foreach ($request->CONDLIST as $keyCond => $valueCond) {
             T_QUOCOND::on($this->dedicatedConnection)->create([
                 'TQUOCOND_QUOCD' => $newQuotationCode['quocode'],

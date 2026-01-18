@@ -51,7 +51,7 @@ class stockInventoryQueue implements ShouldQueue
                 ], [
                     'MITM_ITMCD' => $this->row[0],
                     'MITM_ITMNM' => $this->row[1],
-                    'MITM_STKUOM' => 'UNIT',
+                    'MITM_STKUOM' => $this->row[6],
                     'MITM_BRANCH' => $this->user['branch']
                 ]);
             }
@@ -59,7 +59,7 @@ class stockInventoryQueue implements ShouldQueue
             $cekStock = DB::connection($this->conn)
                 ->table('V_STOCK_CHECK')
                 ->where('CITRN_ITMCD', $this->row[0])
-                ->where('CITRN_LOCCD', $this->row[3])
+                ->where('CITRN_LOCCD', $this->row[5])
                 ->first();
 
             if ($this->row[2] > 0) {
@@ -71,7 +71,7 @@ class stockInventoryQueue implements ShouldQueue
                             $this->date,
                             $cekStock->CITRN_ITMQT - $this->row[2], //qty
                             $this->row[4], //price
-                            $this->row[3], //fr wh
+                            $this->row[5], //fr wh
                             'ADJ-OUT', // fr loc
                             '', //to wh
                             '', // to loc
@@ -87,7 +87,7 @@ class stockInventoryQueue implements ShouldQueue
                             $this->row[4], //price
                             '', //fr wh
                             '', // fr loc
-                            $this->row[3], //to wh
+                            $this->row[5], //to wh
                             'ADJ-INC', // to loc
                             $this->user,
                             $this->conn
@@ -102,7 +102,7 @@ class stockInventoryQueue implements ShouldQueue
                         $this->row[4], //price
                         '', //fr wh
                         '', // fr loc
-                        $this->row[3], //to wh
+                        $this->row[5], //to wh
                         'SA', // to loc
                         $this->user,
                         $this->conn
@@ -115,30 +115,30 @@ class stockInventoryQueue implements ShouldQueue
                     $cekStock = DB::connection($this->conn)
                         ->table('V_STOCK_CHECK')
                         ->where('CITRN_ITMCD', $this->row[0])
-                        ->where('CITRN_LOCCD', $this->row[2])
+                        ->where('CITRN_LOCCD', $this->row[5])
                         ->first();
 
                     if (!empty($cekStock)) {
-                        if ($cekStock->CITRN_ITMQT > $this->row[1]) {
+                        if ($cekStock->CITRN_ITMQT > $this->row[2]) {
                             $this->createBarcode(
                                 $this->id,
                                 $this->row[0],
                                 $this->date,
-                                $cekStock->CITRN_ITMQT - $this->row[1], //qty
+                                $cekStock->CITRN_ITMQT - $this->row[2], //qty
                                 $this->row[3], //price
-                                $this->row[2], //fr wh
+                                $this->row[5], //fr wh
                                 'ADJ-OUT', // fr loc
                                 '', //to wh
                                 '', // to loc
                                 $this->user,
                                 $this->conn
                             );
-                        } elseif ($cekStock->CITRN_ITMQT < $this->row[1]) {
+                        } elseif ($cekStock->CITRN_ITMQT < $this->row[2]) {
                             $this->createBarcode(
                                 $this->id,
                                 $this->row[0],
                                 $this->date,
-                                $this->row[1] - $cekStock->CITRN_ITMQT, //qty
+                                $this->row[2] - $cekStock->CITRN_ITMQT, //qty
                                 $this->row[3], //price
                                 '', //fr wh
                                 '', // fr loc
@@ -153,7 +153,7 @@ class stockInventoryQueue implements ShouldQueue
                             $this->id,
                             $this->row[0],
                             $this->date,
-                            $this->row[1], //qty
+                            $this->row[2], //qty
                             $this->row[3], //price
                             '', //fr wh
                             '', // fr loc

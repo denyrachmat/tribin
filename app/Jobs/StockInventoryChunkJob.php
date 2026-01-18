@@ -192,7 +192,7 @@ class StockInventoryChunkJob implements ShouldQueue
                 $priceData = [
                     'MITMBPRC_ITMCD' => $row[0],
                     'MITMBPRC_PRC' => 1,
-                    'MITMSPRC_PRC' => $row[3],
+                    'MITMSPRC_PRC' => (float)$row[3],
                     'MITMSPRC_TYPE' => 'RTL',
                     'MITMBPRC_STARTDT' => $this->date,
                     'MITMBPRC_ENDDT' => '',

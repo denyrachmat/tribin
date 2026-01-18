@@ -35,8 +35,6 @@ class StockInventoryChunkJob implements ShouldQueue
         $this->conn = $conn;
         $this->rows = $rows;
         $this->user = $user;
-        
-        logger($this->rows);
     }
 
     public function handle(): void
@@ -52,7 +50,8 @@ class StockInventoryChunkJob implements ShouldQueue
             logger($this->isUpdateItem);
             logger($this->conn);
             logger($this->user);
-            logger(json_encode($row));
+            logger('Processing row:'.$this->row[0]);
+            // logger(json_encode($row));
 
             // === COPAS LOGIC LAMA (per row) ===
             $cekItem = M_ITM::on($this->conn)

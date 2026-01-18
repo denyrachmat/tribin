@@ -35,11 +35,11 @@ class StockInventoryChunkJob implements ShouldQueue
         $this->conn = $conn;
         $this->rows = $rows;
         $this->user = $user;
+        logger('StockInventoryChunkJob - Processing chunk with ' . count($this->rows) . ' rows.');
     }
 
     public function handle(): void
     {
-        logger('StockInventoryChunkJob - Processing chunk with ' . count($this->rows) . ' rows.');
         foreach ($this->rows as $row) {
             // skip row invalid
             if (!is_array($row) || empty($row) || empty($row[0])) {
@@ -51,7 +51,7 @@ class StockInventoryChunkJob implements ShouldQueue
             logger($this->isUpdateItem);
             logger($this->conn);
             logger($this->user);
-            logger('Processing row:'.$this->row[0]);
+            logger('Processing row:'.$row[0]);
             // logger(json_encode($row));
 
             // === COPAS LOGIC LAMA (per row) ===

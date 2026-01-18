@@ -39,6 +39,7 @@ class StockInventoryChunkJob implements ShouldQueue
 
     public function handle(): void
     {
+        logger('StockInventoryChunkJob - Processing chunk with ' . count($this->rows) . ' rows.');
         foreach ($this->rows as $row) {
             // skip row invalid
             if (!is_array($row) || empty($row) || empty($row[0])) {

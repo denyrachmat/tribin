@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\M_ITM;
 use Illuminate\Support\Facades\DB;
 use App\Traits\LocationTraits;
+use Illuminate\Http\Request;
 
 class StockInventoryChunkJob implements ShouldQueue
 {
@@ -48,12 +49,12 @@ class StockInventoryChunkJob implements ShouldQueue
                 continue;
             }
 
-            logger($this->date);
-            logger($this->id);
-            logger($this->isUpdateItem);
-            logger($this->conn);
-            logger($this->user);
-            logger('Processing row:'.$row[0]);
+            // logger($this->date);
+            // logger($this->id);
+            // logger($this->isUpdateItem);
+            // logger($this->conn);
+            // logger($this->user);
+            // logger('Processing row:'.$row[0]);
             // logger(json_encode($row));
 
             // === COPAS LOGIC LAMA (per row) ===
@@ -183,6 +184,31 @@ class StockInventoryChunkJob implements ShouldQueue
                     }
                 }
             }
+
+            // Update price beli per item jika ada harga di kolom price
+            if (!empty($row[3]) && $row[3] > 0) {
+                # code...
+                $request = new Request([
+                    'MITP_ITMCD' => $row[0],
+                    'MITP_PRCE' => $row[3],
+                    'MITP_STARTDT' => $this->date,
+                    'MITP_ENDDT' => $this->date,
+                    'MITP_CG' => $this->conn,
+                    'MITMBPRC_ITMCD' => $row[0],
+                    'MITMBPRC_PRC' => 0,
+                    'MITMSPRC_PRC' => $row[3],
+                    'MITMSPRC_TYPE' => 'RTL',
+                    'MITMBPRC_STARTDT' => $this->date,
+                    'MITMBPRC_ENDDT' => '',
+                    'MITMBPRC_ACTIVE' => '1',
+                    'MITMBPRC_CG' => $this->conn,
+                    'MITMBPRC_BRANCH' => $this->user['branch'] ?? '',
+                    'created_by' => $this->user['nick_name'] ?? '',
+                ]);
+
+                app('App\Http\Controllers\PriceBuyController')->store($request);
+            }
+
             // === END logic per row ===
         }
     }

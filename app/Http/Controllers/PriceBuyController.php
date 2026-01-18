@@ -161,6 +161,13 @@ class PriceBuyController extends Controller
             'is_preview' => 'nullable|boolean',
         ]);
 
+        if (!$validatedData) {
+            \Log::error('Validation failed for store method', [
+                'request_data' => $request->all(),
+                'user' => Auth::user()->email ?? 'unknown',
+            ]);
+        }
+
         $validatedData['status'] = true;
         $validatedData['MITMBPRC_ACTIVE'] = $validatedData['MITMBPRC_ACTIVE'] === 'Y' ? 1 : 0;
         $validatedData['created_by'] = Auth::user()->email;

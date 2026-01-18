@@ -35,6 +35,8 @@ class StockInventoryChunkJob implements ShouldQueue
         $this->conn = $conn;
         $this->rows = $rows;
         $this->user = $user;
+        
+        logger($this->rows);
     }
 
     public function handle(): void

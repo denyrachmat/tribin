@@ -575,7 +575,7 @@ class InventoryController extends Controller
         $dedicatedConnection = $this->dedicatedConnection;
 
         // (G) Import per chunk
-        $importer = new \App\Imports\ImportStockTake(
+        $importer = new ImportStockTake(
             $req->date,
             (string) $createdHeader->id,
             (bool) $req->isRegItem,

@@ -45,6 +45,13 @@ class StockInventoryChunkJob implements ShouldQueue
                 continue;
             }
 
+            logger($this->date);
+            logger($this->id);
+            logger($this->isUpdateItem);
+            logger($this->conn);
+            logger($this->user);
+            logger(json_encode($row));
+
             // === COPAS LOGIC LAMA (per row) ===
             $cekItem = M_ITM::on($this->conn)
                 ->where('MITM_ITMCD', $row[0])

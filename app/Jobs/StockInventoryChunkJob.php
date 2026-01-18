@@ -12,6 +12,7 @@ use App\Models\M_ITM;
 use Illuminate\Support\Facades\DB;
 use App\Traits\LocationTraits;
 use Illuminate\Http\Request;
+use App\Http\Controllers\PriceBuyController;
 
 class StockInventoryChunkJob implements ShouldQueue
 {
@@ -188,7 +189,7 @@ class StockInventoryChunkJob implements ShouldQueue
             // Update price beli per item jika ada harga di kolom price
             if (!empty($row[3]) && $row[3] > 0) {
                 # code...
-                $request = new Request([
+                $priceData = [
                     'MITMBPRC_ITMCD' => $row[0],
                     'MITMBPRC_PRC' => 1,
                     'MITMSPRC_PRC' => $row[3],
@@ -199,11 +200,13 @@ class StockInventoryChunkJob implements ShouldQueue
                     'MITMBPRC_CG' => $this->conn,
                     'MITMBPRC_BRANCH' => $this->user['branch'] ?? '',
                     'created_by' => $this->user['nick_name'] ?? '',
-                ]);
+                ];
 
-                logger(json_encode($request->all()));
+                logger(json_encode($priceData));
 
-                app('App\Http\Controllers\PriceBuyController')->store($request);
+                $controller = new PriceBuyController();
+                $request = new Request($priceData);
+                $controller->store($request);
             }
 
             // === END logic per row ===

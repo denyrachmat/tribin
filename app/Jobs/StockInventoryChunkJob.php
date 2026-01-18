@@ -189,22 +189,19 @@ class StockInventoryChunkJob implements ShouldQueue
             if (!empty($row[3]) && $row[3] > 0) {
                 # code...
                 $request = new Request([
-                    'MITP_ITMCD' => $row[0],
-                    'MITP_PRCE' => $row[3],
-                    'MITP_STARTDT' => $this->date,
-                    'MITP_ENDDT' => $this->date,
-                    'MITP_CG' => $this->conn,
                     'MITMBPRC_ITMCD' => $row[0],
                     'MITMBPRC_PRC' => 0,
                     'MITMSPRC_PRC' => $row[3],
                     'MITMSPRC_TYPE' => 'RTL',
                     'MITMBPRC_STARTDT' => $this->date,
                     'MITMBPRC_ENDDT' => '',
-                    'MITMBPRC_ACTIVE' => '1',
+                    'MITMBPRC_ACTIVE' => 'Y',
                     'MITMBPRC_CG' => $this->conn,
                     'MITMBPRC_BRANCH' => $this->user['branch'] ?? '',
                     'created_by' => $this->user['nick_name'] ?? '',
                 ]);
+
+                logger(json_encode($request->all()));
 
                 app('App\Http\Controllers\PriceBuyController')->store($request);
             }

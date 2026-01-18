@@ -516,7 +516,7 @@ class InventoryController extends Controller
 
     function uploadStockTake(Request $req)
     {
-        ini_set('memory_limit', '1024M'); // atau 2048M
+        ini_set('memory_limit', '3G'); // atau 2048M
         ini_set('max_execution_time', '30000');
         set_time_limit(0);
 

@@ -32,6 +32,8 @@ class ImportStockTake implements ToCollection, WithStartRow, WithChunkReading
 
     public function collection(Collection $rows): void
     {
+        ini_set('memory_limit', '3G'); // atau 2048M
+        logger('ImportStockTake - Dispatching chunk job with ' . $rows->count() . ' rows.');
         StockInventoryChunkJob::dispatch(
             $this->date,
             $this->id,
@@ -39,6 +41,6 @@ class ImportStockTake implements ToCollection, WithStartRow, WithChunkReading
             $this->dedicatedConnection,
             $rows->values()->all(),
             $this->meta
-        )->onQueue('stockTake')->afterCommit();
+        )->onQueue('stockTake');
     }
 }

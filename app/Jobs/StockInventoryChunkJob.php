@@ -43,7 +43,7 @@ class StockInventoryChunkJob implements ShouldQueue
         foreach ($this->rows as $row) {
             // skip row invalid
             if (!is_array($row) || empty($row) || empty($row[0])) {
-                logger('is_array:'.(is_array($row) ? 'true' : 'false').', empty:'.(empty($row) ? 'true' : 'false').', row0:'.(empty($row[0]) ? 'true' : 'false'));
+                logger('is_array:'.(is_array($row) ? 'true' : 'false').', empty:'.(empty($row) ? 'true' : 'false').', row0:'.($row[0] ?? 'null'));
                 // logger('StockInventoryChunkJob - Skipping invalid or empty row. '.json_encode($row));
                 continue;
             }

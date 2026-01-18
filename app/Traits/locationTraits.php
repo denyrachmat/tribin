@@ -89,11 +89,9 @@ trait LocationTraits
         }
     }
     // Test
-    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $userHead = [], $conn = null)
+    function createBarcode($idHeader, $item, $date, $qty, $price, $frWH = '', $formout = '', $toWH = '', $forminc = '', $userHead = [], $conn = null, $createBarcode = false)
     {
         $bc = '';
-        logger(empty($userHead) ? 'Kosong $userHeadnya' : 'Gak kosong kok');
-        logger(json_encode([$userHead]));
         $cekLatestBarcode = T_RCV_BC_DETAIL::on(!empty($conn) ? $conn : $this->dedicatedConnection)
             ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
             ->orderBy('id', 'desc')

@@ -340,7 +340,7 @@ class InventoryController extends Controller
                 return (array) $user;
             })->toArray();
 
-            $StockNow = (int)$value['QTY'];
+            $StockNow = (int) $value['QTY'];
             foreach ($getStock as $keyStock => $valueStock) {
                 if ($StockNow <= $valueStock['CITRN_ITMQT']) {
                     // Issue
@@ -518,20 +518,28 @@ class InventoryController extends Controller
     {
         ini_set('max_execution_time', '30000');
 
-        $checkJobsExists = DB::table('jobs')->where('queue', 'stockTake')->first();
-        if (!empty($checkJobsExists)) {
-            return response()->json([["There is still exists upload batch not done yet, please wait until it's done, " . DB::table('jobs')->where('queue', 'stockTake')->count() . " Rows remaining"]], 406);
+        // (A) Cek apakah masih ada queue stockTake yang pending
+        // lebih aman pakai exists()
+        $hasPending = DB::table('jobs')->where('queue', 'stockTake')->exists();
+        if ($hasPending) {
+            $count = DB::table('jobs')->where('queue', 'stockTake')->count();
+            return response()->json([
+                [
+                    "There is still exists upload batch not done yet, please wait until it's done, {$count} Rows remaining"
+                ]
+            ], 406);
         }
 
-        $file = new File($req->file);
+        // (B) Simpan file
         $extNya = $req->file('file')->getClientOriginalExtension();
 
-        $fileHash = str_replace('.' . $file->extension(), '', $file->hashName());
+        $file = $req->file('file');
+        $fileHash = str_replace('.' . $file->getClientOriginalExtension(), '', $file->hashName());
         $nama_file = $fileHash . '.' . $extNya;
 
-        // return $nama_file;
+        $req->file('file')->storeAs('public/upload_stock_take/', $nama_file);
 
-        $req->file->storeAs('/public/upload_stock_take/', $nama_file);
+        // (C) Prepare header (tetap sama seperti kamu)
         $createdHeader = T_RCV_HEAD::on($this->dedicatedConnection)
             ->updateOrCreate([
                 'TRCV_DOCNO' => "STK-" . date('Ymd'),
@@ -546,22 +554,45 @@ class InventoryController extends Controller
                 'created_by' => Auth::user()->nick_name,
             ]);
 
-
-        if ($extNya == 'xls') {
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+        // (D) Kalau xls → convert jadi xlsx (FIX path save-nya)
+        if ($extNya === 'xls') {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load(
+                storage_path('app/public/upload_stock_take/' . $nama_file)
+            );
             $writer = new Xlsx($spreadsheet);
             $nama_file = $fileHash . '.xlsx';
-            $writer->save('/public/upload_stock_take/' . $nama_file);
+            $writer->save(storage_path('app/public/upload_stock_take/' . $nama_file));
         }
 
-        $importer = new importStockTake($req->date, $createdHeader->id, $req->isRegItem);
+        // (E) Meta user sekali saja (jangan Auth di import)
+        $meta = [
+            'branch' => Auth::user()->branch,
+            'nick_name' => Auth::user()->nick_name,
+        ];
 
-        Excel::import($importer, public_path('/storage/upload_stock_take/' . $nama_file));
+        // (F) Dedicated connection sekali saja (jangan cookie di import)
+        // kalau kamu sudah punya $this->dedicatedConnection yang valid, pakai itu:
+        $dedicatedConnection = $this->dedicatedConnection;
+
+        // (G) Import per chunk
+        $importer = new \App\Imports\ImportStockTake(
+            $req->date,
+            (string) $createdHeader->id,
+            (bool) $req->isRegItem,
+            $dedicatedConnection,
+            $meta
+        );
+
+        Excel::import(
+            $importer,
+            storage_path('app/public/upload_stock_take/' . $nama_file)
+        );
 
         return ['msg' => 'Upload Success'];
     }
 
-    function findStockByBarcode($bc) {
+    function findStockByBarcode($bc)
+    {
         $data = C_ITRN::on($this->dedicatedConnection)
             ->select(
                 'CITRN_ITMCD',

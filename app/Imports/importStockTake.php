@@ -3,28 +3,21 @@
 namespace App\Imports;
 
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToModel;
-use Illuminate\Support\Facades\DB;
-use App\Traits\LocationTraits;
-use Illuminate\Support\Facades\Crypt;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
-use Illuminate\Support\Facades\Auth;
-use App\Jobs\stockInventoryQueue;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use App\Jobs\StockInventoryChunkJob;
 
-use App\Models\M_ITM;
-
-class importStockTake implements ToModel, WithStartRow
+class ImportStockTake implements ToCollection, WithStartRow, WithChunkReading
 {
-    use LocationTraits;
-    private $date, $id, $isUpdateItem, $dedicatedConnection;
-
-    public function __construct($date, $id, $isUpdateItem = false, $dedicatedConnection = '')
-    {
+    public function __construct(
+        private string $date,
+        private string $id,
+        private bool $isUpdateItem = false,
+        private string $dedicatedConnection = '',
+        private array $meta = []
+    ) {
         date_default_timezone_set('Asia/Jakarta');
-        $this->date = $date;
-        $this->id = $id;
-        $this->isUpdateItem = $isUpdateItem;
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
     }
 
     public function startRow(): int
@@ -32,22 +25,20 @@ class importStockTake implements ToModel, WithStartRow
         return 2;
     }
 
-    /**
-     * @param Collection $collection
-     */
-    public function model(array $row)
+    public function chunkSize(): int
     {
-        ini_set("memory_limit", "3G");
-        stockInventoryQueue::dispatch(
+        return 200; // bisa 200/500 tergantung load
+    }
+
+    public function collection(Collection $rows): void
+    {
+        StockInventoryChunkJob::dispatch(
             $this->date,
             $this->id,
             $this->isUpdateItem,
             $this->dedicatedConnection,
-            $row,
-            [
-                'branch' => Auth::User()->branch,
-                'nick_name' => Auth::User()->nick_name
-            ]
-        )->onQueue('stockTake');
+            $rows->values()->all(),
+            $this->meta
+        )->onQueue('stockTake')->afterCommit();
     }
 }

@@ -79,7 +79,7 @@ trait accTraits
             }
 
             $client = new \GuzzleHttp\Client();
-            $response = $client->request('POST', env('ACC_URL') . 'api/post-journal', [
+            $response = $client->request('POST', env('ACC_URL', 'https://acc.jatpowerindo.co.id/') . 'api/post-journal', [
                 'body' => json_encode([
                     'cg_code' => $conn,
                     'date' => $date,
@@ -90,7 +90,7 @@ trait accTraits
                 ]),
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'X-API-KEY' => env('ACC_KEY'),
+                    'X-API-KEY' => env('ACC_KEY', 'imaGrANdSILVwaNH5sTxk8O4f60fuule'),
                 ]
             ]);
 
@@ -117,16 +117,18 @@ trait accTraits
     {
         try {
             $client = new \GuzzleHttp\Client();
-            $response = $client->request('GET', env('ACC_URL') . 'api/journal-by-reference', [
+            $response = $client->request('GET', env('ACC_URL', 'https://acc.jatpowerindo.co.id/') . 'api/journal-by-reference', [
                 'query' => [
                     'cg_code' => $conn,
                     'reference_number' => $reference_number,
                 ],
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'X-API-KEY' => env('ACC_KEY'),
+                    'X-API-KEY' => env('ACC_KEY', 'imaGrANdSILVwaNH5sTxk8O4f60fuule'),
                 ]
             ]);
+
+            logger('url:'.env('ACC_URL') . 'api/journal-by-reference?cg_code='.$conn.'&reference_number='.$reference_number);
             if ($shouldExists) {
                 return json_decode($response->getBody(), true);
             } else {
@@ -134,7 +136,7 @@ trait accTraits
             }
 
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-
+            logger($e->getMessage());
             if ($shouldExists === false && $e->getCode() == 422) {
                 return response()->json([
                     'status' => true,
@@ -194,10 +196,10 @@ trait accTraits
                 // return $filterUnvoid;
                 foreach ($filterUnvoid as $key => $value) {
                     $client = new \GuzzleHttp\Client();
-                    $response = $client->request('DELETE', env('ACC_URL') . 'api/voidJournal/' . $value['id'], [
+                    $response = $client->request('DELETE', env('ACC_URL', 'https://acc.jatpowerindo.co.id/') . 'api/voidJournal/' . $value['id'], [
                         'headers' => [
                             'Content-Type' => 'application/json',
-                            'X-API-KEY' => env('ACC_KEY'),
+                            'X-API-KEY' => env('ACC_KEY', 'imaGrANdSILVwaNH5sTxk8O4f60fuule'),
                         ]
                     ]);
 

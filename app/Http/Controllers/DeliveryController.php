@@ -2094,6 +2094,7 @@ class DeliveryController extends Controller
 
     function confirmOutgoing(Request $request)
     {
+        ini_set('max_execution_time', 300);
         if (count($request->data) > 0) {
             $hasilZero = [];
             foreach ($request->data as $rCheck) {

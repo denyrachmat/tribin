@@ -74,6 +74,7 @@
                   emit-value
                   map-options
                   :loading="loading"
+                  @update:model-value="(val) => onChooseItem(val, idx)"
                 >
                 </q-select>
               </div>
@@ -261,15 +262,23 @@ const onInputBC = async (val) => {
     if (response.data.length > 0) {
       const item = response.data[0];
       const row = rows.value.find((r) => r.BC === val);
-      if (row) {
-        row.TDLVORDDETA_ITMCD_ACT = item.CITRN_ITMCD;
-        row.TDLVORDDETA_ITMQT = item.STOCK;
+
+      if (item.STOCK >= row.TDLVORDDETA_ITMQT) {
+        if (row) {
+          row.TDLVORDDETA_ITMCD_ACT = item.CITRN_ITMCD;
+          // row.TDLVORDDETA_ITMQT = item.STOCK;
+        } else {
+          rows.value.push({
+            BC: val,
+            TDLVORDDETA_ITMCD_ACT: item.CITRN_ITMCD,
+            MITM_ITMNMREAL: item.MITM_ITMNM,
+            // TDLVORDDETA_ITMQT: item.STOCK,
+          });
+        }
       } else {
-        rows.value.push({
-          BC: val,
-          TDLVORDDETA_ITMCD_ACT: item.CITRN_ITMCD,
-          MITM_ITMNMREAL: item.MITM_ITMNM,
-          TDLVORDDETA_ITMQT: item.STOCK,
+        $q.notify({
+          color: "negative",
+          message: `Barcode ${val} stock only ${item.STOCK}, not enough for delivery qty ${row.TDLVORDDETA_ITMQT} !!`,
         });
       }
 
@@ -315,6 +324,39 @@ const onSubmitData = () => {
           loading.value = false;
         });
     });
+  }
+};
+
+const onChooseItem = (val, idx) => {
+  const words = (val ?? "")
+    .toString()
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // let findItem = listItems.value.find((itm) => {
+  //   const name = (itm.MITM_ITMNMREAL ?? "").toString().toLowerCase();
+  //   return words.every((w) => name.includes(w));
+  // });
+
+  let wordParse = rows.value[idx].MITM_ITMNMREAL.toString().toLowerCase().trim();
+  findItem = words.every((w) => wordParse.includes(w));
+
+  if (!findItem) {
+    $q.dialog({
+      title: "Error",
+      message: `We found item actual that you input is not same with choosed item, are you sure want to continue ?`,
+      ok: true,
+      persistent: true,
+    }).onOk(() => {
+      rows.value[idx].TDLVORDDETA_ITMCD_ACT = val;
+    }).onCancel(() => {
+      rows.value[idx].TDLVORDDETA_ITMCD_ACT = "";
+      rows.value[idx].BC = "";
+    });
+  } else {
+    rows.value[idx].TDLVORDDETA_ITMCD_ACT = val;
   }
 };
 

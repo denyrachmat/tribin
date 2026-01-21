@@ -31,7 +31,7 @@
             <q-select
               outlined
               v-model="filterCol"
-              :options="col"
+              :options="cols"
               label="Search Columns"
               option-value="name"
               option-label="label"

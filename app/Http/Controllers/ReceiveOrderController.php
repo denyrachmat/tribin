@@ -860,8 +860,8 @@ class ReceiveOrderController extends Controller
         $q = DB::connection($this->dedicatedConnection)
             ->table('V_SALES_REPORT')
             ->whereBetween('SLODET_DATE', [
-                $request->fdate . " 00:00:00",
-                $request->ldate . " 23:59:59",
+                "{$request->input('fdate')} 00:00:00",
+                "{$request->input('ldate')} 23:59:59",
             ])
             ->when(!empty($listCat), function ($qq) use ($listCat) {
                 $qq->whereIn('MITM_ITMCAT', $listCat);
@@ -894,7 +894,7 @@ class ReceiveOrderController extends Controller
         $maxRows = 10000; // sesuaikan
         $rowCount = 0;
 
-        // return $q->get();
+        return $q->count();
         foreach ($q->cursor() as $rowObj) {
             $rowCount++;
             if ($rowCount > $maxRows)
@@ -1034,7 +1034,7 @@ class ReceiveOrderController extends Controller
         foreach ($listCat as $key => $value) {
             $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
                 ->where('MCUS_CUSCD', $value)
-                ->whereBetween('SLODET_DATE', [$request->fdate . " 00:00:00", $request->ldate . " 23:59:59"]);
+                ->whereBetween('SLODET_DATE', ["{$request->input('fdate')} 00:00:00", "{$request->input('ldate')} 23:59:59"]);
 
             if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
                 $RSTemp->where('created_by', Auth::user()->nick_name);

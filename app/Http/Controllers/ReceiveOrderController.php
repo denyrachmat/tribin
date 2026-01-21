@@ -894,7 +894,7 @@ class ReceiveOrderController extends Controller
         $maxRows = 10000; // sesuaikan
         $rowCount = 0;
 
-        return $q->count();
+        // return $q->count();
         foreach ($q->cursor() as $rowObj) {
             $rowCount++;
             if ($rowCount > $maxRows)

@@ -596,14 +596,24 @@ class InventoryController extends Controller
 
     function findStockByBarcode($bc)
     {
+
+        ini_set('max_execution_time', '300');
         $data = C_ITRN::on($this->dedicatedConnection)
             ->select(
                 'CITRN_ITMCD',
                 'CITRN_LOCCD',
-                DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK')
+                DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK'),
+                'MITM_ITMCD',
+                'MITM_ITMNM'
             )
+            ->join('M_ITM', 'MITM_ITMCD', 'CITRN_ITMCD')
             ->where('id_reff', $bc)
-            ->groupBy('CITRN_ITMCD', 'CITRN_LOCCD')
+            ->groupBy(
+                'CITRN_ITMCD',
+                'CITRN_LOCCD',
+                'MITM_ITMCD',
+                'MITM_ITMNM'
+            )
             ->get();
         if ($data->isEmpty()) {
             return response()->json(['msg' => 'Barcode not found'], 404);

@@ -28,7 +28,7 @@
                   dense
                   label="Barcode"
                   v-model="row.BC"
-                  @update:model-value="onInputBC"
+                  @update:model-value="(val) => onInputBC(val, idx)"
                   :debounce="500"
                 />
               </div>
@@ -74,7 +74,7 @@
                   emit-value
                   map-options
                   :loading="loading"
-                  @update:model-value="(val) => onChooseItem(val, idx)"
+                  @update:model-value="(val) => onChooseItem(listItems.find(fin => fin.MITM_ITMCD == row.TDLVORDDETA_ITMCD_ACT), idx)"
                 >
                 </q-select>
               </div>
@@ -254,7 +254,7 @@ const filterFn = (val, update, abort, fun) => {
   });
 };
 
-const onInputBC = async (val) => {
+const onInputBC = async (val, idx) => {
   if (!val) return;
   loading.value = true;
   await api_web.get(`inventory/findStockByBarcode/${val}`).then((response) => {
@@ -283,6 +283,7 @@ const onInputBC = async (val) => {
       }
 
       getItem(item.CITRN_ITMCD);
+      onChooseItem(item, idx)
     } else {
       $q.notify({
         color: "negative",
@@ -328,35 +329,33 @@ const onSubmitData = () => {
 };
 
 const onChooseItem = (val, idx) => {
-  const words = (val ?? "")
+  const words = (val.MITM_ITMNM ?? "")
     .toString()
     .toLowerCase()
     .trim()
     .split(/\s+/)
     .filter(Boolean);
 
-  // let findItem = listItems.value.find((itm) => {
-  //   const name = (itm.MITM_ITMNMREAL ?? "").toString().toLowerCase();
-  //   return words.every((w) => name.includes(w));
-  // });
-
   let wordParse = rows.value[idx].MITM_ITMNMREAL.toString().toLowerCase().trim();
-  findItem = words.every((w) => wordParse.includes(w));
+  console.log(wordParse)
+  let findItem = words.every((w) => wordParse.includes(w));
+  console.log(findItem)
 
   if (!findItem) {
     $q.dialog({
       title: "Error",
       message: `We found item actual that you input is not same with choosed item, are you sure want to continue ?`,
       ok: true,
+      cancel:true,
       persistent: true,
     }).onOk(() => {
-      rows.value[idx].TDLVORDDETA_ITMCD_ACT = val;
+      rows.value[idx].TDLVORDDETA_ITMCD_ACT = val.MITM_ITMCD;
     }).onCancel(() => {
       rows.value[idx].TDLVORDDETA_ITMCD_ACT = "";
       rows.value[idx].BC = "";
     });
   } else {
-    rows.value[idx].TDLVORDDETA_ITMCD_ACT = val;
+    rows.value[idx].TDLVORDDETA_ITMCD_ACT = val.MITM_ITMCD;
   }
 };
 

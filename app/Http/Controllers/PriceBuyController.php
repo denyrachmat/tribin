@@ -69,7 +69,7 @@ class PriceBuyController extends Controller
                 'date',
                 function ($attribute, $value, $fail) use ($request) {
                     $startDate = $value;
-                    $endDate = $request->MITMBPRC_ENDDT ?? \Carbon\Carbon::parse($startDate)->addYears(10)->format('Y-m-d');
+                    $endDate = $request->MITMBPRC_ENDDT;
 
                     $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
                         $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
@@ -79,7 +79,7 @@ class PriceBuyController extends Controller
                         ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
                         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where(function ($query) use ($startDate, $endDate) {
-                            $query->where(function ($q) use ($startDate, $endDate) {
+                            $query->where(function ($q) use ($startDate) {
                                 $q->where('MITMBPRC_STARTDT', '<=', $startDate)
                                     ->where(function ($q2) use ($startDate) {
                                         $q2->whereNull('MITMBPRC_ENDDT')
@@ -87,7 +87,7 @@ class PriceBuyController extends Controller
                                     });
                             })
                                 ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if ($endDate) {
+                                    if (!empty($endDate)) {
                                         $q->where('MITMBPRC_STARTDT', '<=', $endDate)
                                             ->where(function ($q2) use ($endDate) {
                                                 $q2->whereNull('MITMBPRC_ENDDT')
@@ -96,7 +96,7 @@ class PriceBuyController extends Controller
                                     }
                                 })
                                 ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if ($endDate) {
+                                    if (!empty($endDate)) {
                                         $q->where('MITMBPRC_STARTDT', '>=', $startDate)
                                             ->where('MITMBPRC_STARTDT', '<=', $endDate);
                                     }
@@ -125,7 +125,7 @@ class PriceBuyController extends Controller
                         ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
                         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where(function ($query) use ($startDate, $endDate) {
-                            $query->where(function ($q) use ($startDate, $endDate) {
+                            $query->where(function ($q) use ($startDate) {
                                 $q->where('MITMBPRC_STARTDT', '<=', $startDate)
                                     ->where(function ($q2) use ($startDate) {
                                         $q2->whereNull('MITMBPRC_ENDDT')
@@ -133,7 +133,7 @@ class PriceBuyController extends Controller
                                     });
                             })
                                 ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if ($endDate) {
+                                    if (!empty($endDate)) {
                                         $q->where('MITMBPRC_STARTDT', '<=', $endDate)
                                             ->where(function ($q2) use ($endDate) {
                                                 $q2->whereNull('MITMBPRC_ENDDT')
@@ -142,7 +142,7 @@ class PriceBuyController extends Controller
                                     }
                                 })
                                 ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if ($endDate) {
+                                    if (!empty($endDate)) {
                                         $q->where('MITMBPRC_STARTDT', '>=', $startDate)
                                             ->where('MITMBPRC_STARTDT', '<=', $endDate);
                                     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\M_ITMSPRICE;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class PriceSellController extends Controller
 {
@@ -37,7 +38,7 @@ class PriceSellController extends Controller
                 'max:20',
                 function ($attribute, $value, $fail) use ($request) {
                     $exists = \App\Models\M_GENCODE::where('MGECD_CODE', 'MPRC_TYPE')
-                        ->where('MGECD_CG', Crypt::decryptString($request->MITMSPRC_CG))
+                        ->where('MGECD_CG', $this->decryptIfEncrypted($request->MITMSPRC_CG))
                         ->where('MGECD_BRANCH', $request->MITMSPRC_BRANCH)
                         ->where('MGECD_VALUE', $value)
                         ->exists();
@@ -56,7 +57,7 @@ class PriceSellController extends Controller
                     $endDate = $request->MITMSPRC_ENDDT;
 
                     $overlap = M_ITMSPRICE::where('MITMSPRC_ITMCD', $request->MITMSPRC_ITMCD)
-                        ->where('MITMSPRC_CG', Crypt::decryptString($request->MITMSPRC_CG))
+                        ->where('MITMSPRC_CG', $this->decryptIfEncrypted($request->MITMSPRC_CG))
                         ->where('MITMSPRC_BRANCH', $request->MITMSPRC_BRANCH)
                         ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
                         ->where(function ($query) use ($startDate, $endDate) {
@@ -99,7 +100,7 @@ class PriceSellController extends Controller
                     $endDate = $value;
 
                     $overlap = M_ITMSPRICE::where('MITMSPRC_ITMCD', $request->MITMSPRC_ITMCD)
-                        ->where('MITMSPRC_CG', Crypt::decryptString($request->MITMSPRC_CG))
+                        ->where('MITMSPRC_CG', $this->decryptIfEncrypted($request->MITMSPRC_CG))
                         ->where('MITMSPRC_BRANCH', $request->MITMSPRC_BRANCH)
                         ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
                         ->where(function ($query) use ($startDate, $endDate) {
@@ -140,7 +141,7 @@ class PriceSellController extends Controller
             'MITMBPRC_ID' => 'required|numeric',
         ]);
 
-        $validatedData['MITMSPRC_CG'] = Crypt::decryptString($validatedData['MITMSPRC_CG']);
+        $validatedData['MITMSPRC_CG'] = $this->decryptIfEncrypted($validatedData['MITMSPRC_CG']);
 
         // Check if item code exists and deactivate existing records
         M_ITMSPRICE::where('MITMSPRC_ITMCD', $validatedData['MITMSPRC_ITMCD'])
@@ -184,5 +185,27 @@ class PriceSellController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function decryptIfEncrypted($value)
+    {
+        if ($value === null)
+            return null;
+
+        // biar kalau numeric (id biasa) langsung lewat
+        if (is_int($value) || is_float($value))
+            return $value;
+
+        $value = is_string($value) ? trim($value) : $value;
+
+        if (!is_string($value) || $value === '')
+            return $value;
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (DecryptException $e) {
+            // bukan payload encrypt Laravel / payload rusak -> fallback plain
+            return $value;
+        }
     }
 }

@@ -9,6 +9,7 @@ use App\Models\M_ITMSPRICE;
 use App\Http\Controllers\PriceSellController;
 use Auth;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\DB;
 use App\Models\CompanyGroup;
 
@@ -53,7 +54,7 @@ class PriceBuyController extends Controller
                 'max:20',
                 function ($attribute, $value, $fail) use ($request) {
                     $exists = \App\Models\M_GENCODE::where('MGECD_CODE', 'MPRC_TYPE')
-                        ->where('MGECD_CG', Crypt::decryptString($request->MITMBPRC_CG))
+                        ->where('MGECD_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
                         ->where('MGECD_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where('MGECD_VALUE', $value)
                         ->exists();
@@ -75,7 +76,7 @@ class PriceBuyController extends Controller
                     })
                         ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
                         ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
-                        ->where('MITMBPRC_CG', Crypt::decryptString($request->MITMBPRC_CG))
+                        ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
                         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where(function ($query) use ($startDate, $endDate) {
                             $query->where(function ($q) use ($startDate, $endDate) {
@@ -121,7 +122,7 @@ class PriceBuyController extends Controller
                     })
                         ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
                         ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
-                        ->where('MITMBPRC_CG', Crypt::decryptString($request->MITMBPRC_CG))
+                        ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
                         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
                         ->where(function ($query) use ($startDate, $endDate) {
                             $query->where(function ($q) use ($startDate, $endDate) {
@@ -361,5 +362,27 @@ class PriceBuyController extends Controller
         }
 
         return response()->json($results, 200);
+    }
+
+    public function decryptIfEncrypted($value)
+    {
+        if ($value === null)
+            return null;
+
+        // biar kalau numeric (id biasa) langsung lewat
+        if (is_int($value) || is_float($value))
+            return $value;
+
+        $value = is_string($value) ? trim($value) : $value;
+
+        if (!is_string($value) || $value === '')
+            return $value;
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (DecryptException $e) {
+            // bukan payload encrypt Laravel / payload rusak -> fallback plain
+            return $value;
+        }
     }
 }

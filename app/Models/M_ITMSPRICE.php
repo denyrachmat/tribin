@@ -19,6 +19,7 @@ class M_ITMSPRICE extends Model
         'MITMSPRC_ACTIVE',
         'MITMSPRC_CG',
         'MITMSPRC_BRANCH',
-        'created_by'
+        'created_by',
+        'MITMBPRC_ID'
     ];
 }

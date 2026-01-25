@@ -185,7 +185,7 @@ class PriceBuyController extends Controller
             'MITMBPRC_ITMCD' => $validatedData['MITMBPRC_ITMCD'],
             'MITMBPRC_PRC' => $validatedData['MITMBPRC_PRC'],
             'MITMBPRC_STARTDT' => $validatedData['MITMBPRC_STARTDT'],
-            'MITMBPRC_ENDDT' => $validatedData['MITMBPRC_ENDDT'],
+            'MITMBPRC_ENDDT' => !empty($validatedData['MITMBPRC_ENDDT']) ? $validatedData['MITMBPRC_ENDDT'] : null,
             'MITMBPRC_ACTIVE' => $validatedData['MITMBPRC_ACTIVE'],
             'MITMBPRC_CG' => $validatedData['MITMBPRC_CG'],
             'MITMBPRC_BRANCH' => $validatedData['MITMBPRC_BRANCH'],

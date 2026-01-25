@@ -67,93 +67,93 @@ class PriceBuyController extends Controller
             'MITMBPRC_STARTDT' => [
                 'required',
                 'date',
-                function ($attribute, $value, $fail) use ($request) {
-                    $startDate = $value;
-                    $endDate = $request->MITMBPRC_ENDDT;
+                // function ($attribute, $value, $fail) use ($request) {
+                //     $startDate = $value;
+                //     $endDate = $request->MITMBPRC_ENDDT;
 
-                    $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
-                        $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
-                    })
-                        ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
-                        ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
-                        ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
-                        ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
-                        ->where(function ($query) use ($startDate, $endDate) {
-                            $query->where(function ($q) use ($startDate) {
-                                $q->where('MITMBPRC_STARTDT', '<=', $startDate)
-                                    ->where(function ($q2) use ($startDate) {
-                                        $q2->whereNull('MITMBPRC_ENDDT')
-                                            ->orWhere('MITMBPRC_ENDDT', '>=', $startDate);
-                                    });
-                            })
-                                ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if (!empty($endDate)) {
-                                        $q->where('MITMBPRC_STARTDT', '<=', $endDate)
-                                            ->where(function ($q2) use ($endDate) {
-                                                $q2->whereNull('MITMBPRC_ENDDT')
-                                                    ->orWhere('MITMBPRC_ENDDT', '>=', $endDate);
-                                            });
-                                    }
-                                })
-                                ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if (!empty($endDate)) {
-                                        $q->where('MITMBPRC_STARTDT', '>=', $startDate)
-                                            ->where('MITMBPRC_STARTDT', '<=', $endDate);
-                                    }
-                                });
-                        })
-                        ->exists();
+                //     $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
+                //         $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
+                //     })
+                //         ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
+                //         ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
+                //         ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
+                //         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
+                //         ->where(function ($query) use ($startDate, $endDate) {
+                //             $query->where(function ($q) use ($startDate, $endDate) {
+                //                 $q->where('MITMBPRC_STARTDT', '<=', $startDate)
+                //                     ->where(function ($q2) use ($startDate) {
+                //                         $q2->whereNull('MITMBPRC_ENDDT')
+                //                             ->orWhere('MITMBPRC_ENDDT', '>=', $startDate);
+                //                     });
+                //             })
+                //                 ->orWhere(function ($q) use ($startDate, $endDate) {
+                //                     if ($endDate) {
+                //                         $q->where('MITMBPRC_STARTDT', '<=', $endDate)
+                //                             ->where(function ($q2) use ($endDate) {
+                //                                 $q2->whereNull('MITMBPRC_ENDDT')
+                //                                     ->orWhere('MITMBPRC_ENDDT', '>=', $endDate);
+                //                             });
+                //                     }
+                //                 })
+                //                 ->orWhere(function ($q) use ($startDate, $endDate) {
+                //                     if ($endDate) {
+                //                         $q->where('MITMBPRC_STARTDT', '>=', $startDate)
+                //                             ->where('MITMBPRC_STARTDT', '<=', $endDate);
+                //                     }
+                //                 });
+                //         })
+                //         ->exists();
 
-                    if ($overlap) {
-                        $fail('The date range overlaps with an existing price record.');
-                    }
-                },
+                //     if ($overlap) {
+                //         $fail('The date range overlaps with an existing price record.');
+                //     }
+                // },
             ],
             'MITMBPRC_ENDDT' => [
                 'nullable',
                 'date',
                 'after_or_equal:MITMBPRC_STARTDT',
-                function ($attribute, $value, $fail) use ($request) {
-                    $startDate = $request->input('MITMBPRC_STARTDT');
-                    $endDate = $value;
+                // function ($attribute, $value, $fail) use ($request) {
+                //     $startDate = $request->input('MITMBPRC_STARTDT');
+                //     $endDate = $value;
 
-                    $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
-                        $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
-                    })
-                        ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
-                        ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
-                        ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
-                        ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
-                        ->where(function ($query) use ($startDate, $endDate) {
-                            $query->where(function ($q) use ($startDate) {
-                                $q->where('MITMBPRC_STARTDT', '<=', $startDate)
-                                    ->where(function ($q2) use ($startDate) {
-                                        $q2->whereNull('MITMBPRC_ENDDT')
-                                            ->orWhere('MITMBPRC_ENDDT', '>=', $startDate);
-                                    });
-                            })
-                                ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if (!empty($endDate)) {
-                                        $q->where('MITMBPRC_STARTDT', '<=', $endDate)
-                                            ->where(function ($q2) use ($endDate) {
-                                                $q2->whereNull('MITMBPRC_ENDDT')
-                                                    ->orWhere('MITMBPRC_ENDDT', '>=', $endDate);
-                                            });
-                                    }
-                                })
-                                ->orWhere(function ($q) use ($startDate, $endDate) {
-                                    if (!empty($endDate)) {
-                                        $q->where('MITMBPRC_STARTDT', '>=', $startDate)
-                                            ->where('MITMBPRC_STARTDT', '<=', $endDate);
-                                    }
-                                });
-                        })
-                        ->exists();
+                //     $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
+                //         $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
+                //     })
+                //         ->where('MITMSPRC_TYPE', $request->MITMSPRC_TYPE)
+                //         ->where('MITMBPRC_ITMCD', $request->MITMBPRC_ITMCD)
+                //         ->where('MITMBPRC_CG', $this->decryptIfEncrypted($request->MITMBPRC_CG))
+                //         ->where('MITMBPRC_BRANCH', $request->MITMBPRC_BRANCH)
+                //         ->where(function ($query) use ($startDate, $endDate) {
+                //             $query->where(function ($q) use ($startDate, $endDate) {
+                //                 $q->where('MITMBPRC_STARTDT', '<=', $startDate)
+                //                     ->where(function ($q2) use ($startDate) {
+                //                         $q2->whereNull('MITMBPRC_ENDDT')
+                //                             ->orWhere('MITMBPRC_ENDDT', '>=', $startDate);
+                //                     });
+                //             })
+                //                 ->orWhere(function ($q) use ($startDate, $endDate) {
+                //                     if ($endDate) {
+                //                         $q->where('MITMBPRC_STARTDT', '<=', $endDate)
+                //                             ->where(function ($q2) use ($endDate) {
+                //                                 $q2->whereNull('MITMBPRC_ENDDT')
+                //                                     ->orWhere('MITMBPRC_ENDDT', '>=', $endDate);
+                //                             });
+                //                     }
+                //                 })
+                //                 ->orWhere(function ($q) use ($startDate, $endDate) {
+                //                     if ($endDate) {
+                //                         $q->where('MITMBPRC_STARTDT', '>=', $startDate)
+                //                             ->where('MITMBPRC_STARTDT', '<=', $endDate);
+                //                     }
+                //                 });
+                //         })
+                //         ->exists();
 
-                    if ($overlap) {
-                        $fail('The date range overlaps with an existing price record.');
-                    }
-                },
+                //     if ($overlap) {
+                //         $fail('The date range overlaps with an existing price record.');
+                //     }
+                // },
             ],
             'MITMBPRC_ACTIVE' => 'required|in:Y,N',
             'MITMBPRC_CG' => 'nullable|string',

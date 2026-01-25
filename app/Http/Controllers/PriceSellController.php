@@ -54,7 +54,7 @@ class PriceSellController extends Controller
                 'date',
                 function ($attribute, $value, $fail) use ($request) {
                     $startDate = $value;
-                    $endDate = $request->MITMSPRC_ENDDT;
+                    $endDate = $request->MITMSPRC_ENDDT ?? \Carbon\Carbon::parse($startDate)->addYears(10)->format('Y-m-d');
 
                     $overlap = M_ITMSPRICE::where('MITMSPRC_ITMCD', $request->MITMSPRC_ITMCD)
                         ->where('MITMSPRC_CG', $this->decryptIfEncrypted($request->MITMSPRC_CG))

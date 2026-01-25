@@ -69,7 +69,7 @@ class PriceBuyController extends Controller
                 'date',
                 function ($attribute, $value, $fail) use ($request) {
                     $startDate = $value;
-                    $endDate = $request->MITMBPRC_ENDDT;
+                    $endDate = $request->MITMBPRC_ENDDT ?? \Carbon\Carbon::parse($startDate)->addYears(10)->format('Y-m-d');
 
                     $overlap = M_ITMBPRICE::join('M_ITMSPRICE', function ($join) {
                         $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');

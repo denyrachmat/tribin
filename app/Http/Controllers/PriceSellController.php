@@ -142,7 +142,7 @@ class PriceSellController extends Controller
         ]);
 
         $validatedData['MITMSPRC_CG'] = $this->decryptIfEncrypted($validatedData['MITMSPRC_CG']);
-
+        $validatedData['MITMSPRC_ENDDT'] = !empty($validatedData['MITMSPRC_ENDDT']) ? $validatedData['MITMSPRC_ENDDT'] : null;
         // Check if item code exists and deactivate existing records
         M_ITMSPRICE::where('MITMSPRC_ITMCD', $validatedData['MITMSPRC_ITMCD'])
             ->where('MITMSPRC_ACTIVE', true)

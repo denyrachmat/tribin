@@ -172,7 +172,7 @@ class PriceBuyController extends Controller
         $validatedData['status'] = true;
         $validatedData['MITMBPRC_ACTIVE'] = $validatedData['MITMBPRC_ACTIVE'] === 'Y' ? 1 : 0;
         $validatedData['created_by'] = Auth::user()->email;
-        $validatedData['MITMBPRC_CG'] = Crypt::decryptString($validatedData['MITMBPRC_CG']);
+        $validatedData['MITMBPRC_CG'] = $this->decryptIfEncrypted($validatedData['MITMBPRC_CG']);
 
         // Check if item code exists and deactivate existing records
         M_ITMBPRICE::where('MITMBPRC_ITMCD', $validatedData['MITMBPRC_ITMCD'])

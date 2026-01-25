@@ -604,15 +604,31 @@ class InventoryController extends Controller
                 'CITRN_LOCCD',
                 DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK'),
                 'MITM_ITMCD',
-                'MITM_ITMNM'
+                'MITM_ITMNM',
+                 DB::raw('COALESCE((MITMBPRC_PRC),0) AS MITMBPRC_PRC'),
+                 DB::raw('COALESCE((MITMSPRC_PRC),0) AS MITMSPRC_PRC'),
             )
             ->join('M_ITM', 'MITM_ITMCD', 'CITRN_ITMCD')
+            ->leftjoin(DB::raw('jatpower_tribin.M_ITMBPRICE'), function($j) {
+                $j->on('MITMBPRC_ITMCD', 'CITRN_ITMCD')
+                  ->on('MITMBPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
+                  ->on('MITMBPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
+                  ->where('MITMBPRC_ACTIVE', 1);
+            })
+            ->leftjoin(DB::raw('jatpower_tribin.M_ITMSPRICE'), function($j) {
+                $j->on('MITMSPRC_ITMCD', 'CITRN_ITMCD')
+                  ->on('MITMSPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
+                  ->on('MITMSPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
+                  ->where('MITMSPRC_ACTIVE', 1);
+            })
             ->where('id_reff', $bc)
             ->groupBy(
                 'CITRN_ITMCD',
                 'CITRN_LOCCD',
                 'MITM_ITMCD',
-                'MITM_ITMNM'
+                'MITM_ITMNM',
+                'MITMBPRC_PRC',
+                'MITMSPRC_PRC'
             )
             ->get();
         if ($data->isEmpty()) {

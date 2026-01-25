@@ -75,6 +75,7 @@
                   map-options
                   :loading="loading"
                   @update:model-value="(val) => onChooseItem(listItems.find(fin => fin.MITM_ITMCD == row.TDLVORDDETA_ITMCD_ACT), idx)"
+                  :readonly="getNowCG === 'connect_jos_service'"
                 >
                 </q-select>
               </div>
@@ -358,6 +359,13 @@ const onChooseItem = (val, idx) => {
     rows.value[idx].TDLVORDDETA_ITMCD_ACT = val.MITM_ITMCD;
   }
 };
+
+const getNowCG = computed(() => {
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("CGID="))
+    ?.split("=")[1] || "";
+});
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

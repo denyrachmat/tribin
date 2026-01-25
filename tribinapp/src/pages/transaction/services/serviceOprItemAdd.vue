@@ -14,7 +14,23 @@
             <div class="text-h6">Update Used Item</div>
           </div>
           <div class="col text-right" v-if="props.mode !== 'view'">
-            <q-btn icon="add" outline color="blue" @click="onClickAddItem" />
+            <q-input
+              filled
+              dense
+              label="Barcode Scan"
+              v-model="ScannedBC"
+              @update:model-value="(value) => onScanBarcode(value)"
+              ref="barcodeScanRef"
+            >
+              <template v-slot:append>
+                <q-btn
+                  icon="add"
+                  outline
+                  color="blue"
+                  @click="onClickAddItem"
+                />
+              </template>
+            </q-input>
           </div>
         </div>
       </q-card-section>
@@ -41,6 +57,22 @@
                 {{ idx + 1 }}
               </q-avatar>
             </q-item-section>
+
+            <!-- Barcode section -->
+            <q-item-section>
+              <q-item-label>
+                <q-input
+                  label="Barcode"
+                  v-model="items.TSRVF_BC"
+                  filled
+                  dense
+                  readonly
+                >
+                </q-input>
+              </q-item-label>
+            </q-item-section>
+
+            <!-- Item Section -->
 
             <q-item-section>
               <q-item-label>
@@ -76,7 +108,7 @@
                   emit-value
                   map-options
                   :loading="loading"
-                  :readonly="props.mode === 'view'"
+                  :readonly="props.mode === 'view' || items.TSRVF_BC"
                   @update:model-value="(value) => onSelectItem(value, idx)"
                   @virtual-scroll="onScroll"
                   v-else
@@ -192,7 +224,7 @@
 </template>
 <script setup>
 import { api, api_web } from "boot/axios";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, nextTick } from "vue";
 import { date, useQuasar, useDialogPluginComponent } from "quasar";
 
 import priceChooser from "../../master/price/priceChooser.vue";
@@ -214,9 +246,20 @@ const paginate = ref({
   sortBy: "MITM_ITMCD",
   descending: false,
 });
+const ScannedBC = ref("");
+const barcodeScanRef = ref(null);
+
+const listItems = ref([]);
+const listItemsSel = ref([]);
+const loading = ref(false);
 
 onMounted(async () => {
-  console.log(props);
+  await nextTick();
+  setTimeout(() => {
+    barcodeScanRef.value?.focus();
+  }, 100);
+
+  getItem("");
   if (props.dataItem.listFixDet) {
     listItemsSel.value = props.dataItem.listFixDet;
 
@@ -226,10 +269,6 @@ onMounted(async () => {
     });
   }
 });
-
-const listItems = ref([]);
-const listItemsSel = ref([]);
-const loading = ref(false);
 
 const onClickAddItem = () => {
   listItemsSel.value.push({
@@ -436,5 +475,59 @@ const onClickSearchPrice = async (item, idx) => {
     console.log(val);
     listItemsSel.value[idx].TSRVF_PRC = val.MITMSPRC_PRC;
   });
+};
+
+const onScanBarcode = async (value) => {
+  if (!value) return;
+
+  if (listItemsSel.value.filter((fil) => fil.TSRVF_BC === value).length > 0) {
+    $q.notify({
+      color: "negative",
+      message: `Barcode ${value} already scanned !!`,
+    });
+    ScannedBC.value = "";
+    barcodeScanRef.value?.focus();
+    return;
+  }
+
+  loading.value = true;
+  await api_web
+    .get(`inventory/findStockByBarcode/${value}`)
+    .then((response) => {
+      loading.value = false;
+      if (response.data.length > 0) {
+        console.log("Found item:", response.data[0]);
+
+        let dataItem = response.data[0];
+
+        if (dataItem.STOCK <= 0) {
+          $q.notify({
+            color: "negative",
+            message: `Barcode ${value} has stock 0 !!`,
+          });
+          ScannedBC.value = "";
+          barcodeScanRef.value?.focus();
+          return;
+        }
+
+        listItemsSel.value.push({
+          TSRVF_BC: value,
+          TSRVD_ID: props.dataItem.id,
+          TSRVF_ITMCD: dataItem.MITM_ITMCD,
+          TSRVF_PRC: dataItem.MITMSPRC_PRC,
+          TSRVF_QTY: dataItem.STOCK,
+        });
+
+        ScannedBC.value = "";
+        barcodeScanRef.value?.focus();
+      } else {
+        $q.notify({
+          color: "negative",
+          message: `Barcode ${value} not found in stock !!`,
+        });
+        ScannedBC.value = "";
+        barcodeScanRef.value?.focus();
+      }
+    });
 };
 </script>

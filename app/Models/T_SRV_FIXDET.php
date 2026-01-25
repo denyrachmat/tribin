@@ -12,6 +12,7 @@ class T_SRV_FIXDET extends Model
     protected $table = 'T_SRV_FIXDET';
     protected $fillable = [
         'TSRVD_ID',
+        'TSRVD_BC',
         'TSRVF_ITMCD',
         'TSRVF_PRC',
         'TSRVF_QTY',

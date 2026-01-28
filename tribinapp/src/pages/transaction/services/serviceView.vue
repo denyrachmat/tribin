@@ -353,9 +353,11 @@ const onClickProceed = (val) => {
       })
       .then((response) => {
         loading.value = false;
+        dataSrv();
       })
       .catch((e) => {
         loading.value = false;
+        dataSrv();
       });
   });
 };
@@ -372,9 +374,11 @@ const onClickDelete = (val) => {
       .delete(`servicesAdmin/${btoa(val.SRVH_DOCNO)}`)
       .then((response) => {
         loading.value = false;
+        dataSrv();
       })
       .catch((e) => {
         loading.value = false;
+        dataSrv();
       });
   });
 };

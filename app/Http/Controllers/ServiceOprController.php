@@ -98,7 +98,7 @@ class ServiceOprController extends Controller
                     'TSRVF_ITMCD' => $valueDet['TSRVF_ITMCD'],
                     'TSRVF_PRC' => $valueDet['TSRVF_PRC'],
                     'TSRVF_QTY' => $valueDet['TSRVF_QTY'],
-                    'TSRVF_BC' => $valueDet['TSRVF_BC']
+                    'TSRVF_BC' => $valueDet['TSRVF_BC'] ?? ''
                 ]);
             }
         }
@@ -276,7 +276,7 @@ class ServiceOprController extends Controller
                                 'TSRVF_ITMCD' => $valueDet['TLOCREQ_ITMCD'],
                                 'TSRVF_PRC' => $valueDet['TLOCREQ_PRC'],
                                 'TSRVF_QTY' => $valueDet['TLOCREQ_QTY'],
-                                'TSRVF_BC' => $valueDet['TSRVF_BC']
+                                'TSRVF_BC' => $valueDet['TSRVF_BC'] ?? ''
                             ]);
                         }
                     }

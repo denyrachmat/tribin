@@ -45,7 +45,7 @@
               v-model="filter"
               placeholder="Search"
               outlined
-              @update:model-value="getOutgoingData()"
+              @update:model-value="getIncomingData()"
               debounce="1000"
             >
               <template v-slot:append>
@@ -434,7 +434,7 @@ const onClickNew = (data = []) => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    getOutgoingData();
+    getIncomingData();
   });
 };
 

@@ -27,6 +27,7 @@ use App\Models\C_SPK;
 use App\Traits\taxesTraits;
 use App\Traits\accTraits;
 
+use Illuminate\Pagination\LengthAwarePaginator;
 class InvoiceController extends Controller
 {
     use taxesTraits, accTraits;
@@ -155,6 +156,7 @@ class InvoiceController extends Controller
 
     public function search(Request $request)
     {
+
         $data = DB::connection($this->dedicatedConnection)->table('V_INVOICE_DATA')
             ->select('V_INVOICE_DATA.*')->orderBy('TDLVORD_DLVCD', 'desc');
 
@@ -173,8 +175,6 @@ class InvoiceController extends Controller
             })
                 ->where(DB::raw('COALESCE(RCV_QT, 0)'), '<', DB::raw('COALESCE(TOT_DLV, 0)'));
         }
-
-        // return $data->toSql();
 
         if (!empty($request->searchBy)) {
             $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -198,6 +198,7 @@ class InvoiceController extends Controller
                         'isSlo' => true
                     ]
                 );
+
                 $dlv->dlvacc = $data['dlvacc'];
                 $dlv->payment = $data['payment'];
                 $dlv->condition = $data['condition'];
@@ -243,6 +244,338 @@ class InvoiceController extends Controller
         return $listData;
     }
 
+    public function searchUpdate(Request $request)
+    {
+        $conn = $this->dedicatedConnection;
+
+        $page = max(1, (int) data_get($request, 'pagination.page', 1));
+        $perPage = max(1, (int) data_get($request, 'pagination.rowsPerPage', 20));
+
+        $searchBy = strtoupper((string) $request->input('searchBy', ''));
+        $searchValue = trim((string) $request->input('searchValue', ''));
+
+        // ekspresi parent (gabung /1,/2,/3 jadi induk)
+        $parentExpr = "
+            CASE
+                WHEN TDLVORD_TYPE = 4 THEN TDLVORD_DLVCD
+                ELSE SUBSTRING_INDEX(TDLVORD_DLVCD,'/',1)
+            END
+            ";
+
+        // =========================
+        // STEP-1: query parent list
+        // =========================
+        $parentQuery = DB::connection($conn)
+            ->table('T_DLVORDHEAD as h')
+            ->selectRaw("$parentExpr AS parent_dlvcd")
+            ->selectRaw("MAX(h.TDLVORD_DLVCD) AS sort_key")
+            ->groupBy('parent_dlvcd');
+
+        // OPTIONAL: kalau kamu selalu filter branch/user
+        // $parentQuery->where('h.TDLVORD_BRANCH', $request->user()->branch);
+
+        // =========================
+        // APPLY SEARCH (whitelist)
+        // =========================
+        $allowed = [
+            'TDLVORD_DLVCD',
+            'TSLO_QUOCD',
+            'TSLO_SLOCD',
+            'TDLVORD_CONDGRP',
+            'TDLVORD_INVCD',
+            'MCUS_CUSNM',
+            'DLV_TYPE_DESC',
+            'TDLVORDDETA_ITMCD'
+        ];
+
+        if ($searchValue !== '' && in_array($searchBy, $allowed, true)) {
+            switch ($searchBy) {
+
+                case 'TDLVORD_DLVCD':
+                    // prefix search agar cepat (SP-26-0107%)
+                    $parentQuery->where(DB::raw($parentExpr), 'like', $searchValue . '%');
+                    break;
+
+                case 'TDLVORD_CONDGRP':
+                    $parentQuery->where('h.TDLVORD_CONDGRP', 'like', '%' . $searchValue . '%');
+                    break;
+
+                case 'TDLVORD_INVCD':
+                    $parentQuery->where('h.TDLVORD_INVCD', 'like', '%' . $searchValue . '%');
+                    break;
+
+                case 'DLV_TYPE_DESC':
+                    // map text -> type
+                    $map = [
+                        'sales' => 1,
+                        'return po' => 3,
+                        'internal service' => 4,
+                        'susulan' => 2,
+                    ];
+                    $sv = strtolower($searchValue);
+
+                    if (isset($map[$sv])) {
+                        $parentQuery->where('h.TDLVORD_TYPE', '=', $map[$sv]);
+                    } elseif (ctype_digit($searchValue)) {
+                        $parentQuery->where('h.TDLVORD_TYPE', '=', (int) $searchValue);
+                    } else {
+                        // optional fallback: cari via CASE (kalau inputnya bukan angka/text map)
+                        $parentQuery->whereRaw("(
+                      CASE
+                        WHEN h.TDLVORD_TYPE = 1 THEN 'Sales'
+                        WHEN h.TDLVORD_TYPE = 2 THEN 'Combined'
+                        WHEN h.TDLVORD_TYPE = 3 THEN 'Return PO'
+                        WHEN h.TDLVORD_TYPE = 4 THEN 'Internal Service'
+                        ELSE 'Other'
+                      END
+                    ) LIKE ?", ['%' . $searchValue . '%']);
+                    }
+                    break;
+
+                case 'MCUS_CUSNM':
+                    // tetap di step-1 pakai EXISTS (lebih aman daripada join)
+                    $parentQuery->whereExists(function ($q) use ($searchValue) {
+                        $q->selectRaw('1')
+                            ->from('M_CUS as c')
+                            ->whereRaw('c.MCUS_CUSCD = h.TDLVORD_CUSCD')
+                            ->whereRaw('c.MCUS_BRANCH = h.TDLVORD_BRANCH')
+                            ->where('c.MCUS_CUSNM', 'like', '%' . $searchValue . '%');
+                    });
+                    break;
+
+                case 'TSLO_QUOCD':                    
+                    // filter via DETA->QUO, tetap di step-1 (EXISTS)
+                    $parentQuery->whereExists(function ($q) use ($searchBy, $searchValue, $parentExpr) {
+                        $q->selectRaw('1')
+                            ->from('T_DLVORDDETA as d')
+                            ->join('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
+                            ->whereRaw("SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,'/',1) = $parentExpr")
+                            ->where("s.$searchBy", 'like', '%' . $searchValue . '%');
+                    });
+                    break;
+                case 'TSLO_SLOCD':
+                    // filter via DETA->SLO, tetap di step-1 (EXISTS)
+                    $parentQuery->whereExists(function ($q) use ($searchBy, $searchValue, $parentExpr) {
+                        $q->selectRaw('1')
+                            ->from('T_DLVORDDETA as d')
+                            ->join('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
+                            ->whereRaw("SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,'/',1) = $parentExpr")
+                            ->where("s.$searchBy", 'like', '%' . $searchValue . '%');
+                    });
+                    break;
+                case 'TDLVORDDETA_ITMCD':
+                    // filter via DETA->ITM, tetap di step-1 (EXISTS)
+                    $parentQuery->whereExists(function ($q) use ($searchBy, $searchValue, $parentExpr) {
+                        $q->selectRaw('1')
+                            ->from('T_DLVORDDETA as d')
+                            ->whereRaw("SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,'/',1) = $parentExpr")
+                            ->where("d.$searchBy", 'like', '%' . $searchValue . '%');
+                    });
+                    break;
+            }
+        }
+        // total parent (kalau mau cepat tanpa total, pakai simplePaginate)
+        $total = DB::connection($conn)
+            ->table(DB::raw("({$parentQuery->toSql()}) AS t"))
+            ->mergeBindings($parentQuery)
+            ->count();
+
+        // ambil parent codes page ini
+        $parents = $parentQuery
+            ->orderByDesc('sort_key')
+            ->forPage($page, $perPage)
+            ->pluck('parent_dlvcd')
+            ->toArray();
+
+        if (!$parents) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], $total, $perPage, $page, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
+        }
+
+        // =========================
+        // STEP-2: ambil data list
+        // =========================
+        // Saran: untuk list, ambil dari query base (bukan view) dan aggregate minimal.
+        $rows = DB::connection($conn)
+            ->table('T_DLVORDHEAD as h')
+            ->selectRaw("$parentExpr AS TDLVORD_DLVCD")
+            ->selectRaw("ANY_VALUE(s.TSLO_QUOCD) AS TSLO_QUOCD")
+            ->selectRaw("ANY_VALUE(s.TSLO_SLOCD) AS TSLO_SLOCD")
+            ->selectRaw("ANY_VALUE(h.TDLVORD_CONDGRP) AS TDLVORD_CONDGRP")
+            ->selectRaw("ANY_VALUE(h.TDLVORD_INVCD) AS TDLVORD_INVCD")
+            ->selectRaw("ANY_VALUE(c.MCUS_CUSNM) AS MCUS_CUSNM")
+            ->selectRaw("CASE 
+                WHEN h.TDLVORD_TYPE = 1 THEN 'Sales'
+                WHEN h.TDLVORD_TYPE = 2 THEN 'Combined'
+                WHEN h.TDLVORD_TYPE = 3 THEN 'Return PO'
+                WHEN h.TDLVORD_TYPE = 4 THEN 'Internal Service'
+                ELSE 'Other'
+            END AS DLV_TYPE_DESC")
+            ->selectRaw('TDLVORD_ISSUDT')
+            ->selectRaw('TDLVORD_TYPE')
+            ->selectRaw('TQUO_ATTN')
+            ->selectRaw('TQUO_SBJCT')
+            ->selectRaw('MCUS_TELNO')
+            ->selectRaw('TSLO_POCD')
+            ->join('T_DLVORDDETA as d', DB::raw('SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,\'/\',1)'), '=', DB::raw("$parentExpr"))
+            ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
+            ->leftJoin('M_CUS as c', function ($join) {
+                $join->on('c.MCUS_CUSCD', '=', 'h.TDLVORD_CUSCD')
+                    ->on('c.MCUS_BRANCH', '=', 'h.TDLVORD_BRANCH');
+            })
+            ->leftJoin('T_QUOHEAD as qh', 'qh.TQUO_QUOCD', '=', 's.TSLO_QUOCD')
+            ->whereIn(DB::raw($parentExpr), $parents)
+            ->groupBy(DB::raw($parentExpr))
+            ->orderByDesc(DB::raw("MAX(h.TDLVORD_DLVCD)"))
+            ->get();
+
+        $keys = $rows->map(fn($r) => [
+            'dlvcd' => $r->TDLVORD_DLVCD,
+            'slocd' => $r->TSLO_SLOCD ?? null,
+            'cond' => $r->TDLVORD_CONDGRP ?? null,
+        ])->all();
+
+        $details = $this->dataDetailBulk($keys, [
+            'isDlvAcc' => true,
+            'isPayment' => true,
+            'isCond' => true,
+            'isSPK' => true,
+            'isDlvSJ' => true,
+            'isSlo' => true,
+        ]);
+
+        $rows->transform(function ($r) use ($details) {
+            $key = $r->TDLVORD_DLVCD;
+
+            $r->dlvsj = $details['dlvsj'][$key] ?? [];
+            $r->payment = $details['payment'][$key] ?? [];
+            $r->dlvacc = $details['dlvacc'][$key] ?? [];
+            $r->condition = $details['condition'][$r->TDLVORD_CONDGRP] ?? [];
+            $r->spk = $details['spk'][$key] ?? [];
+            $r->sloDet = $details['sloDet'][$r->TSLO_SLOCD] ?? [];
+
+            return $r;
+        });
+
+        return new \Illuminate\Pagination\LengthAwarePaginator($rows, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
+    }
+
+    public function dataDetailBulk(array $rows, array $opt): array
+    {
+        $conn = $this->dedicatedConnection;
+
+        // Normalize keys (decode sekali)
+        $dlvcds = collect($rows)->pluck('dlvcd')->filter()->unique()->values()->all();
+        $slocds = collect($rows)->pluck('slocd')->filter()->unique()->values()->all();
+        $condgrps = collect($rows)->pluck('cond')->filter()->unique()->values()->all();
+
+        $out = [
+            'dlvdet' => [],
+            'dlvacc' => [],
+            'payment' => [],
+            'condition' => [],
+            'spk' => [],
+            'dlvsj' => [],
+            'sloDet' => [],
+        ];
+
+        if (!empty($opt['isDlvAcc'])) {
+            $out['dlvacc'] = T_DLVACCESSORY::on($conn)
+                ->whereIn('TDLVACCESSORY_DLVCD', $dlvcds)
+                ->get()
+                ->groupBy('TDLVACCESSORY_DLVCD')
+                ->toArray();
+        }
+
+        if (!empty($opt['isPayment'])) {
+            $out['payment'] = T_DLVPAYDETA::on($conn)
+                ->select('T_DLVPAYDETA.*', 'branch_payment_accounts.*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'))
+                ->join('branch_payment_accounts', 'branch_payment_accounts.id', '=', 'TDLVPAYDETA_IDPAY')
+                ->whereIn(DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD,\'/\',1)'), $dlvcds)
+                ->get()
+                // ->groupBy(DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD,\'/\',1)'))
+                ->toArray();
+        }
+
+        if (!empty($opt['isCond']) && !empty($condgrps)) {
+            $conds = M_COND_GROUP::on($conn)
+                ->select('M_COND_GROUP.*', 'M_CONDITIONS.MCONDITION_DESCRIPTION')
+                ->join('M_CONDITIONS', 'M_COND_GROUP.MCOND_ID', '=', 'M_CONDITIONS.id')
+                ->whereIn('MCOND_GRPNM', $condgrps)
+                ->get()
+                ->groupBy('MCOND_GRPNM')
+                ->toArray();
+
+            $out['condition'] = $conds;
+        }
+
+        if (!empty($opt['isSPK'])) {
+            $out['spk'] = C_SPK::on($conn)
+                ->whereIn('CSPK_REFF_DOC', $dlvcds)
+                ->where('CSPK_BRANCH', Auth::user()->branch)
+                ->where('CSPK_PIC_AS', 'DRIVER')
+                ->get()
+                ->groupBy('CSPK_REFF_DOC')
+                ->toArray();
+        }
+
+        if (!empty($opt['isSlo']) && !empty($slocds)) {
+            $out['sloDet'] = T_SLODETA::on($conn)
+                ->join('M_USAGE', 'M_USAGE.id', '=', 'TSLODETA_USAGE_DESCRIPTION')
+                ->whereIn('TSLODETA_SLOCD', $slocds)
+                ->get()
+                ->groupBy('TSLODETA_SLOCD')
+                ->toArray();
+        }
+
+        // dlvsj bulk bisa, tapi tergantung struktur tabelmu (kunci join). Bisa kita susun belakangan.
+
+        if (!empty($opt['isDlvSJ']) && !empty($dlvcds)) {
+
+            // Ambil semua SJ rows yang match parent codes (prefix match)
+            $sjRows = T_DLVSJDETA::on($conn)
+                ->select(
+                    'T_DLVSJDETA.*',
+                    // key untuk mapping balik ke parent dlvcd
+                    DB::raw("SUBSTRING_INDEX(T_DLVSJDETA.TDLVSJDETA_DLVCD,'/',1) AS parent_dlvcd"),
+                    // optional: kalau mau lihat “full” dlvcd aslinya
+                    DB::raw("T_DLVSJDETA.TDLVSJDETA_DLVCD AS sj_dlvcd")
+                )
+                ->where(function ($q) use ($dlvcds) {
+                    foreach ($dlvcds as $p) {
+                        // cocok untuk SP-26-0107 (match SP-26-0107, SP-26-0107/1, /2 dst)
+                        $q->orWhere('T_DLVSJDETA.TDLVSJDETA_DLVCD', 'like', $p . '%');
+                    }
+                })
+                // kalau kamu punya kolom tanggal/ID untuk menentukan "yang paling baru", tambahkan orderBy di sini
+                ->orderByDesc('T_DLVSJDETA.id')
+                ->get();
+
+            /**
+             * Karena single kamu pakai ->first(),
+             * kita ambil 1 SJ row per parent_dlvcd.
+             */
+            $dlvsjMap = [];
+            foreach ($sjRows as $row) {
+                $k = $row->parent_dlvcd;
+                if (!isset($dlvsjMap[$k])) {
+                    $dlvsjMap[$k] = $row; // ambil yang pertama (karena sudah orderByDesc id)
+                }
+            }
+
+            $out['dlvsj'] = $dlvsjMap;
+        }
+
+
+        return $out;
+    }
+
+
     public function printInvoice(Request $request)
     {
         $getCompGroups = CompanyGroup::where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->first();
@@ -265,7 +598,7 @@ class InvoiceController extends Controller
         $taxes = $this->getTaxes($request->TSLO_SLOCD, $this->dedicatedConnection);
         $total = 0;
 
-        if (count($request->dlvdet) > 0) {
+        if ($request->has('dlvdet') && count($request->dlvdet) > 0) {
             $dataDet = $request->dlvdet;
         } else {
             $dataDet = $this->dataDetail(

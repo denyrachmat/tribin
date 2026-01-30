@@ -17,7 +17,7 @@
             <q-select
               outlined
               v-model="filterCol"
-              :options="columns"
+              :options="[...columns, { name: 'TDLVORDDETA_ITMCD', label: 'Item Name' }]"
               label="Search Columns"
               option-value="name"
               option-label="label"
@@ -261,7 +261,7 @@ const onRequest = (props) => {
 const getConfirmedData = async (paginate = {}) => {
   loading.value = true;
   await api_web
-    .post("invoices/search", {
+    .post("invoices/searchUpdate", {
       searchBy: filterCol.value,
       searchValue: filter.value,
       pagination: paginate,

@@ -20,11 +20,10 @@
               :options="options"
               type="radio"
               v-model="dataSJ.TDLVSJDETA_TYPE"
-              @update:model-value="(value) => onSelectGroup(value)"
+              @update:model-value="onSelectGroup"
             />
           </div>
           <div class="col text-right">
-
             <q-btn
               color="indigo"
               label="Choose Bank Account"
@@ -207,33 +206,9 @@ import { useQuasar, useDialogPluginComponent, date } from "quasar";
 import assignConditionsView from "pages/master/conditions/assignConditionsView.vue";
 import viewAssignedCond from "pages/master/conditions/viewAssignedCond.vue";
 import invoiceBankChoose from "./invoiceBankChoose.vue";
+import { data } from "autoprefixer";
 
 const $q = useQuasar();
-
-const props = defineProps({
-  idDlv: String,
-  dataSJDB: Array,
-  payment: Array,
-  condition: Array
-});
-
-onMounted(() => {
-  dataSJ.value.TDLVSJDETA_DLVCD = props.idDlv
-  getDataCondition()
-
-  if (props.dataSJDB) {
-    dataSJ.value = props.dataSJDB;
-    dataSJ.value.payment = props.payment
-    dataSJ.value.condition = props.condition
-    dataSJ.value.TDLVSJDETA_ISSPLITSJ = parseInt(props.dataSJDB.TDLVSJDETA_ISSPLITSJ)
-  }
-});
-
-const options = ref([
-  { label: "General", value: "general" },
-  { label: "Forklift", value: "forklift" },
-  { label: "Genset", value: "genset" },
-]);
 
 const dataSJ = ref({
   TDLVSJDETA_DLVCD: "",
@@ -243,23 +218,75 @@ const dataSJ = ref({
   TDLVSJDETA_ENDDT: "",
   TDLVSJDETA_ISSPLITSJ: 0,
   condition: [],
-  payment: []
+  payment: [],
 });
+
+const props = defineProps({
+  idDlv: String,
+  dataSJDB: {
+    type: Object,
+    default: {
+      TDLVSJDETA_DLVCD: "",
+      TDLVSJDETA_TYPE: "",
+      TDLVSJDETA_CONDGRP: "",
+      TDLVSJDETA_STARTDT: "",
+      TDLVSJDETA_ENDDT: "",
+      TDLVSJDETA_ISSPLITSJ: 0,
+      condition: [],
+      payment: [],
+    },
+  },
+  payment: Array,
+  condition: Array,
+});
+
+onMounted(() => {
+  dataSJ.value = {
+    ...dataSJ.value,
+    TDLVSJDETA_DLVCD: props.idDlv,
+  };
+
+  getDataCondition();
+
+  console.log(props);
+  if (props.dataSJDB) {
+    dataSJ.value = {
+      ...props.dataSJDB,
+      payment: props.payment,
+      condition: props.condition,
+      TDLVSJDETA_ISSPLITSJ: parseInt(props.dataSJDB.TDLVSJDETA_ISSPLITSJ) || 0,
+    };
+
+    // dataSJ.value.payment = props.payment;
+    // dataSJ.value.condition = props.condition;
+    // dataSJ.value.TDLVSJDETA_ISSPLITSJ = parseInt(
+    //   props.dataSJDB.TDLVSJDETA_ISSPLITSJ
+    // );
+  }
+});
+
+const options = ref([
+  { label: "General", value: "general" },
+  { label: "Forklift", value: "forklift" },
+  { label: "Genset", value: "genset" },
+]);
 const groupCond = ref([]);
 const loading = ref(false);
 
 const stateSubmit = () => {
-  console.log(dataSJ.value)
+  console.log(dataSJ.value);
   return !dataSJ.value.TDLVSJDETA_DLVCD ||
-  !dataSJ.value.TDLVSJDETA_TYPE ||
-  !dataSJ.value.TDLVSJDETA_CONDGRP ? true : false;
+    !dataSJ.value.TDLVSJDETA_TYPE ||
+    !dataSJ.value.TDLVSJDETA_CONDGRP
+    ? true
+    : false;
 };
 
 const onClickConditions = () => {
   $q.dialog({
     component: assignConditionsView,
     componentProps: {
-      typeGroup: 'inv'
+      typeGroup: "inv",
     },
     // persistent: true,
   }).onOk(async (val) => {
@@ -273,7 +300,7 @@ const onClickViewListConditions = () => {
     component: viewAssignedCond,
     componentProps: {
       listCond: dataSJ.value.condition,
-      typeGroup: 'inv'
+      typeGroup: "inv",
     },
     // persistent: true,
   }).onOk(async (val) => {});
@@ -311,41 +338,62 @@ const onClickChooseBankAcc = () => {
     },
     // persistent: true,
   }).onOk(async (val) => {
-    console.log(val)
-    let payment = []
-    val.map(valMap => {
+    console.log(val);
+    let payment = [];
+    val.map((valMap) => {
       payment.push({
         TDLVPAYDETA_DLVCD: dataSJ.value.TDLVSJDETA_DLVCD,
         TDLVPAYDETA_IDPAY: valMap.id,
-      })
-    })
+      });
+    });
 
     dataSJ.value.payment = payment;
   });
 };
 
 const getDataCondition = async () => {
-  loading.value = true
-  const data = await api.get(`/master/conditions/getdataGroup/inv`).then((response) => {
-    loading.value = false
-    console.log(response);
-    options.value = [];
-    response.data.data.map(val => {
-      let wordSplit = val.MCONDITION_RPT_STAT.split(" - ");
-      options.value.push({ label: wordSplit[1], value: val.MCONDITION_RPT_STAT, data: val })
+  loading.value = true;
+  const data = await api
+    .get(`/master/conditions/getdataGroup/inv`)
+    .then((response) => {
+      loading.value = false;
+      console.log(response);
+      options.value = [];
+      response.data.data.map((val) => {
+        let wordSplit = val.MCONDITION_RPT_STAT.split(" - ");
+        options.value.push({
+          label: wordSplit[1],
+          value: val.MCONDITION_RPT_STAT,
+          data: val,
+        });
+      });
     })
-  }).catch((e) => {
-    loading.value = false
-  });
+    .catch((e) => {
+      loading.value = false;
+    });
 };
 
 const onSelectGroup = (val) => {
-  let getDataIDX = options.value.findIndex(el => el.value === val)
+  // console.log(val)
+  let getDataIDX = options.value.findIndex((el) => el.value == val);
+  // console.log(options.value)
+  // console.log(getDataIDX)
 
-  dataSJ.value.condition = options.value[getDataIDX].data.group
-  dataSJ.value.TDLVSJDETA_CONDGRP = options.value[getDataIDX].value
-  console.log(getDataIDX)
-}
+  console.log("Before", dataSJ.value);
+  dataSJ.value = {
+    ...dataSJ.value,
+    TDLVSJDETA_DLVCD: props.idDlv,
+    TDLVSJDETA_TYPE: val,
+    TDLVSJDETA_CONDGRP: val,
+    TDLVSJDETA_ISSPLITSJ: 0,
+    condition: options.value[getDataIDX].data.group,
+    payment: dataSJ.value.payment,
+  };
+  // dataSJ.value.condition = options.value[getDataIDX].data.group;
+  // dataSJ.value.TDLVSJDETA_CONDGRP = val;
+
+  console.log("After", dataSJ.value);
+};
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();

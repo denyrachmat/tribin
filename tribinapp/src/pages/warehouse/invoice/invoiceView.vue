@@ -234,22 +234,22 @@ onMounted(() => {
 const condButton = (btn, data) => {
   if (btn === "gensetharian") {
     return (
-      !data.dlvsj ||
+      !data.dlvsj || data.dlvsj.length === 0 ||
       !data.TDLVORD_CONDGRP ||
       !data.TDLVORD_CONDGRP.toLowerCase().includes("genset")
     );
   }
 
   if (btn === "invoice") {
-    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && !data.dlvsj);
+    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && data.dlvsj.length === 0);
   }
 
   if (btn === "receipt") {
-    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && !data.dlvsj);
+    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && data.dlvsj.length === 0);
   }
 
   if (btn === "sj") {
-    return data.TDLVORD_TYPE !== 4 && !data.dlvsj;
+    return data.TDLVORD_TYPE !== 4 && data.dlvsj.length === 0;
   }
 };
 

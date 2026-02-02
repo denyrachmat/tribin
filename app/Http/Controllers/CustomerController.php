@@ -181,7 +181,7 @@ class CustomerController extends Controller
 
     function searchAPI(Request $request)
     {
-        $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*')
+        $RSTemp = M_CUS::on($this->dedicatedConnection)->select('*', DB::raw('CONCAT(MCUS_CUSNM, " - ", RTRIM(MCUS_ADDR1, 15)) AS MCUS_CUSNM'))
             ->where('MCUS_BRANCH', Auth::user()->branch);
 
         if ($request->has('type')) {

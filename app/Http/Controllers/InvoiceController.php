@@ -343,7 +343,7 @@ class InvoiceController extends Controller
                     });
                     break;
 
-                case 'TSLO_QUOCD':                    
+                case 'TSLO_QUOCD':
                     // filter via DETA->QUO, tetap di step-1 (EXISTS)
                     $parentQuery->whereExists(function ($q) use ($searchBy, $searchValue, $parentExpr) {
                         $q->selectRaw('1')
@@ -446,6 +446,8 @@ class InvoiceController extends Controller
             'isSlo' => true,
         ]);
 
+        // return $details;
+
         $rows->transform(function ($r) use ($details) {
             $key = $r->TDLVORD_DLVCD;
 
@@ -493,13 +495,24 @@ class InvoiceController extends Controller
         }
 
         if (!empty($opt['isPayment'])) {
-            $out['payment'] = T_DLVPAYDETA::on($conn)
-                ->select('T_DLVPAYDETA.*', 'branch_payment_accounts.*', DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'))
-                ->join('branch_payment_accounts', 'branch_payment_accounts.id', '=', 'TDLVPAYDETA_IDPAY')
-                ->whereIn(DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD,\'/\',1)'), $dlvcds)
+            $paymentsRows = T_DLVPAYDETA::on($this->dedicatedConnection)
+                ->select(
+                    'branch_payment_accounts.*',
+                    DB::raw('branch_payment_accounts.id as TDLVPAYDETA_IDPAY'),
+                    DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD, "/", 1) as TDLVPAYDETA_DLVCD')
+                )
+                ->join('branch_payment_accounts', 'branch_payment_accounts.id', 'TDLVPAYDETA_IDPAY')
+                ->whereIn('TDLVPAYDETA_DLVCD', $dlvcds)
                 ->get()
-                // ->groupBy(DB::raw('SUBSTRING_INDEX(TDLVPAYDETA_DLVCD,\'/\',1)'))
                 ->toArray();
+
+            $paymentsMap = [];
+            foreach ($paymentsRows as $row) {
+                $k = $row['TDLVPAYDETA_DLVCD'];
+                $paymentsMap[$k][] = $row;
+            }
+
+            $out['payment'] = $paymentsMap;
         }
 
         if (!empty($opt['isCond']) && !empty($condgrps)) {

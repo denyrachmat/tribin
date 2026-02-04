@@ -55,8 +55,9 @@
       display: table-header-group;
     }
 
-  @endif .page-break {
-    page-break-before: always;
+  @endif
+  .page-break {
+    page-break-before: avoid;
   }
 
   /* NEW */
@@ -192,213 +193,131 @@
   </table>
 @endif
 
-<div class="page-break"></div>
-
 {{-- ===================== PERPANJANGAN ===================== --}}
 @php
-    // Berapa baris detail yang mau "ikut" bareng approval kalau pindah halaman
-    $TAIL_ROWS = 4;
+  $TAIL_ROWS = 4;
 
-    // Flatten semua baris detail perpanjangan (tanpa header cat/usage)
-    $flatRows = [];
-    if (!empty($data['PERPANJANGAN'])) {
-        foreach ($data['PERPANJANGAN'] as $cat => $usages) {
-            foreach ($usages as $usage => $rows) {
-                foreach ($rows as $r) {
-                    $flatRows[] = [
-                        'cat' => $cat,
-                        'usage' => $usage,
-                        'r' => $r,
-                    ];
-                }
-            }
-        }
-    }
+  // Ambil sumber terakhir yang ada: PERPANJANGAN kalau ada, kalau tidak BARU
+  $tailSource = null; // 'PERPANJANGAN' | 'BARU' | null
 
-    $totalDetail = count($flatRows);
-    $tailCount = min($TAIL_ROWS, $totalDetail);
+  $flat = [];
+  if (!empty($data['PERPANJANGAN']) && count($data['PERPANJANGAN']) > 0) {
+      $tailSource = 'PERPANJANGAN';
+      foreach ($data['PERPANJANGAN'] as $cat => $usages) {
+          foreach ($usages as $usage => $rows) {
+              foreach ($rows as $r) {
+                  $flat[] = ['cat'=>$cat,'usage'=>$usage,'r'=>$r];
+              }
+          }
+      }
+  } elseif (!empty($data['BARU']) && count($data['BARU']) > 0) {
+      $tailSource = 'BARU';
+      foreach ($data['BARU'] as $cat => $usages) {
+          foreach ($usages as $usage => $rows) {
+              foreach ($rows as $r) {
+                  $flat[] = ['cat'=>$cat,'usage'=>$usage,'r'=>$r];
+              }
+          }
+      }
+  }
 
-    // Head = semua kecuali tail, Tail = N baris terakhir
-    $headRows = $tailCount > 0 ? array_slice($flatRows, 0, $totalDetail - $tailCount) : $flatRows;
-    $tailRows = $tailCount > 0 ? array_slice($flatRows, $totalDetail - $tailCount) : [];
+  $total = count($flat);
+  $tailCount = min($TAIL_ROWS, $total);
+  $tailRows = $tailCount > 0 ? array_slice($flat, $total - $tailCount) : [];
+
+  // Ambil grand total sesuai sumber
+  $grand = null;
+  if ($tailSource === 'PERPANJANGAN' && !empty($meta['PERPANJANGAN']['grand'])) {
+      $grand = $meta['PERPANJANGAN']['grand'];
+  } elseif ($tailSource === 'BARU' && !empty($meta['BARU']['grand'])) {
+      $grand = $meta['BARU']['grand'];
+  }
 @endphp
 
-@if(!empty($data['PERPANJANGAN']) && count($data['PERPANJANGAN']) > 0)
-<div style="text-align: center;padding-bottom: 1em;padding-top: 1em">
-    <span style="font-style: bold; font-size: large;">Perpanjangan</span>
-</div>
+{{-- ===== Tail rows + Approval selalu ada (keep together) ===== --}}
+<div class="keep-together" style="margin-top: 10px;">
 
-{{-- ===== Bagian A: Head rows (tanpa N baris terakhir) ===== --}}
-@if(count($headRows) > 0)
-<table class="tg">
-    <thead>
-        <tr>
-            <th class="cell nowrap">Item Code</th>
-            <th class="cell">Item Name</th>
-            <th class="cell nowrap">No Nota</th>
-            <th class="cell">Lokasi</th>
-            <th class="cell">Sopir</th>
-            <th class="cell">Operator</th>
-            <th class="cell">Perusahaan</th>
-            <th class="cell nowrap">Jumlah</th>
-            <th class="cell nowrap">Pajak</th>
-            <th class="cell nowrap">Total</th>
-            <th class="cell nowrap">Status Bayar</th>
-            <th class="cell nowrap">Marketing</th>
-            <th class="cell nowrap">Tgl Awal</th>
-            <th class="cell nowrap">Tgl Akhir</th>
-        </tr>
-    </thead>
-    <tbody>
-        @php
-            $prevCat = null;
-            $prevUsage = null;
-        @endphp
+    {{-- Tampilkan tail table hanya kalau ada data BARU/PERPANJANGAN --}}
+    @if($tailSource && count($tailRows) > 0)
+        <div style="text-align:center; padding-bottom:6px; font-size:11px; font-weight:bold;">
+            {{ $tailSource === 'PERPANJANGAN' ? 'PERPANJANGAN' : 'BARU' }}
+        </div>
 
-        @foreach($headRows as $item)
-            @php
-                $cat = $item['cat'];
-                $usage = $item['usage'];
-                $r = $item['r'];
-            @endphp
-
-            @if($cat !== $prevCat)
-                <tr>
-                    <td class="text-center group-title" colspan="14">{{ $cat }}</td>
-                </tr>
-                @php $prevUsage = null; @endphp
-            @endif
-
-            @if($usage !== $prevUsage)
-                <tr>
-                    <td class="text-left group-title" colspan="14">{{ $usage }}</td>
-                </tr>
-            @endif
-
-            <tr>
-                <td class="cell nowrap text-left">{{ $r['MITM_ITMCD'] ?? '' }}</td>
-                <td class="cell text-left">{{ $r['MITM_ITMNM'] ?? '' }}</td>
-                <td class="cell nowrap text-left">{{ $r['TDLVORDDETA_DLVCD'] ?? '' }}</td>
-                <td class="cell text-left">{{ $r['TQUO_PROJECT_LOCATION'] ?? '' }}</td>
-                <td class="cell text-left">{{ $r['driver_name'] ?? '' }}</td>
-                <td class="cell text-left">{{ $r['operator_name'] ?? '' }}</td>
-                <td class="cell text-left">{{ $r['MCUS_CUSNM'] ?? '' }}</td>
-                <td class="cell nowrap text-right">{{ $r['qty_fmt'] ?? 'Rp 0' }}</td>
-                <td class="cell nowrap text-right">{{ $r['tax_fmt'] ?? 'Rp 0' }}</td>
-                <td class="cell nowrap text-right">{{ $r['total_fmt'] ?? 'Rp 0' }}</td>
-                <td class="cell text-left">{{ $r['payment_status'] ?? '' }}</td>
-                <td class="cell text-left">{{ $r['name'] ?? '' }}</td>
-                <td class="cell nowrap text-left">{{ $r['period_fr_fmt'] ?? '-' }}</td>
-                <td class="cell nowrap text-left">{{ $r['period_to_fmt'] ?? '-' }}</td>
-            </tr>
-
-            @php
-                $prevCat = $cat;
-                $prevUsage = $usage;
-            @endphp
-        @endforeach
-    </tbody>
-</table>
-@endif
-
-{{-- ===== Bagian B: Tail rows + total + approval (KEEP TOGETHER) ===== --}}
-<div class="keep-together" style="margin-top:8px;">
-    @if(count($tailRows) > 0)
-    <table class="tg">
-        <thead>
-            <tr>
-                <th class="cell nowrap">Item Code</th>
-                <th class="cell">Item Name</th>
-                <th class="cell nowrap">No Nota</th>
-                <th class="cell">Lokasi</th>
-                <th class="cell">Sopir</th>
-                <th class="cell">Operator</th>
-                <th class="cell">Perusahaan</th>
-                <th class="cell nowrap">Jumlah</th>
-                <th class="cell nowrap">Pajak</th>
-                <th class="cell nowrap">Total</th>
-                <th class="cell nowrap">Status Bayar</th>
-                <th class="cell nowrap">Marketing</th>
-                <th class="cell nowrap">Tgl Awal</th>
-                <th class="cell nowrap">Tgl Akhir</th>
-            </tr>
-        </thead>
-        <tbody>
-            @php
-                $prevCat2 = null;
-                $prevUsage2 = null;
-            @endphp
-
-            @foreach($tailRows as $item)
-                @php
-                    $cat = $item['cat'];
-                    $usage = $item['usage'];
-                    $r = $item['r'];
-                @endphp
-
-                @if($cat !== $prevCat2)
-                    <tr>
-                        <td class="text-center group-title" colspan="14">{{ $cat }}</td>
-                    </tr>
-                    @php $prevUsage2 = null; @endphp
-                @endif
-
-                @if($usage !== $prevUsage2)
-                    <tr>
-                        <td class="text-left group-title" colspan="14">{{ $usage }}</td>
-                    </tr>
-                @endif
-
-                <tr>
-                    <td class="cell nowrap text-left">{{ $r['MITM_ITMCD'] ?? '' }}</td>
-                    <td class="cell text-left">{{ $r['MITM_ITMNM'] ?? '' }}</td>
-                    <td class="cell nowrap text-left">{{ $r['TDLVORDDETA_DLVCD'] ?? '' }}</td>
-                    <td class="cell text-left">{{ $r['TQUO_PROJECT_LOCATION'] ?? '' }}</td>
-                    <td class="cell text-left">{{ $r['driver_name'] ?? '' }}</td>
-                    <td class="cell text-left">{{ $r['operator_name'] ?? '' }}</td>
-                    <td class="cell text-left">{{ $r['MCUS_CUSNM'] ?? '' }}</td>
-                    <td class="cell nowrap text-right">{{ $r['qty_fmt'] ?? 'Rp 0' }}</td>
-                    <td class="cell nowrap text-right">{{ $r['tax_fmt'] ?? 'Rp 0' }}</td>
-                    <td class="cell nowrap text-right">{{ $r['total_fmt'] ?? 'Rp 0' }}</td>
-                    <td class="cell text-left">{{ $r['payment_status'] ?? '' }}</td>
-                    <td class="cell text-left">{{ $r['name'] ?? '' }}</td>
-                    <td class="cell nowrap text-left">{{ $r['period_fr_fmt'] ?? '-' }}</td>
-                    <td class="cell nowrap text-left">{{ $r['period_to_fmt'] ?? '-' }}</td>
-                </tr>
-
-                @php
-                    $prevCat2 = $cat;
-                    $prevUsage2 = $usage;
-                @endphp
-            @endforeach
-
-            {{-- Grand total tetap di bagian B biar ikut approval kalau pindah halaman --}}
-            <tr>
-                <td class="cell-bold text-left" colspan="7">Grand Total</td>
-                <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['qty_fmt'] }}</td>
-                <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['tax_fmt'] }}</td>
-                <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['total_fmt'] }}</td>
-                <td colspan="4"></td>
-            </tr>
-        </tbody>
-    </table>
-    @else
-        {{-- Kalau tidak ada tail (data kosong), tetap tampilkan grand total --}}
         <table class="tg">
-            <tbody>
+            <thead>
                 <tr>
-                    <td class="cell-bold text-left" colspan="7">Grand Total</td>
-                    <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['qty_fmt'] }}</td>
-                    <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['tax_fmt'] }}</td>
-                    <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['total_fmt'] }}</td>
-                    <td colspan="4"></td>
+                    <th class="cell nowrap">Item Code</th>
+                    <th class="cell">Item Name</th>
+                    <th class="cell nowrap">No Nota</th>
+                    <th class="cell">Lokasi</th>
+                    <th class="cell">Sopir</th>
+                    <th class="cell">Operator</th>
+                    <th class="cell">Perusahaan</th>
+                    <th class="cell nowrap">Jumlah</th>
+                    <th class="cell nowrap">Pajak</th>
+                    <th class="cell nowrap">Total</th>
+                    <th class="cell nowrap">Status Bayar</th>
+                    <th class="cell nowrap">Marketing</th>
+                    <th class="cell nowrap">Tgl Awal</th>
+                    <th class="cell nowrap">Tgl Akhir</th>
                 </tr>
+            </thead>
+            <tbody>
+                @php $prevCat=null; $prevUsage=null; @endphp
+
+                @foreach($tailRows as $item)
+                    @php $cat=$item['cat']; $usage=$item['usage']; $r=$item['r']; @endphp
+
+                    @if($cat !== $prevCat)
+                        <tr>
+                            <td class="text-center group-title" colspan="14">{{ $cat }}</td>
+                        </tr>
+                        @php $prevUsage=null; @endphp
+                    @endif
+
+                    @if($usage !== $prevUsage)
+                        <tr>
+                            <td class="text-left group-title" colspan="14">{{ $usage }}</td>
+                        </tr>
+                    @endif
+
+                    <tr>
+                        <td class="cell nowrap text-left">{{ $r['MITM_ITMCD'] ?? '' }}</td>
+                        <td class="cell text-left">{{ $r['MITM_ITMNM'] ?? '' }}</td>
+                        <td class="cell nowrap text-left">{{ $r['TDLVORDDETA_DLVCD'] ?? '' }}</td>
+                        <td class="cell text-left">{{ $r['TQUO_PROJECT_LOCATION'] ?? '' }}</td>
+                        <td class="cell text-left">{{ $r['driver_name'] ?? '' }}</td>
+                        <td class="cell text-left">{{ $r['operator_name'] ?? '' }}</td>
+                        <td class="cell text-left">{{ $r['MCUS_CUSNM'] ?? '' }}</td>
+                        <td class="cell nowrap text-right">{{ $r['qty_fmt'] ?? 'Rp 0' }}</td>
+                        <td class="cell nowrap text-right">{{ $r['tax_fmt'] ?? 'Rp 0' }}</td>
+                        <td class="cell nowrap text-right">{{ $r['total_fmt'] ?? 'Rp 0' }}</td>
+                        <td class="cell text-left">{{ $r['payment_status'] ?? '' }}</td>
+                        <td class="cell text-left">{{ $r['name'] ?? '' }}</td>
+                        <td class="cell nowrap text-left">{{ $r['period_fr_fmt'] ?? '-' }}</td>
+                        <td class="cell nowrap text-left">{{ $r['period_to_fmt'] ?? '-' }}</td>
+                    </tr>
+
+                    @php $prevCat=$cat; $prevUsage=$usage; @endphp
+                @endforeach
+
+                @if($grand)
+                    <tr>
+                        <td class="cell-bold text-left" colspan="7">Grand Total</td>
+                        <td class="cell-bold nowrap text-right">{{ $grand['qty_fmt'] }}</td>
+                        <td class="cell-bold nowrap text-right">{{ $grand['tax_fmt'] }}</td>
+                        <td class="cell-bold nowrap text-right">{{ $grand['total_fmt'] }}</td>
+                        <td colspan="4"></td>
+                    </tr>
+                @endif
             </tbody>
         </table>
+
+        <div style="height:10px;"></div>
     @endif
 
-    {{-- ===================== APPROVAL ===================== --}}
-    <div style="margin-top: 2em;">
+    {{-- ===================== APPROVAL (SELALU TAMPIL) ===================== --}}
+    <div style="margin-top: 1.5em;">
         <table class="group-title" style="width:100%;text-align:center;border:0;">
             <tr>
                 @foreach ($approvalList as $approval)
@@ -415,5 +334,5 @@
             </tr>
         </table>
     </div>
+
 </div>
-@endif

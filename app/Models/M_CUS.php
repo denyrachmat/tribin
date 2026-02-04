@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class M_CUS extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $table = 'M_CUS';
     protected $fillable = [
         'MCUS_CUSCD', 'MCUS_CUSNM', 'MCUS_CURCD', 'MCUS_TAXREG', 'MCUS_ADDR1', 'MCUS_TELNO',

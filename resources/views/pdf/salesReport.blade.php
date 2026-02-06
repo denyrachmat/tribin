@@ -1,5 +1,8 @@
 <style>
-  body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; }
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10px;
+  }
 
   table.tg {
     width: 100%;
@@ -7,17 +10,29 @@
     table-layout: auto;
   }
 
-  .tg th, .tg td {
+  .tg th,
+  .tg td {
     border: 1px solid #000;
     padding: 4px;
     vertical-align: top;
     word-break: break-word;
   }
 
-  .text-left  { text-align: left; }
-  .text-right { text-align: right; }
-  .text-center{ text-align: center; }
-  .nowrap { white-space: nowrap; }
+  .text-left {
+    text-align: left;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
 
   .group-title {
     font-size: 12px;
@@ -25,15 +40,23 @@
     padding: 6px 0;
   }
 
-  .tg .cell { font-size: 7px; vertical-align: top; }
-  .tg .cell-bold { font-size: 7px; font-weight: bold; }
+  .tg .cell {
+    font-size: 7px;
+    vertical-align: top;
+  }
 
-  @if(!empty($repeatTableHeader))
-    thead { display: table-header-group; }
-  @endif
+  .tg .cell-bold {
+    font-size: 7px;
+    font-weight: bold;
+  }
+
+  thead { display: table-header-group; }
 
   /* Approval jangan pecah */
-  .approval-wrap { page-break-inside: avoid; margin-top: 2em; }
+  .approval-wrap {
+    page-break-inside: avoid;
+    margin-top: 2em;
+  }
 
   /* Section title biar konsisten */
   .section-header {
@@ -42,9 +65,24 @@
     text-align: center;
     margin: 12px 0 6px 0;
   }
+
   .section-divider {
     border-top: 2px solid #000;
     margin: 6px 0 10px 0;
+  }
+
+  .section-title-th{
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 0;
+    border: 0 !important;
+  }
+
+  .section-title-line{
+    border-top: 2px solid #000 !important;
+    padding: 0 !important;
+    height: 0;
   }
 </style>
 
@@ -53,7 +91,7 @@
   $TAIL_ROWS = 4;
 
   // ---------- Flatten helper ----------
-  $flatten = function($sectionData) {
+  $flatten = function ($sectionData) {
     $flat = [];
     if (!empty($sectionData)) {
       foreach ($sectionData as $cat => $usages) {
@@ -68,7 +106,7 @@
   };
 
   // ---------- Split helper ----------
-  $splitFlat = function($flat, $tailN) {
+  $splitFlat = function ($flat, $tailN) {
     $total = count($flat);
     $take = min($tailN, $total);
     $head = $take > 0 ? array_slice($flat, 0, $total - $take) : $flat;
@@ -85,7 +123,7 @@
   [$perpanjanganHead, $perpanjanganTail] = $splitFlat($flatPerpanjangan, $TAIL_ROWS);
 
   // Helper render list rows (flat)
-  $renderFlatRows = function($rows) {
+  $renderFlatRows = function ($rows) {
     $prevCat = null;
     $prevUsage = null;
 
@@ -95,28 +133,28 @@
       $r = $item['r'];
 
       if ($cat !== $prevCat) {
-        echo '<tr><td class="text-center group-title" colspan="14">'.e($cat).'</td></tr>';
+        echo '<tr><td class="text-center group-title" colspan="14">' . e($cat) . '</td></tr>';
         $prevUsage = null;
       }
       if ($usage !== $prevUsage) {
-        echo '<tr><td class="text-left group-title" colspan="14">'.e($usage).'</td></tr>';
+        echo '<tr><td class="text-left group-title" colspan="14">' . e($usage) . '</td></tr>';
       }
 
       echo '<tr>';
-      echo '<td class="cell nowrap text-left">'.e($r['MITM_ITMCD'] ?? '').'</td>';
-      echo '<td class="cell text-left">'.e($r['MITM_ITMNM'] ?? '').'</td>';
-      echo '<td class="cell nowrap text-left">'.e($r['TDLVORDDETA_DLVCD'] ?? '').'</td>';
-      echo '<td class="cell text-left">'.e($r['TQUO_PROJECT_LOCATION'] ?? '').'</td>';
-      echo '<td class="cell text-left">'.e($r['driver_name'] ?? '').'</td>';
-      echo '<td class="cell text-left">'.e($r['operator_name'] ?? '').'</td>';
-      echo '<td class="cell text-left">'.e($r['MCUS_CUSNM'] ?? '').'</td>';
-      echo '<td class="cell nowrap text-right">'.e($r['qty_fmt'] ?? 'Rp 0').'</td>';
-      echo '<td class="cell nowrap text-right">'.e($r['tax_fmt'] ?? 'Rp 0').'</td>';
-      echo '<td class="cell nowrap text-right">'.e($r['total_fmt'] ?? 'Rp 0').'</td>';
-      echo '<td class="cell text-left">'.e($r['payment_status'] ?? '').'</td>';
-      echo '<td class="cell text-left">'.e($r['name'] ?? '').'</td>';
-      echo '<td class="cell nowrap text-left">'.e($r['period_fr_fmt'] ?? '-').'</td>';
-      echo '<td class="cell nowrap text-left">'.e($r['period_to_fmt'] ?? '-').'</td>';
+      echo '<td class="cell nowrap text-left">' . e($r['MITM_ITMCD'] ?? '') . '</td>';
+      echo '<td class="cell text-left">' . e($r['MITM_ITMNM'] ?? '') . '</td>';
+      echo '<td class="cell nowrap text-left">' . e($r['TDLVORDDETA_DLVCD'] ?? '') . '</td>';
+      echo '<td class="cell text-left">' . e($r['TQUO_PROJECT_LOCATION'] ?? '') . '</td>';
+      echo '<td class="cell text-left">' . e($r['driver_name'] ?? '') . '</td>';
+      echo '<td class="cell text-left">' . e($r['operator_name'] ?? '') . '</td>';
+      echo '<td class="cell text-left">' . e($r['MCUS_CUSNM'] ?? '') . '</td>';
+      echo '<td class="cell nowrap text-right">' . e($r['qty_fmt'] ?? 'Rp 0') . '</td>';
+      echo '<td class="cell nowrap text-right">' . e($r['tax_fmt'] ?? 'Rp 0') . '</td>';
+      echo '<td class="cell nowrap text-right">' . e($r['total_fmt'] ?? 'Rp 0') . '</td>';
+      echo '<td class="cell text-left">' . e($r['payment_status'] ?? '') . '</td>';
+      echo '<td class="cell text-left">' . e($r['name'] ?? '') . '</td>';
+      echo '<td class="cell nowrap text-left">' . e($r['period_fr_fmt'] ?? '-') . '</td>';
+      echo '<td class="cell nowrap text-left">' . e($r['period_to_fmt'] ?? '-') . '</td>';
       echo '</tr>';
 
       $prevCat = $cat;
@@ -124,7 +162,7 @@
     }
   };
 
-  $renderTableHeader = function() {
+  $renderTableHeader = function () {
     echo '<thead><tr>';
     echo '<th class="cell nowrap">Item Code</th>';
     echo '<th class="cell">Item Name</th>';
@@ -164,76 +202,96 @@
 
 <hr>
 
-{{-- ===================== BARU (HEAD) ===================== --}}
-@if(count($baruHead) > 0)
-  <div class="section-header">BARU</div>
-  <div class="section-divider"></div>
-
+{{-- ===================== BARU ===================== --}}
+@if(count($flatBaru) > 0)
   <table class="tg">
-    @php $renderTableHeader(); @endphp
+    <thead>
+      {{-- Judul section: ini akan repeat kalau tabel lanjut page berikutnya --}}
+      <tr>
+        <th colspan="14" class="section-title-th">BARU</th>
+      </tr>
+      <tr>
+        <th colspan="14" class="section-title-line"></th>
+      </tr>
+
+      {{-- Header kolom --}}
+      <tr>
+        <th class="cell nowrap">Item Code</th>
+        <th class="cell">Item Name</th>
+        <th class="cell nowrap">No Nota</th>
+        <th class="cell">Lokasi</th>
+        <th class="cell">Sopir</th>
+        <th class="cell">Operator</th>
+        <th class="cell">Perusahaan</th>
+        <th class="cell nowrap">Jumlah</th>
+        <th class="cell nowrap">Pajak</th>
+        <th class="cell nowrap">Total</th>
+        <th class="cell nowrap">Status Bayar</th>
+        <th class="cell nowrap">Marketing</th>
+        <th class="cell nowrap">Tgl Awal</th>
+        <th class="cell nowrap">Tgl Akhir</th>
+      </tr>
+    </thead>
+
     <tbody>
-      @php $renderFlatRows($baruHead); @endphp
+      @php $renderFlatRows($flatBaru); @endphp
+
+      <tr>
+        <td class="cell-bold text-left" colspan="7">Grand Total</td>
+        <td class="cell-bold nowrap text-right">{{ $meta['BARU']['grand']['qty_fmt'] }}</td>
+        <td class="cell-bold nowrap text-right">{{ $meta['BARU']['grand']['tax_fmt'] }}</td>
+        <td class="cell-bold nowrap text-right">{{ $meta['BARU']['grand']['total_fmt'] }}</td>
+        <td colspan="4"></td>
+      </tr>
     </tbody>
   </table>
 @endif
+
 
 {{-- ===================== PERPANJANGAN (HEAD) ===================== --}}
-@if(count($perpanjanganHead) > 0)
-  <div class="section-header">PERPANJANGAN</div>
-  <div class="section-divider"></div>
-
+{{-- ===================== PERPANJANGAN ===================== --}}
+@if(count($flatPerpanjangan) > 0)
   <table class="tg">
-    @php $renderTableHeader(); @endphp
+    <thead>
+      <tr>
+        <th colspan="14" class="section-title-th">PERPANJANGAN</th>
+      </tr>
+      <tr>
+        <th colspan="14" class="section-title-line"></th>
+      </tr>
+
+      <tr>
+        <th class="cell nowrap">Item Code</th>
+        <th class="cell">Item Name</th>
+        <th class="cell nowrap">No Nota</th>
+        <th class="cell">Lokasi</th>
+        <th class="cell">Sopir</th>
+        <th class="cell">Operator</th>
+        <th class="cell">Perusahaan</th>
+        <th class="cell nowrap">Jumlah</th>
+        <th class="cell nowrap">Pajak</th>
+        <th class="cell nowrap">Total</th>
+        <th class="cell nowrap">Status Bayar</th>
+        <th class="cell nowrap">Marketing</th>
+        <th class="cell nowrap">Tgl Awal</th>
+        <th class="cell nowrap">Tgl Akhir</th>
+      </tr>
+    </thead>
+
     <tbody>
-      @php $renderFlatRows($perpanjanganHead); @endphp
+      @php $renderFlatRows($flatPerpanjangan); @endphp
+
+      <tr>
+        <td class="cell-bold text-left" colspan="7">Grand Total</td>
+        <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['qty_fmt'] }}</td>
+        <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['tax_fmt'] }}</td>
+        <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['total_fmt'] }}</td>
+        <td colspan="4"></td>
+      </tr>
     </tbody>
   </table>
 @endif
 
-{{-- =========================================================
-   Tail terakhir yang “ikut approval”
-   Prioritas: kalau PERPANJANGAN ada data -> tail dari PERPANJANGAN
-              else kalau BARU ada data -> tail dari BARU
-   (TAIL INI TIDAK DOBEL karena sudah dipotong dari HEAD)
-   ========================================================= --}}
-@php
-  $tailSource = null;
-  $tailRows = [];
-  $grand = null;
-
-  if (count($flatPerpanjangan) > 0) {
-    $tailSource = 'PERPANJANGAN';
-    $tailRows = $perpanjanganTail;
-    $grand = $meta['PERPANJANGAN']['grand'] ?? null;
-  } elseif (count($flatBaru) > 0) {
-    $tailSource = 'BARU';
-    $tailRows = $baruTail;
-    $grand = $meta['BARU']['grand'] ?? null;
-  }
-@endphp
-
-{{-- ===== Tail table (boleh mengisi sisa halaman) ===== --}}
-@if($tailSource && count($tailRows) > 0)
-  <div class="section-header">{{ $tailSource }}</div>
-  <div class="section-divider"></div>
-
-  <table class="tg">
-    @php $renderTableHeader(); @endphp
-    <tbody>
-      @php $renderFlatRows($tailRows); @endphp
-
-      @if($grand)
-        <tr>
-          <td class="cell-bold text-left" colspan="7">Grand Total</td>
-          <td class="cell-bold nowrap text-right">{{ $grand['qty_fmt'] }}</td>
-          <td class="cell-bold nowrap text-right">{{ $grand['tax_fmt'] }}</td>
-          <td class="cell-bold nowrap text-right">{{ $grand['total_fmt'] }}</td>
-          <td colspan="4"></td>
-        </tr>
-      @endif
-    </tbody>
-  </table>
-@endif
 
 {{-- ===================== APPROVAL (SELALU TAMPIL) ===================== --}}
 <div class="approval-wrap">
@@ -243,9 +301,15 @@
         <td style="height: 60px">{{ $approval['remarks'] ?? '' }}</td>
       @endforeach
     </tr>
-    <tr><td colspan="{{ max(count($approvalList),1) }}">&nbsp;</td></tr>
-    <tr><td colspan="{{ max(count($approvalList),1) }}">&nbsp;</td></tr>
-    <tr><td colspan="{{ max(count($approvalList),1) }}">&nbsp;</td></tr>
+    <tr>
+      <td colspan="{{ max(count($approvalList), 1) }}">&nbsp;</td>
+    </tr>
+    <tr>
+      <td colspan="{{ max(count($approvalList), 1) }}">&nbsp;</td>
+    </tr>
+    <tr>
+      <td colspan="{{ max(count($approvalList), 1) }}">&nbsp;</td>
+    </tr>
     <tr>
       @foreach ($approvalList as $approval)
         <td>{{ $approval['name'] ?? '' }}</td>

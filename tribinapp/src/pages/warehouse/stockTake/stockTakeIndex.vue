@@ -43,25 +43,18 @@
     <div class="row q-col-gutter-md q-pt-md">
       <div class="col-12">
         <q-uploader
+          ref="uploaderRef"
           class="full-height"
-          url="http://localhost:4444/upload"
           label="Upload Stock Take"
           color="amber"
           text-color="black"
-          accept=".xlsx, .xls"
+          accept=".xlsx,.xls"
           :max-files="date ? 1 : 0"
           style="width: 100%"
-          auto-upload
-          :factory="factoryFn"
-          :form-fields="
-            (files) => [
-              { name: 'isRegItem', value : isRegisterItem},
-              { name: 'file', value: files[0] },
-              { name: 'date', value: date },
-            ]
-          "
-          @factory-failed="(err, files) => failedUpload(err, files)"
-          @added="file_selected"
+          :auto-upload="false"
+          :hide-upload-btn="false"
+          :url="''"
+          @added="onAdded"
         />
       </div>
     </div>
@@ -78,26 +71,81 @@ const $q = useQuasar();
 const date = ref("");
 const selected_file = ref(null);
 const check_if_document_upload = ref(false);
-const isRegisterItem = ref(false)
+const isRegisterItem = ref(false);
+const uploaderRef = ref(null)
 
 const file_selected = (file) => {
   selected_file.value = file[0];
   check_if_document_upload.value = true;
 };
 
-const factoryFn = async (val) => {
-  // dataLoading.value = true;
-  console.log(val);
-  await new Promise((resolve, reject) => {
+const factoryFn = (val) => {
+  return new Promise((resolve, reject) => {
     let fd = new FormData();
     fd.append("file", selected_file.value);
     fd.append("date", date.value);
     fd.append("isRegItem", isRegisterItem.value);
 
-    api_web.post("inventory/uploadStockTake", fd).then((resp) => {
-      resolve(resp);
-    });
+    api_web
+      .post("inventory/uploadStockTake", fd)
+      .then((resp) => {
+        console.log("request success", resp);
+        resolve(resp);
+      })
+      .catch((err) => {
+        console.log("request failed", err);
+        reject(err);
+      });
   });
+};
+
+const onAdded = async (files) => {
+  // max 1 file juga bisa kamu enforce di sini
+  const file = files?.[0];
+  if (!file) return;
+
+  // optional: kalau ada file lain di queue, hapus
+  // uploaderRef.value?.removeQueuedFiles?.()
+
+  try {
+    // tandai uploading (kalau method ini ada di versi Quasar kamu)
+    uploaderRef.value?.updateFileStatus?.(file, "uploading");
+
+    const fd = new FormData();
+    fd.append("file", file); // <-- pakai file dari QUploader, bukan selected_file.value
+    fd.append("date", date.value);
+    fd.append("isRegItem", isRegisterItem.value);
+
+    const resp = await api_web.post("inventory/uploadStockTake", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (e) => {
+        if (!e.total) return;
+        const pct = Math.round((e.loaded * 100) / e.total);
+
+        // update progress QUploader (method bisa beda tergantung versi)
+        // coba salah satu yang tersedia:
+        // uploaderRef.value?.updateFileProgress?.(file, pct);
+        // atau:
+        uploaderRef.value?.updateFileStatus?.(file, 'uploading', e.loaded)
+      },
+    });
+
+    console.log("request success", resp);
+
+    // tandai selesai
+    uploaderRef.value?.updateFileStatus?.(file, "uploaded");
+
+    $q.notify({ type: "positive", message: "Upload sukses" });
+
+    // optional: bersihin list biar nggak numpuk
+    // uploaderRef.value?.removeFile?.(file)
+  } catch (err) {
+    console.log("request failed", err);
+
+    uploaderRef.value?.updateFileStatus?.(file, "failed");
+
+    $q.notify({ type: "negative", message: "Upload gagal" });
+  }
 };
 
 const failedUpload = (err, files) => {

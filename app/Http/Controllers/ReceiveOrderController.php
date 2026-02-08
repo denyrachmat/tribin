@@ -979,6 +979,8 @@ class ReceiveOrderController extends Controller
             ];
         }
 
+        // return $hasilTemp;
+
         // PDF render
         $pdf = Pdf::setPaper('A4', 'portrait')
             ->loadView('pdf.salesReport', [

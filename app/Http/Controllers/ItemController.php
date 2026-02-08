@@ -24,7 +24,7 @@ class ItemController extends Controller
 
     public function __construct()
     {
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID'] ?? '');
     }
 
     public function index()

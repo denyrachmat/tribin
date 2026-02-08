@@ -302,6 +302,7 @@ class PriceBuyController extends Controller
                     ->where('MGECD_CODE', '=', 'MPRC_TYPE');
             })
             ->where('M_ITMBPRICE.MITMBPRC_CG', '=', Crypt::decryptString($request->cg))
+            ->where('MITMBPRC_ACTIVE', '=', 1)
             ->groupBy(
                 'M_ITMSPRICE.id',
                 'MITMBPRC_ITMCD',

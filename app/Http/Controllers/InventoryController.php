@@ -15,7 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\LocationTraits;
 use Illuminate\Http\File;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App\Imports\importStockTake;
+use App\Imports\ImportStockTake;
 use App\Models\M_ITM;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\T_RCV_HEAD;

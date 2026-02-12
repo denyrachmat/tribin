@@ -268,8 +268,48 @@ class InvoiceController extends Controller
         $parentQuery = DB::connection($conn)
             ->table('T_DLVORDHEAD as h')
             ->selectRaw("$parentExpr AS parent_dlvcd")
-            ->selectRaw("MAX(h.TDLVORD_DLVCD) AS sort_key")
+            ->selectRaw("MAX(h.TDLVORD_DLVCD) AS sort_dlvcd")
+            ->selectRaw("MAX(h.TDLVORD_ISSUDT) AS sort_issudt")
+            ->selectRaw("MAX(h.TDLVORD_CONDGRP) AS sort_condgrp")
+            ->selectRaw("MAX(h.TDLVORD_INVCD) AS sort_invcd")
+            ->selectRaw("MAX(h.TDLVORD_TYPE) AS sort_type") // buat DLV_TYPE_DESC
+            // join customer untuk sort MCUS_CUSNM
+            ->leftJoin('M_CUS as c', function ($join) {
+                $join->on('c.MCUS_CUSCD', '=', 'h.TDLVORD_CUSCD')
+                    ->on('c.MCUS_BRANCH', '=', 'h.TDLVORD_BRANCH');
+            })
+            ->selectRaw("MAX(c.MCUS_CUSNM) AS sort_cusnm")
+            // join ke DETA + SLO untuk sort TSLO_*
+            ->leftJoin('T_DLVORDDETA as d', DB::raw('SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,\'/\',1)'), '=', DB::raw("$parentExpr"))
+            ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
+            ->selectRaw("MAX(s.TSLO_QUOCD) AS sort_quocd")
+            ->selectRaw("MAX(s.TSLO_SLOCD) AS sort_slocd")
             ->groupBy('parent_dlvcd');
+
+        if ($request->has('pagination') && !empty($request->pagination['sortBy'])) {
+            $dir = !empty($request->pagination['descending']) ? 'desc' : 'asc';
+            $sortBy = strtoupper($request->pagination['sortBy']);
+
+            $sortMap = [
+                'TDLVORD_DLVCD' => 'sort_dlvcd',
+                'TDLVORD_ISSUDT' => 'sort_issudt',
+                'TSLO_QUOCD' => 'sort_quocd',
+                'TSLO_SLOCD' => 'sort_slocd',
+                'TDLVORD_CONDGRP' => 'sort_condgrp',
+                'TDLVORD_INVCD' => 'sort_invcd',
+                'MCUS_CUSNM' => 'sort_cusnm',
+                // DLV_TYPE_DESC itu label; sort pakai type numeriknya
+                'DLV_TYPE_DESC' => 'sort_type',
+            ];
+
+            if (isset($sortMap[$sortBy])) {
+                $parentQuery->orderBy($sortMap[$sortBy], $dir);
+            } else {
+                $parentQuery->orderByDesc('sort_dlvcd'); // fallback
+            }
+        } else {
+            $parentQuery->orderByDesc('sort_dlvcd');
+        }
 
         // OPTIONAL: kalau kamu selalu filter branch/user
         // $parentQuery->where('h.TDLVORD_BRANCH', $request->user()->branch);
@@ -374,6 +414,7 @@ class InvoiceController extends Controller
                     break;
             }
         }
+
         // total parent (kalau mau cepat tanpa total, pakai simplePaginate)
         $total = DB::connection($conn)
             ->table(DB::raw("({$parentQuery->toSql()}) AS t"))
@@ -382,13 +423,13 @@ class InvoiceController extends Controller
 
         // ambil parent codes page ini
         $parents = $parentQuery
-            ->orderByDesc('sort_key')
+            // ->orderByDesc('sort_key')
             ->forPage($page, $perPage)
             ->pluck('parent_dlvcd')
             ->toArray();
 
         if (!$parents) {
-            return new \Illuminate\Pagination\LengthAwarePaginator([], $total, $perPage, $page, [
+            return new LengthAwarePaginator([], $total, $perPage, $page, [
                 'path' => $request->url(),
                 'query' => $request->query(),
             ]);
@@ -397,8 +438,7 @@ class InvoiceController extends Controller
         // =========================
         // STEP-2: ambil data list
         // =========================
-        // Saran: untuk list, ambil dari query base (bukan view) dan aggregate minimal.
-        $rows = DB::connection($conn)
+        $rowsQ = DB::connection($conn)
             ->table('T_DLVORDHEAD as h')
             ->selectRaw("$parentExpr AS TDLVORD_DLVCD")
             ->selectRaw("ANY_VALUE(s.TSLO_QUOCD) AS TSLO_QUOCD")
@@ -406,20 +446,22 @@ class InvoiceController extends Controller
             ->selectRaw("ANY_VALUE(h.TDLVORD_CONDGRP) AS TDLVORD_CONDGRP")
             ->selectRaw("ANY_VALUE(h.TDLVORD_INVCD) AS TDLVORD_INVCD")
             ->selectRaw("ANY_VALUE(c.MCUS_CUSNM) AS MCUS_CUSNM")
-            ->selectRaw("CASE 
-                WHEN h.TDLVORD_TYPE = 1 THEN 'Sales'
-                WHEN h.TDLVORD_TYPE = 2 THEN 'Combined'
-                WHEN h.TDLVORD_TYPE = 3 THEN 'Return PO'
-                WHEN h.TDLVORD_TYPE = 4 THEN 'Internal Service'
-                ELSE 'Other'
-            END AS DLV_TYPE_DESC")
-            ->selectRaw('TDLVORD_ISSUDT')
-            ->selectRaw('TDLVORD_TYPE')
-            ->selectRaw('TQUO_ATTN')
-            ->selectRaw('TQUO_SBJCT')
-            ->selectRaw('MCUS_TELNO')
-            ->selectRaw('TSLO_POCD')
-            ->leftjoin('T_DLVORDDETA as d', DB::raw('SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,\'/\',1)'), '=', DB::raw("$parentExpr"))
+            ->selectRaw("
+        CASE 
+            WHEN ANY_VALUE(h.TDLVORD_TYPE) = 1 THEN 'Sales'
+            WHEN ANY_VALUE(h.TDLVORD_TYPE) = 2 THEN 'Combined'
+            WHEN ANY_VALUE(h.TDLVORD_TYPE) = 3 THEN 'Return PO'
+            WHEN ANY_VALUE(h.TDLVORD_TYPE) = 4 THEN 'Internal Service'
+            ELSE 'Other'
+        END AS DLV_TYPE_DESC
+    ")
+            ->selectRaw("ANY_VALUE(h.TDLVORD_ISSUDT) AS TDLVORD_ISSUDT")
+            ->selectRaw("ANY_VALUE(h.TDLVORD_TYPE) AS TDLVORD_TYPE")
+            ->selectRaw("ANY_VALUE(qh.TQUO_ATTN) AS TQUO_ATTN")
+            ->selectRaw("ANY_VALUE(qh.TQUO_SBJCT) AS TQUO_SBJCT")
+            ->selectRaw("ANY_VALUE(c.MCUS_TELNO) AS MCUS_TELNO")
+            ->selectRaw("ANY_VALUE(s.TSLO_POCD) AS TSLO_POCD")
+            ->leftJoin('T_DLVORDDETA as d', DB::raw("SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,'/',1)"), '=', DB::raw($parentExpr))
             ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
             ->leftJoin('M_CUS as c', function ($join) {
                 $join->on('c.MCUS_CUSCD', '=', 'h.TDLVORD_CUSCD')
@@ -427,8 +469,12 @@ class InvoiceController extends Controller
             })
             ->leftJoin('T_QUOHEAD as qh', 'qh.TQUO_QUOCD', '=', 's.TSLO_QUOCD')
             ->whereIn(DB::raw($parentExpr), $parents)
-            ->groupBy(DB::raw($parentExpr))
-            ->orderByDesc(DB::raw("MAX(h.TDLVORD_DLVCD)"))
+            ->groupBy(DB::raw($parentExpr));
+
+        $orderParents = implode(',', array_map(fn($p) => "'" . addslashes($p) . "'", $parents));
+
+        $rows = $rowsQ
+            ->orderByRaw("FIELD($parentExpr, $orderParents)")
             ->get();
 
         $keys = $rows->map(fn($r) => [
@@ -436,8 +482,6 @@ class InvoiceController extends Controller
             'slocd' => $r->TSLO_SLOCD ?? null,
             'cond' => $r->TDLVORD_CONDGRP ?? null,
         ])->all();
-
-        // return $rows;
 
         $details = $this->dataDetailBulk($keys, [
             'isDlvAcc' => true,
@@ -463,10 +507,14 @@ class InvoiceController extends Controller
             return $r;
         });
 
-        return new \Illuminate\Pagination\LengthAwarePaginator($rows, $total, $perPage, $page, [
-            'path' => $request->url(),
-            'query' => $request->query(),
-        ]);
+        if ($request->has('pagination') && !empty($request->pagination)) {
+            return new LengthAwarePaginator($rows->values(), $total, $perPage, $page, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
+        } else {
+            return $rows;
+        }
     }
 
     public function dataDetailBulk(array $rows, array $opt): array

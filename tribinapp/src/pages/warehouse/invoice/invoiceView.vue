@@ -173,6 +173,13 @@ const columns = ref([
     align: "left",
   },
   {
+    name: "TDLVORD_ISSUDT",
+    label: "DO Date",
+    field: "TDLVORD_ISSUDT",
+    sortable: true,
+    align: "left",
+  },  
+  {
     name: "TSLO_QUOCD",
     label: "Quotation",
     field: "TSLO_QUOCD",
@@ -223,7 +230,7 @@ const pagination = ref({
   rowsPerPage: 20,
   page: 1,
   rowsNumber: 20,
-  sortBy: "TDLVORD_DLVCD",
+  sortBy: "TDLVORD_ISSUDT",
   descending: true,
 });
 
@@ -272,6 +279,8 @@ const getConfirmedData = async (paginate = {}) => {
       pagination.value.rowsNumber = response.data.total;
       pagination.value.page = response.data.current_page;
       pagination.value.rowsPerPage = response.data.per_page;
+      pagination.value.sortBy = paginate.sortBy;
+      pagination.value.descending = paginate.descending;
     })
     .catch((e) => {
       loading.value = false;

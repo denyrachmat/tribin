@@ -607,6 +607,7 @@ class InventoryController extends Controller
                 'MITM_ITMNM',
                  DB::raw('COALESCE((MITMBPRC_PRC),0) AS MITMBPRC_PRC'),
                  DB::raw('COALESCE((MITMSPRC_PRC),0) AS MITMSPRC_PRC'),
+                 DB::raw('id_reff AS BC')
             )
             ->join('M_ITM', 'MITM_ITMCD', 'CITRN_ITMCD')
             ->leftjoin(DB::raw('jatpower_tribin.M_ITMBPRICE'), function($j) {
@@ -628,7 +629,8 @@ class InventoryController extends Controller
                 'MITM_ITMCD',
                 'MITM_ITMNM',
                 'MITMBPRC_PRC',
-                'MITMSPRC_PRC'
+                'MITMSPRC_PRC',
+                'id_reff'
             )
             ->get();
         if ($data->isEmpty()) {

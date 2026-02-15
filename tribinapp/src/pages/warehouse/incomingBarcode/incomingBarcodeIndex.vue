@@ -137,6 +137,13 @@ const cols = ref([
     align: "left",
   },
   {
+    name: "item_code",
+    label: "Item Code",
+    field: "item_code",
+    sortable: true,
+    align: "left",
+  },
+  {
     name: "MITM_ITMNM",
     label: "Item Name",
     field: "MITM_ITMNM",

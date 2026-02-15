@@ -14,7 +14,7 @@
             <div class="text-h6">Update Used Item</div>
           </div>
           <div class="col text-right" v-if="props.mode !== 'view'">
-            <q-input
+            <!-- <q-input
               filled
               dense
               label="Barcode Scan"
@@ -30,7 +30,8 @@
                   @click="onClickAddItem"
                 />
               </template>
-            </q-input>
+            </q-input> -->
+            <q-btn icon="add" outline color="blue" @click="onClickAddItem" />
           </div>
         </div>
       </q-card-section>

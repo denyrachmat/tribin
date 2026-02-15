@@ -22,13 +22,23 @@
             <q-spinner-gears size="50px" color="primary" />
           </q-inner-loading>
           <div class="row q-col-gutter-md">
-            <div class="col-12">
+            <div class="col-12 col-sm-6">
               <q-input
                 label="Doc No"
                 dense
                 filled
                 v-model="header.TLOCREQ_DOCNO"
                 :readonly="true"
+              />
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-input
+                label="Barcode Scan"
+                dense
+                filled
+                v-model="BC"
+                ref="barcodeScanRef"
+                @update:model-value="onScanBarcode"
               />
             </div>
           </div>
@@ -128,12 +138,11 @@
                   v-model="list.TLOCREQ_QTY"
                   :rules="[
                     (val) =>
-                      val <= checkItemList(list.TLOCREQ_ITMCD).STOCK ||
-                      `Stock is less than needed, stock only ${
-                        checkItemList(list.TLOCREQ_ITMCD).STOCK
-                      }`,
+                      val <= checkItemList(list.TLOCREQ_ITMCD) ||
+                      `Scanned Qty only ${checkItemList(list.TLOCREQ_ITMCD)}`,
                   ]"
-                  :hint="`Stock is ${checkItemList(list.TLOCREQ_ITMCD).STOCK}`"
+                  :hint="`Scanned Qty is ${checkItemList(list.TLOCREQ_ITMCD)}`"
+                  :readonly="true"
                 />
               </div>
 
@@ -160,15 +169,17 @@
           :loading="loading"
           :disable="checkIsValidData()"
         />
-        <q-btn flat label="Cancel" color="red" @click="onDialogCancel" />
+        <q-btn flat label="Cancel" color="red" @click="onClickCancel" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api, api_web } from "boot/axios";
+
+import scanBarcodeStock from "./scanBarcodeStock.vue";
 
 const $q = useQuasar();
 
@@ -184,6 +195,10 @@ const header = ref({
   TLOCREQ_TOLOC: "",
 });
 
+const BC = ref("");
+const scannedBarcode = ref([]);
+const barcodeScanRef = ref(null);
+
 const listItems = ref([]);
 const listLoc = ref([]);
 
@@ -192,7 +207,11 @@ const loading = ref(false);
 const addMoreItems = ref(false);
 
 onMounted(async () => {
-  console.log(props);
+  await nextTick();
+  setTimeout(() => {
+    barcodeScanRef.value?.focus();
+  }, 100);
+
   await getLocation("");
 
   header.value = props.dataHeader;
@@ -202,23 +221,23 @@ onMounted(async () => {
       ...val,
       // REQ_QTY: val.TLOCREQ_QTY,
       TLOCREQ_QTY: val.TLOCREQ_QTY,
-      IS_STOCK_EX:
-        checkItemList(val.TLOCREQ_ITMCD).STOCK >= val.TLOCREQ_QTY,
+      // TLOCREQ_QTY: 0,
+      IS_STOCK_EX: checkItemList(val.TLOCREQ_ITMCD) >= val.TLOCREQ_QTY,
     });
   });
 });
 
 const checkIsValidData = () => {
-  let nValidData = []
+  let nValidData = [];
 
   listDet.value.map((valMap) => {
-    if (checkItemList(valMap.TLOCREQ_ITMCD).STOCK < valMap.TLOCREQ_QTY) {
-      nValidData.push(valMap)
+    if (checkItemList(valMap.TLOCREQ_ITMCD) < valMap.TLOCREQ_QTY) {
+      nValidData.push(valMap);
     }
-  })
+  });
 
-  return nValidData.length > 0
-}
+  return nValidData.length > 0;
+};
 
 const filterFn = (val, update, abort, fun) => {
   update(async () => {
@@ -261,8 +280,8 @@ const getItem = async (val, withStock = 0) => {
       const newItems = Array.isArray(response.data.data)
         ? response.data.data
         : [response.data.data];
-      newItems.forEach(item => {
-        if (!listItems.value.some(i => i.MITM_ITMCD === item.MITM_ITMCD)) {
+      newItems.forEach((item) => {
+        if (!listItems.value.some((i) => i.MITM_ITMCD === item.MITM_ITMCD)) {
           listItems.value.push(item);
         }
       });
@@ -293,21 +312,26 @@ const onSubmitData = () => {
     persistent: true,
   }).onOk(async () => {
     loading.value = true;
-    console.log(listDet.value)
+    console.log(listDet.value);
 
     await api_web
       .post(`inventory/transferRequest`, {
-        data: listDet.value,
+        data: listDet.value.map((val) => ({
+          ...val,
+          listBarcode: scannedBarcode.value.filter(
+            (fil) => fil.MITM_ITMCD === val.TLOCREQ_ITMCD
+          ),
+        })),
       })
       .then(async (response) => {
         loading.value = false;
 
-          $q.notify({
-            color: "green",
-            message: `${response.data.msg}`,
-          });
+        $q.notify({
+          color: "green",
+          message: `${response.data.msg}`,
+        });
 
-          onDialogOK();
+        onDialogOK();
       })
       .catch((err) => {
         loading.value = false;
@@ -316,8 +340,104 @@ const onSubmitData = () => {
 };
 
 const checkItemList = (item) =>
-  listItems.value.filter((fil) => fil.MITM_ITMCD == item)[0];
+  scannedBarcode.value.filter((fil) => fil.MITM_ITMCD == item)[0]?.STOCK || 0;
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
+
+const onScanBarcode = async (value) => {
+  if (!value) return;
+
+  if (scannedBarcode.value.filter((fil) => fil.TSRVF_BC === value).length > 0) {
+    $q.notify({
+      color: "negative",
+      message: `Barcode ${value} already scanned !!`,
+    });
+    BC.value = "";
+    barcodeScanRef.value?.focus();
+    return;
+  }
+
+  loading.value = true;
+  await api_web
+    .get(`inventory/findStockByBarcode/${value}`)
+    .then((response) => {
+      loading.value = false;
+      if (response.data.length > 0) {
+        console.log("Found item:", response.data[0]);
+
+        let dataItem = response.data[0];
+
+        if (dataItem) {
+          if (dataItem.STOCK <= 0) {
+            $q.notify({
+              color: "negative",
+              message: `Barcode ${value} has stock 0 !!`,
+            });
+            BC.value = "";
+            barcodeScanRef.value?.focus();
+            return;
+          }
+
+          let checkItemExists = listDet.value.filter(
+            (fil) => fil.TLOCREQ_ITMCD === dataItem.MITM_ITMCD
+          );
+
+          if (checkItemExists.length > 0) {
+            // checkItemExists[0].TLOCREQ_QTY += 1;
+            scannedBarcode.value.push(dataItem);
+            $q.notify({
+              color: "positive",
+              message: `Item quantity updated. Current qty: ${checkItemExists[0].TLOCREQ_QTY}`,
+            });
+            BC.value = "";
+            barcodeScanRef.value?.focus();
+
+            // if (!checkIsValidData()) {
+            //   onSubmitData();
+            // }
+
+            console.log(
+              "Updated item in listDet:",
+              listDet.value.map((item) => ({
+                ...item,
+                listBarcode: scannedBarcode.value.filter(
+                  (fil) => fil.MITM_ITMCD === item.TLOCREQ_ITMCD
+                ),
+              }))
+            );
+          } else {
+            $q.notify({
+              color: "negative",
+              message: `Barcode ${value} item is not match with the existing items !!`,
+            });
+            BC.value = "";
+            barcodeScanRef.value?.focus();
+          }
+        } else {
+          $q.notify({
+            color: "negative",
+            message: `Barcode ${value} not found !!`,
+          });
+          BC.value = "";
+          barcodeScanRef.value?.focus();
+        }
+      }
+    });
+};
+
+const onClickCancel = () => {
+  if (scannedBarcode.value.length > 0) {
+    $q.dialog({
+      title: "Confirmation",
+      message: `Some item already scanned, are you sure want to cancel this request ? All scanned data will be lost !!`,
+      cancel: true,
+      persistent: true,
+    }).onOk(async () => {
+      onDialogCancel();
+    });
+  } else {
+    onDialogCancel();
+  }
+};
 </script>

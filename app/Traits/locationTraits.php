@@ -21,6 +21,7 @@ trait LocationTraits
             'LOCFROM' => 'required',
             'ITMCD' => 'required',
             'QTY' => 'required|numeric',
+            'BC' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -29,12 +30,26 @@ trait LocationTraits
 
         $cekStock = DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
             ->where('CITRN_ITMCD', $request->ITMCD)
-            ->where('CITRN_LOCCD', $request->LOCFROM)
-            ->first();
+            ->where('CITRN_LOCCD', $request->LOCFROM);
+
+        if ($request->has('BC') && !empty($request->BC)) {
+            $cekStock = $cekStock->where('id_reff', $request->BC);
+        }
+
+        $cekStock = $cekStock->first();
 
         if ($cekStock === null || (!empty($cekStock) && $cekStock->CITRN_ITMQT < $request->QTY)) {
             return response([
-                'STOK' => ['Stock less than inputed qty or stock not exists!!']
+                'status' => false,
+                'error' => 'Stock less than inputed qty or stock not exists!!',
+                'data' => $cekStock,
+                'params' => [
+                    'LOCFROM' => $request->LOCFROM,
+                    'LOCTO' => $request->LOCTO,
+                    'ITMCD' => $request->ITMCD,
+                    'QTY' => $request->QTY,
+                    'BC' => $request->BC ?? null,
+                ]
             ], 406);
         } else {
             $cekLatestTrf = C_ITRN::on($this->dedicatedConnection)->where(DB::raw('YEAR(created_at)', date('Y')))
@@ -54,12 +69,13 @@ trait LocationTraits
                 'CITRN_LOCCD' => $request->LOCFROM,
                 'CITRN_DOCNO' => $request->has('DOC') && !empty($request->DOC) ? $request->DOC : $TRFCODE,
                 'CITRN_ISSUDT' => date('Y-m-d'),
-                'CITRN_FORM' => 'OUT-TRF-LOC',
+                'CITRN_FORM' => $request->OUTFORM ?? 'OUT-TRF-LOC',
                 'CITRN_ITMCD' => $request->ITMCD,
                 'CITRN_ITMQT' => $request->QTY * -1,
                 'CITRN_PRCPER' => $cekStock->CITRN_PRCPER,
                 'CITRN_PRCAMT' => $request->QTY * $cekStock->CITRN_PRCPER,
                 'created_by' => Auth::user()->nick_name,
+                'id_reff' => $request->has('BC') && !empty($request->BC) ? $request->BC : null,
             ]);
 
             $rcv = null;
@@ -70,16 +86,18 @@ trait LocationTraits
                     'CITRN_LOCCD' => $request->LOCTO,
                     'CITRN_DOCNO' => $request->has('DOC') && !empty($request->DOC) ? $request->DOC : $TRFCODE,
                     'CITRN_ISSUDT' => date('Y-m-d'),
-                    'CITRN_FORM' => 'INC-TRF-LOC',
+                    'CITRN_FORM' => $request->INCFORM ?? 'INC-TRF-LOC',
                     'CITRN_ITMCD' => $request->ITMCD,
                     'CITRN_ITMQT' => $request->QTY,
                     'CITRN_PRCPER' => $cekStock->CITRN_PRCPER,
                     'CITRN_PRCAMT' => $request->QTY * $cekStock->CITRN_PRCPER,
                     'created_by' => Auth::user()->nick_name,
+                    'id_reff' => $request->has('BC') && !empty($request->BC) ? $request->BC : null,
                 ]);
             }
 
             return [
+                'status' => true,
                 'msg' => 'OK',
                 'DATA' => [
                     'ISS' => $iss,

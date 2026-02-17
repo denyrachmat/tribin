@@ -47,7 +47,7 @@ class PurchaseController extends Controller
         date_default_timezone_set('Asia/Jakarta');
         $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
         $this->fpdf = new Fpdf;
-        $this->fpdf->SetAutoPageBreak(true, 20);
+        $this->fpdf->SetAutoPageBreak(false, 20);
     }
 
     public function save(Request $request)
@@ -82,7 +82,7 @@ class PurchaseController extends Controller
                 // $newQuotationCode = substr('00' . $LastLine, -3) . '/PCR/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
             }
 
-            $newQuotationCode = $this->getGencodeData('pr', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
+            $newQuotationCode = $this->getGencodeData('pr', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
 
             $quotationHeader = [
                 'TPCHREQ_PCHCD' => $newQuotationCode,
@@ -187,7 +187,7 @@ class PurchaseController extends Controller
                 // $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
             }
 
-            $newPOCode = $this->getGencodeData('po', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
+            $newPOCode = $this->getGencodeData('po', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
         }
 
         $headerTable = [
@@ -707,16 +707,36 @@ class PurchaseController extends Controller
             ->where("TPCHORDDETA_PCHCD", $doc)
             ->get()->toArray();
 
-        $chunkedRSDetail = array_chunk($RSDetail, 5);
+        // ===== SETTINGS =====
+        $itemsPerPage = $itemsPerPage ?? 8; // atau set manual: 8
+        $rowHeight = 5;
+        $bottomMargin = 5;
 
-        $startPointY = 50;
+        // perkiraan tinggi footer (terbilang + total + note + approval)
+        // kalau masih kepotong, naikin ke 70/80
+        $neededFooterHeight = 80;
+
+        $chunkedRSDetail = array_chunk($RSDetail, $itemsPerPage);
+
+        // IMPORTANT: biar FPDF tidak auto AddPage sendiri saat MultiCell panjang
+        $this->fpdf->SetAutoPageBreak(false);
+
         foreach ($chunkedRSDetail as $chunkIndex => $chunk) {
+
+            // ===== ADD PAGE PER CHUNK =====
+            $this->fpdf->SetFont('Arial', 'B', 18);
+            $this->fpdf->AddPage("L", "A5");
+            $this->fpdf->SetMargins(3, 3, 3);
+
+            // ===== Y POSITIONS (page 1 vs next pages) =====
             if ($chunkIndex === 0) {
-                $this->fpdf->SetFont('Arial', 'B', 18);
-                $this->fpdf->AddPage("L", 'A5');
-                $this->fpdf->SetMargins(3, 3, 3);
+                $tableHeaderY = 50;
+                $rowStartY = 55;
+
+                // ===== HEADER ATAS (punyamu tetap) =====
                 $this->fpdf->SetXY(7, 5);
                 $this->fpdf->Cell(0, 8, $RSCG->name, 0, 0, 'C');
+
                 $this->fpdf->SetFont('Arial', '', 11);
                 $this->fpdf->SetXY(3, 12);
                 $this->fpdf->MultiCell(0, 4, $RSCG->address, 0, 'C');
@@ -727,6 +747,7 @@ class PurchaseController extends Controller
                 $this->fpdf->SetFont('Arial', 'BU', 12);
                 $this->fpdf->SetXY(3, 24);
                 $this->fpdf->MultiCell(0, 4, 'Purchase Order', 0, 'C');
+
                 $this->fpdf->SetFont('Arial', '', 10);
                 $this->fpdf->SetXY(3, 28);
                 $this->fpdf->MultiCell(0, 4, 'PO No. : ' . $doc, 0, 'C');
@@ -763,36 +784,43 @@ class PurchaseController extends Controller
                 $this->fpdf->SetXY(123, 32);
                 $this->fpdf->MultiCell(25, 4, 'Date', 0);
                 $this->fpdf->SetFont('Arial', '', 10);
-                $this->fpdf->SetXY(123 + 25, 32);
+                $this->fpdf->SetXY(148, 32);
                 $this->fpdf->MultiCell(50, 4, ': ' . $TPCHORD_ISSUDT, 0);
 
                 $this->fpdf->SetFont('Arial', 'B', 10);
                 $this->fpdf->SetXY(123, 36);
                 $this->fpdf->MultiCell(25, 4, 'PR. No', 0);
                 $this->fpdf->SetFont('Arial', '', 10);
-                $this->fpdf->SetXY(123 + 25, 36);
+                $this->fpdf->SetXY(148, 36);
                 $this->fpdf->MultiCell(50, 4, ': ' . $TPCHORD_REQCD, 0);
 
                 $this->fpdf->SetFont('Arial', 'B', 10);
                 $this->fpdf->SetXY(123, 40);
                 $this->fpdf->MultiCell(25, 4, 'Delivery Date', 0);
                 $this->fpdf->SetFont('Arial', '', 10);
-                $this->fpdf->SetXY(123 + 25, 40);
+                $this->fpdf->SetXY(148, 40);
                 $this->fpdf->MultiCell(50, 4, ': ', 0);
 
                 $this->fpdf->SetFont('Arial', 'B', 10);
                 $this->fpdf->SetXY(123, 44);
                 $this->fpdf->MultiCell(25, 4, 'NPWP', 0);
                 $this->fpdf->SetFont('Arial', '', 10);
-                $this->fpdf->SetXY(123 + 25, 44);
+                $this->fpdf->SetXY(148, 44);
                 $this->fpdf->MultiCell(50, 4, ': ' . $MSUP_TAXREG, 0);
+
             } else {
-                $this->fpdf->AddPage("L", 'A5');
-                $this->fpdf->SetMargins(3, 3, 3);
+                $tableHeaderY = 10;
+                $rowStartY = 15;
+
+                // optional mini header page 2+
+                // $this->fpdf->SetFont('Arial','B',12);
+                // $this->fpdf->SetXY(3, 5);
+                // $this->fpdf->Cell(0, 5, 'Purchase Order - ' . $doc, 0, 0, 'C');
             }
 
+            // ===== TABLE HEADER =====
             $this->fpdf->SetFont('Arial', 'B', 10);
-            $this->fpdf->SetXY(3, $startPointY);
+            $this->fpdf->SetXY(3, $tableHeaderY);
             $this->fpdf->Cell(10, 5, 'No', 1, 0, 'L');
             $this->fpdf->Cell(85, 5, 'Item Description', 1, 0, 'L');
             $this->fpdf->Cell(15, 5, 'Qty', 1, 0, 'C');
@@ -800,13 +828,32 @@ class PurchaseController extends Controller
             $this->fpdf->Cell(35, 5, 'Unit Price', 1, 0, 'C');
             $this->fpdf->Cell(35, 5, 'Line Total', 1, 0, 'C');
 
-            $y = 55;
-            $nomor = ($chunkIndex * 3) + 1;
-            $grandTotal = 0;
-            $subTotal = 0;
+            // ===== ROWS =====
+            $y = $rowStartY;
+            $nomor = ($chunkIndex * $itemsPerPage) + 1;
             $this->fpdf->SetFont('Arial', '', 8);
+
+            // ===== CARRY LAST ROW LOGIC (only for last chunk) =====
+            $isLastChunk = ($chunkIndex == count($chunkedRSDetail) - 1);
+            $forceFooterNewPage = false;
+            $carryRow = null;
+
+            if ($isLastChunk && count($chunk) > 0) {
+                $pageH = $this->fpdf->GetPageHeight();
+                $yAfterRows = $rowStartY + (count($chunk) * $rowHeight);
+
+                if ($yAfterRows + $neededFooterHeight > ($pageH - $bottomMargin)) {
+                    // pindahin 1 item terakhir ke halaman footer
+                    $carryRow = array_pop($chunk);
+                    $forceFooterNewPage = true;
+                }
+            }
+
+            // print rows (yang tersisa)
+            $subTotal = 0;
             foreach ($chunk as $r) {
                 $lineTotal = $r['TPCHORDDETA_ITMPRC_PER'] * $r['TPCHORDDETA_ITMQT'];
+
                 $this->fpdf->SetXY(3, $y);
                 $this->fpdf->Cell(10, 5, $nomor++, 1, 0, 'L');
                 $this->fpdf->Cell(85, 5, $r['MITM_ITMNM'], 1, 0, 'L');
@@ -814,41 +861,84 @@ class PurchaseController extends Controller
                 $this->fpdf->Cell(15, 5, $r['MITM_STKUOM'], 1, 0, 'C');
                 $this->fpdf->Cell(35, 5, number_format($r['TPCHORDDETA_ITMPRC_PER']), 1, 0, 'R');
                 $this->fpdf->Cell(35, 5, number_format($lineTotal), 1, 0, 'R');
+
                 $subTotal += $lineTotal;
-                $y += 5;
+                $y += $rowHeight;
             }
 
-            // Reset y position for next page if not the last chunk
-            if ($chunkIndex < count($chunkedRSDetail) - 1) {
-                $y = 60; // Reset y position for next page
-            }
-            $startPointY = $y;
+            // ===== FOOTER ONLY ON LAST CHUNK =====
+            if ($isLastChunk) {
 
-            // $startPointY = $y;
+                // kalau perlu halaman baru untuk carryRow + footer
+                if ($forceFooterNewPage === true) {
 
-            // Calculate grand total for all items (only on the last page)
-            if ($chunkIndex == count($chunkedRSDetail) - 1) {
-                // Recalculate subtotal for all items
+                    $this->fpdf->AddPage("L", "A5");
+                    $this->fpdf->SetMargins(3, 3, 3);
+
+                    // page ini bukan page 1
+                    $tableHeaderY = 10;
+                    $rowStartY = 15;
+
+                    // table header lagi biar konteks jelas
+                    $this->fpdf->SetFont('Arial', 'B', 10);
+                    $this->fpdf->SetXY(3, $tableHeaderY);
+                    $this->fpdf->Cell(10, 5, 'No', 1, 0, 'L');
+                    $this->fpdf->Cell(85, 5, 'Item Description', 1, 0, 'L');
+                    $this->fpdf->Cell(15, 5, 'Qty', 1, 0, 'C');
+                    $this->fpdf->Cell(15, 5, 'Unit', 1, 0, 'C');
+                    $this->fpdf->Cell(35, 5, 'Unit Price', 1, 0, 'C');
+                    $this->fpdf->Cell(35, 5, 'Line Total', 1, 0, 'C');
+
+                    // print carryRow
+                    $y = $rowStartY;
+
+                    if (!empty($carryRow)) {
+                        $r = $carryRow;
+                        $lineTotal = $r['TPCHORDDETA_ITMPRC_PER'] * $r['TPCHORDDETA_ITMQT'];
+
+                        $this->fpdf->SetFont('Arial', '', 8);
+                        $this->fpdf->SetXY(3, $y);
+                        $this->fpdf->Cell(10, 5, $nomor++, 1, 0, 'L');
+                        $this->fpdf->Cell(85, 5, $r['MITM_ITMNM'], 1, 0, 'L');
+                        $this->fpdf->Cell(15, 5, $r['TPCHORDDETA_ITMQT'], 1, 0, 'C');
+                        $this->fpdf->Cell(15, 5, $r['MITM_STKUOM'], 1, 0, 'C');
+                        $this->fpdf->Cell(35, 5, number_format($r['TPCHORDDETA_ITMPRC_PER']), 1, 0, 'R');
+                        $this->fpdf->Cell(35, 5, number_format($lineTotal), 1, 0, 'R');
+
+                        $y += $rowHeight;
+                    }
+                } else {
+                    // kalau tidak forceFooterNewPage, pastikan footer muat (fallback)
+                    $pageH = $this->fpdf->GetPageHeight();
+                    if ($y + $neededFooterHeight > ($pageH - $bottomMargin)) {
+                        $this->fpdf->AddPage("L", "A5");
+                        $this->fpdf->SetMargins(3, 3, 3);
+                        $y = 20;
+                    }
+                }
+
+                // ====== FOOTER KAMU (tetap) ======
+                // Recalculate subtotal for all items (total semua, bukan cuma chunk)
                 $subTotal = 0;
-                foreach ($RSDetail as $r) {
-                    $subTotal += $r['TPCHORDDETA_ITMPRC_PER'] * $r['TPCHORDDETA_ITMQT'];
+                foreach ($RSDetail as $rr) {
+                    $subTotal += $rr['TPCHORDDETA_ITMPRC_PER'] * $rr['TPCHORDDETA_ITMQT'];
                 }
 
                 $totalTax = 0;
                 $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
                 if (count($taxes) > 0) {
-                    foreach ($taxes as $keyTaxes => $valueTaxes) {
+                    foreach ($taxes as $valueTaxes) {
                         $totalTax += $valueTaxes['TTAXM_TAXAMT'];
                     }
                 }
 
                 $vat = strlen($MSUP_TAXREG) !== 0 ? 11 / 100 : 0;
-                $vatValue = 0;
+                $vatValue = 0; // kalau mau dipakai: $vatValue = $subTotal * $vat;
                 $grandTotal = $vatValue + $subTotal;
 
                 $this->fpdf->SetXY(3, $y);
                 $this->fpdf->SetFont('Arial', 'I', 8);
-                $this->fpdf->MultiCell(125, 4, ucwords($this->numberToSentence(round($grandTotal + $totalTax))). ' Rupiah', 1);
+                $this->fpdf->MultiCell(125, 4, ucwords($this->numberToSentence(round($grandTotal + $totalTax))) . ' Rupiah', 1);
 
                 if (count($taxes) > 0) {
                     $this->fpdf->SetFont('Arial', '', 10);
@@ -856,7 +946,7 @@ class PurchaseController extends Controller
                     $this->fpdf->Cell(35, 5, 'Sub total', 1, 0);
                     $this->fpdf->Cell(35, 6, number_format($subTotal), 1, 0, 'R');
 
-                    foreach ($taxes as $keyTaxes => $valueTaxes2) {
+                    foreach ($taxes as $valueTaxes2) {
                         $y += 5;
                         $this->fpdf->SetXY(128, $y);
                         $this->fpdf->Cell(35, 5, $valueTaxes2['MTAX_DESC'], 1, 0);
@@ -868,23 +958,25 @@ class PurchaseController extends Controller
                 $this->fpdf->SetXY(128, $y);
                 $this->fpdf->Cell(35, 5, 'Total', 1, 0);
                 $this->fpdf->Cell(35, 5, number_format(round($grandTotal + $totalTax)), 1, 0, 'R');
+
                 $y += 5;
                 $this->fpdf->SetXY(3, $y);
                 $this->fpdf->SetFont('Arial', '', 8);
                 $this->fpdf->MultiCell(10, 5, 'Note', 0);
+
                 $y += 3;
-                $this->fpdf->SetXY(3 + 10, $y);
-                $this->fpdf->SetFont('Arial', '', 8);
+                $this->fpdf->SetXY(13, $y);
                 $this->fpdf->MultiCell(150, 5, '1. Semua pengiriman barang harus disertakan nota/faktur/kwitansi', 0);
+
                 $y += 5;
-                $this->fpdf->SetXY(3 + 10, $y);
-                $this->fpdf->SetFont('Arial', '', 8);
+                $this->fpdf->SetXY(13, $y);
                 $this->fpdf->MultiCell(150, 5, '2. Barang akan kami kembalikan apabila tidak sesuai pesanan', 0);
+
                 $y += 5;
-                $this->fpdf->SetXY(3 + 10, $y);
-                $this->fpdf->SetFont('Arial', '', 8);
+                $this->fpdf->SetXY(13, $y);
                 $this->fpdf->MultiCell(150, 5, '3. Nomor Purchase Order (PO) harus dicantumkan dalam nota/faktur/kwitansi', 0);
 
+                // approval block kamu tetap...
                 $getApproval = $this->getGencode(
                     base64_encode('APPROVAL_SETUP'),
                     base64_encode('purchase_order'),
@@ -892,7 +984,7 @@ class PurchaseController extends Controller
                 );
 
                 $hasilApproval = [];
-                foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+                foreach (json_decode($getApproval['MGECD_DESC'], true) as $value) {
                     $hasilApproval[] = [
                         'name' => $value['isOwnApproval']
                             ? $RSUserWhoPrepare->name : (
@@ -904,8 +996,6 @@ class PurchaseController extends Controller
                     ];
                 }
 
-                // return $hasilApproval;
-
                 $y += 5;
                 $this->fpdf->SetXY(90, $y);
                 $this->fpdf->SetFont('Arial', '', 8);
@@ -913,48 +1003,23 @@ class PurchaseController extends Controller
                     $this->fpdf->SetXY(90 + (27 * $key), $y);
                     $this->fpdf->MultiCell(27, 5, $value['remarks'], 1, 'C');
                 }
-                // $this->fpdf->MultiCell(27, 5, 'Order By', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27, $y);
-                // $this->fpdf->MultiCell(27, 5, 'Prepared By', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27 + 27, $y);
-                // $this->fpdf->MultiCell(27, 5, 'Approved By', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
-                // $this->fpdf->MultiCell(27, 5, 'Confirmed By', 1, 'C');
 
                 $y += 5;
                 $this->fpdf->SetXY(90, $y);
-                $this->fpdf->SetFont('Arial', '', 8);
                 foreach ($hasilApproval as $key => $value) {
                     $this->fpdf->SetXY(90 + (27 * $key), $y);
                     $this->fpdf->MultiCell(27, 15, '', 1, 'C');
                 }
-                // $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27, $y);
-                // $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27 + 27, $y);
-                // $this->fpdf->MultiCell(27, 15, '', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
-                // $this->fpdf->MultiCell(27, 15, '', 1, 'C');
 
                 $y += 10;
                 $this->fpdf->SetXY(90, $y);
-                $this->fpdf->SetFont('Arial', '', 8);
-
                 foreach ($hasilApproval as $key => $value) {
                     $this->fpdf->SetXY(90 + (27 * $key), $y);
                     $this->fpdf->MultiCell(27, 5, $value['name'], 1, 'C');
                 }
-                // $this->fpdf->MultiCell(27, 5, '', 1, 'C');
-                // $this->fpdf->SetXY(90 + 27, $y);
-                // $this->fpdf->MultiCell(27, 5, $RSUserWhoPrepare->name, 1, 'C');
-                // $this->fpdf->SetXY(90 + 27 + 27, $y);
-                // $this->fpdf->SetFont('Arial', '', 6);
-                // $this->fpdf->MultiCell(27, 5, $RSUserApproved->name, 1, 'C');
-                // $this->fpdf->SetFont('Arial', '', 8);
-                // $this->fpdf->SetXY(90 + 27 + 27 + 27, $y);
-                // $this->fpdf->MultiCell(27, 5, '', 1, 'C');
             }
         }
+
 
         // $this->fpdf->Output('purchase order ' . $doc . '.pdf', 'I');
 

@@ -594,7 +594,7 @@ class InventoryController extends Controller
         return ['msg' => 'Upload Success'];
     }
 
-    function findStockByBarcode($bc)
+    function findStockByBarcode($bc, $loc = null)
     {
 
         ini_set('max_execution_time', '300');
@@ -631,8 +631,13 @@ class InventoryController extends Controller
                 'MITMBPRC_PRC',
                 'MITMSPRC_PRC',
                 'id_reff'
-            )
-            ->get();
+            );
+
+        if (!empty($loc)) {
+            $data->where('CITRN_LOCCD', $loc);
+        }
+
+        $data = $data->get();
         if ($data->isEmpty()) {
             return response()->json(['msg' => 'Barcode not found'], 404);
         } else {

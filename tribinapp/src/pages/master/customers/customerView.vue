@@ -308,7 +308,7 @@ const custData = ref({
   MCUS_TELNO: "",
   MCUS_PIC_NAME: "-",
   MCUS_PIC_TELNO: "-",
-  MCUS_TYPE: "",
+  MCUS_TYPE: "1",
   MCUS_GROUP: "",
   MCUS_EMAIL: "",
   MCUS_KTP_FILE: "",

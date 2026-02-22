@@ -136,12 +136,14 @@
                   dense
                   filled
                   v-model="list.TLOCREQ_QTY"
-                  :rules="[
-                    (val) =>
-                      val <= checkItemList(list.TLOCREQ_ITMCD) ||
-                      `Scanned Qty only ${checkItemList(list.TLOCREQ_ITMCD)}`,
-                  ]"
-                  :hint="`Scanned Qty is ${checkItemList(list.TLOCREQ_ITMCD)}`"
+                  :hint="`Scanned Qty Total ${
+                    list.listBarcode && list.listBarcode.length > 0
+                      ? list.listBarcode.reduce(
+                          (acc, curr) => acc + (curr.STOCK || 0),
+                          0
+                        )
+                      : 0
+                  }`"
                   :readonly="true"
                 />
               </div>
@@ -155,6 +157,24 @@
                   :false-value="0"
                   :disable="true"
                 />
+              </div>
+              <div class="col-12 col-sm-1">
+                <q-btn
+                  flat
+                  :color="!list.listBarcode ? 'red' : 'primary'"
+                  icon="visibility"
+                  @click="onClickScanPreview(list)"
+                  dense
+                >
+                  <q-badge
+                    v-if="list.listBarcode"
+                    :label="list.listBarcode.length"
+                    color="white"
+                    text-color="black"
+                    size="xs"
+                    class="q-ml-sm"
+                  />
+                </q-btn>
               </div>
             </div>
           </template>
@@ -179,7 +199,7 @@ import { ref, onMounted, computed, nextTick } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import { api, api_web } from "boot/axios";
 
-import scanBarcodeStock from "./scanBarcodeStock.vue";
+import scannedBarcodeView from "./scannedBarcodeView.vue";
 
 const $q = useQuasar();
 
@@ -231,7 +251,9 @@ const checkIsValidData = () => {
   let nValidData = [];
 
   listDet.value.map((valMap) => {
-    if (checkItemList(valMap.TLOCREQ_ITMCD) < valMap.TLOCREQ_QTY) {
+    let totalScanned = valMap.listBarcode ? valMap.listBarcode.reduce((acc, curr) => acc + (curr.STOCK || 0), 0) : 0;
+    console.log(`Item ${valMap.TLOCREQ_ITMCD} - Requested: ${valMap.TLOCREQ_QTY}, Scanned: ${totalScanned}`);
+    if (valMap.TLOCREQ_QTY > totalScanned) {
       nValidData.push(valMap);
     }
   });
@@ -360,65 +382,75 @@ const onScanBarcode = async (value) => {
 
   loading.value = true;
   await api_web
-    .get(`inventory/findStockByBarcode/${value}`)
+    .get(`inventory/findStockByBarcode/${value}/${header.value.TLOCREQ_FRLOC}`)
     .then((response) => {
       loading.value = false;
       if (response.data.length > 0) {
         console.log("Found item:", response.data[0]);
 
         let dataItem = response.data[0];
+        console.log("Data item:", dataItem);
 
         if (dataItem) {
-          if (dataItem.STOCK <= 0) {
+          let dataListByItem = findItemonListDet(dataItem.MITM_ITMCD);
+
+          // Check if barcode item is exist on list
+          if (!dataListByItem) {
             $q.notify({
               color: "negative",
-              message: `Barcode ${value} has stock 0 !!`,
+              message: `Item ${dataItem.MITM_ITMCD} - ${dataItem.MITM_ITMNM} not found on list !!`,
             });
             BC.value = "";
             barcodeScanRef.value?.focus();
+
             return;
           }
 
-          let checkItemExists = listDet.value.filter(
+          // Check if scanned qty less than requested qty
+          if (dataItem.STOCK < dataListByItem.TLOCREQ_QTY) {
+            $q.notify({
+              color: "negative",
+              message: `Qty for item ${dataItem.MITM_ITMCD} less than requested !!`,
+            });
+            BC.value = "";
+            barcodeScanRef.value?.focus();
+
+            return;
+          }
+
+          // Check if barcode already scanned on other line
+          if (
+            listDet.value.filter(
+              (fil) =>
+                fil.listBarcode && fil.listBarcode.filter((fil2) => fil2.TSRVF_BC === value).length > 0
+            ).length > 0
+          ) {
+            $q.notify({
+              color: "negative",
+              message: `Barcode ${value} already scanned !!`,
+            });
+            BC.value = "";
+            barcodeScanRef.value?.focus();
+
+            return;
+          }
+
+          let findIndex = listDet.value.findIndex(
             (fil) => fil.TLOCREQ_ITMCD === dataItem.MITM_ITMCD
           );
 
-          if (checkItemExists.length > 0) {
-            // checkItemExists[0].TLOCREQ_QTY += 1;
-            scannedBarcode.value.push(dataItem);
-            $q.notify({
-              color: "positive",
-              message: `Item quantity updated. Current qty: ${checkItemExists[0].TLOCREQ_QTY}`,
-            });
-            BC.value = "";
-            barcodeScanRef.value?.focus();
-
-            // if (!checkIsValidData()) {
-            //   onSubmitData();
-            // }
-
-            console.log(
-              "Updated item in listDet:",
-              listDet.value.map((item) => ({
-                ...item,
-                listBarcode: scannedBarcode.value.filter(
-                  (fil) => fil.MITM_ITMCD === item.TLOCREQ_ITMCD
-                ),
-              }))
-            );
-          } else {
-            $q.notify({
-              color: "negative",
-              message: `Barcode ${value} item is not match with the existing items !!`,
-            });
-            BC.value = "";
-            barcodeScanRef.value?.focus();
+          if (findIndex !== -1) {
+            listDet.value[findIndex].listBarcode = [
+              ...(listDet.value[findIndex].listBarcode || []),
+              {
+                TSRVF_BC: value,
+                MITM_ITMCD: dataItem.MITM_ITMCD,
+                STOCK: dataItem.STOCK,
+              },
+            ];
           }
-        } else {
-          $q.notify({
-            color: "negative",
-            message: `Barcode ${value} not found !!`,
-          });
+
+          console.log("List Det after scan:", listDet.value);
           BC.value = "";
           barcodeScanRef.value?.focus();
         }
@@ -439,5 +471,41 @@ const onClickCancel = () => {
   } else {
     onDialogCancel();
   }
+};
+
+const checkBarcodeScannedItem = (item) => {
+  return (
+    scannedBarcode.value.filter(
+      (fil) => fil.MITM_ITMCD === item.TLOCREQ_ITMCD
+    ) || []
+  );
+};
+
+const findItemonListDet = (item) => {
+  return listDet.value.filter((fil) => fil.TLOCREQ_ITMCD === item)[0] || null;
+};
+
+const onClickScanPreview = (list) => {
+  console.log("List for preview:", list);
+  console.log(checkBarcodeScannedItem(list));
+
+  $q.dialog({
+    component: scannedBarcodeView,
+    componentProps: {
+      dataHeader: list,
+    },
+    // persistent: true,
+  }).onOk(async (res) => {
+    console.log("Data from scanned barcode view:", res);
+    if (res && res.length > 0) {
+      let findIndex = listDet.value.findIndex(
+        (fil) => fil.TLOCREQ_ITMCD === list.TLOCREQ_ITMCD
+      );
+
+      if (findIndex !== -1) {
+        listDet.value[findIndex].listBarcode = res;
+      }
+    }
+  });
 };
 </script>

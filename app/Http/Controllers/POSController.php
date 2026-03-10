@@ -77,7 +77,7 @@ class POSController extends Controller
 
         $listForDODet = [];
         foreach ($request->det as $key => $value) {
-            $checkItem = M_ITM::on($this->dedicatedConnection)->where('ITMCD', $value['TPOSD_ITMCD'])->first();
+            $checkItem = M_ITM::on($this->dedicatedConnection)->where('MITM_ITMCD', $value['TPOSD_ITMCD'])->first();
             T_POS_DET::on($this->dedicatedConnection)->updateOrCreate([
                 'TPOSH_ID' => $IDPOS,
                 'TPOSD_ITMCD' => $value['TPOSD_ITMCD']

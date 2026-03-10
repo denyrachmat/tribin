@@ -39,8 +39,8 @@
                       <b>{{
                         (selItem.LATEST_PRC * selItem.sellQty).toLocaleString()
                       }}</b>
-                      <br>
-                      BC : {{ selItem.BC || '-' }}
+                      <br />
+                      BC : {{ selItem.BC || "-" }}
                     </q-item-label>
                   </q-item-section>
 
@@ -372,7 +372,7 @@ const getCustomer = async (val, cols = "MCUS_CUSNM") => {
     });
 };
 
-const onAddItems = (vals, idx, barcode = '') => {
+const onAddItems = (vals, idx, barcode = "") => {
   $q.dialog({
     dark: true,
     title: "Prompt",
@@ -397,7 +397,7 @@ const onAddItems = (vals, idx, barcode = '') => {
         selectedItems.value.push({
           ...vals,
           sellQty: data,
-          BC: barcode
+          BC: barcode,
         });
       }
       // console.log('>>>> OK, received', data)
@@ -514,7 +514,7 @@ const onSubmited = () => {
         TPOSD_ITMCD: val.MITM_ITMNM,
         TPOSD_PRC: val.LATEST_PRC,
         TPOSD_QTY: val.sellQty,
-        BC: val.BC || ''
+        BC: val.BC || "",
       };
     });
 
@@ -573,7 +573,7 @@ const getDefaultTax = async () => {
     .catch((e) => {});
 };
 
-const onScanBarcode = async (value, wh = 'WH1') => {
+const onScanBarcode = async (value, wh = "WH1") => {
   if (!value) return;
 
   // if (selectedItems.value.filter((fil) => fil.BC === value).length > 0) {
@@ -586,46 +586,60 @@ const onScanBarcode = async (value, wh = 'WH1') => {
   //   return;
   // }
 
-  loading.value = true;
-  await api_web
-    .get(`inventory/findStockByBarcode/${value}/${wh}`)
-    .then((response) => {
-      loading.value = false;
-      if (response.data.length > 0) {
-        console.log("Found item:", response.data[0]);
+  try {
+    loading.value = true;
+    await api_web
+      .get(`inventory/findStockByBarcode/${value}/${wh}`)
+      .then((response) => {
+        loading.value = false;
+        if (response.data.length > 0) {
+          console.log("Found item:", response.data[0]);
 
-        let dataItem = response.data[0];
-        console.log("Data item:", dataItem);
+          let dataItem = response.data[0];
+          console.log("Data item:", dataItem);
 
-        if (dataItem) {
-          // Check if barcode already scanned on other line
-          if (
-            selectedItems.value.filter(
-              (fil) => fil.BC === value
-            ).length > 0
-          ) {
-            $q.notify({
-              color: "negative",
-              message: `Barcode ${value} already scanned !!`,
-            });
+          if (dataItem) {
+            // Check if barcode already scanned on other line
+            if (
+              selectedItems.value.filter((fil) => fil.BC === value).length > 0
+            ) {
+              $q.notify({
+                color: "negative",
+                message: `Barcode ${value} already scanned !!`,
+              });
+              BC.value = "";
+              barcodeRef.value?.focus();
+
+              return;
+            }
+            onAddItems(
+              {
+                MITM_ITMNM: dataItem.CITRN_ITMCD,
+                MITM_ITMNMREAL: dataItem.MITM_ITMNM,
+                STOCK: dataItem.STOCK,
+                LATEST_PRC: dataItem.MITMSPRC_PRC,
+              },
+              0,
+              value
+            );
+
+            // console.log("List Det after scan:", listDet.value);
             BC.value = "";
             barcodeRef.value?.focus();
-
-            return;
           }
-          onAddItems({
-            MITM_ITMNM: dataItem.CITRN_ITMCD,
-            MITM_ITMNMREAL: dataItem.MITM_ITMNM,
-            STOCK: dataItem.STOCK,
-            LATEST_PRC: dataItem.MITMSPRC_PRC
-          }, 0, value);
-
-          // console.log("List Det after scan:", listDet.value);
-          BC.value = "";
-          barcodeRef.value?.focus();
         }
-      }
+      });
+  } catch (error) {
+    console.error("Error scanning barcode:", error);
+    $q.notify({
+      color: "negative",
+      message: `Error scanning barcode: ${error.message}`,
     });
+    BC.value = "";
+    barcodeRef.value?.focus();
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 

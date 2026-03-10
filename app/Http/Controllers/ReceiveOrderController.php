@@ -1016,74 +1016,85 @@ class ReceiveOrderController extends Controller
 
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
-        $listCat = [];
-        if (count($request->cust) > 0) {
+        $allowedRoles = ['root', 'accounting', 'director', 'manager', 'general_manager'];
+
+        // Ambil list customer code
+        if (!empty($request->cust) && count($request->cust) > 0) {
             $listCat = $request->cust;
         } else {
-            $listCatTemp = M_CUS::on($this->dedicatedConnection)->select('MCUS_CUSCD')
+            $custQuery = M_CUS::on($this->dedicatedConnection)
+                ->select('MCUS_CUSCD')
                 ->groupBy('MCUS_CUSCD');
 
-            if ($request->typeCust === 'all') {
-                $listCat = $listCatTemp->get()->pluck('MCUS_CUSCD');
-            } elseif ($request->typeCust == '1') {
-                $listCat = $listCatTemp->where('MCUS_TYPE', '<>', 3)->get()->pluck('MCUS_CUSCD');
-            } elseif ($request->typeCust == '3') {
-                $listCat = $listCatTemp->where('MCUS_TYPE', 3)->get()->pluck('MCUS_CUSCD');
+            if ($request->typeCust === '1') {
+                $custQuery->where('MCUS_TYPE', '<>', 3);
+            } elseif ($request->typeCust === '3') {
+                $custQuery->where('MCUS_TYPE', 3);
             }
+
+            $listCat = $custQuery->pluck('MCUS_CUSCD')->toArray();
         }
 
-        $hasilTemp = [];
-        foreach ($listCat as $key => $value) {
-            $RSTemp = DB::connection($this->dedicatedConnection)->table('V_SALES_REPORT')
-                ->where('MCUS_CUSCD', $value)
-                ->whereBetween('SLODET_DATE', ["{$request->input('fdate')} 00:00:00", "{$request->input('ldate')} 23:59:59"]);
+        if (empty($listCat)) {
+            $hasil = [];
+        } else {
+            $query = DB::connection($this->dedicatedConnection)
+                ->table('V_SALES_REPORT as v')
+                ->leftJoin('M_CUS as c', 'c.MCUS_CUSCD', '=', 'v.MCUS_CUSCD')
+                ->select(
+                    'v.*',
+                    'c.MCUS_CUSNM',
+                    'c.MCUS_TYPE'
+                )
+                ->whereIn('v.MCUS_CUSCD', $listCat)
+                ->whereBetween('v.SLODET_DATE', [
+                    $request->input('fdate') . ' 00:00:00',
+                    $request->input('ldate') . ' 23:59:59',
+                ]);
 
-            if (!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager'])) {
-                $RSTemp->where('created_by', Auth::user()->nick_name);
+            if (!in_array($activeRole['code'], $allowedRoles)) {
+                $query->where('v.created_by', Auth::user()->nick_name);
             }
 
-            // return Auth::user();
+            $rows = $query
+                ->orderBy('c.MCUS_CUSNM')
+                ->orderBy('v.SLODET_DATE')
+                ->get();
 
-            $cekTotalData = $RSTemp->get()->toArray();
-            $cekTotalData = json_decode(json_encode($cekTotalData), true);
-
-            if (count($cekTotalData) > 0) {
-                $getCustName = M_CUS::on($this->dedicatedConnection)->select('MCUS_CUSNM')
-                    ->where('MCUS_CUSCD', $value)
-                    ->first()
-                    ->MCUS_CUSNM;
-
-                $hasilTemp[$getCustName][] = $cekTotalData;
-            }
+            // Group per customer name
+            $hasil = $rows->groupBy(function ($item) {
+                return $item->MCUS_TYPE != 3 ? 
+                'EXTERNAL'
+                : $item->MCUS_CUSNM ?? $item->MCUS_CUSCD ?? 'UNKNOWN CUSTOMER';
+            });
         }
-
-        // return $hasilTemp;
 
         $companyGroupData = CompanyGroup::where('connection', $this->dedicatedConnection)->first();
-
-        $hasil = $hasilTemp;
 
         $getApproval = $this->getGencode(
             base64_encode('APPROVAL_SETUP'),
             base64_encode('marketing_report'),
-            empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+            $_COOKIE['CGID'] ?? null
         );
 
         $hasilApproval = [];
-        foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+        $approvalDecoded = json_decode($getApproval['MGECD_DESC'] ?? '[]', true);
+
+        foreach ($approvalDecoded as $value) {
             $hasilApproval[] = [
-                'name' => $value['isOwnApproval']
-                    ? Auth::user()->name : $value['username'],
-                'remarks' => $value['remarks'],
+                'name' => !empty($value['isOwnApproval']) ? Auth::user()->name : ($value['username'] ?? '-'),
+                'remarks' => $value['remarks'] ?? '-',
             ];
         }
+
+        // return $hasil;
 
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReportByCust', [
             'data' => $hasil,
             'dateRange' => [$request->fdate, $request->ldate],
-            'header' => $companyGroupData->name,
+            'header' => $companyGroupData->name ?? '',
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
-            'addr' => $companyGroupData->address,
+            'addr' => $companyGroupData->address ?? '',
             'approvalList' => $hasilApproval,
         ]);
 

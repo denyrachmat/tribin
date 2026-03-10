@@ -228,7 +228,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if($TDLVORD_TYPE === 3 || $TDLVORD_TYPE === 4)
+                    @if($TDLVORD_TYPE === 3 || $TDLVORD_TYPE === 4 || $TDLVORD_TYPE === 5)
                         @foreach($dlvDetNew as $key => $value)
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
@@ -255,7 +255,7 @@
                                 </tr>
                             @else
                                 <tr>
-                                    <td class="tg-0lax" colspan=5>Data Not Found</td>
+                                    <td class="tg-0lax" colspan=6>Data Not Found</td>
                                 </tr>
                             @endif
                         @endforeach

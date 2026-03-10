@@ -168,7 +168,7 @@ class InvoiceController extends Controller
                 group by T_RCV_HEAD.id, TRCV_REFFNO, T_RCV_DETAIL.id_header
             ) as rcv'
             ), function ($join) {
-                $join->on(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+                $join->on(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
                     THEN TDLVORD_DLVCD
                     ELSE substring_index(TDLVORD_DLVCD, '/', 1)
                 END"), '=', 'rcv.TRCV_REFFNO');
@@ -257,7 +257,7 @@ class InvoiceController extends Controller
         // ekspresi parent (gabung /1,/2,/3 jadi induk)
         $parentExpr = "
             CASE
-                WHEN TDLVORD_TYPE = 4 THEN TDLVORD_DLVCD
+                WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5 THEN TDLVORD_DLVCD
                 ELSE SUBSTRING_INDEX(TDLVORD_DLVCD,'/',1)
             END
             ";
@@ -366,6 +366,7 @@ class InvoiceController extends Controller
                         WHEN h.TDLVORD_TYPE = 2 THEN 'Combined'
                         WHEN h.TDLVORD_TYPE = 3 THEN 'Return PO'
                         WHEN h.TDLVORD_TYPE = 4 THEN 'Internal Service'
+                        WHEN h.TDLVORD_TYPE = 5 THEN 'POS'
                         ELSE 'Other'
                       END
                     ) LIKE ?", ['%' . $searchValue . '%']);
@@ -452,6 +453,7 @@ class InvoiceController extends Controller
             WHEN ANY_VALUE(h.TDLVORD_TYPE) = 2 THEN 'Combined'
             WHEN ANY_VALUE(h.TDLVORD_TYPE) = 3 THEN 'Return PO'
             WHEN ANY_VALUE(h.TDLVORD_TYPE) = 4 THEN 'Internal Service'
+            WHEN ANY_VALUE(h.TDLVORD_TYPE) = 5 THEN 'POS'
             ELSE 'Other'
         END AS DLV_TYPE_DESC
     ")
@@ -683,7 +685,7 @@ class InvoiceController extends Controller
         // return $dataDet;
 
         foreach ($dataDet as $key => $value) {
-            if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL') {
+            if ($value['TDLVORD_REMARK'] == 'SERVICE-INTERNAL' || $value['TDLVORD_REMARK'] == 'POS') {
                 $getTotalPrice = ($value['TDLVORDDETA_ITMQT'] * $value['TDLVORDDETA_PRC']);
                 $total += $getTotalPrice;
                 $dlvDetParse[] = array_merge($value, ['totPRCSLO' => $getTotalPrice]);
@@ -825,14 +827,15 @@ class InvoiceController extends Controller
                 'T_DLVORDHEAD',
                 DB::raw(
                     "case
-                    when (TDLVOR_ISSPLITSJ <> 1)
+                    when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
                                 then TDLVORD_DLVCD
                                 else substr(TDLVORD_DLVCD, 1, (length(TDLVORD_DLVCD) - locate('/', reverse(TDLVORD_DLVCD))))
                         end"
                 ),
+                '=',
                 DB::raw(
                     "case
-                        when (TDLVOR_ISSPLITSJ <> 1)
+                        when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
                                 then TDLVORDDETA_DLVCD
                             else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
                     end"
@@ -851,7 +854,7 @@ class InvoiceController extends Controller
             //         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
             // })
             ->where(DB::raw("case
-                    when (TDLVOR_ISSPLITSJ <> 1)
+                    when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
                     then TDLVORDDETA_DLVCD
                     else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
             end"), '=', base64_decode($id));
@@ -869,7 +872,7 @@ class InvoiceController extends Controller
                     trh.TRCV_REFFNO
             ) RCV'), function ($join) {
                 $join->on('RCV.TRCV_REFFNO', '=', DB::raw("case
-                    when (TDLVOR_ISSPLITSJ <> 1)
+                    when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
                     then TDLVORDDETA_DLVCD
                     else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
             end"))
@@ -919,19 +922,19 @@ class InvoiceController extends Controller
                 ->join(
                     'T_DLVORDHEAD',
                     DB::raw(
-                        "CASE WHEN TDLVORD_TYPE = 4
+                        "CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
                                     THEN TDLVORD_DLVCD
                                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                                 END"
                     ),
                     DB::raw(
-                        "CASE WHEN TDLVORD_TYPE = 4
+                        "CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
                                     THEN TDLVSJDETA_DLVCD
                                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                                 END"
                     )
                 )
-                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 5
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
                     THEN TDLVSJDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVSJDETA_DLVCD, '/', 1)
                 END"), '=', base64_decode($id))
@@ -996,7 +999,7 @@ class InvoiceController extends Controller
                 $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->with('condition')
-            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
                     THEN TDLVORD_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)
                 END"), $doc)
@@ -1026,7 +1029,7 @@ class InvoiceController extends Controller
                 'TDLVORD_DLVCD',
                 'TDLVORDDETA_DLVCD'
             )
-            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
                     THEN TDLVORDDETA_DLVCD
                     ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)
                 END"), $doc)
@@ -1098,12 +1101,12 @@ class InvoiceController extends Controller
                 $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT) + $Usage->TSLODETA_OPRPRC + $Usage->TSLODETA_MOBDEMOB;
             } else {
                 $HargaSewa = 0;
-                if ($r->TDLVORD_REMARK == 'SERVICE-INTERNAL') {
+                if ($r->TDLVORD_REMARK == 'SERVICE-INTERNAL' || $r->TDLVORD_REMARK == 'POS') {
                     $HargaSewa = ($r->TDLVORDDETA_PRC * $r->TDLVORDDETA_ITMQT);
                 }
             }
 
-            if ($r->TDLVORD_REMARK !== 'SERVICE-INTERNAL') {
+            if ($r->TDLVORD_REMARK !== 'SERVICE-INTERNAL' && $r->TDLVORD_REMARK !== 'POS') {
                 if ($Usage->MITM_ITMTYPE == 1 || $Usage->MITM_ITMTYPE == 2) {
                     $PeriodFrom = date_format(date_create($Usage->TSLODETA_PERIOD_FR), 'd-M-Y');
                     $PeriodTo = date_format(date_create($Usage->TSLODETA_PERIOD_TO), 'd-M-Y');

@@ -67,6 +67,7 @@
                 >
                   <q-tooltip>Update Surat Jalan</q-tooltip>
                 </q-btn>
+                {{ props.row.TDLVORD_TYPE }}
                 <q-btn
                   flat
                   :color="
@@ -239,6 +240,7 @@ onMounted(() => {
 });
 
 const condButton = (btn, data) => {
+  // IF true then disable button
   if (btn === "gensetharian") {
     return (
       !data.dlvsj || data.dlvsj.length === 0 ||
@@ -248,15 +250,15 @@ const condButton = (btn, data) => {
   }
 
   if (btn === "invoice") {
-    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && data.dlvsj.length === 0);
+    return data.TDLVORD_TYPE === 3 || ((data.TDLVORD_TYPE !== 4 && data.TDLVORD_TYPE !== 5) && data.dlvsj.length === 0);
   }
 
   if (btn === "receipt") {
-    return data.TDLVORD_TYPE === 3 || (data.TDLVORD_TYPE !== 4 && data.dlvsj.length === 0);
+    return data.TDLVORD_TYPE === 3 || ((data.TDLVORD_TYPE !== 4 && data.TDLVORD_TYPE !== 5) && data.dlvsj.length === 0);
   }
 
   if (btn === "sj") {
-    return data.TDLVORD_TYPE !== 4 && data.dlvsj.length === 0;
+    return data.TDLVORD_TYPE !== 4 && data.TDLVORD_TYPE !== 5 && data.dlvsj.length === 0;
   }
 };
 

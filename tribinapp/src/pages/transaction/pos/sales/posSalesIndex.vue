@@ -33,12 +33,14 @@
 
                   <q-item-section>
                     <q-item-label>{{ selItem.MITM_ITMNMREAL }}</q-item-label>
-                    <q-item-label lines="1">
+                    <q-item-label lines="2">
                       Rp {{ selItem.LATEST_PRC.toLocaleString() }} x
                       {{ selItem.sellQty.toLocaleString() }} =
                       <b>{{
                         (selItem.LATEST_PRC * selItem.sellQty).toLocaleString()
                       }}</b>
+                      <br>
+                      BC : {{ selItem.BC || '-' }}
                     </q-item-label>
                   </q-item-section>
 
@@ -124,6 +126,19 @@
           <div class="col">
             <q-input
               filled
+              v-model="BC"
+              label="Barcode"
+              dense
+              @update:model-value="(val) => onScanBarcode(val)"
+              :debounce="500"
+              ref="barcodeRef"
+            />
+          </div>
+        </div>
+        <div class="row bg-white">
+          <div class="col">
+            <q-input
+              filled
               v-model="searchItem"
               label="Search Item"
               dense
@@ -192,7 +207,7 @@
         </div>
         <div
           class="row bg-white q-pa-sm"
-          style="height: 62vh; overflow: auto"
+          style="height: 55vh; overflow: auto"
           :key="refreshIdx"
         >
           <div class="col">
@@ -271,12 +286,14 @@ const listItems = ref([]);
 const listCustomers = ref([]);
 const selectedItems = ref([]);
 const loading = ref(false);
-const page = ref(0);
+const page = ref(1);
 const searchItem = ref("");
 const refreshIdx = ref(0);
 const isUsingTax = ref(false);
 const tax_code = ref("");
 const listTaxes = ref([]);
+const BC = ref("");
+const barcodeRef = ref(null);
 
 onMounted(async () => {
   await getItem("");
@@ -297,12 +314,14 @@ const getTotal = computed(() =>
 const getTotalTax = computed(() =>
   listTaxes.value.length > 0
     ? listTaxes.value.reduce(
-        (acc, cur) => cur.MTAX_CODE === tax_code.value ? acc + parseFloat(cur.MTAX_RATE) : acc + 0,
+        (acc, cur) =>
+          cur.MTAX_CODE === tax_code.value
+            ? acc + parseFloat(cur.MTAX_RATE)
+            : acc + 0,
         0
       )
     : 0
 );
-
 
 const getItem = async (val) => {
   loading.value = true;
@@ -313,7 +332,7 @@ const getItem = async (val) => {
   await api_web
     .post("item/searchAPIStockAndPriceOnly", {
       searchValue: val,
-      page: val ? page.value : 1,
+      page: !val ? page.value : 1,
     })
     .then((response) => {
       loading.value = false;
@@ -353,7 +372,7 @@ const getCustomer = async (val, cols = "MCUS_CUSNM") => {
     });
 };
 
-const onAddItems = (vals, idx) => {
+const onAddItems = (vals, idx, barcode = '') => {
   $q.dialog({
     dark: true,
     title: "Prompt",
@@ -361,7 +380,7 @@ const onAddItems = (vals, idx) => {
     prompt: {
       model: 0,
       type: "number", // optional
-      isValid: (val) => val > 0 && val <= listItems.value[idx].STOCK,
+      isValid: (val) => val > 0 && val <= vals.STOCK,
     },
     cancel: true,
     persistent: true,
@@ -378,6 +397,7 @@ const onAddItems = (vals, idx) => {
         selectedItems.value.push({
           ...vals,
           sellQty: data,
+          BC: barcode
         });
       }
       // console.log('>>>> OK, received', data)
@@ -488,10 +508,20 @@ const onSubmited = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
+    loading.value = true;
+    let data = selectedItems.value.map((val) => {
+      return {
+        TPOSD_ITMCD: val.MITM_ITMNM,
+        TPOSD_PRC: val.LATEST_PRC,
+        TPOSD_QTY: val.sellQty,
+        BC: val.BC || ''
+      };
+    });
+
     await api_web
       .post("pos", {
         TPOS_CUSTCD: TPOS_CUSTCD.value,
-        det: listItems.value,
+        det: data,
       })
       .then((response) => {
         loading.value = false;
@@ -541,6 +571,61 @@ const getDefaultTax = async () => {
       }
     })
     .catch((e) => {});
+};
+
+const onScanBarcode = async (value, wh = 'WH1') => {
+  if (!value) return;
+
+  // if (selectedItems.value.filter((fil) => fil.BC === value).length > 0) {
+  //   $q.notify({
+  //     color: "negative",
+  //     message: `Barcode ${value} already scanned !!`,
+  //   });
+  //   BC.value = "";
+  //   barcodeRef.value?.focus();
+  //   return;
+  // }
+
+  loading.value = true;
+  await api_web
+    .get(`inventory/findStockByBarcode/${value}/${wh}`)
+    .then((response) => {
+      loading.value = false;
+      if (response.data.length > 0) {
+        console.log("Found item:", response.data[0]);
+
+        let dataItem = response.data[0];
+        console.log("Data item:", dataItem);
+
+        if (dataItem) {
+          // Check if barcode already scanned on other line
+          if (
+            selectedItems.value.filter(
+              (fil) => fil.BC === value
+            ).length > 0
+          ) {
+            $q.notify({
+              color: "negative",
+              message: `Barcode ${value} already scanned !!`,
+            });
+            BC.value = "";
+            barcodeRef.value?.focus();
+
+            return;
+          }
+          onAddItems({
+            MITM_ITMNM: dataItem.CITRN_ITMCD,
+            MITM_ITMNMREAL: dataItem.MITM_ITMNM,
+            STOCK: dataItem.STOCK,
+            LATEST_PRC: dataItem.MITMSPRC_PRC
+          }, 0, value);
+
+          // console.log("List Det after scan:", listDet.value);
+          BC.value = "";
+          barcodeRef.value?.focus();
+        }
+      }
+    });
 };
 </script>
 

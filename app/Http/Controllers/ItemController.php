@@ -231,8 +231,9 @@ class ItemController extends Controller
             DB::raw('MITM_ITMCD AS MITM_ITMNM'),
             DB::raw('MITM_ITMNM AS MITM_ITMNMREAL'),
             // 'MITM_SPEC',
-            'LATEST_PRC',
-            'STOCK'
+            // 'LATEST_PRC',
+            'STOCK',
+            DB::raw('COALESCE((MITMSPRC_PRC),0) AS LATEST_PRC'),
         ];
 
         $DataSet = DB::connection($this->dedicatedConnection);
@@ -243,8 +244,14 @@ class ItemController extends Controller
                 FROM C_ITRN
                 GROUP BY CITRN_ITMCD, CITRN_PRCPER
             ) AS C_ITRN_SUM'), 'MITM_ITMCD', 'C_ITRN_SUM.CITRN_ITMCD')
+            ->leftjoin(DB::raw('jatpower_tribin.M_ITMSPRICE'), function ($j) {
+                $j->on('MITMSPRC_ITMCD', 'MITM_ITMCD')
+                    ->on('MITMSPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
+                    ->on('MITMSPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
+                    ->where('MITMSPRC_ACTIVE', 1);
+            })
             ->where('MITM_BRANCH', Auth::user()->branch)
-            ->where('LATEST_PRC', '>', 0)
+            ->where(DB::raw('COALESCE((MITMSPRC_PRC),0)'), '>', 0)
             ->where('STOCK', '>', 0);
 
         // if ($request->has('isITMCD') && $request->isITMCD == 1) {
@@ -327,7 +334,7 @@ class ItemController extends Controller
 
         if (!empty($request->searchValue)) {
             $RSHead->where(DB::raw("CONCAT(MITM_ITMCD, ' (', MITM_ITMNM, ')' )"), 'like', '%' . $request->searchValue . '%');
-                // ->orWhere(DB::raw("MITM_ITMCD"), 'like', '%' . $request->searchValue . '%');
+            // ->orWhere(DB::raw("MITM_ITMCD"), 'like', '%' . $request->searchValue . '%');
         }
 
         if ($request->has('paginate')) {

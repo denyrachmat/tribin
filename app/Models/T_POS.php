@@ -9,6 +9,8 @@ class T_POS extends Model
 {
     use HasFactory;
 
+    protected $table = 'T_POS';
+
     protected $fillable = [
         'TPOS_DOCNO',
         'TPOS_CUSTCD',

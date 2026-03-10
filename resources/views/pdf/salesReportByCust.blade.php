@@ -71,13 +71,14 @@
     }
 
     @media print {
-      .page-break {
-        page-break-after: always;
-      }
+        .page-break {
+            page-break-after: always;
+        }
     }
 </style>
 <div style="text-align: center">
-    <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
+    <div style="text-align: center; font-size: 32px;padding-bottom: 15px"><span
+            style="text-decoration: underline;"><strong>{{$header}}</strong></span></div>
     <div style="text-align: center; font-size: 16px;padding-bottom: 4px"><strong>{{$subHeader}}</strong></div>
     <div style="text-align: center;font-size: 13px;padding-bottom: 10px"><strong>{{$addr}}</strong></div>
 </div>
@@ -108,6 +109,7 @@
                 <th class="tg-0lax">Pajak</th>
                 <th class="tg-0lax">Total Harga</th>
                 <th class="tg-0lax">Mekanik</th>
+                <th class="tg-0lax">Customer</th>
                 <th class="tg-0lax">Unit</th>
                 <th class="tg-0lax">Lokasi</th>
                 <th class="tg-0lax">Cost</th>
@@ -116,55 +118,61 @@
         <tbody style="page-break-inside: avoid;">
             @php
                 $total = $totalTax = $totalQty = 0;
-            @endphp 
-            @foreach($data as $key => $value)
-                        <tr style="page-break-inside: avoid;">
-                            <td class="tg-0lax" style="text-align: center;" colspan="12">
-                                <h3>{{$key}}</h3>
-                            </td>
-                        </tr>
-                        @php
-                            $subtotal = 0;
-                            $subtotalQty = 0;
-                            $subtotalTax = 0;
-                        @endphp
-                        @foreach($value as $keyUsage => $valueUsage)
-                            @foreach($valueUsage as $keyDet => $valueDet)
-                                @php
-                                    $subtotal += $valueDet['TSLODETA_ITMQT'];
-                                    $subtotalQty += $valueDet['QTY'];
-                                    $subtotalTax += $valueDet['totalTax'];
-                                    $total += $valueDet['TSLODETA_ITMQT'];
-                                    $totalQty += $valueDet['QTY'];
-                                    $totalTax += $valueDet['totalTax'];
-                                @endphp
-                                <tr>
-                                    <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_ITMCD']}}</td>
-                                    <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_ITMNM']}}</td>
-                                    <td class="tg-0lax" style="text-align: left;">{{$valueDet['MITM_STKUOM']}}</td>
-                                    <td class="tg-0lax" style="text-align: left;">{{$valueDet['TDLVORDDETA_DLVCD']}}</td>
-                                    <td class="tg-0lax" style="text-align: right;">{{number_format($valueDet['QTY'])}}</td>
-                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['PRC'])}}</td>
-                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['totalTax'])}}</td>
-                                    <td class="tg-0lax" style="text-align: right;">Rp {{number_format($valueDet['TSLODETA_ITMQT'] + $valueDet['totalTax'])}}</td>
-                                    <td class="tg-0lax" style="text-align: left;">{{ $valueDet['CSPK_PIC_NAME'] }} ( {{ $valueDet['CSPK_PIC_AS'] ?? '-' }} )</td>
-                                    <td class="tg-0lax" style="text-align: left;">{{ $valueDet['SERVICED_UNIT'] }} ( {{ $valueDet['SERVICED_UNIT_DESC'] ?? '-' }} )</td>
-                                    <td class="tg-0lax" style="text-align: left;">{{ $valueDet['TQUO_PROJECT_LOCATION'] }}</td>
-                                    <td class="tg-0lax" style="text-align: left;">Rp {{number_format($valueDet['BPRICE'])}}</td>
-                                </tr>
-                            @endforeach
-                        @endforeach
-                        <tr>
-                            <td class="tg-0laxa" style="text-align: left;" colspan="4">
-                                Subtotal
-                            </td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:7px">{{number_format($subtotalQty)}}</td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:7px"></td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotalTax)}}</td>
-                            <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($subtotal + $subtotalTax)}}</td>
-                            <td class="tg-0laxa" style="text-align: center;" colspan="4">
-                            </td>
-                        </tr>
+            @endphp
+            @foreach($data as $key => $rows)
+                <tr style="page-break-inside: avoid;">
+                    <td class="tg-0lax" style="text-align: center;" colspan="13">
+                        <h3>{{ $key }}</h3>
+                    </td>
+                </tr>
+
+                @php
+                    $subtotal = 0;
+                    $subtotalQty = 0;
+                    $subtotalTax = 0;
+                @endphp
+
+                @foreach($rows as $valueDet)
+                    @php
+                        $subtotal += $valueDet->TSLODETA_ITMQT;
+                        $subtotalQty += $valueDet->QTY;
+                        $subtotalTax += $valueDet->totalTax;
+                        $total += $valueDet->TSLODETA_ITMQT;
+                        $totalQty += $valueDet->QTY;
+                        $totalTax += $valueDet->totalTax;
+                    @endphp
+
+                    <tr>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->MITM_ITMCD }}</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->MITM_ITMNM }}</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->MITM_STKUOM }}</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->TDLVORDDETA_DLVCD }}</td>
+                        <td class="tg-0lax" style="text-align: right;">{{ number_format($valueDet->QTY) }}</td>
+                        <td class="tg-0lax" style="text-align: right;">Rp {{ number_format($valueDet->PRC) }}</td>
+                        <td class="tg-0lax" style="text-align: right;">Rp {{ number_format($valueDet->totalTax) }}</td>
+                        <td class="tg-0lax" style="text-align: right;">Rp
+                            {{ number_format($valueDet->TSLODETA_ITMQT + $valueDet->totalTax) }}</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->CSPK_PIC_NAME }} (
+                            {{ $valueDet->CSPK_PIC_AS ?? '-' }} )</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->MCUS_CUSNM }}</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->SERVICED_UNIT }} (
+                            {{ $valueDet->SERVICED_UNIT_DESC ?? '-' }} )</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ strip_tags($valueDet->TQUO_PROJECT_LOCATION) }}</td>
+                        <td class="tg-0lax" style="text-align: left;">Rp {{ number_format($valueDet->BPRICE) }}</td>
+                    </tr>
+                @endforeach
+
+                <tr>
+                    <td class="tg-0laxa" style="text-align: left;" colspan="4">
+                        Subtotal
+                    </td>
+                    <td class="tg-0laxa" style="text-align: right; font-size:7px">{{ number_format($subtotalQty) }}</td>
+                    <td class="tg-0laxa" style="text-align: right; font-size:7px"></td>
+                    <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{ number_format($subtotalTax) }}</td>
+                    <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp
+                        {{ number_format($subtotal + $subtotalTax) }}</td>
+                    <td class="tg-0laxa" style="text-align: center;" colspan="5"></td>
+                </tr>
             @endforeach
             <tr>
                 <td class="tg-0laxa" style="text-align: left;" colspan="4">
@@ -173,8 +181,9 @@
                 <td class="tg-0laxa" style="text-align: right; font-size:7px">{{number_format($totalQty)}}</td>
                 <td class="tg-0laxa" style="text-align: right; font-size:7px"></td>
                 <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($totalTax)}}</td>
-                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total + $totalTax)}}</td>
-                <td class="tg-0laxa" style="text-align: center;" colspan="4">
+                <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total + $totalTax)}}
+                </td>
+                <td class="tg-0laxa" style="text-align: center;" colspan="5">
                 </td>
             </tr>
         </tbody>

@@ -62,7 +62,7 @@ class POSController extends Controller
         if ($request->has('TPOS_DOCNO')) {
             $IDPOS = $request->TPOS_DOCNO;
         } else {
-            $IDPOS = 'POS/' . $cekCG->alias_code . '/' . date('Y/m/d') . '/' . (empty($cek) ? '0001' : sprintf('%07d', (int) substr($cek->TPOS_DOCNO, -4) + 1));
+            $IDPOS = 'POS/' . $cekCG->alias_code . '/' . date('Y/m/d') . '/' . (empty($cek) ? '0001' : sprintf('%04d', (int) substr($cek->TPOS_DOCNO, -4) + 1));
         }
 
 

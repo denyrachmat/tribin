@@ -573,6 +573,8 @@ Route::group(['middleware' => 'cors'], function () {
 
         // Route::resource('pos', POSController::class);
         Route::prefix('pos')->group(function () {
+
+            Route::post('sendToDeliveryOrder', [POSController::class, 'sendToDeliveryOrder']);
             Route::get('', [POSController::class, 'index']);
             Route::get('report', [POSController::class, 'listForms']);
 
@@ -581,8 +583,6 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('printStruk', [POSController::class, 'printStruk']);
 
             Route::delete('{id}', [POSController::class, 'destroy']);
-
-            Route::post('sendToDeliveryOrder', [POSController::class, 'sendToDeliveryOrder']);
         });
 
         Route::prefix('payroll')->group(function () {

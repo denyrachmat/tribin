@@ -288,6 +288,7 @@ class POSController extends Controller
 
         $data = T_POS::on($conn)->where('TPOS_DOCNO', $request->TPOS_DOCNO)
             ->select(
+                'T_POS.id',
                 'T_POS.TPOS_DOCNO', 
                 'T_POS.TPOS_CUSTCD',
                 'T_POS.TPOS_PAY',
@@ -314,11 +315,11 @@ class POSController extends Controller
                 'header' => $RSCG,
                 'data' => $data,
                 'details' => T_POS_DET::on($conn)
-                    ->where('TPOSH_ID', $request->TPOS_DOCNO)
+                    ->where('TPOSH_ID', $data->id)
                     ->join('M_ITM', 'M_ITM.MITM_ITMCD', '=', 'T_POS_DET.TPOSD_ITMCD')
                     ->get(),
                 'subtotal' => T_POS_DET::on($conn)
-                    ->where('TPOSH_ID', $request->TPOS_DOCNO)
+                    ->where('TPOSH_ID', $data->id)
                     ->sum(DB::raw('TPOSD_QTY * TPOSD_PRC')),
                 'diskon' => $request->diskon ?? 0,
                 'bayar' => $request->bayar ?? 0

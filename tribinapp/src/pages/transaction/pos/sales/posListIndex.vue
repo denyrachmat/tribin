@@ -181,7 +181,14 @@ const onClickPrintStruk = async (docNo) => {
     loading.value = true;
     const response = await api_web.post(
       "pos/printStruk",
-      { TPOS_DOCNO: docNo },
+      { 
+        TPOS_DOCNO: docNo,
+         cg:
+          document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("CGID="))
+            ?.split("=")[1] || "",
+      },
       { responseType: "blob" }
     );
     const blob = new Blob([response.data], { type: "application/pdf" });

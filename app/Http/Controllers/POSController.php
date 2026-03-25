@@ -278,12 +278,13 @@ class POSController extends Controller
     }
 
     public function printStruk(Request $request){
-        $RSCG = COMPANY_BRANCH::on(empty($conn) ? $this->dedicatedConnection : base64_decode($conn))->select('name', 'address', 'phone', 'fax', 'letter_head')
-            ->where('connection', empty($conn) ? $this->dedicatedConnection : base64_decode($conn))
+        $conn = $request->has('cg') && !empty($request->cg) ? Crypt::decryptString($request->cg) : $this->dedicatedConnection;
+        $RSCG = COMPANY_BRANCH::select('name', 'address', 'phone', 'fax', 'letter_head')
+            ->where('connection', $conn)
             ->where('BRANCH', Auth::user()->branch)
             ->first();
 
-        $data = T_POS::on($this->dedicatedConnection)->where('TPOS_DOCNO', $request->TPOS_DOCNO)
+        $data = T_POS::on($conn)->where('TPOS_DOCNO', $request->TPOS_DOCNO)
             ->select(
                 'T_POS.TPOS_DOCNO', 
                 'T_POS.TPOS_CUSTCD',
@@ -310,11 +311,11 @@ class POSController extends Controller
             [
                 'header' => $RSCG,
                 'data' => $data,
-                'details' => T_POS_DET::on($this->dedicatedConnection)
+                'details' => T_POS_DET::on($conn)
                     ->where('TPOSH_ID', $request->TPOS_DOCNO)
                     ->join('M_ITM', 'M_ITM.MITM_ITMCD', '=', 'T_POS_DET.TPOSD_ITMCD')
                     ->get(),
-                'subtotal' => T_POS_DET::on($this->dedicatedConnection)
+                'subtotal' => T_POS_DET::on($conn)
                     ->where('TPOSH_ID', $request->TPOS_DOCNO)
                     ->sum(DB::raw('TPOSD_QTY * TPOSD_PRC')),
                 'diskon' => $request->diskon ?? 0,

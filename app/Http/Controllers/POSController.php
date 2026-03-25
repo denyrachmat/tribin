@@ -128,12 +128,12 @@ class POSController extends Controller
 
         $IDPOS = $request->TPOS_DOCNO;
 
-        $posData = T_POS::on($this->dedicatedConnection)->where('TPOS_DOCNO', $IDPOS)->first();
+        $posData = T_POS::on($request->cg)->where('TPOS_DOCNO', $IDPOS)->first();
         if (!$posData) {
             return response()->json(['message' => 'Data POS tidak ditemukan'], 404);
         }
 
-        $posDetData = T_POS_DET::on($this->dedicatedConnection)->where('TPOSH_ID', $IDPOS)->get();
+        $posDetData = T_POS_DET::on($request->cg)->where('TPOSH_ID', $IDPOS)->get();
         if ($posDetData->isEmpty()) {
             return response()->json(['message' => 'Detail POS tidak ditemukan'], 404);
         }

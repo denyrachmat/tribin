@@ -211,6 +211,11 @@ const onClickSendToDeliveryOrder = (docNo) => {
       loading.value = true;
       const sendAPI = await api_web.post("posOpt/sendToDeliveryOrder", {
         TPOS_DOCNO: docNo,
+        cg:
+          document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("CGID="))
+            ?.split("=")[1] || "",
       });
 
       if (sendAPI) {

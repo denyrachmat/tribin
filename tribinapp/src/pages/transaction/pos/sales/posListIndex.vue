@@ -179,15 +179,27 @@ const getListData = async (pagination) => {
 const onClickPrintStruk = async (docNo) => {
   try {
     loading.value = true;
+
+    const getUsersDet =
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("user_det="))
+        ?.split("=")[1] || "";
+
+    const userDet = getUsersDet
+      ? JSON.parse(decodeURIComponent(getUsersDet))
+      : {};
     const response = await api_web.post(
       "pos/printStruk",
-      { 
+      {
         TPOS_DOCNO: docNo,
-         cg:
+        cg:
           document.cookie
             .split("; ")
             .find((row) => row.startsWith("CGID="))
             ?.split("=")[1] || "",
+        username: userDet.nick_name || "",
+        branch: userDet ? userDet.branch : "",
       },
       { responseType: "blob" }
     );

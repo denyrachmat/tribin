@@ -13,6 +13,7 @@ use App\Models\T_POS;
 use App\Models\T_POS_DET;
 use App\Models\COMPANY_BRANCH;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 use App\Models\CompanyGroup;
 use App\Traits\gencodeTraits;
@@ -279,9 +280,10 @@ class POSController extends Controller
 
     public function printStruk(Request $request){
         $conn = $request->has('cg') && !empty($request->cg) ? Crypt::decryptString($request->cg) : $this->dedicatedConnection;
+        $user = Auth::user() ?? User::where('id', 1)->first(); // Fallback ke user dengan ID 1 jika tidak ada user yang terautentikasi;
         $RSCG = COMPANY_BRANCH::select('name', 'address', 'phone', 'fax', 'letter_head')
             ->where('connection', $conn)
-            ->where('BRANCH', Auth::user()->branch)
+            ->where('BRANCH', $user->branch)
             ->first();
 
         $data = T_POS::on($conn)->where('TPOS_DOCNO', $request->TPOS_DOCNO)

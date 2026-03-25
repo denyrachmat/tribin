@@ -117,6 +117,17 @@
                   Cancel
                 </q-btn>
               </div>
+
+              <div class="col-12 q-pa-sm">
+                <q-btn
+                  color="orange"
+                  class="full-width"
+                  @click="findTransaction()"
+                  :loading="loading"
+                >
+                  Find transaction
+                </q-btn>
+              </div>
             </div>
           </div>
         </div>
@@ -132,7 +143,8 @@
               @update:model-value="(val) => onScanBarcode(val)"
               :debounce="500"
               ref="barcodeRef"
-            />
+            >
+            </q-input>
           </div>
         </div>
         <div class="row bg-white">
@@ -278,10 +290,11 @@ import { computed, onMounted, ref } from "vue";
 import { useQuasar } from "quasar";
 import { api, api_web } from "boot/axios";
 import customerView from "src/pages/master/customers/customerView.vue";
-
+import multiplePromptDialog from "src/components/multiplePromptDialog.vue";
 const $q = useQuasar();
 
 const TPOS_CUSTCD = ref("");
+const TPOS_DOCNO = ref("");
 const listItems = ref([]);
 const listCustomers = ref([]);
 const selectedItems = ref([]);
@@ -295,11 +308,14 @@ const listTaxes = ref([]);
 const BC = ref("");
 const barcodeRef = ref(null);
 
+const listDocuments = ref([]);
+
 onMounted(async () => {
   await getItem("");
   await getCustomer("");
   await getTaxes();
   await getDefaultTax();
+  await getListData();
 });
 
 const getTotal = computed(() =>
@@ -508,29 +524,81 @@ const onSubmited = () => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    loading.value = true;
-    let data = selectedItems.value.map((val) => {
-      return {
-        TPOSD_ITMCD: val.MITM_ITMNM,
-        TPOSD_PRC: val.LATEST_PRC,
-        TPOSD_QTY: val.sellQty,
-        BC: val.BC || "",
-      };
-    });
+    $q.dialog({
+      title: "Payment",
+      message: "Enter payment amount",
+      prompt: {
+        model: "",
+        type: "number", // optional
+      },
+      cancel: true,
+      persistent: true,
+    }).onOk(async (data) => {
+      $q.dialog({
+        title: "Confirmation",
+        message: `Payment amount is Rp. ${parseInt(data).toLocaleString()}, are you sure want continue ?`,
+        cancel: true,
+        persistent: true,
+      }).onOk(async () => {
+        $q.dialog({
+          title: "Payment",
+          message: "Change amount is Rp. " + (data - getTotal.value - getTotalTax.value).toLocaleString(),
+          noEscDismiss: true,
+          noBackdropDismiss: true,
+          persistent: true,
+        });
 
-    await api_web
-      .post("pos", {
-        TPOS_CUSTCD: TPOS_CUSTCD.value,
-        det: data,
-      })
-      .then((response) => {
-        loading.value = false;
-        selectedItems.value = [];
-      })
-      .catch(() => {
-        loading.value = false;
+        loading.value = true;
+        let dataDet = selectedItems.value.map((val) => {
+          return {
+            TPOSD_ITMCD: val.MITM_ITMNM,
+            TPOSD_PRC: val.LATEST_PRC,
+            TPOSD_QTY: val.sellQty,
+            BC: val.BC || "",
+          };
+        });
+
+        await api_web
+          .post("pos", {
+            TPOS_DOCNO: TPOS_DOCNO.value,
+            TPOS_CUSTCD: TPOS_CUSTCD.value,
+            TPOS_PAY: data,
+            det: dataDet,
+          })
+          .then((response) => {
+            loading.value = false;
+            selectedItems.value = [];
+            onClickPrintStruk(response.data.TPOS_DOCNO);
+          })
+          .catch(() => {
+            loading.value = false;
+          });
       });
+    });
   });
+};
+
+const onClickPrintStruk = async (docNo) => {
+  try {
+    loading.value = true;
+    const response = await api_web.post(
+      "pos/printStruk",
+      { TPOS_DOCNO: docNo },
+      { responseType: "blob" }
+    );
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  } catch (error) {
+    console.error("Error printing struk:", error);
+    $q.dialog({
+      title: "Error",
+      message: "Failed to print struk. Please try again.",
+      ok: "OK",
+    });
+  } finally {
+    loading.value = false;
+  }
 };
 
 const getTaxes = async (val) => {
@@ -640,6 +708,64 @@ const onScanBarcode = async (value, wh = "WH1") => {
   } finally {
     loading.value = false;
   }
+};
+
+const getListData = async (pagination) => {
+  loading.value = true;
+  try {
+    const response = await api_web.post("pos/searchApi", {
+      withDet: true,
+    });
+    listDocuments.value = response.data;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    $q.dialog({
+      title: "Error",
+      message: "Failed to fetch data. Please try again.",
+      ok: "OK",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const findTransaction = () => {
+  $q.dialog({
+    component: multiplePromptDialog,
+    componentProps: {
+      title: "User Details",
+      initialFields: [
+        {
+          name: "pos_no",
+          label: "Select Transaction ID",
+          type: "select",
+          // default: "",
+          options: listDocuments.value.map((doc) => ({
+            label: `${doc.TPOS_DOCNO} - ${doc.MCUS_CUSNM} - ${doc.MCUS_CURCD} ${doc.TPOS_TOTALAMT}`,
+            value: doc.TPOS_DOCNO,
+          })),
+          rules: [(val) => !!val || "Field is required"],
+        },
+      ],
+    },
+    persistent: true,
+  }).onOk((data) => {
+    let selectedDoc = listDocuments.value.find(
+      (doc) => doc.TPOS_DOCNO === data.pos_no
+    );
+    if (selectedDoc) {
+      TPOS_DOCNO.value = selectedDoc.TPOS_DOCNO;
+      TPOS_CUSTCD.value = selectedDoc.TPOS_CUSTCD;
+      tax_code.value = selectedDoc.TPOS_TAXCODE;
+      selectedItems.value = selectedDoc.det.map((det) => ({
+        MITM_ITMNM: det.TPOSD_ITMCD,
+        MITM_ITMNMREAL: det.MITM_ITMNMREAL,
+        LATEST_PRC: det.TPOSD_PRC,
+        sellQty: det.TPOSD_QTY,
+        BC: det.TPOSD_BC || "",
+      }));
+    }
+  });
 };
 </script>
 

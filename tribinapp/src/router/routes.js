@@ -39,6 +39,7 @@ const routes = [
       { path: 'journalReport', component: () => import('pages/transaction/accounting/journalReport/journalReportIndex.vue') },
       { path: 'journalInput', component: () => import('pages/transaction/accounting/journalInput/journalInputIndex.vue') },
       { path: 'pos', component: () => import('pages/transaction/pos/sales/posSalesIndex.vue') },
+      { path: 'posList', component: () => import('pages/transaction/pos/sales/posListIndex.vue') },
 
     ]
   },

@@ -571,7 +571,19 @@ Route::group(['middleware' => 'cors'], function () {
             });
         });
 
-        Route::resource('pos', POSController::class);
+        // Route::resource('pos', POSController::class);
+        Route::prefix('pos')->group(function () {
+            Route::get('', [POSController::class, 'index']);
+            Route::get('report', [POSController::class, 'listForms']);
+
+            Route::post('', [POSController::class, 'store']);
+            Route::post('searchApi', [POSController::class, 'searchAPI']); // Added route for pos/searchApi
+            Route::post('printStruk', [POSController::class, 'printStruk']);
+
+            Route::delete('{id}', [POSController::class, 'destroy']);
+
+            Route::post('sendToDeliveryOrder', [POSController::class, 'sendToDeliveryOrder']);
+        });
 
         Route::prefix('payroll')->group(function () {
             // media related routes
@@ -643,7 +655,7 @@ Route::group(['middleware' => 'cors'], function () {
         });
         Route::resource('disc', DiscController::class);
 
-        Route::resource('price', PriceBuyController::class);        
+        Route::resource('price', PriceBuyController::class);
         Route::prefix('price')->group(function () {
             Route::post('search', [PriceBuyController::class, 'search']);
             Route::post('bulkUpload', [PriceBuyController::class, 'bulkUpload']);

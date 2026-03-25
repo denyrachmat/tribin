@@ -16,6 +16,9 @@ class T_DLVORDHEAD extends Model
     //     $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
     // }
 
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $primaryKey = 'TDLVORD_DLVCD';
     protected $table = 'T_DLVORDHEAD';
     protected $fillable = [
         'TDLVORD_DLVCD',

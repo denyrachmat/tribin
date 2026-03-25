@@ -2183,26 +2183,36 @@ class InvoiceController extends Controller
             ->first();
 
         if ($RSHeader) {
-            T_DLVORDHEAD::on($this->dedicatedConnection)
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))
-                ->update([
-                    'TDLVORD_REC_NO' => ''
-                ]);
-
-            T_DLVORDDETA::on($this->dedicatedConnection)
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($doc))
-                ->update([
-                    'TDLVORDDETA_ITMCD_ACT' => ''
-                ]);
-
-            if ($RSHeader->TDLVORD_TYPE == 3) {
-                C_ITRN::on($this->dedicatedConnection)
-                    ->where(DB::raw("CITRN_DOCNO"), base64_decode($doc))
-                    ->delete();
-                T_DLVORDDETA::on($this->dedicatedConnection)
-                    ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($doc))->delete();
+            if (in_array($RSHeader->TDLVORD_TYPE, ['1', '2', '3'])){
                 T_DLVORDHEAD::on($this->dedicatedConnection)
-                    ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))->delete();
+                    ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))
+                    ->update([
+                        'TDLVORD_REC_NO' => ''
+                    ]);
+
+                T_DLVORDDETA::on($this->dedicatedConnection)
+                    ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($doc))
+                    ->update([
+                        'TDLVORDDETA_ITMCD_ACT' => ''
+                    ]);
+
+                if ($RSHeader->TDLVORD_TYPE == 3) {
+                    C_ITRN::on($this->dedicatedConnection)
+                        ->where(DB::raw("CITRN_DOCNO"), base64_decode($doc))
+                        ->delete();
+                    T_DLVORDDETA::on($this->dedicatedConnection)
+                        ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($doc))->delete();
+                    T_DLVORDHEAD::on($this->dedicatedConnection)
+                        ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))->delete();
+                }
+            } else {
+                T_DLVORDHEAD::on($this->dedicatedConnection)
+                    ->where('TDLVORD_DLVCD', base64_decode($doc))
+                    ->delete();
+
+                T_DLVORDDETA::on($this->dedicatedConnection)
+                    ->where('TDLVORDDETA_DLVCD', base64_decode($doc))
+                    ->delete();
             }
         }
 

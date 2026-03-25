@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 
+use App\Traits\gencodeTraits;
+
 class CustomerController extends Controller
 {
+    use gencodeTraits;
     protected $dedicatedConnection;
 
     public function __construct()
@@ -28,7 +31,14 @@ class CustomerController extends Controller
         // return view('tribinapp_layouts', ['routeApp' => 'customer']);
         return view('master.customer', [
             'companies' => CompanyGroup::select('*')->where('connection', '!=', $this->dedicatedConnection)->get(),
-            'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get()
+            'CurrentCompanies' => CompanyGroup::select('*')->where('connection', $this->dedicatedConnection)->get(),
+            'termList' => $this->getGencode(
+                base64_encode('TERM_LIST'),
+                '',
+                $_COOKIE['CGID'],
+                Auth::user()->branch,
+                true
+            )
         ]);
     }
 
@@ -155,6 +165,17 @@ class CustomerController extends Controller
             'MCUS_GENID' => $NewGENID,
         ]);
 
+        if ($request->has('term') && !empty($request->term)) {
+            $this->saveGencode(new Request([
+                'MGECD_CODE' => 'TERM_LIST_SELECTED',
+                'MGECD_VALUE' => $request->term,
+                'MGECD_DESC' => $NEW_MCUS_CUSCD,
+                'MGECD_ACTIVE' => 1,
+                'MGECD_CG' => $this->dedicatedConnection,
+                'MGECD_BRANCH' => Auth::user()->branch,
+            ]));
+        }
+
         return [
             'msg' => 'OK',
             'MCUS_CUSCD' => $NEW_MCUS_CUSCD,
@@ -172,10 +193,29 @@ class CustomerController extends Controller
             'MCUS_ADDR1',
         ];
 
-        $RS = M_CUS::on($this->dedicatedConnection)->select('*')
+        $RS = M_CUS::on($this->dedicatedConnection)->select(DB::raw('M_CUS.*'), DB::raw('
+            CASE WHEN MGECD1.MGECD_VALUE IS NULL
+                THEN (
+                    SELECT MGECD_VALUE FROM jatpower_tribin.M_GENCODE 
+                    WHERE MGECD_CODE = "TERM_LIST_DEF" 
+                    AND MGECD_ACTIVE = 1 
+                    AND MGECD_CG = "' . $this->dedicatedConnection . '" 
+                    AND MGECD_BRANCH = ' . Auth::user()->branch . '
+                )
+                ELSE MGECD1.MGECD_VALUE
+            END AS TERM_LIST_SELECTED
+        '))
             ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('MCUS_BRANCH', Auth::user()->branch)
+            ->leftjoin(DB::raw('jatpower_tribin.M_GENCODE AS MGECD1'), function ($join) {
+                $join->on('MCUS_CUSCD', '=', 'MGECD1.MGECD_DESC')                
+                ->where('MGECD1.MGECD_CODE', '=', 'TERM_LIST_SELECTED')
+                ->where('MGECD1.MGECD_ACTIVE', '=', 1)
+                ->where('MGECD1.MGECD_CG', '=', $this->dedicatedConnection)
+                ->where('MGECD1.MGECD_BRANCH', '=', Auth::user()->branch);
+            })
             ->get();
+
         return ['data' => $RS];
     }
 
@@ -349,7 +389,8 @@ class CustomerController extends Controller
         return ['msg' => $affectedRow ? 'OK' : 'No changes', 'FixedFileName' => $fileName];
     }
 
-    function getAllRegisteredCurr(Request $request) {
+    function getAllRegisteredCurr(Request $request)
+    {
         $RSTemp = M_CUS::on($this->dedicatedConnection)->select('MCUS_CURCD')
             ->where('MCUS_BRANCH', Auth::user()->branch)
             ->groupBy('MCUS_CURCD');

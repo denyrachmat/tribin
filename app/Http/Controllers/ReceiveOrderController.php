@@ -1035,6 +1035,8 @@ class ReceiveOrderController extends Controller
             $listCat = $custQuery->pluck('MCUS_CUSCD')->toArray();
         }
 
+        return $listCat;
+
         if (empty($listCat)) {
             $hasil = [];
         } else {

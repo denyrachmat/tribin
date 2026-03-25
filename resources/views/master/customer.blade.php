@@ -2,9 +2,12 @@
     <h1 class="h2">Customer Master</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnNewOnclick(this)"><i class="fas fa-file"></i></button>
-            <button type="button" class="btn btn-outline-primary" id="btnSave" onclick="btnSaveOnclick(this)"><i class="fas fa-save"></i></button>
-            <button type="button" class="btn btn-outline-primary" id="btnImport" onclick="btnShowImportDataModal()" title="Import"><i class="fas fa-file-import"></i></button>
+            <button type="button" class="btn btn-outline-primary" id="btnNew" onclick="btnNewOnclick(this)"><i
+                    class="fas fa-file"></i></button>
+            <button type="button" class="btn btn-outline-primary" id="btnSave" onclick="btnSaveOnclick(this)"><i
+                    class="fas fa-save"></i></button>
+            <button type="button" class="btn btn-outline-primary" id="btnImport" onclick="btnShowImportDataModal()"
+                title="Import"><i class="fas fa-file-import"></i></button>
         </div>
     </div>
 </div>
@@ -35,8 +38,10 @@
         <div class="col-md-4 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <span class="input-group-text">Customer Code</span>
-                <input type="text" id="customerCode" class="form-control" placeholder="Customer Code" aria-label="Customer Code" maxlength="10" readonly disabled>
-                <button class="btn btn-primary" type="button" onclick="btnShowCustomerModal()"><i class="fas fa-search"></i></button>
+                <input type="text" id="customerCode" class="form-control" placeholder="Customer Code"
+                    aria-label="Customer Code" maxlength="10" readonly disabled>
+                <button class="btn btn-primary" type="button" onclick="btnShowCustomerModal()"><i
+                        class="fas fa-search"></i></button>
             </div>
         </div>
         <div class="col-md-4 mb-1">
@@ -96,7 +101,7 @@
                 <select class="form-select" id="companyGroup">
                     <option value="-" selected>-</option>
                     @foreach ($companies as $r)
-                    <option value="{{$r->connection}}">{{$r->name}}</option>
+                        <option value="{{$r->connection}}">{{$r->name}}</option>
                     @endforeach
                 </select>
             </div>
@@ -122,6 +127,19 @@
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-md-3 mb-1">
+            <div class="input-group input-group-sm mb-1">
+                <span class="input-group-text">Term</span>
+                <select class="form-select" id="term">
+                    @foreach ($termList as $r)
+                        <option value="{{$r['MGECD_VALUE']}}">{{$r['MGECD_DESC']}}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col mb-1">
             <h4>Required File</h4>
@@ -131,15 +149,18 @@
         <div class="col-md-5 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <label class="input-group-text" for="customerKTPFile">KTP</label>
-                <input type="file" class="form-control" id="customerKTPFile" accept="image/*,.pdf" onchange="customerKTPFileOnChange(event)">
+                <input type="file" class="form-control" id="customerKTPFile" accept="image/*,.pdf"
+                    onchange="customerKTPFileOnChange(event)">
             </div>
         </div>
         <div class="col-md-7 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <label class="input-group-text" for="customerKTPFilePath"><i class="fas fa-file"></i> </label>
                 <input type="text" class="form-control" id="customerKTPFilePath" readonly disabled>
-                <button class="btn btn-primary" type="button" onclick="btnShowKTPFFile()"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-outline-primary btnChangeFile" type="button" onclick="btnChangeKTPFile(this)" title="Change file" disabled><i class="fas fa-pencil"></i></button>
+                <button class="btn btn-primary" type="button" onclick="btnShowKTPFFile()"><i
+                        class="fas fa-eye"></i></button>
+                <button class="btn btn-outline-primary btnChangeFile" type="button" onclick="btnChangeKTPFile(this)"
+                    title="Change file" disabled><i class="fas fa-pencil"></i></button>
             </div>
         </div>
     </div>
@@ -147,15 +168,18 @@
         <div class="col-md-5 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <label class="input-group-text" for="customerNPWPFile">NPWP</label>
-                <input type="file" class="form-control" id="customerNPWPFile" accept="image/*,.pdf" onchange="customerNPWPFileOnChange(event)">
+                <input type="file" class="form-control" id="customerNPWPFile" accept="image/*,.pdf"
+                    onchange="customerNPWPFileOnChange(event)">
             </div>
         </div>
         <div class="col-md-7 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <label class="input-group-text" for="customerNPWPFilePath"><i class="fas fa-file"></i> </label>
                 <input type="text" class="form-control" id="customerNPWPFilePath" readonly disabled>
-                <button class="btn btn-primary" type="button" onclick="btnShowNPWPFile()"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-outline-primary btnChangeFile" type="button" onclick="btnChangeNPWPFile(this)" title="Change file" disabled><i class="fas fa-pencil"></i></button>
+                <button class="btn btn-primary" type="button" onclick="btnShowNPWPFile()"><i
+                        class="fas fa-eye"></i></button>
+                <button class="btn btn-outline-primary btnChangeFile" type="button" onclick="btnChangeNPWPFile(this)"
+                    title="Change file" disabled><i class="fas fa-pencil"></i></button>
             </div>
         </div>
     </div>
@@ -163,15 +187,18 @@
         <div class="col-md-5 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <label class="input-group-text" for="customerNIBFile">NIB</label>
-                <input type="file" class="form-control" id="customerNIBFile" accept="image/*,.pdf" onchange="customerNIBFileOnChange(event)">
+                <input type="file" class="form-control" id="customerNIBFile" accept="image/*,.pdf"
+                    onchange="customerNIBFileOnChange(event)">
             </div>
         </div>
         <div class="col-md-7 mb-1">
             <div class="input-group input-group-sm mb-1">
                 <label class="input-group-text" for="customerNIBFilePath"><i class="fas fa-file"></i> </label>
                 <input type="text" class="form-control" id="customerNIBFilePath" readonly disabled>
-                <button class="btn btn-primary" type="button" onclick="btnShowNIBFile()"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-outline-primary btnChangeFile" type="button" onclick="btnChangeNIBFile(this)" title="Change file" disabled><i class="fas fa-pencil"></i></button>
+                <button class="btn btn-primary" type="button" onclick="btnShowNIBFile()"><i
+                        class="fas fa-eye"></i></button>
+                <button class="btn btn-outline-primary btnChangeFile" type="button" onclick="btnChangeNIBFile(this)"
+                    title="Change file" disabled><i class="fas fa-pencil"></i></button>
             </div>
         </div>
     </div>
@@ -196,14 +223,16 @@
                                     <option value="1">Customer Name</option>
                                     <option value="2">Address</option>
                                 </select>
-                                <input type="text" id="customerSearch" class="form-control" maxlength="50" onkeypress="customerSearchOnKeypress(event)">
+                                <input type="text" id="customerSearch" class="form-control" maxlength="50"
+                                    onkeypress="customerSearchOnKeypress(event)">
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col">
                             <div class="table-responsive" id="customerTabelContainer">
-                                <table id="customerTabel" class="table table-sm table-striped table-bordered table-hover">
+                                <table id="customerTabel"
+                                    class="table table-sm table-striped table-bordered table-hover">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Code</th>
@@ -233,7 +262,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="container-fluid">                    
+                <div class="container-fluid">
                     <div class="row">
                         <div class="col mb-1" id="div-alert-import">
                         </div>
@@ -244,7 +273,7 @@
                                 <span class="input-group-text">Source</span>
                                 <select id="fromConnection" class="form-select">
                                     @foreach ($companies as $r)
-                                    <option value="{{$r->connection}}">{{$r->name}}</option>
+                                        <option value="{{$r->connection}}">{{$r->name}}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -257,7 +286,7 @@
                                 <span class="input-group-text">Destination</span>
                                 <select class="form-select" disabled>
                                     @foreach ($CurrentCompanies as $r)
-                                    <option value="{{$r->connection}}">{{$r->name}}</option>
+                                        <option value="{{$r->connection}}">{{$r->name}}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -315,6 +344,7 @@
             formData.append('MCUS_NPWP_FILE', customerNPWPFile.files[0])
             formData.append('MCUS_NIB_FILE', customerNIBFile.files[0])
             formData.append('MCUS_IDCARD', customerKTPNumber.value)
+            formData.append('term', term.value)
             formData.append('_token', '{{ csrf_token() }}')
             if (customerTypeValue === '1') {
                 if (customerKTPFile.files.length === 0) {
@@ -354,7 +384,7 @@
                     dataType: "json",
                     contentType: false,
                     processData: false,
-                    success: function(response) {
+                    success: function (response) {
                         pthis.innerHTML = `<i class="fas fa-save"></i>`
                         alertify.success(response.msg)
                         pthis.disabled = false
@@ -366,7 +396,7 @@
                         customerNIBFilePath.value = response.MCUS_NIB_FILE
                         customerInputMode.value = 1
                     },
-                    error: function(xhr, xopt, xthrow) {
+                    error: function (xhr, xopt, xthrow) {
                         const respon = Object.keys(xhr.responseJSON)
                         const div_alert = document.getElementById('div-alert')
                         let msg = ''
@@ -407,13 +437,13 @@
                     url: `customer/${btoa(customerCode.value)}`,
                     data: data,
                     dataType: "json",
-                    success: function(response) {
+                    success: function (response) {
                         pthis.innerHTML = `<i class="fas fa-save"></i>`
                         alertify.success(response.msg)
                         pthis.disabled = false
                         document.getElementById('div-alert').innerHTML = ''
                     },
-                    error: function(xhr, xopt, xthrow) {
+                    error: function (xhr, xopt, xthrow) {
                         const respon = Object.keys(xhr.responseJSON)
                         const div_alert = document.getElementById('div-alert')
                         let msg = ''
@@ -447,12 +477,12 @@
                 _token: '{{ csrf_token() }}',
             },
             dataType: "json",
-            success: function(response) {
+            success: function (response) {
                 pthis.disabled = false
                 pthis.innerHTML = `Import`
                 alert(response.message)
             },
-            error: function(xhr, xopt, xthrow) {
+            error: function (xhr, xopt, xthrow) {
                 const respon = Object.keys(xhr.responseJSON)
                 const div_alert = document.getElementById('div-alert-import')
                 let msg = ''
@@ -479,7 +509,7 @@
     }
 
     function btnShowImportDataModal() {
-        const myModal = new bootstrap.Modal(document.getElementById('customerImportModal'), {})        
+        const myModal = new bootstrap.Modal(document.getElementById('customerImportModal'), {})
         myModal.show()
     }
 
@@ -496,7 +526,7 @@
                 url: "customer",
                 data: data,
                 dataType: "json",
-                success: function(response) {
+                success: function (response) {
                     e.target.disabled = false
                     let myContainer = document.getElementById("customerTabelContainer");
                     let myfrag = document.createDocumentFragment();
@@ -528,6 +558,7 @@
                             customerKTPFilePath.value = arrayItem['MCUS_KTP_FILE']
                             customerNPWPFilePath.value = arrayItem['MCUS_NPWP_FILE']
                             customerNIBFilePath.value = arrayItem['MCUS_NIB_FILE']
+                            term.value = arrayItem['TERM_LIST_SELECTED']
                             customerCode.disabled = true
                             switch (arrayItem['MCUS_TYPE']) {
                                 case '1':
@@ -553,7 +584,7 @@
                     myContainer.innerHTML = ''
                     myContainer.appendChild(myfrag)
                 },
-                error: function(xhr, xopt, xthrow) {
+                error: function (xhr, xopt, xthrow) {
                     alertify.warning(xthrow);
                     e.target.disabled = false
                     customerTabel.getElementsByTagName('tbody')[0].innerHTML = `<tr><td colspan="6">Please try again</td></tr>`
@@ -621,14 +652,14 @@
                 dataType: "json",
                 contentType: false,
                 processData: false,
-                success: function(response) {
+                success: function (response) {
                     senderObject.innerHTML = `<i class="fas fa-pencil"></i>`
                     alertify.success(response.msg)
                     senderObject.disabled = false
                     document.getElementById('div-alert').innerHTML = ''
                     fixedFileNameContainer.value = response.FixedFileName
                 },
-                error: function(xhr, xopt, xthrow) {
+                error: function (xhr, xopt, xthrow) {
                     const respon = Object.keys(xhr.responseJSON)
                     const div_alert = document.getElementById('div-alert')
                     let msg = ''

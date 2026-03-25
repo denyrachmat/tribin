@@ -604,6 +604,7 @@ class DeliveryController extends Controller
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->whereNull('TDLVORD_REC_NO')
+            ->whereIn('TDLVORD_TYPE', [1, 2, 3])
             ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc')
             ->groupBy(
                 DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
@@ -1998,6 +1999,7 @@ class DeliveryController extends Controller
                     ->on('TDLVORD_BRANCH', '=', 'CITRN_BRANCH');
             })
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->whereIn('TDLVORD_TYPE', [1, 2, 3])
             ->whereNull('T_DLVORDDETA.deleted_at')
             // ->where('MITM_ITMTYPE', '!=', '3')
             ->groupBy(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', DB::raw("SUBSTRING_INDEX(CITRN_DOCNO, '/', 1)"), 'CITRN_BRANCH')
@@ -2009,36 +2011,6 @@ class DeliveryController extends Controller
         }
 
         $hasil = $Data->get()->map(function ($dlv) {
-            // $getDet = T_DLVORDDETA::on($this->dedicatedConnection)->select(
-            //     'T_DLVORDDETA.id',
-            //     'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-            //     'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-            //     'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-            //     'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-            //     'T_DLVORDDETA.TDLVORDDETA_PRC',
-            //     'MITM_ITMNM',
-            //     'MITM_ITMNMREAL'
-            // )->groupBy(
-            //         'T_DLVORDDETA.id',
-            //         'T_DLVORDDETA.TDLVORDDETA_DLVCD',
-            //         'T_DLVORDDETA.TDLVORDDETA_ITMCD',
-            //         'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
-            //         'T_DLVORDDETA.TDLVORDDETA_ITMQT',
-            //         'T_DLVORDDETA.TDLVORDDETA_PRC',
-            //         'MITM_ITMNM',
-            //         'MITM_ITMNMREAL'
-            //     )
-            //     ->leftJoin("M_ITM_GRP", function ($join) {
-            //         $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
-            //             ->on('TDLVORDDETA_BRANCH', '=', 'MITM_BRANCH');
-            //     })
-            //     ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
-            //         $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
-            //             ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
-            //     })
-            //     ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', $dlv->TDLVORD_DLVCD)
-            //     ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
-            //     ->get();
 
             $getDet = [];
             $dlv->dlvdet = $getDet;

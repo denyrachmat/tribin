@@ -572,9 +572,11 @@ Route::group(['middleware' => 'cors'], function () {
         });
 
         // Route::resource('pos', POSController::class);
-        Route::prefix('pos')->group(function () {
-
+        Route::prefix('posOpt')->group(function () {
             Route::post('sendToDeliveryOrder', [POSController::class, 'sendToDeliveryOrder']);
+        });
+
+        Route::prefix('pos')->group(function () {
             Route::get('', [POSController::class, 'index']);
             Route::get('report', [POSController::class, 'listForms']);
 

@@ -209,7 +209,7 @@ const onClickSendToDeliveryOrder = (docNo) => {
       ok: "Yes",
     }).onOk(async () => {
       loading.value = true;
-      const sendAPI = await api_web.post("pos/sendToDeliveryOrder", {
+      const sendAPI = await api_web.post("posOpt/sendToDeliveryOrder", {
         TPOS_DOCNO: docNo,
       });
 

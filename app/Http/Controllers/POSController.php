@@ -281,7 +281,7 @@ class POSController extends Controller
     public function printStruk(Request $request){
         $conn = $request->has('cg') && !empty($request->cg) ? Crypt::decryptString($request->cg) : $this->dedicatedConnection;
         $user = $request->has('username') && !empty($request->username) ? User::where('nick_name', $request->username)->first() : Auth::user(); // Fallback ke user dengan ID 1 jika tidak ada user yang terautentikasi;
-        $RSCG = COMPANY_BRANCH::select('name', 'address', 'phone', 'fax', 'letter_head')
+        $RSCG = COMPANY_BRANCH::on($conn)->select('name', 'address', 'phone', 'fax', 'letter_head')
             ->where('connection', $conn)
             ->where('BRANCH', $user->branch)
             ->first();

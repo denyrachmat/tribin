@@ -284,6 +284,7 @@ class DeliveryController extends Controller
     {
         $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
+        $connection = $request->has('cg') && !empty($request->cg) ? Crypt::decryptString($request->cg) : $this->dedicatedConnection;
         # data quotation header
         $validator = Validator::make($request->all(), [
             'TDLVORD_CUSCD' => 'required',
@@ -294,14 +295,14 @@ class DeliveryController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $Company = COMPANY_BRANCH::on($this->dedicatedConnection)->select(
+        $Company = COMPANY_BRANCH::on($connection)->select(
             'invoice_letter_id'
         )
-            ->where('connection', $this->dedicatedConnection)
+            ->where('connection', $connection)
             ->where('BRANCH', Auth::user()->branch)
             ->first();
 
-        $checkLine = T_DLVORDHEAD::on($this->dedicatedConnection)
+        $checkLine = T_DLVORDHEAD::on($connection)
             ->whereYear('created_at', '=', date('Y'))
             // ->whereMonth('created_at', '=', date('m'))
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
@@ -316,7 +317,7 @@ class DeliveryController extends Controller
             $newInvoiceCode = '';
 
             if ($request->typeOutgoing == 2) {
-                // $getLatestDOData = T_DLVORDHEAD::on($this->dedicatedConnection)->where('TDLVORD_DLVCD', 'like', $request->TDLVORD_DLVCD.'%')->orderBy('TDLVORD_DLVCD', 'desc')->first()->TDLVORD_DLVCD;
+                // $getLatestDOData = T_DLVORDHEAD::on($connection)->where('TDLVORD_DLVCD', 'like', $request->TDLVORD_DLVCD.'%')->orderBy('TDLVORD_DLVCD', 'desc')->first()->TDLVORD_DLVCD;
                 // $getLatestDO = explode('/', $getLatestDOData);
                 // if (count($getLatestDO) > 1) {
                 //     $newQuotationCode = $getLatestDO[0] . '/' . ((int)$getLatestDO[1] + 1);
@@ -345,10 +346,10 @@ class DeliveryController extends Controller
                     // $newInvoiceCode = $LastLine . '/' . $Company->invoice_letter_id . '/' . $monthOfRoma[date('n') - 1] . '/' . date('Y');
                 }
 
-                $newInvoiceCode = $this->getGencodeData('inv', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
+                $newInvoiceCode = $this->getGencodeData('inv', $connection, true)->getData(true)['data'] ?? null;
             }
 
-            $newQuotationCode = $this->getGencodeData('do', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
+            $newQuotationCode = $this->getGencodeData('do', $connection, true)->getData(true)['data'] ?? null;
         } else {
             $newQuotationCode = $request->TDLVORD_DLVCD;
             $newInvoiceCode = $request->TDLVORD_INVCD;
@@ -387,7 +388,7 @@ class DeliveryController extends Controller
             $idAutoIDX = 0;
             foreach ($request->SO_DET as $keySODet => $valueSODetHeader) {
                 $quotationHeader['TDLVORD_DLVCD'] = $newQuotationCode . "/{$idAuto}";
-                $dataDLVHead[$idAutoIDX]['HEAD'] = T_DLVORDHEAD::on($this->dedicatedConnection)->updateOrCreate([
+                $dataDLVHead[$idAutoIDX]['HEAD'] = T_DLVORDHEAD::on($connection)->updateOrCreate([
                     'TDLVORD_DLVCD' => $newQuotationCode
                 ], $quotationHeader);
                 $dataDLVHead[$idAutoIDX]['DET'] = [$valueSODetHeader];
@@ -398,7 +399,7 @@ class DeliveryController extends Controller
         } else {
             $dataDLVHead = [
                 [
-                    'HEAD' => T_DLVORDHEAD::on($this->dedicatedConnection)
+                    'HEAD' => T_DLVORDHEAD::on($connection)
                         ->updateOrCreate([
                             'TDLVORD_DLVCD' => $newQuotationCode
                         ], $quotationHeader),
@@ -412,7 +413,7 @@ class DeliveryController extends Controller
             foreach ($valueHeader['DET'] as $keySODet => $valueSODet) {
                 $sloCD = isset($request->TDLVORDDETA_SLOCD) && !empty($request->TDLVORDDETA_SLOCD) ? $request->TDLVORDDETA_SLOCD : '';
 
-                $getData[] = T_DLVORDDETA::on($this->dedicatedConnection)->create([
+                $getData[] = T_DLVORDDETA::on($connection)->create([
                     'TDLVORDDETA_DLVCD' => $valueHeader['HEAD']->TDLVORD_DLVCD,
                     'TDLVORDDETA_ITMCD' => $valueSODet['TSLODETA_ITMCD'],
                     'TDLVORDDETA_ITMQT' => $valueSODet['BALQT'],

@@ -157,8 +157,9 @@ class POSController extends Controller
             'typeOutgoing' => 5,
             'SO_DET' => $listForDODet,
             'splitSJ' => 0,
+            'cg' => $request->cg
         ]);
-        $_COOKIE['CGID'] = $request->cg;
+
         $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
 
         return response()->json([

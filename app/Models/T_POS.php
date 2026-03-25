@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\T_POS_DET;
+
 class T_POS extends Model
 {
     use HasFactory;
@@ -18,6 +20,6 @@ class T_POS extends Model
     ];
 
     public function det(){
-        return $this->hasMany(T_POS_Det::class, 'TPOSH_ID', 'id');
+        return $this->hasMany(T_POS_DET::class, 'TPOSH_ID', 'id');
     }
 }

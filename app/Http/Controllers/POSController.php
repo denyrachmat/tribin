@@ -134,7 +134,7 @@ class POSController extends Controller
             return response()->json(['message' => 'Data POS tidak ditemukan'], 404);
         }
 
-        $posDetData = T_POS_DET::on(Crypt::decryptString($cg))->where('TPOSH_ID', $IDPOS)->get();
+        $posDetData = T_POS_DET::on(Crypt::decryptString($cg))->where('TPOSH_ID', $posData->id)->get();
         if ($posDetData->isEmpty()) {
             return response()->json(['message' => 'Detail POS tidak ditemukan'], 404);
         }

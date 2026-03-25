@@ -223,10 +223,11 @@ const onClickSendToDeliveryOrder = (docNo) => {
           type: "positive",
           message: "Transaction sent to delivery order successfully!",
         });
+
+        getListData(pagination.value); // Refresh the list after sending to delivery order
       }
     });
   } catch (error) {
-    console.error("Error navigating to delivery order:", error);
     $q.dialog({
       title: "Error",
       message: "Failed to navigate to delivery order. Please try again.",

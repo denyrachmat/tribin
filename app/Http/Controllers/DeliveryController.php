@@ -444,8 +444,12 @@ class DeliveryController extends Controller
 
     public function delete($id)
     {
-        $det = T_DLVORDDETA::on($this->dedicatedConnection)->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), base64_decode($id))->delete();
-        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($id))->delete();
+        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), base64_decode($id))->first();
+
+        $det = T_DLVORDDETA::on($this->dedicatedConnection)->where('TDLVORDDETA_DLVCD', $header->TDLVORD_DLVCD)->delete();
 
         return [
             'msg' => 'OK',
@@ -584,7 +588,10 @@ class DeliveryController extends Controller
             ->groupBy('TDLVORDDETA_ITMCD_ACT', 'TDLVORDDETA_DLVCD', 'TDLVORDDETA_BRANCH');
 
         $RSTemp = T_DLVORDHEAD::on($this->dedicatedConnection)->select([
-            DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD"),
+            DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END AS TDLVORD_DLVCD "),
             "TDLVORD_CUSCD",
             DB::raw("MAX(TDLVORD_ISSUDT) AS TDLVORD_ISSUDT"),
             "MCUS_CUSNM",
@@ -599,7 +606,10 @@ class DeliveryController extends Controller
                     ->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
             })
             ->leftJoinSub($RSSub, 'V1', function ($join) {
-                $join->on(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), '=', DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
+                $join->on(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), '=', DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"))
                     ->on('TDLVORD_BRANCH', '=', 'TDLVORDDETA_BRANCH')
                     ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"));
             })
@@ -608,7 +618,10 @@ class DeliveryController extends Controller
             ->whereIn('TDLVORD_TYPE', [1, 2, 3])
             ->orderBy(DB::raw('MAX(T_DLVORDHEAD.created_at)'), 'desc')
             ->groupBy(
-                DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"),
+                DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"),
                 'TDLVORDDETA_ITMCD_ACT',
                 "TDLVORD_CUSCD",
                 "MCUS_CUSNM",
@@ -1264,7 +1277,7 @@ class DeliveryController extends Controller
     function formDriverAssignment()
     {
         $getUsers = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
-            ->whereIn('job_position', ['MEKANIK','MEKANIK CAT & BODY REPAIR','MEKANIK DINAMO','OP BACKHOE LOADER','OP EXCAVATOR','OP FORKLIFT','OP GENSET','SUPIR'])
+            ->whereIn('job_position', ['MEKANIK', 'MEKANIK CAT & BODY REPAIR', 'MEKANIK DINAMO', 'OP BACKHOE LOADER', 'OP EXCAVATOR', 'OP FORKLIFT', 'OP GENSET', 'SUPIR'])
             ->get();
 
         return view(
@@ -2104,7 +2117,10 @@ class DeliveryController extends Controller
             );
 
             $getInv = T_DLVORDHEAD::on($this->dedicatedConnection)
-                ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), $request->id)
+                ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), $request->id)
                 ->first();
 
             // return env('ACC_URL');

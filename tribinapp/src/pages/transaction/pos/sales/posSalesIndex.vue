@@ -514,6 +514,16 @@ const onCancelSales = () => {
     persistent: true,
   }).onOk(async () => {
     selectedItems.value = [];
+    TPOS_CUSTCD.value = "";
+    tax_code.value = "";
+    TPOS_DOCNO.value = "";
+    BC.value = "";
+
+    await getItem("");
+    await getCustomer("");
+    await getTaxes();
+    await getDefaultTax();
+    await getListData();
   });
 };
 
@@ -530,19 +540,24 @@ const onSubmited = () => {
       prompt: {
         model: "",
         type: "number", // optional
+        isValid: (val) => val > 0 && val >= getTotal.value + getTotalTax.value, // << here is the magic
       },
       cancel: true,
       persistent: true,
     }).onOk(async (data) => {
       $q.dialog({
         title: "Confirmation",
-        message: `Payment amount is Rp. ${parseInt(data).toLocaleString()}, are you sure want continue ?`,
+        message: `Payment amount is Rp. ${parseInt(
+          data
+        ).toLocaleString()}, are you sure want continue ?`,
         cancel: true,
         persistent: true,
       }).onOk(async () => {
         $q.dialog({
           title: "Payment",
-          message: "Change amount is Rp. " + (data - getTotal.value - getTotalTax.value).toLocaleString(),
+          message:
+            "Change amount is Rp. " +
+            (data - getTotal.value - getTotalTax.value).toLocaleString(),
           noEscDismiss: true,
           noBackdropDismiss: true,
           persistent: true,
@@ -568,7 +583,7 @@ const onSubmited = () => {
           .then((response) => {
             loading.value = false;
             selectedItems.value = [];
-            onClickPrintStruk(response.data.TPOS_DOCNO);
+            onClickPrintStruk(response.data.data.TPOS_DOCNO);
           })
           .catch(() => {
             loading.value = false;
@@ -581,9 +596,28 @@ const onSubmited = () => {
 const onClickPrintStruk = async (docNo) => {
   try {
     loading.value = true;
+
+    const getUsersDet =
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("user_det="))
+        ?.split("=")[1] || "";
+
+    const userDet = getUsersDet
+      ? JSON.parse(decodeURIComponent(getUsersDet))
+      : {};
     const response = await api_web.post(
       "pos/printStruk",
-      { TPOS_DOCNO: docNo },
+      {
+        TPOS_DOCNO: docNo,
+        cg:
+          document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("CGID="))
+            ?.split("=")[1] || "",
+        username: userDet.nick_name || "",
+        branch: userDet ? userDet.branch : "",
+      },
       { responseType: "blob" }
     );
     const blob = new Blob([response.data], { type: "application/pdf" });

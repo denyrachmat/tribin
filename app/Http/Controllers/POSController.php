@@ -65,15 +65,14 @@ class POSController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if ($request->has('TPOS_DOCNO')) {
+        if ($request->has('TPOS_DOCNO') && !empty($request->TPOS_DOCNO)) {
             $IDPOS = $request->TPOS_DOCNO;
         } else {
             // $IDPOS = 'POS/' . $cekCG->alias_code . '/' . date('Y/m/d') . '/' . (empty($cek) ? '0001' : sprintf('%04d', (int) substr($cek->TPOS_DOCNO, -4) + 1));
-            $IDPOS = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
+            $IDPOS = $this->getGencodeData('posgencode', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
         }
 
-
-        T_POS::on($this->dedicatedConnection)->updateOrCreate([
+        $idMaster = T_POS::on($this->dedicatedConnection)->updateOrCreate([
             'TPOS_DOCNO' => $IDPOS,
             'TPOS_CUSTCD' => $request->TPOS_CUSTCD
         ], [
@@ -85,15 +84,15 @@ class POSController extends Controller
 
         $listForDODet = [];
         T_POS_DET::on($this->dedicatedConnection)
-            ->where('TPOSH_ID', $IDPOS)
+            ->where('TPOSH_ID', $idMaster->id)
             ->delete();
         foreach ($request->det as $key => $value) {
             $checkItem = M_ITM::on($this->dedicatedConnection)->where('MITM_ITMCD', $value['TPOSD_ITMCD'])->first();
             T_POS_DET::on($this->dedicatedConnection)->updateOrCreate([
-                'TPOSH_ID' => $IDPOS,
+                'TPOSH_ID' => $idMaster->id,
                 'TPOSD_ITMCD' => $value['TPOSD_ITMCD']
             ], [
-                'TPOSH_ID' => $IDPOS,
+                'TPOSH_ID' => $idMaster->id,
                 'TPOSD_ITMCD' => !empty($value['BC']) ? $value['TPOSD_ITMCD'] : $checkItem->MITM_ITMNM,
                 'TPOSD_QTY' => $value['TPOSD_QTY'],
                 'TPOSD_BC' => $value['BC'] ?? '',
@@ -109,12 +108,14 @@ class POSController extends Controller
         }
 
         $postToDelivery = $this->sendToDeliveryOrder(new Request([
-            'TPOS_DOCNO' => $IDPOS
+            'TPOS_DOCNO' => $IDPOS,
+            'cg' => $request->has('cg') && !empty($request->cg) ? $request->cg : Crypt::encryptString($this->dedicatedConnection)
         ]));
 
         return response()->json([
             'message' => 'Data berhasil disimpan',
-            'data' => $postToDelivery
+            'data' => $idMaster,
+            'data_dlv' => $postToDelivery->getOriginalContent()
         ], 200);
     }
     

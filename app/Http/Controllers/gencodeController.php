@@ -16,9 +16,9 @@ class gencodeController extends Controller
     public function getGencodeList(Request $request, $branch = '')
     {
         $data = $this->getGencode(
-            base64_encode($request->has('code') ? $request->code : 'GEN_LIST_SETUP'), 
-            '', 
-            $request->cg, 
+            base64_encode($request->has('code') ? $request->code : 'GEN_LIST_SETUP'),
+            '',
+            $request->cg,
             $branch,
             $request->has('exactSearch') ? $request->exactSearch : false
         );
@@ -63,6 +63,7 @@ class gencodeController extends Controller
 
         $validated = $request->validate($rules);
 
+        $hasil = [];
         foreach ($validated['gencodeData'] as $gencodeItem) {
             // Simpan kode utama ke GEN_LIST_SETUP
             M_GENCODE::updateOrCreate(
@@ -112,34 +113,37 @@ class gencodeController extends Controller
                     }
                 }
             }
+
             // Simpan data detail untuk setiap kode
-            M_GENCODE::where('MGECD_CODE', 'like', $gencodeItem['code'] . '%')
-                ->where('MGECD_CG', isset($request->cg) ? Crypt::decryptString($request->cg) : null)
-                ->delete();
+
+            $cekData = M_GENCODE::where('MGECD_CODE', 'like', $gencodeItem['code'] . '%')->count();
+
+            if ($cekData > 0) {
+                M_GENCODE::where('MGECD_CODE', 'like', $gencodeItem['code'] . '%')
+                    ->where('MGECD_CG', isset($request->cg) ? Crypt::decryptString($request->cg) : null)
+                    ->where('MGECD_BRANCH', $request->branch ?? null)
+                    ->delete();
+            }
 
             foreach ($gencodeItem['data'] as $index => $value) {
-                M_GENCODE::updateOrCreate(
-                    [
-                        'MGECD_CODE' => $gencodeItem['code'] . '_' . ($index + 1),
-                        // 'MGECD_VALUE' => $value['MGECD_VALUE'],
-                        'MGECD_CG' => isset($request->cg) ? Crypt::decryptString($request->cg) : null,
-                    ],
-                    [
-                        'MGECD_VALUE' => $value['MGECD_VALUE'],
-                        'MGECD_DESC' => $value['MGECD_DESC'] ?? null,
-                        'MGECD_DESC2' => $value['MGECD_DESC2'] ?? null,
-                        'MGECD_DESC3' => $value['MGECD_DESC3'] ?? null,
-                        'MGECD_ACTIVE' => $value['MGECD_ACTIVE'] ?? 1,
-                        'MGECD_FLAG' => $value['MGECD_FLAG'] ?? 0,
-                        'MGECD_BRANCH' => $value['MGECD_BRANCH'] ?? null,
-                    ]
-                );
+                $hasil[$gencodeItem['code']][] = M_GENCODE::create([
+                    'MGECD_CODE' => $gencodeItem['code'] . '_' . ($index + 1),
+                    'MGECD_CG' => isset($request->cg) ? Crypt::decryptString($request->cg) : null,
+                    'MGECD_VALUE' => $value['MGECD_VALUE'] ?? null,
+                    'MGECD_DESC' => $value['MGECD_DESC'] ?? null,
+                    'MGECD_DESC2' => $value['MGECD_DESC2'] ?? null,
+                    'MGECD_DESC3' => $value['MGECD_DESC3'] ?? null,
+                    'MGECD_ACTIVE' => $value['MGECD_ACTIVE'] ?? 1,
+                    'MGECD_FLAG' => $value['MGECD_FLAG'] ?? 0,
+                    'MGECD_BRANCH' => $request->branch ?? null,
+                ]);
             }
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Gencode data saved successfully',
+            'data' => $hasil,
         ]);
     }
 

@@ -444,11 +444,16 @@ class DeliveryController extends Controller
 
     public function delete($id)
     {
-        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
-                    THEN TDLVORD_DLVCD
-                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
-                END"), base64_decode($id))->first();
+        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw("
+            CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                THEN TDLVORD_DLVCD
+                ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+            END"), base64_decode($id))->first();
 
+        if (empty($header)) {
+            return response()->json(['msg' => 'Header not found'], 404);
+        }
+        
         $det = T_DLVORDDETA::on($this->dedicatedConnection)->where('TDLVORDDETA_DLVCD', $header->TDLVORD_DLVCD)->delete();
 
         return [

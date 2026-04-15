@@ -1581,9 +1581,7 @@ class DeliveryController extends Controller
                 ->where('TPCHORDDETA_BRANCH', Auth::user()->branch)
                 ->where('TPCHORDDETA_PCHCD', $newPOCode)
                 ->where('TPCHORDDETA_ITMCD', 'SOLAR')
-                ->whereHas('header', function ($query) use ($ParamData) {
-                    $query->where('TPCHORD_REMARK', $ParamData['DOC']);
-                })->count();
+                ->count();
 
             if ($checkIfAlreadyExist > 0) {
                 return true;

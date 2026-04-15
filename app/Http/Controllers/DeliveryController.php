@@ -1675,20 +1675,62 @@ class DeliveryController extends Controller
             }
             $this->fpdf->SetXY(3, 95);
             $this->fpdf->Cell(10, 5, '1', 1, 0, 'C');
-            $this->fpdf->Cell(75, 5, 'Total', 1, 0, 'C');
-            $this->fpdf->Cell(50, 5, number_format($TotalPrice), 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang Jalan', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_JALAN), 1, 0, 'C');
+            $this->fpdf->SetXY(3, 100);
+            $this->fpdf->Cell(10, 5, '2', 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang Solar', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_SOLAR), 1, 0, 'C');
             $this->fpdf->SetXY(3, 105);
-            $this->fpdf->Cell(10, 5, 'Terbilang', 0, 0, 'L');
+            $this->fpdf->Cell(10, 5, '3', 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang Makan', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_MAKAN), 1, 0, 'C');
             $this->fpdf->SetXY(3, 110);
-            $this->fpdf->MultiCell(140, 5, ucwords(trim($this->numberToSentence($TotalPrice))), 1, 'C');
+            $this->fpdf->Cell(10, 5, '4', 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang Mandah', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_MANDAH), 1, 0, 'C');
+            $this->fpdf->SetXY(3, 115);
+            $this->fpdf->Cell(10, 5, '5', 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang Penginapan', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_PENGINAPAN), 1, 0, 'C');
             $this->fpdf->SetXY(3, 120);
+            $this->fpdf->Cell(10, 5, '6', 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang Pengawalan', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_PENGAWALAN), 1, 0, 'C');
+            $this->fpdf->SetXY(3, 125);
+            $this->fpdf->Cell(10, 5, '7', 1, 0, 'C');
+            $this->fpdf->Cell(75, 5, 'Uang lain - lain', 1, 0, 'L');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_LAIN2), 1, 0, 'C');
+            $this->fpdf->SetXY(3, 130);
+            $this->fpdf->Cell(85, 5, 'Total', 1, 0, 'L');
+            // $this->fpdf->Cell(75, 5, '', 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp '.number_format($TotalPrice), 1, 0, 'C');
+            $this->fpdf->SetXY(3, 140);
+            $this->fpdf->Cell(10, 5, 'Terbilang', 0, 0, 'L');
+            $this->fpdf->SetXY(3, 145);
+            $this->fpdf->MultiCell(140, 5, ucwords(trim($this->numberToSentence($TotalPrice))) . ' Rupiah', 1, 'C');
+
+            $this->fpdf->SetXY(3, 160);
             $this->fpdf->Cell(10, 5, 'PIC yang ditugaskan', 0, 0, 'L');
-            $this->fpdf->SetXY(100, 120);
+            $this->fpdf->SetXY(100, 160);
             $this->fpdf->Cell(10, 5, 'PIC yang menugaskan', 0, 0, 'L');
 
-            $this->fpdf->SetXY(3, 155);
+            // $this->fpdf->SetXY(3, 100);
+            // $this->fpdf->Cell(10, 5, '1', 1, 0, 'C');
+            // $this->fpdf->Cell(75, 5, 'Total', 1, 0, 'C');
+            // $this->fpdf->Cell(50, 5, number_format($TotalPrice), 1, 0, 'C');
+            // $this->fpdf->SetXY(3, 105);
+            // $this->fpdf->Cell(10, 5, 'Terbilang', 0, 0, 'L');
+            // $this->fpdf->SetXY(3, 110);
+            // $this->fpdf->MultiCell(140, 5, ucwords(trim($this->numberToSentence($TotalPrice))), 1, 'C');
+            // $this->fpdf->SetXY(3, 120);
+            // $this->fpdf->Cell(10, 5, 'PIC yang ditugaskan', 0, 0, 'L');
+            // $this->fpdf->SetXY(100, 120);
+            // $this->fpdf->Cell(10, 5, 'PIC yang menugaskan', 0, 0, 'L');
+
+            $this->fpdf->SetXY(3, 185);
             $this->fpdf->Cell(10, 5, ucwords($PICDitugaskan->name) . ' - ' . $Data->CSPK_PIC_AS, 0, 0, 'L');
-            $this->fpdf->SetXY(100, 155);
+            $this->fpdf->SetXY(100, 185);
             $this->fpdf->Cell(10, 5, ucwords($PICMenugaskan->name), 0, 0, 'L');
         } else {
             $this->fpdf->SetXY(3, 95);
@@ -1733,7 +1775,6 @@ class DeliveryController extends Controller
             $this->fpdf->SetXY(100, 155);
             $this->fpdf->Cell(10, 5, 'PIC yang menugaskan', 0, 0, 'L');
         }
-
 
         $this->fpdf->AddPage("P", 'A5');
         $this->fpdf->SetAutoPageBreak(true, 0);

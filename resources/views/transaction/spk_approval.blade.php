@@ -243,6 +243,7 @@
                                 <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" id="btnAction">Action</button>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" onclick="approveQuotation(this)"><i class="fas fa-check text-success"></i> Approve</a></li>
+                                    <li><a class="dropdown-item" onclick="printSPK(this)"><i class="fas fa-print text-success"></i> Print SPK</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -434,9 +435,9 @@
                     newcell.classList.add('d-none')
                     newcell.innerHTML = arrayItem['id']
                     newcell = newrow.insertCell(1)
-                    newcell.innerHTML = arrayItem['TDLVORDDETA_ITMCD']
+                    newcell.innerHTML = arrayItem['TDLVORDDETA_ITMCD_ACT']
                     newcell = newrow.insertCell(2)
-                    newcell.innerHTML = arrayItem['MITM_ITMNM']
+                    newcell.innerHTML = arrayItem['ITMNM_ACT']
                     newcell = newrow.insertCell(3)
                     newcell.classList.add('text-end')
                     newcell.innerHTML = arrayItem['TDLVORDDETA_ITMQT']
@@ -450,5 +451,10 @@
                 quotationAddressDescription.value = ''
             }
         });
+    }
+
+    function printSPK(pthis) {
+        const url = `PDF/SPK/${btoa(idSPK.value)}`
+        window.open(url, '_blank').focus();
     }
 </script>

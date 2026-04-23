@@ -167,12 +167,14 @@ class CustomerController extends Controller
 
         if ($request->has('term') && !empty($request->term)) {
             $this->saveGencode(new Request([
-                'MGECD_CODE' => 'TERM_LIST_SELECTED',
-                'MGECD_VALUE' => $request->term,
-                'MGECD_DESC' => $NEW_MCUS_CUSCD,
-                'MGECD_ACTIVE' => 1,
-                'MGECD_CG' => $this->dedicatedConnection,
-                'MGECD_BRANCH' => Auth::user()->branch,
+                'data' => [
+                    'MGECD_CODE' => 'TERM_LIST_SELECTED',
+                    'MGECD_VALUE' => $request->term,
+                    'MGECD_DESC' => $NEW_MCUS_CUSCD,
+                    'MGECD_ACTIVE' => 1,
+                    'MGECD_CG' => $this->dedicatedConnection,
+                    'MGECD_BRANCH' => Auth::user()->branch,
+                ]
             ]));
         }
 
@@ -208,11 +210,11 @@ class CustomerController extends Controller
             ->where($columnMap[$request->searchBy], 'like', '%' . $request->searchValue . '%')
             ->where('MCUS_BRANCH', Auth::user()->branch)
             ->leftjoin(DB::raw('jatpower_tribin.M_GENCODE AS MGECD1'), function ($join) {
-                $join->on('MCUS_CUSCD', '=', 'MGECD1.MGECD_DESC')                
-                ->where('MGECD1.MGECD_CODE', '=', 'TERM_LIST_SELECTED')
-                ->where('MGECD1.MGECD_ACTIVE', '=', 1)
-                ->where('MGECD1.MGECD_CG', '=', $this->dedicatedConnection)
-                ->where('MGECD1.MGECD_BRANCH', '=', Auth::user()->branch);
+                $join->on('MCUS_CUSCD', '=', 'MGECD1.MGECD_DESC')
+                    ->where('MGECD1.MGECD_CODE', '=', 'TERM_LIST_SELECTED')
+                    ->where('MGECD1.MGECD_ACTIVE', '=', 1)
+                    ->where('MGECD1.MGECD_CG', '=', $this->dedicatedConnection)
+                    ->where('MGECD1.MGECD_BRANCH', '=', Auth::user()->branch);
             })
             ->get();
 

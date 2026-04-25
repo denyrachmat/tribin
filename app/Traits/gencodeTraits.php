@@ -17,7 +17,7 @@ trait gencodeTraits
      * @param string $cg
      * @return mixed
      */
-    public function getGencode($code, $value = '', $cg = '', $branch = '', $exactSearch = false)
+    public function getGencode($code, $value = '', $cg = '', $branch = '', $exactSearch = false, $includeChild = false)
     {
         $dataHead = M_GENCODE::select('mg.*', DB::raw('(
                 SELECT MGECD_VALUE FROM M_GENCODE
@@ -32,6 +32,10 @@ trait gencodeTraits
 
         if (!empty($branch)) {
             $dataHead->where('mg.MGECD_BRANCH', $branch);
+        }
+
+        if ($includeChild === true) {
+            $dataHead->whereNull('MGECD_PARENT')->with('children');
         }
 
         if (!empty($value)) {
@@ -91,7 +95,7 @@ trait gencodeTraits
                     'MGECD_DESC' => $value['MGECD_DESC'],
                     'MGECD_DESC2' => isset($value['MGECD_DESC2']) ? $value['MGECD_DESC2'] : null,
                     'MGECD_DESC3' => isset($value['MGECD_DESC3']) ? $value['MGECD_DESC3'] : null,
-                    'MGECD_ACTIVE' => $value['MGECD_ACTIVE'],
+                    'MGECD_ACTIVE' => $value['MGECD_ACTIVE'] ?? 1,
                     'MGECD_CG' => isset($value['MGECD_CG']) ? Crypt::decryptString($value['MGECD_CG']) : null,
                 ]);
             } else {

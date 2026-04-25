@@ -11,6 +11,7 @@ use App\Models\T_QUOHEAD;
 use App\Models\T_SLOHEAD;
 use App\Models\User;
 use App\Models\M_BRANCH;
+use Illuminate\Log\Logger;
 use Illuminate\Support\Facades\Crypt;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\COMPANY_BRANCH;
@@ -519,6 +520,30 @@ class InvoiceController extends Controller
         }
     }
 
+    public function getDetailDatabyDlvcd(Request $request)
+    {
+        $data = $this->dataDetailBulk(
+            [
+                [
+                    'dlvcd' => $request->input('dlvcd'),
+                    'slocd' => $request->input('slocd'),
+                    'cond' => $request->input('cond')
+                ]
+            ],
+            [
+                'isDlvDet' => $request->input('opt.isDlvDet', false),
+                'isDlvAcc' => $request->input('opt.isDlvAcc', false),
+                'isPayment' => $request->input('opt.isPayment', false),
+                'isCond' => $request->input('opt.isCond', false),
+                'isSPK' => $request->input('opt.isSPK', false),
+                'isDlvSJ' => $request->input('opt.isDlvSJ', false),
+                'isSlo' => $request->input('opt.isSlo', false)
+            ]
+        );
+
+        return $data;
+    }
+
     public function dataDetailBulk(array $rows, array $opt): array
     {
         $conn = $this->dedicatedConnection;
@@ -537,6 +562,70 @@ class InvoiceController extends Controller
             'dlvsj' => [],
             'sloDet' => [],
         ];
+
+        if (!empty($opt['isDlvDet'])) {
+            $out['dlvdet'] = T_DLVORDDETA::on($this->dedicatedConnection)->select(
+                'T_DLVORDDETA.id',
+                'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                'T_DLVORDDETA.TDLVORDDETA_PRC',
+                'M_ITM_GRP.MITM_ITMNM',
+                'M_ITM_GRP.MITM_ITMNMREAL',
+                'M_ITM.MITM_BRAND',
+                'M_ITM.MITM_MODEL',
+                'TDLVORD_REMARK'
+            )->groupBy(
+                    'T_DLVORDDETA.id',
+                    'T_DLVORDDETA.TDLVORDDETA_DLVCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT',
+                    'T_DLVORDDETA.TDLVORDDETA_ITMQT',
+                    'T_DLVORDDETA.TDLVORDDETA_PRC',
+                    'M_ITM_GRP.MITM_ITMNM',
+                    'M_ITM_GRP.MITM_ITMNMREAL',
+                    'M_ITM.MITM_BRAND',
+                    'M_ITM.MITM_MODEL',
+                    'TDLVORD_REMARK'
+                )
+                ->join(
+                    'T_DLVORDHEAD',
+                    DB::raw(
+                        "case
+                    when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
+                                then TDLVORD_DLVCD
+                                else substr(TDLVORD_DLVCD, 1, (length(TDLVORD_DLVCD) - locate('/', reverse(TDLVORD_DLVCD))))
+                        end"
+                    ),
+                    '=',
+                    DB::raw(
+                        "case
+                        when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
+                                then TDLVORDDETA_DLVCD
+                            else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
+                    end"
+                    )
+                )
+                ->leftJoin("M_ITM_GRP", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD', '=', 'MITM_ITMNM')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM_GRP.MITM_BRANCH');
+                })
+                ->leftJoin("M_ITM", function ($join) {
+                    $join->on('TDLVORDDETA_ITMCD_ACT', '=', 'MITM_ITMCD')
+                        ->on('TDLVORDDETA_BRANCH', '=', 'M_ITM.MITM_BRANCH');
+                })
+                // ->leftJoin(DB::raw("(SELECT SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) as TDLVORD_DLVCD, TDLVORD_BRANCH FROM T_DLVORDHEAD) as TDLVORDHEAD_ALIAS"), function ($join) {
+                //     $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
+                //         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
+                // })
+                ->whereIn(DB::raw("case
+                        when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
+                        then TDLVORDDETA_DLVCD
+                        else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
+                end"), $dlvcds)
+                ->get();
+        }
 
         if (!empty($opt['isDlvAcc'])) {
             $out['dlvacc'] = T_DLVACCESSORY::on($conn)
@@ -2179,11 +2268,14 @@ class InvoiceController extends Controller
     function cancelInvoice($doc)
     {
         $RSHeader = T_DLVORDHEAD::on($this->dedicatedConnection)
-            ->where('TDLVORD_DLVCD', base64_decode($doc))
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), base64_decode($doc))
             ->first();
 
         if ($RSHeader) {
-            if (in_array($RSHeader->TDLVORD_TYPE, ['1', '2', '3'])){
+            if (in_array($RSHeader->TDLVORD_TYPE, ['1', '2', '3'])) {
                 T_DLVORDHEAD::on($this->dedicatedConnection)
                     ->where(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), base64_decode($doc))
                     ->update([
@@ -2218,7 +2310,9 @@ class InvoiceController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Invoice is canceled'
+            'message' => 'Invoice is canceled',
+            'data' => $RSHeader,
+            'conn' => $this->dedicatedConnection
         ]);
     }
 }

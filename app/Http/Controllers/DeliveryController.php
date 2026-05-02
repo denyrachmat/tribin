@@ -427,7 +427,7 @@ class DeliveryController extends Controller
             }
         }
 
-        if ($request->typeOutgoing == 3) {
+        if ($request->typeOutgoing == 3 || $request->typeOutgoing == 5) {
             $this->confirmOutgoing(new Request([
                 'data' => $getData,
                 'id' => $newQuotationCode,

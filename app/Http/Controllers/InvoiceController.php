@@ -619,11 +619,12 @@ class InvoiceController extends Controller
                 //     $join->on('T_DLVORDDETA.TDLVORDDETA_DLVCD', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_DLVCD')
                 //         ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
                 // })
-                ->whereIn(DB::raw("case
-                        when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
-                        then TDLVORDDETA_DLVCD
-                        else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
-                end"), $dlvcds)
+                // ->whereIn(DB::raw("case
+                //         when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
+                //         then TDLVORDDETA_DLVCD
+                //         else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
+                // end"), $dlvcds)
+                ->whereIn('T_DLVORDDETA.TDLVORDDETA_DLVCD', $dlvcds)
                 ->get();
         }
 

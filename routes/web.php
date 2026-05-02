@@ -310,6 +310,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('cekInv', [InvoiceController::class, 'cekKwitansiNo']);
 
             Route::delete('{id}', [InvoiceController::class, 'cancelInvoice']);
+
+            Route::post('getDataDetailByDoc', [InvoiceController::class, 'getDetailDatabyDlvcd']);
         });
 
         #Terkait Receive Order
@@ -337,6 +339,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::prefix('assignment-driver')->group(function () {
             Route::get('form/delivery', [DeliveryController::class, 'formDriverAssignment']);
             Route::get('data/delivery', [DeliveryController::class, 'emptyDriver']);
+            Route::post('data/unassign-driver', [DeliveryController::class, 'listUnassignedDriver']);
             Route::put('form/delivery/{id}', [DeliveryController::class, 'assignDriver']);
         });
 
@@ -669,7 +672,7 @@ Route::get('tribinapp/{path?}', function () {
     return view('tribinapp');
 })->where('any', '.*');
 
-
+Route::get('getHREmployee', [DeliveryController::class, 'getHREmployee']);
 
 #Terkait config
 Route::get('ACL/database', function () {

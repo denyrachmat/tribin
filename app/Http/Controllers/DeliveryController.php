@@ -453,7 +453,7 @@ class DeliveryController extends Controller
         if (empty($header)) {
             return response()->json(['msg' => 'Header not found'], 404);
         }
-        
+
         $det = T_DLVORDDETA::on($this->dedicatedConnection)->where('TDLVORDDETA_DLVCD', $header->TDLVORD_DLVCD)->delete();
 
         return [
@@ -508,6 +508,9 @@ class DeliveryController extends Controller
             ->where('TSLO_SLOCD', $SalesOrderNumber)
             ->where('TSLO_BRANCH', Auth::user()->branch)
             ->get();
+
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+
         return [
             'data' => $OrderDetail,
             'input' => base64_decode($request->id),
@@ -543,7 +546,8 @@ class DeliveryController extends Controller
                     'submitted_by',
                     'submitted_at',
                 )
-                ->get()
+                ->get(),
+            'is_allowed_approve_spk' => $activeRole['code'] == 'ga_manager' || $activeRole['code'] == 'ga_spv' || $activeRole['code'] == 'root'
         ];
     }
 
@@ -1281,6 +1285,8 @@ class DeliveryController extends Controller
 
     function formDriverAssignment()
     {
+        return view('tribinapp_layouts', ['routeApp' => 'unassignedDriver']);
+
         $getUsers = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
             ->whereIn('job_position', ['MEKANIK', 'MEKANIK CAT & BODY REPAIR', 'MEKANIK DINAMO', 'OP BACKHOE LOADER', 'OP EXCAVATOR', 'OP FORKLIFT', 'OP GENSET', 'SUPIR'])
             ->get();
@@ -1293,6 +1299,15 @@ class DeliveryController extends Controller
         );
     }
 
+    public function getHREmployee()
+    {
+        $getUsers = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
+            ->whereIn('job_position', ['MEKANIK', 'MEKANIK CAT & BODY REPAIR', 'MEKANIK DINAMO', 'OP BACKHOE LOADER', 'OP EXCAVATOR', 'OP FORKLIFT', 'OP GENSET', 'SUPIR'])
+            ->get();
+
+        return $getUsers;
+    }
+
     function emptyDriver(Request $request)
     {
         $data = T_DLVORDHEAD::on($this->dedicatedConnection)->select('MCUS_CUSNM', 'TDLVORD_DLVCD', 'TDLVORD_BRANCH', 'T_DLVORDHEAD.created_at', 'MCUS_ADDR1')
@@ -1302,6 +1317,68 @@ class DeliveryController extends Controller
             ->whereNull('TDLVORD_DELIVERED_BY')
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->get();
+
+        return ['data' => $data];
+    }
+
+    public function listUnassignedDriver(Request $request)
+    {
+        $data = T_DLVORDHEAD::on($this->dedicatedConnection)->select(
+            'MCUS_CUSNM',
+            'TDLVORD_DLVCD',
+            'TDLVORD_BRANCH',
+            'T_DLVORDHEAD.created_at',
+            'MCUS_ADDR1'
+        )
+            ->leftJoin('M_CUS', function ($join) {
+                $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
+            })
+            ->with('spk')
+            ->groupBy(
+                'MCUS_CUSNM',
+                'TDLVORD_DLVCD',
+                'TDLVORD_BRANCH',
+                'T_DLVORDHEAD.created_at',
+                'MCUS_ADDR1'
+            )
+            ->orderBy('T_DLVORDHEAD.created_at', 'desc');
+
+
+        if ($request->has('status') && !empty($request->status)) {
+            if ($request->status === 'approved') {
+                $data->whereHas('spk', function ($query) {
+                    $query->whereNotNull('submitted_at');
+                })->whereDoesntHave('spk', function ($query) {
+                    $query->whereNull('submitted_at');
+                });
+            } else {
+                $data->where(function ($query) {
+                     $query->whereHas('spk', function ($query) {
+                        $query->whereNull('submitted_at');
+                    })->orWhereDoesntHave('spk');
+                });
+            }
+        }
+
+        if (!empty($request->searchBy)) {
+            $data->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
+        }
+
+        if ($request->has('pagination') && !empty($request->pagination)) {
+            $pagination = $request->pagination;
+            $page = $pagination['page'] ?? 1;
+            $rowsPerPage = $pagination['rowsPerPage'] ?? 10;
+            $data = $data->paginate($rowsPerPage, ['*'], 'page', $page);
+        } else {
+            $data = $data->get();
+        }
+
+        $data->transform(function ($item) {
+            $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+            $item->created_at_formatted = date_format(date_create($item->created_at), 'd-M-Y H:i:s');
+            $item->is_allowed_approve_spk = $activeRole['code'] == 'ga_manager' || $activeRole['code'] == 'ga_spv' || $activeRole['code'] == 'root';
+            return $item;
+        });
 
         return ['data' => $data];
     }
@@ -1437,7 +1514,7 @@ class DeliveryController extends Controller
 
         # Validasi Driver
         $UANG_JALAN = 0;
-        if ($request->CSPK_PIC_AS === 'DRIVER') {
+        if ($request->CSPK_PIC_AS === 'DRIVER' || $request->CSPK_PIC_AS === 'SUPIR') {
             $RangePrice = M_DISTANCE_PRICE::on($this->dedicatedConnection)->select('*')
                 ->where('RANGE2', '>=', $request->CSPK_KM)
                 ->where('BRANCH', Auth::user()->branch)
@@ -1686,35 +1763,35 @@ class DeliveryController extends Controller
             $this->fpdf->SetXY(3, 95);
             $this->fpdf->Cell(10, 5, '1', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang Jalan', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_JALAN), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_JALAN), 1, 0, 'C');
             $this->fpdf->SetXY(3, 100);
             $this->fpdf->Cell(10, 5, '2', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang Solar', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_SOLAR), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_SOLAR), 1, 0, 'C');
             $this->fpdf->SetXY(3, 105);
             $this->fpdf->Cell(10, 5, '3', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang Makan', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_MAKAN), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_MAKAN), 1, 0, 'C');
             $this->fpdf->SetXY(3, 110);
             $this->fpdf->Cell(10, 5, '4', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang Mandah', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_MANDAH), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_MANDAH), 1, 0, 'C');
             $this->fpdf->SetXY(3, 115);
             $this->fpdf->Cell(10, 5, '5', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang Penginapan', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_PENGINAPAN), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_PENGINAPAN), 1, 0, 'C');
             $this->fpdf->SetXY(3, 120);
             $this->fpdf->Cell(10, 5, '6', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang Pengawalan', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_PENGAWALAN), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_PENGAWALAN), 1, 0, 'C');
             $this->fpdf->SetXY(3, 125);
             $this->fpdf->Cell(10, 5, '7', 1, 0, 'C');
             $this->fpdf->Cell(75, 5, 'Uang lain - lain', 1, 0, 'L');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($Data->CSPK_UANG_LAIN2), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($Data->CSPK_UANG_LAIN2), 1, 0, 'C');
             $this->fpdf->SetXY(3, 130);
             $this->fpdf->Cell(85, 5, 'Total', 1, 0, 'L');
             // $this->fpdf->Cell(75, 5, '', 1, 0, 'C');
-            $this->fpdf->Cell(50, 5, 'Rp '.number_format($TotalPrice), 1, 0, 'C');
+            $this->fpdf->Cell(50, 5, 'Rp ' . number_format($TotalPrice), 1, 0, 'C');
             $this->fpdf->SetXY(3, 140);
             $this->fpdf->Cell(10, 5, 'Terbilang', 0, 0, 'L');
             $this->fpdf->SetXY(3, 145);
@@ -1926,7 +2003,34 @@ class DeliveryController extends Controller
                 'remark' => '',
                 'branch' => Auth::user()->branch,
             ]);
+
+
+            $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+            $ColumnFocusName = '';
+            $ColumnFocusTime = '';
+            switch ($activeRole['code']) {
+                case 'ga_manager':
+                    $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
+                    $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
+                    break;
+                case 'ga_spv':
+                    $ColumnFocusName = 'CSPK_GA_SPV_APPROVED_BY';
+                    $ColumnFocusTime = 'CSPK_GA_SPV_APPROVED_AT';
+                    break;
+                case 'root':
+                    $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
+                    $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
+                    break;
+            }
+
+            C_SPK::on($this->dedicatedConnection)
+                ->where('id', base64_decode($request->id))
+                ->update([
+                    $ColumnFocusName => Auth::user()->nick_name,
+                    $ColumnFocusTime => date('Y-m-d H:i:s')
+                ]);
         }
+
         return ['message' => 'Submitted'];
     }
 
@@ -1947,6 +2051,7 @@ class DeliveryController extends Controller
         if ($activeRole['code'] === 'ga_manager') {
             $SPK->whereNull('CSPK_GA_MGR_APPROVED_AT');
         }
+
         if ($activeRole['code'] === 'ga_spv') {
             $SPK->whereNull('CSPK_GA_SPV_APPROVED_AT');
         }

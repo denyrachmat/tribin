@@ -20,20 +20,47 @@ class gencodeController extends Controller
             '',
             $request->cg,
             $branch,
-            $request->has('exactSearch') ? $request->exactSearch : false
+            $request->has('exactSearch') ? $request->exactSearch : false,
+            $request->has('includeChild') ? $request->includeChild : false
         );
 
         // return $request;
         $hasil = [];
         if (count($data) > 0) {
+            $parental = function($data, $cg) use (&$parental) {
+                $parent = [
+                    'idx'  => $data['id'],
+                    'code' => $data['MGECD_VALUE'],
+                    'desc' => $data['MGECD_DESC'],
+                    'desc2' => $data['MGECD_DESC2'],
+                    'desc3' => $data['MGECD_DESC3'],
+                    'data' => $this->getGencode(base64_encode($data['MGECD_VALUE']), '', $cg),
+                ];
+
+                if (isset($data['children']) && is_array($data['children'])) {
+                    $parent['children'] = array_map(function ($child) use ($cg, $parental) {
+                        return $parental($child, $cg);
+                    }, $data['children']);
+                }
+
+                return $parent;
+            };
+
             foreach ($data as $item) {
-                $hasil[] = [
+                $parent = [
+                    'idx'  => $item['id'],
                     'code' => $item['MGECD_VALUE'],
                     'desc' => $item['MGECD_DESC'],
                     'desc2' => $item['MGECD_DESC2'],
                     'desc3' => $item['MGECD_DESC3'],
-                    'data' => $this->getGencode(base64_encode($item['MGECD_VALUE']), '', $request->cg)
+                    'data' => $this->getGencode(base64_encode($item['MGECD_VALUE']), '', $request->cg),
                 ];
+
+                if ($request->has('includeChild')) {
+                    $parent['children'] = $parental($item, $request->cg)['children'] ?? [];
+                }
+
+                $hasil[] = $parent;
             }
         }
 

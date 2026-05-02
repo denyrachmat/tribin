@@ -40,6 +40,7 @@ const routes = [
       { path: 'journalInput', component: () => import('pages/transaction/accounting/journalInput/journalInputIndex.vue') },
       { path: 'pos', component: () => import('pages/transaction/pos/sales/posSalesIndex.vue') },
       { path: 'posList', component: () => import('pages/transaction/pos/sales/posListIndex.vue') },
+      { path: 'unassignedDriver', component: () => import('pages/warehouse/invoice/unassignedDriver.vue') },
 
     ]
   },

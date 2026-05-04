@@ -2234,10 +2234,10 @@ class DeliveryController extends Controller
                     ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
             })
             ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', base64_decode($dlvcd))
-            ->where(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"), '=', '')
+            ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
             ->get();
 
-        return $getDet;
+        return $getDet->toArray();
     }
 
     function confirmOutgoing(Request $request)

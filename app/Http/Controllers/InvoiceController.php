@@ -464,14 +464,17 @@ class InvoiceController extends Controller
             ->selectRaw("ANY_VALUE(qh.TQUO_SBJCT) AS TQUO_SBJCT")
             ->selectRaw("ANY_VALUE(c.MCUS_TELNO) AS MCUS_TELNO")
             ->selectRaw("ANY_VALUE(s.TSLO_POCD) AS TSLO_POCD")
-            ->leftJoin('T_DLVORDDETA as d', DB::raw("SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,'/',1)"), '=', DB::raw($parentExpr))
+            ->leftJoin('T_DLVORDDETA as d', DB::raw("CASE
+                WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5 THEN TDLVORDDETA_DLVCD
+                ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD,'/',1)
+            END"), '=', DB::raw($parentExpr))
             ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
             ->leftJoin('M_CUS as c', function ($join) {
                 $join->on('c.MCUS_CUSCD', '=', 'h.TDLVORD_CUSCD')
                     ->on('c.MCUS_BRANCH', '=', 'h.TDLVORD_BRANCH');
             })
             ->leftJoin('T_QUOHEAD as qh', 'qh.TQUO_QUOCD', '=', 's.TSLO_QUOCD')
-            ->where(DB::raw('TRIM(d.TDLVORDDETA_ITMCD_ACT)'), '<>', '')
+            ->whereNotNull(DB::raw("NULLIF(d.TDLVORDDETA_ITMCD_ACT, '')")) // pastikan ada detail aktif
             ->whereIn(DB::raw($parentExpr), $parents)
             ->groupBy(DB::raw($parentExpr));
 

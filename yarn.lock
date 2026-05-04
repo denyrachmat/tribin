@@ -6745,6 +6745,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsbarcode@npm:^3.12.3":
+  version: 3.12.3
+  resolution: "jsbarcode@npm:3.12.3"
+  checksum: 06eb034155e19f683e0e31e08d973a32433b213de9d3d86dc334c75a89832fe2f90cfe9c7e30de004b4706c21b456dcf627c612636af6ce66c0c1061f5b3ac4a
+  languageName: node
+  linkType: hard
+
 "jsbn@npm:1.1.0":
   version: 1.1.0
   resolution: "jsbn@npm:1.1.0"
@@ -9456,6 +9463,7 @@ __metadata:
     "@vitejs/plugin-vue": ^5.2.4
     axios: ^1.1.2
     clean-webpack-plugin: ^4.0.0
+    jsbarcode: ^3.12.3
     laravel-mix: ^6.0.49
     laravel-vite-plugin: ^0.7.2
     v-money: ^0.8.1

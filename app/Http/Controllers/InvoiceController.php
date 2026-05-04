@@ -471,6 +471,7 @@ class InvoiceController extends Controller
                     ->on('c.MCUS_BRANCH', '=', 'h.TDLVORD_BRANCH');
             })
             ->leftJoin('T_QUOHEAD as qh', 'qh.TQUO_QUOCD', '=', 's.TSLO_QUOCD')
+            ->where(DB::raw('TRIM(d.TDLVORDDETA_ITMCD_ACT)'), '<>', '')
             ->whereIn(DB::raw($parentExpr), $parents)
             ->groupBy(DB::raw($parentExpr));
 

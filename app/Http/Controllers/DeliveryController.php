@@ -2176,6 +2176,7 @@ class DeliveryController extends Controller
             ->where('TDLVORD_BRANCH', Auth::user()->branch)
             ->whereIn('TDLVORD_TYPE', [1, 2, 3])
             ->whereNull('T_DLVORDDETA.deleted_at')
+            // ->where(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"), '=', '')
             // ->where('MITM_ITMTYPE', '!=', '3')
             ->groupBy(DB::raw("SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1)"), 'TDLVORD_BRANCH', 'MCUS_CUSNM', DB::raw("SUBSTRING_INDEX(CITRN_DOCNO, '/', 1)"), 'CITRN_BRANCH')
             // ->whereNull('CITRN_DOCNO')
@@ -2233,7 +2234,7 @@ class DeliveryController extends Controller
                     ->on('T_DLVORDDETA.TDLVORDDETA_BRANCH', '=', 'TDLVORDHEAD_ALIAS.TDLVORD_BRANCH');
             })
             ->where(DB::raw("SUBSTRING_INDEX(TDLVORDDETA_DLVCD, '/', 1)"), '=', base64_decode($dlvcd))
-            ->whereNull(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"))
+            ->where(DB::raw("NULLIF(TDLVORDDETA_ITMCD_ACT, '')"), '=', '')
             ->get();
 
         return $getDet;

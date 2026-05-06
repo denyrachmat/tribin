@@ -79,6 +79,7 @@ class POSController extends Controller
             'TPOS_DOCNO' => $IDPOS,
             'TPOS_CUSTCD' => $request->TPOS_CUSTCD,
             'TPOS_PAY' => $request->TPOS_PAY,
+            'created_by' => Auth::user()->nick_name
         ]);
 
 

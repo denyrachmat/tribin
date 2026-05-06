@@ -1228,6 +1228,8 @@ class InvoiceController extends Controller
 
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
+        $heightBox = 115;
+
         $this->fpdf->AddPage("P", 'A4');
         $this->fpdf->SetFont('Arial', 'B', 10);
         $this->fpdf->SetXY(7, 5);
@@ -1248,7 +1250,7 @@ class InvoiceController extends Controller
         // $this->fpdf->Cell(25, 5, 'Proj. Location:', 0, 0, 'L');
         // $this->fpdf->Cell(15, 5, ': ' . $Subject->TQUO_PROJECT_LOCATION, 0, 0, 'L');
         $this->fpdf->SetXY(7, 35);
-        $this->fpdf->Cell(195, 115, '', 1, 0, 'L');
+        $this->fpdf->Cell(195, $heightBox, '', 1, 0, 'L');
         $this->fpdf->SetXY(10, 40);
         $this->fpdf->Cell(50, 5, 'Sudah terima dari', 0, 0, 'L');
         $this->fpdf->Cell(50, 5, ': ' . $RSHeader->MCUS_CUSNM, 0, 0, 'L');
@@ -1261,7 +1263,10 @@ class InvoiceController extends Controller
         $Yfocus = $this->fpdf->GetY() + 5;
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Terbilang', 0, 0, 'L');
-        $this->fpdf->Cell(50, 5, ': ' . $terbilang . ' Rupiah', 0, 0, 'L');
+        $this->fpdf->Cell(1, 5, ': ', 0, 0, 'L');
+        $this->fpdf->SetFont('Arial', 'BI', 10);
+        $this->fpdf->Cell(50, 5, $terbilang . ' Rupiah', 0, 0, 'L');
+        $this->fpdf->SetFont('Arial', '', 10);
         $this->fpdf->Line(63, $Yfocus + 7, 180, $Yfocus + 7);
 
         $Yfocus += 10;
@@ -1309,7 +1314,9 @@ class InvoiceController extends Controller
         $this->fpdf->SetXY(10, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Jumlah', 0, 0, 'L');
         $this->fpdf->Cell(50, 5, ': Rp. ' . number_format($PPNAmount + $totalHargaSewa), 0, 0, 'L');
-        $Yfocus = $this->fpdf->GetY() + 15;
+        $Yfocus = 142;
+
+        // logger($Yfocus);
         $this->fpdf->SetXY(120, $Yfocus);
         $this->fpdf->Cell(50, 5, 'Syapril, S.T', 0, 0, 'L');
         // $Yfocus += 9;

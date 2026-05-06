@@ -290,7 +290,7 @@
                 <tr>
                     <td><b>Terbilang</b></td>
                     <td><b>:</b></td>
-                    <td><b>{{$terbilang}} Rupiah</b></td>
+                    <td><b><i>{{$terbilang}} Rupiah</i></b></td>
                 </tr>
             </table>
         </div>

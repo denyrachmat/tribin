@@ -1056,29 +1056,29 @@ class InvoiceController extends Controller
     public function numberToSentence($nilai)
     {
         $nilai = round(abs($nilai));
-        $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+        $huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
         $temp = "";
 
         if ($nilai < 12) {
             $temp = " " . $huruf[$nilai];
         } else if ($nilai < 20) {
-            $temp = $this->numberToSentence($nilai - 10) . " belas";
+            $temp = $this->numberToSentence($nilai - 10) . " Belas";
         } else if ($nilai < 100) {
-            $temp = $this->numberToSentence(floor($nilai / 10)) . " puluh" . $this->numberToSentence($nilai % 10);
+            $temp = $this->numberToSentence(floor($nilai / 10)) . " Puluh" . $this->numberToSentence($nilai % 10);
         } else if ($nilai < 200) {
-            $temp = " seratus" . $this->numberToSentence($nilai - 100);
+            $temp = " Seratus" . $this->numberToSentence($nilai - 100);
         } else if ($nilai < 1000) {
-            $temp = $this->numberToSentence(floor($nilai / 100)) . " ratus" . $this->numberToSentence($nilai % 100);
+            $temp = $this->numberToSentence(floor($nilai / 100)) . " Ratus" . $this->numberToSentence($nilai % 100);
         } else if ($nilai < 2000) {
-            $temp = " seribu" . $this->numberToSentence($nilai - 1000);
+            $temp = " Seribu" . $this->numberToSentence($nilai - 1000);
         } else if ($nilai < 1000000) {
-            $temp = $this->numberToSentence(floor($nilai / 1000)) . " ribu" . $this->numberToSentence($nilai % 1000);
+            $temp = $this->numberToSentence(floor($nilai / 1000)) . " Ribu" . $this->numberToSentence($nilai % 1000);
         } else if ($nilai < 1000000000) {
-            $temp = $this->numberToSentence(floor($nilai / 1000000)) . " juta" . $this->numberToSentence($nilai % 1000000);
+            $temp = $this->numberToSentence(floor($nilai / 1000000)) . " Juta" . $this->numberToSentence($nilai % 1000000);
         } else if ($nilai < 1000000000000) {
-            $temp = $this->numberToSentence(floor($nilai / 1000000000)) . " milyar" . $this->numberToSentence($nilai % 1000000000);
+            $temp = $this->numberToSentence(floor($nilai / 1000000000)) . " Milyar" . $this->numberToSentence($nilai % 1000000000);
         } else if ($nilai < 1000000000000000) {
-            $temp = $this->numberToSentence(floor($nilai / 1000000000000)) . " trilyun" . $this->numberToSentence($nilai % 1000000000000);
+            $temp = $this->numberToSentence(floor($nilai / 1000000000000)) . " Trilyun" . $this->numberToSentence($nilai % 1000000000000);
         }
 
         return $temp;

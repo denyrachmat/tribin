@@ -827,7 +827,7 @@ class ReceiveOrderController extends Controller
             $listCat = $request->itmCat;
         } else {
             $listCat = M_ITM::on($this->dedicatedConnection)
-                ->select('MITM_ITMCAT')
+                ->select(DB::raw("COALESCE(MITM_ITMCAT, '-') as MITM_ITMCAT"))
                 ->groupBy('MITM_ITMCAT')
                 ->pluck('MITM_ITMCAT')
                 ->toArray();
@@ -864,14 +864,14 @@ class ReceiveOrderController extends Controller
                 "{$request->input('ldate')} 23:59:59",
             ])
             ->when(!empty($listCat), function ($qq) use ($listCat) {
-                $qq->whereIn('MITM_ITMCAT', $listCat);
+                $qq->whereIn(DB::raw("COALESCE(MITM_ITMCAT, '-')"), $listCat);
             })
             ->when(!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager']), function ($qq) {
                 $qq->where('created_by', Auth::user()->nick_name);
             })
             // Ambil kolom seperlunya (tambahkan kalau ada yang dipakai di view)
             ->select([
-                'MITM_ITMCAT',
+                DB::raw("COALESCE(MITM_ITMCAT, '-') as MITM_ITMCAT"),
                 'MUSAGE_ALIAS',
                 'TSLO_SLOCD',
                 'MITM_ITMCD',

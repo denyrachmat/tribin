@@ -1016,7 +1016,7 @@ class ReceiveOrderController extends Controller
 
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
 
-        $allowedRoles = ['root', 'accounting', 'director', 'manager', 'general_manager'];
+        $allowedRoles = ['root', 'accounting', 'director', 'manager', 'general_manager', 'pos_adm'];
 
         // Ambil list customer code
         if (!empty($request->cust) && count($request->cust) > 0) {

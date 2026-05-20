@@ -137,7 +137,8 @@
                         $subtotal += $valueDet->TSLODETA_ITMQT;
                         $subtotalQty += $valueDet->QTY;
                         $subtotalTax += $valueDet->totalTax;
-                        $total += $valueDet->TSLODETA_ITMQT;
+                        $subtotal += ($valueDet->TSLODETA_ITMQT * $valueDet->PRC);
+                        $total += ($valueDet->TSLODETA_ITMQT * $valueDet->PRC);
                         $totalQty += $valueDet->QTY;
                         $totalTax += $valueDet->totalTax;
                     @endphp
@@ -151,7 +152,7 @@
                         <td class="tg-0lax" style="text-align: right;">Rp {{ number_format($valueDet->PRC) }}</td>
                         <td class="tg-0lax" style="text-align: right;">Rp {{ number_format($valueDet->totalTax) }}</td>
                         <td class="tg-0lax" style="text-align: right;">Rp
-                            {{ number_format($valueDet->TSLODETA_ITMQT + $valueDet->totalTax) }}</td>
+                            {{ number_format(($valueDet->TSLODETA_ITMQT * $valueDet->PRC) + $valueDet->totalTax) }}</td>
                         <td class="tg-0lax" style="text-align: left;">{{ $valueDet->CSPK_PIC_NAME }} (
                             {{ $valueDet->CSPK_PIC_AS ?? '-' }} )</td>
                         <td class="tg-0lax" style="text-align: left;">{{ $valueDet->MCUS_CUSNM }}</td>

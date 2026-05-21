@@ -129,7 +129,8 @@
 
         .tg .tg-0lax {
             text-align: left;
-            vertical-align: top
+            vertical-align: top;
+            word-break: normal;
         }
     </style>
 </head>

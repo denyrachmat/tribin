@@ -1089,8 +1089,6 @@ class ReceiveOrderController extends Controller
             ];
         }
 
-        // return $hasil;
-
         $pdf = Pdf::setPaper('A4', 'portrait')->loadView('pdf.salesReportByCust', [
             'data' => $hasil,
             'dateRange' => [$request->fdate, $request->ldate],

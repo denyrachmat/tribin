@@ -41,6 +41,6 @@ class ImportStockTake implements ToCollection, WithStartRow, WithChunkReading
             $this->dedicatedConnection,
             $rows->values()->all(),
             $this->meta
-        )->onQueue('stockTake')->afterCommit();
+        )->onQueue('stockTake');
     }
 }

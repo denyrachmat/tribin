@@ -102,9 +102,9 @@ class CustomerController extends Controller
         }
 
         if ($request->MCUS_TYPE === '2') {
-            $validator = Validator::make($request->all(), [
-                'MCUS_NIB_FILE' => 'required|mimes:png,jpg,jpeg,pdf|max:2048',
-            ]);
+            // $validator = Validator::make($request->all(), [
+            //     'MCUS_NIB_FILE' => 'required|mimes:png,jpg,jpeg,pdf|max:2048',
+            // ]);
         }
         if ($validator->fails()) {
             return response()->json($validator->errors(), 406);

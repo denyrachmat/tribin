@@ -135,7 +135,7 @@ class CustomerController extends Controller
             $file->move(public_path($location), $fileName);
         }
 
-        $LastGENID = M_CUS::on($this->dedicatedConnection)->max('MCUS_GENID');
+        $LastGENID = M_CUS::on($this->dedicatedConnection)->where('MCUS_CUSCD', 'like', 'CUST-%')->where('MCUS_BRANCH', Auth::user()->branch)->max(DB::raw('CAST(SUBSTRING(MCUS_CUSCD, 6) AS UNSIGNED)'));
         $NEW_MCUS_CUSCD = NULL;
         $NewGENID = $LastGENID + 1;
         $NEW_MCUS_CUSCD = 'CUST-' . substr('0000' . $NewGENID, -4);

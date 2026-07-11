@@ -46,7 +46,7 @@ class StockInventoryChunkJob implements ShouldQueue
             logger('StockInventoryChunkJob - Started processing chunk. Date: ' . $this->date . ', ID: ' . $this->id . ', isUpdateItem: ' . ($this->isUpdateItem ? 'true' : 'false') . ', Connection: ' . $this->conn);
             foreach ($this->rows as $row) {
                 // skip row invalid
-                if (empty($row[0])) {
+                if (empty($row[0]) && empty($row[1])) {
                     logger('is_array:' . (is_array($row) ? 'true' : 'false') . ', empty:' . (empty($row) ? 'true' : 'false') . ', row0:' . ($row[0] ?? 'null'));
                     // logger('StockInventoryChunkJob - Skipping invalid or empty row. '.json_encode($row));
                     continue;

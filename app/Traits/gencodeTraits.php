@@ -35,7 +35,18 @@ trait gencodeTraits
         }
 
         if ($includeChild === true) {
-            $dataHead->whereNull('MGECD_PARENT')->with('children');
+            $dataHead->whereNull('MGECD_PARENT')->with('children', function ($query) use ($cg, $branch) {
+                $query->where('MGECD_ACTIVE', 1);
+                if (!empty($branch)) {
+                    $query->where('MGECD_BRANCH', $branch);
+                }
+                if (!empty($cg)) {
+                    $conn = Crypt::decryptString($cg);
+                    $query->where('MGECD_CG', $conn);
+                } else {
+                    $query->whereNull('MGECD_CG');
+                }
+            });
         }
 
         if (!empty($value)) {

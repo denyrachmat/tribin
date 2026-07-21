@@ -187,7 +187,11 @@ class PurchaseController extends Controller
                 // $newPOCode = substr('00' . $LastLine, -3) . '/' . $RSAlias->alias_code . '-PO/' . $this->monthOfRoma[date('n') - 1] . '/' . date('y');
             }
 
-            $newPOCode = $this->getGencodeData('po', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
+            $newPOCode = $this->getGencodeData('pch', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
+        }
+
+        if(empty($newPOCode)) {
+            return response()->json(['error' => 'Failed to generate PO code.', 'code' => $this->getGencodeData('pch', $this->dedicatedConnection, true)->getData(true)], 500);
         }
 
         $headerTable = [

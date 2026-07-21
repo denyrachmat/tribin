@@ -958,6 +958,7 @@ class PurchaseController extends Controller
                     }
                 }
 
+                $y += 5;
                 $this->fpdf->SetXY(128, $y);
                 $this->fpdf->SetFont('Arial', '', 10);
                 $this->fpdf->Cell(35, 5, 'Total', 1, 0);

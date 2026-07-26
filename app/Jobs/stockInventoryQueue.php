@@ -20,19 +20,33 @@ class stockInventoryQueue implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, LocationTraits;
 
+    public $timeout = 600;
+    public $tries = 3;
+    public $maxExceptions = 3;
+
     private $date, $id, $isUpdateItem, $conn, $row, $user;
     protected $dedicatedConnection;
 
     public function __construct($date, $id, $isUpdateItem, $conn, $row, $user)
     {
-        date_default_timezone_set('Asia/Jakarta');
         $this->date = $date;
         $this->id = $id;
         $this->isUpdateItem = $isUpdateItem;
         $this->conn = $conn;
         $this->dedicatedConnection = $conn;
-        $this->row = $row;
+        $this->row = array_map(function ($item) {
+            return is_object($item) ? $item->__toString() : $item;
+        }, $row);
         $this->user = $user;
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        \Log::error('stockInventoryQueue failed', [
+            'id' => $this->id,
+            'row' => $this->row,
+            'error' => $exception->getMessage(),
+        ]);
     }
 
     /**
@@ -40,6 +54,8 @@ class stockInventoryQueue implements ShouldQueue
      */
     public function handle(): void
     {
+        date_default_timezone_set('Asia/Jakarta');
+
         $cekItem = M_ITM::on($this->conn)
             ->where('MITM_ITMCD', $this->row[0])
             ->first();

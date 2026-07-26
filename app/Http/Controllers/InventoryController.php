@@ -15,10 +15,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\LocationTraits;
 use Illuminate\Http\File;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use App\Imports\ImportStockTake;
 use App\Models\M_ITM;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\T_RCV_HEAD;
+use Illuminate\Support\Facades\Cache;
 
 class InventoryController extends Controller
 {
@@ -591,7 +595,10 @@ class InventoryController extends Controller
             storage_path('app/public/upload_stock_take/' . $nama_file)
         );
 
-        return ['msg' => 'Upload Success'];
+        $pendingNow = DB::table('jobs')->where('queue', 'stockTake')->count();
+        Cache::put('stocktake_total_dispatched', $pendingNow, now()->addHours(1));
+
+        return ['msg' => 'Upload Success', 'total_rows' => $pendingNow];
     }
 
     function findStockByBarcode($bc, $loc = null)
@@ -643,5 +650,70 @@ class InventoryController extends Controller
         } else {
             return response()->json($data, 200);
         }
+    }
+
+    function downloadStockTakeTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['Item Code', 'Item Name', 'Qty', 'Price', 'Price 2', 'Location Code', 'UOM'];
+        foreach ($headers as $col => $header) {
+            $cell = $sheet->getCellByColumnAndRow($col + 1, 1);
+            $cell->setValue($header);
+            $cell->getStyle()->getFont()->setBold(true);
+            $cell->getStyle()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $cell->getStyle()->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THIN);
+        }
+
+        $sample = ['ITEM001', 'Sample Item', 10, 15000, 14000, 'WH01', 'PCS'];
+        foreach ($sample as $col => $value) {
+            $sheet->getCellByColumnAndRow($col + 1, 2)->setValue($value);
+        }
+
+        $sheet->getColumnDimension('A')->setWidth(15);
+        $sheet->getColumnDimension('B')->setWidth(25);
+        $sheet->getColumnDimension('C')->setWidth(10);
+        $sheet->getColumnDimension('D')->setWidth(12);
+        $sheet->getColumnDimension('E')->setWidth(12);
+        $sheet->getColumnDimension('F')->setWidth(15);
+        $sheet->getColumnDimension('G')->setWidth(10);
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'stock_take_template.xlsx';
+
+        $tempPath = storage_path('app/' . $fileName);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    function stockTakeProgress()
+    {
+        $pendingCount = DB::table('jobs')->where('queue', 'stockTake')->count();
+        $failedCount = DB::table('failed_jobs')
+            ->where('queue', 'stockTake')
+            ->where('failed_at', '>=', now()->subHours(1))
+            ->count();
+
+        $totalDispatched = Cache::get('stocktake_total_dispatched', 0);
+        $completed = $totalDispatched - $pendingCount;
+
+        if ($totalDispatched > 0) {
+            $percent = round(($completed / $totalDispatched) * 100);
+        } else {
+            $percent = $pendingCount > 0 ? 0 : 100;
+        }
+
+        return response()->json([
+            'pending' => $pendingCount,
+            'total' => $totalDispatched,
+            'completed' => max(0, $completed),
+            'percent' => min(100, max(0, $percent)),
+            'failed' => $failedCount,
+            'is_done' => $pendingCount === 0 && $totalDispatched > 0,
+        ]);
     }
 }

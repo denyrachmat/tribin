@@ -493,6 +493,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('printHandoverPDF', [InventoryController::class, 'printHandoverPDF']);
             Route::get('uploadStockTakeView', [InventoryController::class, 'uploadStockTakeView']);
             Route::post('uploadStockTake', [InventoryController::class, 'uploadStockTake']);
+            Route::get('downloadStockTakeTemplate', [InventoryController::class, 'downloadStockTakeTemplate']);
+            Route::get('stockTakeProgress', [InventoryController::class, 'stockTakeProgress']);
             Route::get('viewStockByItemLoc/{item}/{loc?}', [InventoryController::class, 'viewStockByItemLoc']);
             Route::get('findStockByBarcode/{barcode}/{loc?}', [InventoryController::class, 'findStockByBarcode']);
             Route::prefix('transferRequest')->group(function () {

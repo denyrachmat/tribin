@@ -1540,7 +1540,7 @@ class InvoiceController extends Controller
                 $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
                     ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
                     ->join('T_SRV_DET', 'T_SRV_DET.TSRVH_ID', '=', 'T_SRV_HEAD.SRVH_DOCNO')
-                    ->where('SRVH_DOCNO', $doc)
+                    ->where('SRVH_DOCNO', $r->TDLVORDDETA_DLVCD)
                     ->where('SRVH_BRANCH', Auth::user()->branch)
                     ->first();
             } else {

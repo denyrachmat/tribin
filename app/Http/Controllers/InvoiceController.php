@@ -1541,7 +1541,7 @@ class InvoiceController extends Controller
                     ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
                     ->join('T_SRV_DET', 'T_SRV_DET.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.SRVH_DOCNO')
                     ->where('SRVH_DOCNO', $doc)
-                    ->where('TSRV_BRANCH', Auth::user()->branch)
+                    ->where('SRVH_BRANCH', Auth::user()->branch)
                     ->first();
             } else {
                 $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')

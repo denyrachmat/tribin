@@ -754,9 +754,9 @@ class InvoiceController extends Controller
                 ->first();
         } else {
             $Subject = T_QUOHEAD::on($this->dedicatedConnection)
-            ->where('TQUO_QUOCD', $request->TSLO_QUOCD)
-            ->where('TQUO_BRANCH', Auth::user()->branch)
-            ->first();
+                ->where('TQUO_QUOCD', $request->TSLO_QUOCD)
+                ->where('TQUO_BRANCH', Auth::user()->branch)
+                ->first();
         }
 
         $total = 0;
@@ -1536,16 +1536,25 @@ class InvoiceController extends Controller
 
         foreach ($RSDetail as $r) {
             $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
-            $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')
-                ->where('TSLO_SLOCD', $r->TDLVORDDETA_SLOCD)
-                ->where('TSLO_BRANCH', Auth::user()->branch)
-                ->first();
-
-            if (!empty($Attn)) {
-                $Subject = T_QUOHEAD::on($this->dedicatedConnection)
-                    ->where('TQUO_QUOCD', $Attn->TSLO_QUOCD)
-                    ->where('TQUO_BRANCH', Auth::user()->branch)
+            if ($RSHeader->TDLVORD_TYPE == 4) {
+                $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
+                    ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
+                    ->join('T_SRVDETA', 'T_SRVDETA.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.TSRV_SRVCD')
+                    ->where('TSRV_SRVCD', $doc)
+                    ->where('TSRV_BRANCH', Auth::user()->branch)
                     ->first();
+            } else {
+                $Attn = T_SLOHEAD::on($this->dedicatedConnection)->select('TSLO_ATTN', 'TSLO_QUOCD', 'TSLO_POCD', 'TSLO_ADDRESS_DESCRIPTION')
+                    ->where('TSLO_SLOCD', $r->TDLVORDDETA_SLOCD)
+                    ->where('TSLO_BRANCH', Auth::user()->branch)
+                    ->first();
+
+                if (!empty($Attn)) {
+                    $Subject = T_QUOHEAD::on($this->dedicatedConnection)
+                        ->where('TQUO_QUOCD', $Attn->TSLO_QUOCD)
+                        ->where('TQUO_BRANCH', Auth::user()->branch)
+                        ->first();
+                }
             }
             break;
         }

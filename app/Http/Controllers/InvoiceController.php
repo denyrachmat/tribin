@@ -748,7 +748,7 @@ class InvoiceController extends Controller
         if ($request->TDLVORD_TYPE == 4) {
             $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
                 ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
-                ->join('T_SRVDETA', 'T_SRVDETA.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.TSRV_SRVCD')
+                ->join('T_SRV_DETA', 'T_SRV_DETA.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.TSRV_SRVCD')
                 ->where('TSRV_SRVCD', $request->TSLO_SLOCD)
                 ->where('TSRV_BRANCH', Auth::user()->branch)
                 ->first();
@@ -1539,7 +1539,7 @@ class InvoiceController extends Controller
             if ($RSHeader->TDLVORD_TYPE == 4) {
                 $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
                     ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
-                    ->join('T_SRVDETA', 'T_SRVDETA.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.TSRV_SRVCD')
+                    ->join('T_SRV_DETA', 'T_SRV_DETA.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.TSRV_SRVCD')
                     ->where('TSRV_SRVCD', $doc)
                     ->where('TSRV_BRANCH', Auth::user()->branch)
                     ->first();

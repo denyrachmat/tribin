@@ -747,10 +747,10 @@ class InvoiceController extends Controller
 
         if ($request->TDLVORD_TYPE == 4) {
             $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
-                ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
+                ->select(DB::raw('CONCAT(T_SRV_DET.TSRVD_ITMCD, " - ", T_SRV_DET.TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
                 ->join('T_SRV_DET', 'T_SRV_DET.TSRVDETA_SRVCD', '=', 'T_SRV_HEAD.TSRV_SRVCD')
-                ->where('TSRV_SRVCD', $request->TSLO_SLOCD)
-                ->where('TSRV_BRANCH', Auth::user()->branch)
+                ->where('SRVH_DOCNO', $request->TSLO_SLOCD)
+                ->where('SRVH_BRANCH', Auth::user()->branch)
                 ->first();
         } else {
             $Subject = T_QUOHEAD::on($this->dedicatedConnection)

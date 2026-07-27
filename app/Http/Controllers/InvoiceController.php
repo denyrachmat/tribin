@@ -1741,7 +1741,7 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetXY(3, 91.5);
             // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
-            $this->fpdf->Cell(29, 5, "Lokasi : " . ($RSHeader->TDLVORD_TYPE == 4 ? $Subject->TQUO_PROJECT_LOCATION : $RSHeader->TQUO_PROJECT_LOCATION), 0, 0, 'L');
+            $this->fpdf->Cell(29, 5, "Lokasi : " . ($RSHeader->TDLVORD_TYPE == 4 && !empty($Subject->TQUO_PROJECT_LOCATION) ? $Subject->TQUO_PROJECT_LOCATION : $RSHeader->TQUO_PROJECT_LOCATION), 0, 0, 'L');
             $this->fpdf->SetXY(170, 91.5);
             $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', 'B', 10);

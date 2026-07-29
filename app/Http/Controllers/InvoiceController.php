@@ -18,6 +18,7 @@ use App\Models\COMPANY_BRANCH;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Models\T_DLVSJDETA;
 use App\Models\CompanyGroup;
@@ -155,6 +156,23 @@ class InvoiceController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    private function sanitizeText($value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_array($value)) {
+            return implode(', ', array_map(fn ($item) => $this->sanitizeText($item), $value));
+        }
+
+        $text = strip_tags((string) $value);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return trim($text);
     }
 
     public function search(Request $request)
@@ -1539,7 +1557,7 @@ class InvoiceController extends Controller
             if ($RSHeader->TDLVORD_TYPE == 4) {
                 $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
                     ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
-                    ->join('T_SRV_DET', 'T_SRV_DET.TSRVH_ID', '=', 'T_SRV_HEAD.SRVH_DOCNO')
+                    ->join('T_SRV_DET', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
                     ->where('SRVH_DOCNO', $r->TDLVORDDETA_DLVCD)
                     ->where('SRVH_BRANCH', Auth::user()->branch)
                     ->first();
@@ -1556,6 +1574,7 @@ class InvoiceController extends Controller
                         ->first();
                 }
             }
+
             break;
         }
 
@@ -1598,6 +1617,19 @@ class InvoiceController extends Controller
             $PPNAmount = $totalHargaSewa * 11 / 100;
         }
 
+        Log::info('subject', [
+            'subject' => T_SRV_HEAD::on($this->dedicatedConnection)
+                ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
+                ->leftjoin('T_SRV_DET', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
+                ->where('SRVH_DOCNO', $doc)
+                ->where('SRVH_BRANCH', Auth::user()->branch)
+                ->first(),
+            'remark' => $RSHeader->TDLVORD_REMARK,
+            'doc' => $doc,
+            'branch' => Auth::user()->branch,
+            'connection' => $this->dedicatedConnection
+        ]);
+
         $subjek = ucwords(trim(str_replace('penawaran', '', strtolower(empty($Subject) || $RSHeader->TDLVORD_REMARK == 'SERVICE-INTERNAL' ? 'Internal Service' : $Subject->TQUO_SBJCT))));
         $terbilang = ucwords(rtrim($this->numberToSentence($PPNAmount + $totalHargaSewa)));
 
@@ -1616,32 +1648,32 @@ class InvoiceController extends Controller
             $this->fpdf->SetAutoPageBreak(true, 0);
             $this->fpdf->SetFont('Arial', 'B', 12);
             $this->fpdf->SetXY(3, 5);
-            $this->fpdf->Cell(45, 5, $Company->name, 0, 0, 'L');
+            $this->fpdf->Cell(45, 5, $this->sanitizeText($Company->name), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(3, 10);
-            $this->fpdf->MultiCell(70, 4, $Company->address . ' Telp.' . $Company->phone, 0, 'L');
+            $this->fpdf->MultiCell(70, 4, $this->sanitizeText($Company->address) . ' Telp.' . $this->sanitizeText($Company->phone), 0, 'L');
 
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 5);
-            $this->fpdf->Cell(45, 5, $Branch->MBRANCH_NM . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate), 0, 0, 'L');
+            $this->fpdf->Cell(45, 5, $this->sanitizeText($Branch->MBRANCH_NM) . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 10);
-            $this->fpdf->MultiCell(55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM, 0, 'L');
+            $this->fpdf->MultiCell(55, 4, 'Kepada ' . $this->sanitizeText($RSHeader->MCUS_CUSNM), 0, 'L');
             $this->fpdf->SetFont('Arial', '', 5);
             $this->fpdf->SetXY(150, 17);
-            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_ADDR1, 0, 'L');
+            $this->fpdf->MultiCell(55, 4, $this->sanitizeText($RSHeader->MCUS_ADDR1), 0, 'L');
             $this->fpdf->SetFont('Arial', '', 8);
             $this->fpdf->SetXY(150, 20);
-            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_REFF_MKT, 0, 'L');
+            $this->fpdf->MultiCell(55, 4, $this->sanitizeText($RSHeader->MCUS_REFF_MKT), 0, 'L');
             $this->fpdf->SetXY(150, 30);
-            $this->fpdf->MultiCell(55, 4, $RSHeader->MCUS_TELNO, 0, 'L');
+            $this->fpdf->MultiCell(55, 4, $this->sanitizeText($RSHeader->MCUS_TELNO), 0, 'L');
 
             $this->fpdf->SetFont('Arial', 'U', 10);
             $this->fpdf->SetXY(90, 15);
             $this->fpdf->Cell(29, 5, 'SURAT JALAN', 0, 0, 'C');
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(90, 20);
-            $this->fpdf->Cell(29, 5, 'NO : ' . $getDO, 0, 0, 'C');
+            $this->fpdf->Cell(29, 5, 'NO : ' . $this->sanitizeText($getDO), 0, 0, 'C');
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(3, 30);
@@ -1741,7 +1773,10 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetXY(3, 91.5);
             // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
-            $this->fpdf->Cell(29, 5, "Lokasi : " . ($RSHeader->TDLVORD_TYPE == 4 && !empty($Subject->TQUO_PROJECT_LOCATION) ? $Subject->TQUO_PROJECT_LOCATION : $RSHeader->TQUO_PROJECT_LOCATION), 0, 0, 'L');
+            $locationValue = $RSHeader->TDLVORD_TYPE == 4 && !empty($Subject->TQUO_PROJECT_LOCATION)
+                ? $Subject->TQUO_PROJECT_LOCATION
+                : $RSHeader->TQUO_PROJECT_LOCATION;
+            $this->fpdf->Cell(29, 5, 'Lokasi : ' . $this->sanitizeText($locationValue), 0, 0, 'L');
             $this->fpdf->SetXY(170, 91.5);
             $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', 'B', 10);
@@ -1757,9 +1792,9 @@ class InvoiceController extends Controller
                         $startCond = 98;
                     }
                     $this->fpdf->SetXY(1, $startCond);
-                    $cond = str_replace("\n", '', $valueCond->MCONDITION_DESCRIPTION);
+                    $cond = $this->sanitizeText($valueCond->MCONDITION_DESCRIPTION);
 
-                    $desc = wordwrap("- " . $cond, 210, "\n", false);
+                    $desc = wordwrap('- ' . $cond, 210, "\n", false);
                     $this->fpdf->MultiCell(210, 3, $desc, 0, 'L');
                     $startCond = $this->fpdf->GetY();
                 }

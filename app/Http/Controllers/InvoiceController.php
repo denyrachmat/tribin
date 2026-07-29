@@ -175,6 +175,14 @@ class InvoiceController extends Controller
         return trim($text);
     }
 
+    private function writeWrappedText($x, $y, $width, $height, $text, $align = 'L')
+    {
+        $this->fpdf->SetXY($x, $y);
+        $this->fpdf->MultiCell($width, $height, $this->sanitizeText($text), 0, $align);
+
+        return $this->fpdf->GetY();
+    }
+
     public function search(Request $request)
     {
 
@@ -1651,22 +1659,16 @@ class InvoiceController extends Controller
             $this->fpdf->Cell(45, 5, $this->sanitizeText($Company->name), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', '', 10);
             $this->fpdf->SetXY(3, 10);
-            $this->fpdf->MultiCell(70, 4, $this->sanitizeText($Company->address) . ' Telp.' . $this->sanitizeText($Company->phone), 0, 'L');
+            $this->writeWrappedText(3, 10, 70, 4, $Company->address . ' Telp.' . $Company->phone);
 
             $this->fpdf->SetFont('Arial', '', 8);
-            $this->fpdf->SetXY(150, 5);
-            $this->fpdf->Cell(45, 5, $this->sanitizeText($Branch->MBRANCH_NM) . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate), 0, 0, 'L');
-            $this->fpdf->SetFont('Arial', '', 8);
-            $this->fpdf->SetXY(150, 10);
-            $this->fpdf->MultiCell(55, 4, 'Kepada ' . $this->sanitizeText($RSHeader->MCUS_CUSNM), 0, 'L');
+            $rightY = $this->writeWrappedText(150, 5, 55, 4, $Branch->MBRANCH_NM . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate));
+            $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM);
             $this->fpdf->SetFont('Arial', '', 5);
-            $this->fpdf->SetXY(150, 17);
-            $this->fpdf->MultiCell(55, 4, $this->sanitizeText($RSHeader->MCUS_ADDR1), 0, 'L');
+            $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_ADDR1);
             $this->fpdf->SetFont('Arial', '', 8);
-            $this->fpdf->SetXY(150, 20);
-            $this->fpdf->MultiCell(55, 4, $this->sanitizeText($RSHeader->MCUS_REFF_MKT), 0, 'L');
-            $this->fpdf->SetXY(150, 30);
-            $this->fpdf->MultiCell(55, 4, $this->sanitizeText($RSHeader->MCUS_TELNO), 0, 'L');
+            $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_REFF_MKT);
+            $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_TELNO);
 
             $this->fpdf->SetFont('Arial', 'U', 10);
             $this->fpdf->SetXY(90, 15);
@@ -1728,33 +1730,34 @@ class InvoiceController extends Controller
 
                 $qtyNya = $r->TDLVORDDETA_ITMQT;
 
+                $rowHeight = 5;
                 $this->fpdf->SetXY(3, $Y);
-                $this->fpdf->Cell(29, 5, $nomor++, 0, 0, 'L');
+                $this->fpdf->MultiCell(10, $rowHeight, $nomor++, 0, 'L');
                 $this->fpdf->SetXY(15, $Y);
-                $this->fpdf->Cell(29, 5, $r->TDLVORDDETA_ITMCD_ACT, 0, 0, 'L');
+                $this->fpdf->MultiCell(25, $rowHeight, $this->sanitizeText($r->TDLVORDDETA_ITMCD_ACT), 0, 'L');
                 $this->fpdf->SetXY(45, $Y);
-                $this->fpdf->Cell(29, 5, $r->MITM_ITMNM, 0, 0, 'L');
+                $this->fpdf->MultiCell(50, $rowHeight, $this->sanitizeText($r->MITM_ITMNM), 0, 'L');
                 $this->fpdf->SetXY(100, $Y);
-                $this->fpdf->Cell(29, 5, "{$qtyNya} {$r->MITM_STKUOM}", 0, 0, 'L');
+                $this->fpdf->MultiCell(18, $rowHeight, $this->sanitizeText("{$qtyNya} {$r->MITM_STKUOM}"), 0, 'L');
                 $this->fpdf->SetXY(120, $Y);
-                $this->fpdf->Cell(29, 5, empty($RSDetail[$i]->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_FR)), 0, 0, 'L');
+                $this->fpdf->MultiCell(22, $rowHeight, empty($RSDetail[$i]->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_FR)), 0, 'L');
                 $this->fpdf->SetXY(145, $Y);
-                $this->fpdf->Cell(29, 5, empty($RSDetail[$i]->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_TO)), 0, 0, 'L');
+                $this->fpdf->MultiCell(22, $rowHeight, empty($RSDetail[$i]->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_TO)), 0, 'L');
                 if ($RSHeader->TDLVORD_TYPE != 4) {
                     if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                         $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->Cell(29, 5, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 0, 'L');
+                        $this->fpdf->MultiCell(35, $rowHeight, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 'L');
                         $this->fpdf->SetXY(170, $Y + 5);
-                        $this->fpdf->Cell(29, 5, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 0, 'L');
+                        $this->fpdf->MultiCell(35, $rowHeight, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 'L');
                     } else {
                         $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->Cell(29, 5, $r['MITM_ITMCAT'], 0, 0, 'L');
+                        $this->fpdf->MultiCell(35, $rowHeight, $this->sanitizeText($r['MITM_ITMCAT']), 0, 'L');
                         $Y += 5;
                         $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->Cell(29, 5, 'HM :', 0, 0, 'L');
+                        $this->fpdf->MultiCell(35, $rowHeight, 'HM :', 0, 'L');
                         $Y += 5;
                         $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->Cell(29, 5, 'Solar :', 0, 0, 'L');
+                        $this->fpdf->MultiCell(35, $rowHeight, 'Solar :', 0, 'L');
                     }
                 }
 
@@ -1776,7 +1779,7 @@ class InvoiceController extends Controller
             $locationValue = $RSHeader->TDLVORD_TYPE == 4 && !empty($Subject->TQUO_PROJECT_LOCATION)
                 ? $Subject->TQUO_PROJECT_LOCATION
                 : $RSHeader->TQUO_PROJECT_LOCATION;
-            $this->fpdf->Cell(29, 5, 'Lokasi : ' . $this->sanitizeText($locationValue), 0, 0, 'L');
+            $this->writeWrappedText(3, 91.5, 160, 3, 'Lokasi : ' . $locationValue);
             $this->fpdf->SetXY(170, 91.5);
             $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
             $this->fpdf->SetFont('Arial', 'B', 10);

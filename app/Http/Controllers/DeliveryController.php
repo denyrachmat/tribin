@@ -41,7 +41,10 @@ class DeliveryController extends Controller
     public function __construct()
     {
         date_default_timezone_set('Asia/Jakarta');
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+
+        if (isset($_COOKIE['CGID'])) {
+            $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+        }
         $this->fpdf = new Fpdf;
     }
 
@@ -1353,7 +1356,7 @@ class DeliveryController extends Controller
                 });
             } else {
                 $data->where(function ($query) {
-                     $query->whereHas('spk', function ($query) {
+                    $query->whereHas('spk', function ($query) {
                         $query->whereNull('submitted_at');
                     })->orWhereDoesntHave('spk');
                 });

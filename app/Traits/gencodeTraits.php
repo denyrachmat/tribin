@@ -28,7 +28,8 @@ trait gencodeTraits
             // ->leftjoin('M_GENCODE as mg2', 'mg.MGECD_VALUE', '=', 'mg2.MGECD_CODE')
             ->where('mg.MGECD_CODE', $exactSearch ? '=' : 'like', base64_decode($code) . ($exactSearch ? '' : '%'))
             ->where('mg.MGECD_ACTIVE', 1)
-            ->orderBy('mg.MGECD_CODE', 'asc');
+            ->orderBy('mg.MGECD_CODE', 'asc')
+            ->orderBy('mg.MGECD_ORDER', 'asc');
 
         if (!empty($branch)) {
             $dataHead->where('mg.MGECD_BRANCH', $branch);
@@ -46,6 +47,8 @@ trait gencodeTraits
                 } else {
                     $query->whereNull('MGECD_CG');
                 }
+
+                $query->orderBy('MGECD_CODE', 'asc')->orderBy('MGECD_ORDER', 'asc');
             });
         }
 

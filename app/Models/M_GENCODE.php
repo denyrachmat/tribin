@@ -20,7 +20,8 @@ class M_GENCODE extends Model
         'MGECD_CG',
         'MGECD_FLAG',
         'MGECD_BRANCH',
-        'MGECD_PARENT'
+        'MGECD_PARENT',
+        'MGECD_ORDER'
     ];
 
     public function parent()

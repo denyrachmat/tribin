@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 use App\Traits\LocationTraits;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PriceBuyController;
+use App\Events\StockTakeProgress;
+use Illuminate\Support\Facades\Cache;
 
 class StockInventoryChunkJob implements ShouldQueue
 {
@@ -44,26 +46,22 @@ class StockInventoryChunkJob implements ShouldQueue
     {
         try {
             logger('StockInventoryChunkJob - Started processing chunk. Date: ' . $this->date . ', ID: ' . $this->id . ', isUpdateItem: ' . ($this->isUpdateItem ? 'true' : 'false') . ', Connection: ' . $this->conn);
-            foreach ($this->rows as $row) {
-                // skip row invalid
-                if (empty($row[0]) && empty($row[1])) {
-                    logger('is_array:' . (is_array($row) ? 'true' : 'false') . ', empty:' . (empty($row) ? 'true' : 'false') . ', row0:' . ($row[0] ?? 'null'));
-                    // logger('StockInventoryChunkJob - Skipping invalid or empty row. '.json_encode($row));
-                    continue;
-                }
 
-                // logger($this->date);
-                // logger($this->id);
-                // logger($this->isUpdateItem);
-                // logger($this->conn);
-                // logger($this->user);
-                // logger('Processing row:'.$row[0]);
-                // logger(json_encode($row));
+            $validRows = collect($this->rows)->filter(fn($row) => !empty($row[0]) || !empty($row[1]))->values();
+            $totalRowsKey = 'stocktake_total_' . $this->id;
+            $currentRowKey = 'stocktake_current_' . $this->id;
+            $total = Cache::get($totalRowsKey, $validRows->count());
+            $chunkTotal = $validRows->count();
 
-                // === COPAS LOGIC LAMA (per row) ===
-                $cekItem = M_ITM::on($this->conn)
-                    ->where('MITM_ITMCD', $row[0])
-                    ->first();
+            foreach ($validRows as $row) {
+                $current = Cache::increment($currentRowKey);
+                $itemCode = $row[0] ?? 'unknown';
+
+                try {
+                    // === COPAS LOGIC LAMA (per row) ===
+                    $cekItem = M_ITM::on($this->conn)
+                        ->where('MITM_ITMCD', $row[0])
+                        ->first();
 
                 if ($this->isUpdateItem === true) {
                     if (empty($cekItem)) {
@@ -214,10 +212,30 @@ class StockInventoryChunkJob implements ShouldQueue
                 }
 
                 // === END logic per row ===
+
+                    event(new StockTakeProgress(
+                        (int) $this->id,
+                        $current,
+                        $total,
+                        $itemCode,
+                        'ok'
+                    ));
+
+                } catch (\Exception $rowEx) {
+                    logger('StockInventoryChunkJob - Error processing item ' . $itemCode . ': ' . $rowEx->getMessage());
+
+                    event(new StockTakeProgress(
+                        (int) $this->id,
+                        $current,
+                        $total,
+                        $itemCode,
+                        'error',
+                        $rowEx->getMessage()
+                    ));
+                }
             }
         } catch (\Exception $e) {
             logger('StockInventoryChunkJob - Error processing chunk. Date: ' . $this->date . ', ID: ' . $this->id . '. Error: ' . $e->getMessage());
-            // Optionally, you can rethrow the exception to let the job fail and be retried
             throw $e;
         }
     }

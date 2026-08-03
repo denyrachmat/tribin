@@ -15,9 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\warehouse\incomingBarcodeExport;
+use App\Traits\gencodeTraits;
 
 class ReceiveController extends Controller
 {
+    use gencodeTraits;
+
     protected $dedicatedConnection;
 
     public function __construct()
@@ -729,5 +732,63 @@ class ReceiveController extends Controller
             ),
             'incomingBarcodeExport.xlsx'
         );
+    }
+
+    function checkLastBarcode($isIncrement = false)
+    {
+        $gencode = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, false)->getData(true);
+        $bc = $gencode['success'] ? $gencode['data'] : null;
+
+        if ($bc && !T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+            ->where('TRCVBC_BCCD', $bc)
+            ->exists()) {
+            $lastAssigned = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $bc = $lastAssigned ? $lastAssigned->TRCVBC_BCCD : 'BC' . date('Ymd') . '0001';
+        }
+
+        if ($isIncrement) {
+            $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($bc, -4) + 1);
+        }
+
+        return [
+            'lastBarcode' => $bc
+        ];
+    }
+
+    function saveDirectBarcode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'TRCV_RCVCD' => 'required',
+            'det.*.item_code' => 'required|string',
+            'det.*.quantity' => 'required|numeric',
+            'det.*.unit_price' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        foreach ($request->det as $key => $value) {
+            do {
+                $gencode = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, true)->getData(true);
+                $bc = $gencode['success'] ? $gencode['data'] : null;
+            } while ($bc && T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+                ->where('TRCVBC_BCCD', $bc)
+                ->exists());
+
+            $bc = $bc ?: 'BC' . date('Ymd') . '0001';
+
+            T_RCV_BC_DETAIL::on($this->dedicatedConnection)->create([
+                'TRCVBC_BCCD' => $bc,
+                'TRCVBC_DOCNO' => $request->TRCV_RCVCD,
+                'TRCVBC_BCQT' => $value['quantity'],
+                'TRCVBC_DETID' => null,
+            ]);
+        }
+
+        return ['MSG' => 'Barcode saved successfully'];
     }
 }

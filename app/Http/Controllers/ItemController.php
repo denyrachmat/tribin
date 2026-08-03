@@ -145,9 +145,11 @@ class ItemController extends Controller
 
     function searchAPI(Request $request)
     {
+        $isITMCD = $request->input('isITMCD', $request->input('IS_ITMCD'));
+
         $columnMap = [
             'M_ITM_GRP.MITM_ITMNM as MITM_ITMNM',
-            $request->has('IS_ITMCD') && $request->IS_ITMCD == 1
+            (string) $isITMCD === '1'
             ? DB::raw("COALESCE(M_ITM_GRP.MITM_ITMNMREAL, ' - ', M_ITM_GRP.MITM_ITMNM) as MITM_ITMNMREAL")
             : 'M_ITM_GRP.MITM_ITMNMREAL as MITM_ITMNMREAL',
             'LATEST_PRC',
@@ -158,10 +160,8 @@ class ItemController extends Controller
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch);
 
-        if ($request->has('isITMCD') && $request->isITMCD == 1) {
-            $RSHead->where('IS_ITMCD', 1);
-        } else {
-            $RSHead->where('IS_ITMCD', 0);
+        if ($isITMCD !== null && $isITMCD !== '') {
+            $RSHead->where('IS_ITMCD', (int) $isITMCD);
         }
 
         if ($request->has('isForServ') && $request->isForServ == 1) {
@@ -177,7 +177,8 @@ class ItemController extends Controller
         if (!empty($request->searchValue)) {
             $RS = (clone $RSHead)
                 ->where(function ($wh) use ($request) {
-                    $wh->where('M_ITM_GRP.MITM_ITMNMREAL', 'like', "%{$request->searchValue}%");
+                    $wh->where('M_ITM_GRP.MITM_ITMNMREAL', 'like', "%{$request->searchValue}%")
+                        ->orWhere('M_ITM_GRP.MITM_ITMNM', 'like', "%{$request->searchValue}%");
                 })
                 ->get();
         } else {
@@ -189,6 +190,8 @@ class ItemController extends Controller
 
     function searchAPINameOnly(Request $request)
     {
+        $isITMCD = $request->input('isITMCD', $request->input('IS_ITMCD'));
+
         $columnMap = [
             DB::raw('MITM_ITMNM'),
             'LATEST_PRC',
@@ -200,10 +203,8 @@ class ItemController extends Controller
         $RSHead = $DataSet->table('M_ITM_GRP')->select($columnMap)
             ->where('MITM_BRANCH', Auth::user()->branch);
 
-        if ($request->has('isITMCD') && $request->isITMCD == 1) {
-            $RSHead->where('IS_ITMCD', 1);
-        } else {
-            $RSHead->where('IS_ITMCD', 0);
+        if ($isITMCD !== null && $isITMCD !== '') {
+            $RSHead->where('IS_ITMCD', (int) $isITMCD);
         }
 
         if ($request->has('isForServ') && $request->isForServ == 1) {
@@ -364,8 +365,8 @@ class ItemController extends Controller
     {
         $DataSet = DB::connection($this->dedicatedConnection);
         $data = $DataSet->table('M_ITM_GRP')->select('*')
-            ->where('MITM_BRANCH', Auth::user()->branch);
-        // ->where('IS_ITMCD', 1);
+            ->where('MITM_BRANCH', Auth::user()->branch)
+            ->whereIn('IS_ITMCD', [1, 0]);
 
         if (
             count($request->filter) > 0 && count(array_filter($request->filter, function ($f) {

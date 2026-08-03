@@ -24,7 +24,7 @@ class gencodeController extends Controller
             $request->has('includeChild') ? $request->includeChild : false
         );
 
-        // return $request;
+        // return $data;
         $hasil = [];
         if (count($data) > 0) {
             $parental = function($data, $cg) use (&$parental) {

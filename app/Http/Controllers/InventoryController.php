@@ -582,9 +582,23 @@ class InventoryController extends Controller
         $dedicatedConnection = $this->dedicatedConnection;
 
         // (G) Import per chunk
+        $headerId = (string) $createdHeader->id;
+        $totalRowsKey = 'stocktake_total_' . $headerId;
+        $currentRowKey = 'stocktake_current_' . $headerId;
+
+        $spreadsheetPath = storage_path('app/public/upload_stock_take/' . $nama_file);
+        $reader = IOFactory::createReaderForFile($spreadsheetPath);
+        $reader->setReadDataOnly(true);
+        $loadedSheet = $reader->loadWorksheet($spreadsheetPath);
+        $totalRows = max(0, $loadedSheet->getHighestRow() - 1);
+        $loadedSheet->disconnectWorksheets();
+
+        Cache::put($totalRowsKey, $totalRows, now()->addHours(1));
+        Cache::put($currentRowKey, 0, now()->addHours(1));
+
         $importer = new ImportStockTake(
             $req->date,
-            (string) $createdHeader->id,
+            $headerId,
             (bool) $req->isRegItem,
             $dedicatedConnection,
             $meta
@@ -598,7 +612,7 @@ class InventoryController extends Controller
         $pendingNow = DB::table('jobs')->where('queue', 'stockTake')->count();
         Cache::put('stocktake_total_dispatched', $pendingNow, now()->addHours(1));
 
-        return ['msg' => 'Upload Success', 'total_rows' => $pendingNow];
+        return ['msg' => 'Upload Success', 'headerId' => (int) $createdHeader->id, 'total_rows' => $pendingNow];
     }
 
     function findStockByBarcode($bc, $loc = null)

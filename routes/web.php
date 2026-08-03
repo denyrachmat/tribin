@@ -523,6 +523,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('outstanding-po', [ReceiveController::class, 'outstandingPO']);
             Route::get('outstanding-po/{id}', [ReceiveController::class, 'outstandingPOPerDocument']);
             Route::delete('item/{id}', [ReceiveController::class, 'delete']);
+
+            Route::get('checkLastBarcode', [ReceiveController::class, 'checkLastBarcode']);
         });
 
         Route::resource('receiveBarcode', ReceiveBarcodeController::class);

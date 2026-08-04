@@ -525,6 +525,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::delete('item/{id}', [ReceiveController::class, 'delete']);
 
             Route::get('checkLastBarcode', [ReceiveController::class, 'checkLastBarcode']);
+            Route::get('checkLastBarcode/{id}', [ReceiveController::class, 'checkLastBarcode']);
+            Route::post('saveDirectBarcode', [ReceiveController::class, 'saveDirectBarcode']);
         });
 
         Route::resource('receiveBarcode', ReceiveBarcodeController::class);

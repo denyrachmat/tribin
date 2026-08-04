@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\C_ITRN;
+use App\Models\M_GENCODE;
 use App\Models\T_PCHORDDETA;
 use App\Models\T_RCV_BC_DETAIL;
 use App\Models\T_RCV_DETAIL;
@@ -648,6 +648,7 @@ class ReceiveController extends Controller
 
     function confirmIncoming(Request $request)
     {
+        ini_set('max_execution_time', 700);
         $validator = Validator::make($request->all(), [
             'TRCV_RCVCD' => 'required',
         ]);
@@ -665,16 +666,9 @@ class ReceiveController extends Controller
                 ->first();
 
             if (empty($cek) && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
-                if (!empty($value['BARCODE'])) {
-                    $bc = $value['BARCODE'];
-                } else {
-                    $bc = '';
-                    if (empty($cekLatestBarcode)) {
-                        $bc = 'BC' . date('Ymd') . '0001';
-                    } else {
-                        $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($cekLatestBarcode->TRCVBC_BCCD, -3) + 1);
-                    }
-                }
+                $bc = !empty($value['BARCODE'])
+                    ? $value['BARCODE']
+                    : $this->checkLastBarcode(true)['lastBarcode'];
 
                 C_ITRN::on($this->dedicatedConnection)->create([
                     'CITRN_BRANCH' => Auth::user()->branch,
@@ -695,10 +689,6 @@ class ReceiveController extends Controller
                     'updated_by' => Auth::user()->nick_name,
                 ]);
 
-                $cekLatestBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
-                    ->whereBetween('created_at', [date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59')])
-                    ->first();
-
                 // Save to be incoming barcode
                 T_RCV_BC_DETAIL::on($this->dedicatedConnection)->create([
                     'TRCVBC_BCCD' => $bc,
@@ -706,6 +696,9 @@ class ReceiveController extends Controller
                     'TRCVBC_BCQT' => $value['CONFIRMED_QTY'],
                     'TRCVBC_DETID' => $value['id'],
                 ]);
+
+                // Keep BCGENCODE equal to the last barcode sequence used.
+                $this->updateGencodeBarcode($bc);
             }
         }
 
@@ -736,30 +729,48 @@ class ReceiveController extends Controller
 
     function checkLastBarcode($isIncrement = false)
     {
-        $gencode = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, false)->getData(true);
-        $bc = $gencode['success'] ? $gencode['data'] : null;
+        // Read the BCGENCODE counter so the BC matches gencode.
+        $seq = (int) M_GENCODE::on($this->dedicatedConnection)
+            ->where('MGECD_CG', $this->dedicatedConnection)
+            ->where('MGECD_CODE', 'like', 'GEN_REF_BCGENCODE%')
+            ->value('MGECD_VALUE');
 
-        if ($bc && !T_RCV_BC_DETAIL::on($this->dedicatedConnection)
-            ->where('TRCVBC_BCCD', $bc)
-            ->exists()) {
-            $lastAssigned = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+        // Fall back to the highest sequence actually used if gencode is empty.
+        if ($seq <= 0) {
+            $last = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
                 ->orderBy('id', 'desc')
-                ->first();
+                ->value('TRCVBC_BCCD');
 
-            $bc = $lastAssigned ? $lastAssigned->TRCVBC_BCCD : 'BC' . date('Ymd') . '0001';
-        }
-
-        if ($isIncrement) {
-            $bc = 'BC' . date('Ymd') . sprintf('%04d', (int) substr($bc, -4) + 1);
+            $seq = (!empty($last) && is_string($last) && strlen($last) >= 4)
+                ? (int) substr($last, -4)
+                : 0;
         }
 
         return [
-            'lastBarcode' => $bc
+            'lastBarcode' => 'BC' . date('Ymd') . sprintf('%04d', $seq + 1)
         ];
+    }
+
+    /**
+     * Keep BCGENCODE's counter equal to the last barcode sequence actually used.
+     * Only syncs when the barcode matches the generated BC.YYYYMMDD.SSSS format.
+     */
+    function updateGencodeBarcode(string $barcode): void
+    {
+        if (!preg_match('/^BC\d{8}(\d{4})$/', $barcode, $m)) {
+            return;
+        }
+
+        M_GENCODE::on($this->dedicatedConnection)
+            ->where('MGECD_CG', $this->dedicatedConnection)
+            ->where('MGECD_CODE', 'like', 'GEN_REF_BCGENCODE%')
+            ->update(['MGECD_VALUE' => $m[1]]);
     }
 
     function saveDirectBarcode(Request $request)
     {
+
+        ini_set('max_execution_time', 700);
         $validator = Validator::make($request->all(), [
             'TRCV_RCVCD' => 'required',
             'det.*.item_code' => 'required|string',
@@ -771,22 +782,71 @@ class ReceiveController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        foreach ($request->det as $key => $value) {
-            do {
-                $gencode = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, true)->getData(true);
-                $bc = $gencode['success'] ? $gencode['data'] : null;
-            } while ($bc && T_RCV_BC_DETAIL::on($this->dedicatedConnection)
-                ->where('TRCVBC_BCCD', $bc)
-                ->exists());
+        $det = collect($request->det);
 
-            $bc = $bc ?: 'BC' . date('Ymd') . '0001';
+        // Validate each item has enough *un-barcoded* stock at WH1.
+        $det->groupBy('item_code')->each(function ($lines, $itemCode) {
+            $totalStock = C_ITRN::on($this->dedicatedConnection)
+                ->where('CITRN_ITMCD', $itemCode)
+                ->where('CITRN_LOCCD', 'WH1')
+                ->sum('CITRN_ITMQT');
 
-            T_RCV_BC_DETAIL::on($this->dedicatedConnection)->create([
-                'TRCVBC_BCCD' => $bc,
-                'TRCVBC_DOCNO' => $request->TRCV_RCVCD,
-                'TRCVBC_BCQT' => $value['quantity'],
-                'TRCVBC_DETID' => null,
-            ]);
+            $alreadyBarcoded = C_ITRN::on($this->dedicatedConnection)
+                ->where('CITRN_ITMCD', $itemCode)
+                ->where('CITRN_LOCCD', 'WH1')
+                ->whereNotNull('id_reff')
+                ->sum('CITRN_ITMQT');
+
+            $requested = (float) $lines->sum('quantity');
+            $outstanding = $totalStock - $alreadyBarcoded;
+
+            if ($requested > $outstanding) {
+                abort(response()->json([
+                    'item_code' => [
+                        "Stock not enough for item {$itemCode}. Outstanding (un-barcoded) stock: {$outstanding}, requested: {$requested}"
+                    ]
+                ], 406));
+            }
+        });
+
+        DB::connection($this->dedicatedConnection)->beginTransaction();
+
+        try {
+            foreach ($det as $key => $value) {
+                $bc = $this->checkLastBarcode(true)['lastBarcode'];
+
+                // Real WH1 stock linked to the barcode
+                C_ITRN::on($this->dedicatedConnection)->create([
+                    'CITRN_BRANCH' => Auth::user()->branch,
+                    'CITRN_LOCCD' => 'WH1',
+                    'CITRN_DOCNO' => $request->TRCV_RCVCD,
+                    'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                    'CITRN_FORM' => 'BC-DIRECT',
+                    'CITRN_ITMCD' => $value['item_code'],
+                    'CITRN_ITMQT' => $value['quantity'],
+                    'CITRN_PRCPER' => $value['unit_price'],
+                    'CITRN_PRCAMT' => $value['unit_price'] * $value['quantity'],
+                    'created_by' => Auth::user()->nick_name,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'id_reff' => $bc,
+                ]);
+
+                // Barcode registry record
+                T_RCV_BC_DETAIL::on($this->dedicatedConnection)->create([
+                    'TRCVBC_BCCD' => $bc,
+                    'TRCVBC_DOCNO' => $request->TRCV_RCVCD,
+                    'TRCVBC_BCQT' => $value['quantity'],
+                    'TRCVBC_DETID' => null,
+                ]);
+
+                // Keep BCGENCODE equal to the last barcode sequence used.
+                $this->updateGencodeBarcode($bc);
+            }
+
+            DB::connection($this->dedicatedConnection)->commit();
+        } catch (Exception $e) {
+            DB::connection($this->dedicatedConnection)->rollBack();
+            return response()->json([[$e->getMessage()]], 406);
         }
 
         return ['MSG' => 'Barcode saved successfully'];

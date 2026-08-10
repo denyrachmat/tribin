@@ -2,7 +2,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\C_ITRN;
-use App\Models\M_GENCODE;
 use App\Models\T_PCHORDDETA;
 use App\Models\T_RCV_BC_DETAIL;
 use App\Models\T_RCV_DETAIL;
@@ -696,9 +695,6 @@ class ReceiveController extends Controller
                     'TRCVBC_BCQT' => $value['CONFIRMED_QTY'],
                     'TRCVBC_DETID' => $value['id'],
                 ]);
-
-                // Keep BCGENCODE equal to the last barcode sequence used.
-                $this->updateGencodeBarcode($bc);
             }
         }
 
@@ -729,42 +725,24 @@ class ReceiveController extends Controller
 
     function checkLastBarcode($isIncrement = false)
     {
-        // Read the BCGENCODE counter so the BC matches gencode.
-        $seq = (int) M_GENCODE::on($this->dedicatedConnection)
-            ->where('MGECD_CG', $this->dedicatedConnection)
-            ->where('MGECD_CODE', 'like', 'GEN_REF_BCGENCODE%')
-            ->value('MGECD_VALUE');
+        // Build the next barcode the same way gencode does (root M_GENCODE, scoped by MGECD_CG).
+        // Preview (false) computes without saving; allocation (true) advances and returns it.
+        $gencode = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, (bool) $isIncrement)->getData(true);
+        $bc = $gencode['success'] ? $gencode['data'] : null;
 
-        // Fall back to the highest sequence actually used if gencode is empty.
-        if ($seq <= 0) {
-            $last = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
-                ->orderBy('id', 'desc')
-                ->value('TRCVBC_BCCD');
-
-            $seq = (!empty($last) && is_string($last) && strlen($last) >= 4)
-                ? (int) substr($last, -4)
-                : 0;
+        if ($isIncrement) {
+            // ensure uniqueness when allocating
+            while ($bc && T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+                ->where('TRCVBC_BCCD', $bc)
+                ->exists()) {
+                $gencode = $this->getGencodeData('BCGENCODE', $this->dedicatedConnection, true)->getData(true);
+                $bc = $gencode['success'] ? $gencode['data'] : null;
+            }
         }
 
         return [
-            'lastBarcode' => 'BC' . date('Ymd') . sprintf('%04d', $seq + 1)
+            'lastBarcode' => $bc ?? ''
         ];
-    }
-
-    /**
-     * Keep BCGENCODE's counter equal to the last barcode sequence actually used.
-     * Only syncs when the barcode matches the generated BC.YYYYMMDD.SSSS format.
-     */
-    function updateGencodeBarcode(string $barcode): void
-    {
-        if (!preg_match('/^BC\d{8}(\d{4})$/', $barcode, $m)) {
-            return;
-        }
-
-        M_GENCODE::on($this->dedicatedConnection)
-            ->where('MGECD_CG', $this->dedicatedConnection)
-            ->where('MGECD_CODE', 'like', 'GEN_REF_BCGENCODE%')
-            ->update(['MGECD_VALUE' => $m[1]]);
     }
 
     function saveDirectBarcode(Request $request)
@@ -838,9 +816,6 @@ class ReceiveController extends Controller
                     'TRCVBC_BCQT' => $value['quantity'],
                     'TRCVBC_DETID' => null,
                 ]);
-
-                // Keep BCGENCODE equal to the last barcode sequence used.
-                $this->updateGencodeBarcode($bc);
             }
 
             DB::connection($this->dedicatedConnection)->commit();

@@ -2051,7 +2051,7 @@ class DeliveryController extends Controller
             ->leftJoin($currentDBName . '.users AS A', 'C_SPK.CSPK_PIC_NAME', '=', 'A.nick_name')
             ->whereNotNull('submitted_at');
 
-        if ($activeRole['code'] === 'ga_manager') {
+        if ($activeRole['code'] === 'ga_manager' || $activeRole['code'] === 'ga_spv') {
             $SPK->whereNull('CSPK_GA_MGR_APPROVED_AT');
         }
 

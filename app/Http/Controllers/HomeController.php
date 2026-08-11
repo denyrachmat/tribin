@@ -218,7 +218,7 @@ class HomeController extends Controller
                 ->groupBy('TPCHREQ_PCHCD')->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga'])) {
+        if (in_array($activeRole['code'], ['root', 'ga', 'ga_spv', 'ga_manager'])) {
             $dataDeliveryOrderNoDriver = T_DLVORDHEAD::on($this->dedicatedConnection)->select('MCUS_CUSNM')
                 ->leftJoin('M_CUS', function ($join) {
                     $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');
@@ -228,7 +228,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga', 'driver'])) {
+        if (in_array($activeRole['code'], ['root', 'ga', 'ga_spv', 'ga_manager'])) {
             $dataDeliveryOrderUndelivered = T_DLVORDHEAD::on($this->dedicatedConnection)->select('MCUS_CUSNM')
                 ->leftJoin('M_CUS', function ($join) {
                     $join->on('TDLVORD_CUSCD', '=', 'MCUS_CUSCD')->on('TDLVORD_BRANCH', '=', 'MCUS_BRANCH');

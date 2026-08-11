@@ -252,7 +252,7 @@ class HomeController extends Controller
             $UnApprovedSPK = json_decode(json_encode($UnApprovedSPK), true);
         }
 
-        if (in_array($activeRole['code'], ['root', 'ga_manager', 'srv_mgr', 'manager'])) {
+        if (in_array($activeRole['code'], ['root', 'ga_manager', 'ga_spv', 'srv_mgr', 'manager'])) {
             $unapproveService = T_SRV_HEAD::on($this->dedicatedConnection)
                 ->select('T_SRV_HEAD.*')
                 ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')

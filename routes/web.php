@@ -293,6 +293,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::delete('{id}', [DeliveryController::class, 'delete']);
         });
 
+        Route::get('invoice/{datas}', [InvoiceController::class, 'indexWithParam'])->where('datas', '.*');
         Route::resource('invoice', InvoiceController::class);
         Route::prefix('invoices')->group(function () {
             Route::post('search', [InvoiceController::class, 'search']);

@@ -222,7 +222,8 @@
                     <tr>
                         <th class="tg-0lax"><b>Merk</b></th>
                         <th class="tg-0lax"><b>Capacity / Model</b></th>
-                        <th class="tg-0lax"><b>Pemakaian / Periode</b></th>
+                        <th class="tg-0lax"><b>Pemakaian</b></th>
+                        <th class="tg-0lax"><b>Periode</b></th>
                         <th class="tg-0lax"><b>Qty</b></th>
                         <th class="tg-0lax"><b>Harga Satuan</b></th>
                         <th class="tg-0lax"><b>{{$TDLVORD_TYPE > 2 ? 'Total Harga Barang': 'Total Harga Sewa'}}</b></th>
@@ -234,6 +235,7 @@
                             <tr>
                                 <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
                                 <td class="tg-0lax">{{$value['MITM_ITMNMREAL']}} <br> {{$value['MITM_MODEL']}}</td>
+                                <td class="tg-0lax">-</td>
                                 <td class="tg-0lax">-</td>
                                 <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
                                 <td class="tg-0lax">Rp {{number_format($value['TDLVORDDETA_PRC'], 0, ".", ",") }}</td>
@@ -247,8 +249,8 @@
                                     <td class="tg-0lax">{{$value['MITM_BRAND']}}</td>
                                     <td class="tg-0lax">{{$value['MITM_ITMNM']}} <br> {{$value['MITM_MODEL']}}</td>
                                     <td class="tg-0lax">{{$value['dataSLO']['MUSAGE_ALIAS']}} -
-                                        {{$value['dataSLO']['MUSAGE_DESCRIPTION']}} /
-                                        {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_FR']))}} -
+                                        {{$value['dataSLO']['MUSAGE_DESCRIPTION']}}</td>
+                                    <td class="tg-0lax">{{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_FR']))}} -
                                         {{date('d M Y', strtotime($value['dataSLO']['TSLODETA_PERIOD_TO']))}} </td>
                                     <td class="tg-0lax">{{$value['TDLVORDDETA_ITMQT']}}</td>
                                     <td class="tg-0lax">Rp {{number_format($value['totPRCSLO'], 0, ".", ",") }}</td>

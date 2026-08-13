@@ -30,6 +30,7 @@ use App\Models\T_SRV_HEAD;
 use App\Models\T_SRVDETA;
 use App\Traits\taxesTraits;
 use App\Traits\accTraits;
+use App\Models\hrm\HRMEmployee;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 class InvoiceController extends Controller
@@ -43,7 +44,9 @@ class InvoiceController extends Controller
         date_default_timezone_set('Asia/Jakarta');
         ini_set('max_execution_time', 300);
         ini_set('memory_limit', '512M');
-        $this->dedicatedConnection = Crypt::decryptString($_COOKIE['CGID']);
+        $this->dedicatedConnection = isset($_COOKIE['CGID']) && !empty($_COOKIE['CGID'])
+            ? Crypt::decryptString($_COOKIE['CGID'])
+            : '';
         $this->fpdf = new Fpdf;
     }
     /**
@@ -52,6 +55,11 @@ class InvoiceController extends Controller
     public function index()
     {
         return view('tribinapp_layouts', ['routeApp' => 'invoice']);
+    }
+
+    public function indexWithParam($datas) {
+        
+        return view('tribinapp_layouts', ['routeApp' => 'invoice/' . $datas]);
     }
 
     /**
@@ -1823,6 +1831,8 @@ class InvoiceController extends Controller
                 empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
             );
 
+            // return $getApproval;
+
             $hasilApproval = [];
             foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
                 $hasilApproval[] = [
@@ -1830,7 +1840,7 @@ class InvoiceController extends Controller
                         ? $Dibuat->name : (
                             $value['isSupplierOrCustApproval']
                             ? $RSHeader->MCUS_CUSNM
-                            : ''
+                            : (isset($value['isOtherApproval']) && $value['isOtherApproval'] ? $value['username'] : '')
                         ),
                     'remarks' => $value['remarks'],
                 ];
@@ -1843,7 +1853,7 @@ class InvoiceController extends Controller
                         ? $Dibuat->name : (
                             $value['isSupplierOrCustApproval']
                             ? $RSHeader->MCUS_CUSNM
-                            : ''
+                            : (isset($value['isOtherApproval']) && $value['isOtherApproval'] ? $value['username'] : '')
                         ),
                     'remarks' => $value['remarks'],
                 ];
@@ -1851,6 +1861,11 @@ class InvoiceController extends Controller
 
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetXY(15, $startCond + 3);
+
+            $getDriverSPK = $RSHeader->spk->where('CSPK_PIC_AS', 'DRIVER')->first();
+            $getDriverProfile = HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first();
+            $getDriverProfile = $getDriverProfile ? $getDriverProfile->toArray() : ['full_name' => ''];
+
             if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                 $startCountF = 52;
                 foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
@@ -1859,34 +1874,20 @@ class InvoiceController extends Controller
                 $this->fpdf->SetXY(13, 135);
                 foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
                     if (!empty($valueRemarksForklift['name'])) {
-                        $this->fpdf->Cell($startCountF, 5, '(' . $valueRemarksForklift['name'] . ')', 0, 0, 'L');
+                        $this->fpdf->Cell($startCountF, 5, '(' . ($getDriverProfile[$valueRemarksForklift['name']] ?? $valueRemarksForklift['name']) . ')', 0, 0, 'L');
                     } else {
                         $this->fpdf->Cell($startCountF, 5, '(                   )', 0, 0, 'L');
                     }
                 }
-                // $this->fpdf->Cell(52, 5, 'Penerima', 0, 0, 'L');
-                // $this->fpdf->Cell(48, 5, 'Sopir', 0, 0, 'L');
-                // $this->fpdf->Cell(50, 5, 'Ks. Gudang', 0, 0, 'L');
-                // $this->fpdf->Cell(50, 5, 'Dibuat Oleh', 0, 0, 'L');
-                // $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-                // $this->fpdf->Cell(50, 2, '(                   )', 0, 0, 'L');
-                // $this->fpdf->Cell(52, 2, '(                   )', 0, 0, 'L');
-                // $this->fpdf->Cell(50, 2, '(' . $Dibuat->name . ')', 0, 0, 'L');
             } else {
-                // $this->fpdf->Cell(40, 5, 'Penerima', 0, 0, 'L');
-                // $this->fpdf->Cell(40, 5, 'Sopir', 0, 0, 'L');
-                // $this->fpdf->Cell(40, 5, 'Operator', 0, 0, 'L');
-                // $this->fpdf->Cell(40, 5, 'Adm. Stok', 0, 0, 'L');
-                // $this->fpdf->Cell(40, 5, 'Dibuat Oleh', 0, 0, 'L');
-
                 $startCount = 40;
                 foreach ($hasilApproval as $key => $valueRemarks) {
                     $this->fpdf->Cell($startCount, 5, $valueRemarks['remarks'], 0, 0, 'L');
                 }
                 $this->fpdf->SetXY(13, 135);
                 foreach ($hasilApproval as $key => $valueRemarks) {
-                    if (!empty($valueRemarks['name'])) {
-                        $this->fpdf->Cell($startCount, 5, '(' . $valueRemarks['name'] . ')', 0, 0, 'L');
+                    if (!empty($valueRemarks['name'])) {                   
+                        $this->fpdf->Cell($startCount, 5, '(' . ($getDriverProfile[$valueRemarks['name']] ?? $valueRemarks['name']) . ')', 0, 0, 'L');
                     } else {
                         $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
                     }

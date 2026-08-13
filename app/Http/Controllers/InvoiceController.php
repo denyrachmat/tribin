@@ -2046,8 +2046,20 @@ class InvoiceController extends Controller
             $spkCollection = collect($RSHeader->spk);
 
             $getOperator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
-            $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
+            $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'DRIVER'))->CSPK_PIC_NAME ?? '-';
             $getKordinator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'KOORDINATOR'))->CSPK_PIC_NAME ?? '-';
+            
+            $getEmployeeName = function ($employeeId) {
+                if (empty($employeeId)) {
+                    return '';
+                }
+                $employee = HRMEmployee::where('employee_id', $employeeId)->first();
+                return $employee ? $employee->full_name : '';
+            };
+            
+            $getOperator = $getEmployeeName($getOperator);
+            $getDriver = $getEmployeeName($getDriver);
+            $getKordinator = $getEmployeeName($getKordinator);
 
             $listHeader = [
                 [
@@ -2136,10 +2148,6 @@ class InvoiceController extends Controller
 
             $Y = $tinggiTable + 5;
 
-            $getDriverSPK = $RSHeader->spk->where('CSPK_PIC_AS', 'DRIVER')->first();
-            $getDriverProfile = !empty($getDriverSPK->CSPK_PIC_NAME) ? HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first() : '';
-            $getDriverProfile = !empty($getDriverProfile) ? $getDriverProfile->toArray() : ['full_name' => ''];
-
             $listTTD = [
                 [
                     'mark' => 'Marketing',
@@ -2147,11 +2155,11 @@ class InvoiceController extends Controller
                 ],
                 [
                     'mark' => 'Sopir',
-                    'markVal' => '(' . (!empty($getDriverProfile['full_name']) ? $getDriverProfile['full_name'] : '                   ') . ')',
+                    'markVal' => '(' . (!empty($getDriver) ? $getDriver : '                   ') . ')',
                 ],
                 [
                     'mark' => 'Operator',
-                    'markVal' => '(                   )',
+                    'markVal' => '(' . (!empty($getOperator) ? $getOperator : '                   ') . ')',
                 ],
                 [
                     'mark' => 'Adm. Stok',

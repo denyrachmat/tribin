@@ -57,8 +57,9 @@ class InvoiceController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'invoice']);
     }
 
-    public function indexWithParam($datas) {
-        
+    public function indexWithParam($datas)
+    {
+
         return view('tribinapp_layouts', ['routeApp' => 'invoice/' . $datas]);
     }
 
@@ -173,7 +174,7 @@ class InvoiceController extends Controller
         }
 
         if (is_array($value)) {
-            return implode(', ', array_map(fn ($item) => $this->sanitizeText($item), $value));
+            return implode(', ', array_map(fn($item) => $this->sanitizeText($item), $value));
         }
 
         $text = strip_tags((string) $value);
@@ -1866,6 +1867,21 @@ class InvoiceController extends Controller
             $getDriverProfile = !empty($getDriverSPK->CSPK_PIC_NAME) ? HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first() : '';
             $getDriverProfile = !empty($getDriverProfile) ? $getDriverProfile->toArray() : ['full_name' => ''];
 
+            $spkCollection = collect($RSHeader->spk);
+            $getOperator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
+            $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'DRIVER'))->CSPK_PIC_NAME ?? '-';
+
+            $getEmployeeName = function ($employeeId, $keys_ob) {
+                if (empty($employeeId)) {
+                    return [$keys_ob => ''];
+                }
+                $employee = HRMEmployee::where('employee_id', $employeeId)->first();
+                return $employee ? [$keys_ob => $employee->full_name] : [$keys_ob => ''];
+            };
+
+            $getOperator = $getEmployeeName($getOperator, 'full_name');
+            $getDriver = $getEmployeeName($getDriver, 'full_name');
+
             if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                 $startCountF = 52;
                 foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
@@ -1874,7 +1890,12 @@ class InvoiceController extends Controller
                 $this->fpdf->SetXY(13, 135);
                 foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
                     if (!empty($valueRemarksForklift['name'])) {
-                        $this->fpdf->Cell($startCountF, 5, '(' . ($getDriverProfile[$valueRemarksForklift['name']] ?? $valueRemarksForklift['name']) . ')', 0, 0, 'L');
+                        try {
+                            $getName = ($valueRemarksForklift['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarksForklift['name']];
+                            $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
+                        } catch (\Throwable $e) {
+                            $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                        }
                     } else {
                         $this->fpdf->Cell($startCountF, 5, '(                   )', 0, 0, 'L');
                     }
@@ -1886,8 +1907,13 @@ class InvoiceController extends Controller
                 }
                 $this->fpdf->SetXY(13, 135);
                 foreach ($hasilApproval as $key => $valueRemarks) {
-                    if (!empty($valueRemarks['name'])) {                   
-                        $this->fpdf->Cell($startCount, 5, '(' . ($getDriverProfile[$valueRemarks['name']] ?? $valueRemarks['name']) . ')', 0, 0, 'L');
+                    if (!empty($valueRemarks['name'])) {
+                        try {
+                            $getName = ($valueRemarks['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarks['name']];
+                            $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
+                        } catch (\Throwable $e) {
+                            $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                        }
                     } else {
                         $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
                     }
@@ -2048,7 +2074,7 @@ class InvoiceController extends Controller
             $getOperator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
             $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'DRIVER'))->CSPK_PIC_NAME ?? '-';
             $getKordinator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'KOORDINATOR'))->CSPK_PIC_NAME ?? '-';
-            
+
             $getEmployeeName = function ($employeeId) {
                 if (empty($employeeId)) {
                     return '';
@@ -2056,7 +2082,7 @@ class InvoiceController extends Controller
                 $employee = HRMEmployee::where('employee_id', $employeeId)->first();
                 return $employee ? $employee->full_name : '';
             };
-            
+
             $getOperator = $getEmployeeName($getOperator);
             $getDriver = $getEmployeeName($getDriver);
             $getKordinator = $getEmployeeName($getKordinator);

@@ -2148,6 +2148,10 @@ class InvoiceController extends Controller
 
             $Y = $tinggiTable + 5;
 
+            $getDriverSPK = $RSHeader->spk->where('CSPK_PIC_AS', 'DRIVER')->first();
+            $getDriverProfile = !empty($getDriverSPK->CSPK_PIC_NAME) ? HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first() : '';
+            $getDriverProfile = !empty($getDriverProfile) ? $getDriverProfile->toArray() : ['full_name' => ''];
+
             $listTTD = [
                 [
                     'mark' => 'Marketing',
@@ -2155,7 +2159,7 @@ class InvoiceController extends Controller
                 ],
                 [
                     'mark' => 'Sopir',
-                    'markVal' => '(                   )',
+                    'markVal' => '(' . (!empty($getDriverProfile['full_name']) ? $getDriverProfile['full_name'] : '                   ') . ')',
                 ],
                 [
                     'mark' => 'Operator',

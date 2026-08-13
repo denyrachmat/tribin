@@ -2043,23 +2043,11 @@ class InvoiceController extends Controller
             $this->fpdf->SetFont('Arial', 'B', 10);
             $this->fpdf->Cell($pageWidth, 5, "No. SJ : {$doc}", 0, 1, 'C');
 
-            $getOperator = count($RSHeader->spk) > 0
-                ? array_values(array_filter($RSHeader->spk, function ($f) {
-                    return $f['CSPK_PIC_AS'] == 'OPERATOR';
-                }))[0]['CSPK_PIC_NAME']
-                : '-';
+            $spkCollection = collect($RSHeader->spk);
 
-            $getDriver = count($RSHeader->spk) > 0
-                ? array_values(array_filter($RSHeader->spk, function ($f) {
-                    return $f['CSPK_PIC_AS'] == 'OPERATOR';
-                }))[0]['CSPK_PIC_NAME']
-                : '-';
-
-            $getKordinator = count($RSHeader->spk) > 0
-                ? array_values(array_filter($RSHeader->spk, function ($f) {
-                    return $f['CSPK_PIC_AS'] == 'KOORDINATOR';
-                }))[0]['CSPK_PIC_NAME']
-                : '-';
+            $getOperator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
+            $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
+            $getKordinator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'KOORDINATOR'))->CSPK_PIC_NAME ?? '-';
 
             $listHeader = [
                 [

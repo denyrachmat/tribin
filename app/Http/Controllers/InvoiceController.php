@@ -1864,7 +1864,7 @@ class InvoiceController extends Controller
 
             $getDriverSPK = $RSHeader->spk->where('CSPK_PIC_AS', 'DRIVER')->first();
             $getDriverProfile = HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first();
-            $getDriverProfile = $getDriverProfile ? $getDriverProfile->toArray() : ['full_name' => ''];
+            $getDriverProfile = !empty($getDriverProfile) ? $getDriverProfile->toArray() : ['full_name' => ''];
 
             if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
                 $startCountF = 52;

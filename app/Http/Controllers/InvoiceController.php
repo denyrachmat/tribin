@@ -1894,7 +1894,7 @@ class InvoiceController extends Controller
                             $getName = ($valueRemarksForklift['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarksForklift['name']];
                             $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
                         } catch (\Throwable $e) {
-                            $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                            $this->fpdf->Cell($startCount, 5, '(' . ($valueRemarksForklift['name'] ?? '                   ') . ')', 0, 0, 'L');
                         }
                     } else {
                         $this->fpdf->Cell($startCountF, 5, '(                   )', 0, 0, 'L');
@@ -1912,7 +1912,7 @@ class InvoiceController extends Controller
                             $getName = ($valueRemarks['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarks['name']];
                             $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
                         } catch (\Throwable $e) {
-                            $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                            $this->fpdf->Cell($startCount, 5, '(' . ($valueRemarks['name'] ?? '                   ') . ')', 0, 0, 'L');
                         }
                     } else {
                         $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');

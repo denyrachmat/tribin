@@ -300,6 +300,16 @@
                         <td class="tg-0lax" colspan="{{count($checkIsTruckCount) === 0 ? 6 : 5}}">Total</td>
                         <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll)}}</td>
                     </tr>
+                    @foreach($taxes as $key => $valueTax)
+                    <tr>
+                        <td class="tg-0lax" colspan="{{count($checkIsTruckCount) === 0 ? 6 : 5}}">{{$valueTax['MTAX_DESC']}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($valueTax['TTAXM_TAXAMT'])}}</td>
+                    </tr>
+                    @endforeach
+                    <tr>
+                        <td class="tg-0lax" colspan="{{count($checkIsTruckCount) === 0 ? 6 : 5}}"><b>Total Tagihan</b></td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right"><b>Rp {{number_format($totalAll + $totalTax)}}</b></td>
+                    </tr>
                 </tbody>
             </table>
         @else
@@ -342,6 +352,16 @@
                     <tr>
                         <td class="tg-0lax" colspan="5">Total</td>
                         <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST)}}</td>
+                    </tr>
+                    @foreach($taxes as $key => $valueTax)
+                    <tr>
+                        <td class="tg-0lax" colspan="5">{{$valueTax['MTAX_DESC']}}</td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right">Rp {{number_format($valueTax['TTAXM_TAXAMT'])}}</td>
+                    </tr>
+                    @endforeach
+                    <tr>
+                        <td class="tg-0lax" colspan="5"><b>Total Tagihan</b></td>
+                        <td class="tg-0lax" style="white-space: nowrap;text-align: right"><b>Rp {{number_format($totalAll + $headerQuo->TQUO_SERVTRANS_COST + $totalTax)}}</b></td>
                     </tr>
                     <!-- <tr>
                         <td class="tg-0lax" colspan="5">Jasa Service & Transportasi</td>

@@ -679,7 +679,7 @@ Route::get('tribinapp/{path?}', function () {
     return view('tribinapp');
 })->where('any', '.*');
 
-Route::get('getHREmployee', [DeliveryController::class, 'getHREmployee']);
+Route::match(['get', 'post'], 'getHREmployee', [DeliveryController::class, 'getHREmployee']);
 
 #Terkait config
 Route::get('ACL/database', function () {

@@ -28,12 +28,13 @@ use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\accTraits;
 use App\Models\hrm\HRMEmployee;
+use App\Traits\gencodeTraits;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DeliveryController extends Controller
 {
-    use accTraits;
+    use accTraits, gencodeTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -1302,13 +1303,32 @@ class DeliveryController extends Controller
         );
     }
 
-    public function getHREmployee()
+    public function getHREmployee(Request $request)
     {
-        $getUsers = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
-            ->whereIn('job_position', ['MEKANIK', 'MEKANIK CAT & BODY REPAIR', 'MEKANIK DINAMO', 'OP BACKHOE LOADER', 'OP EXCAVATOR', 'OP FORKLIFT', 'OP GENSET', 'SUPIR'])
-            ->get();
+        $getGencode = collect($this->getGencode(base64_encode('JOS_JOB_POS_MAP'), '', '', '', true));
 
-        return $getUsers;
+        $getListPos = $getGencode->pluck('MGECD_VALUE')->toArray();
+
+        $getUsers = HRMEmployee::select('employee_id as nick_name', 'full_name as name', 'job_position')
+            ->whereIn('job_position', $getListPos);
+
+        if ($request->has('filter')) {
+            foreach ($request->filter as $field => $criteria) {
+                if (is_array($criteria)) {
+                    $op = $criteria['op'] ?? 'like';
+                    $val = $criteria['value'] ?? $criteria;
+                    if ($op === 'in') {
+                        $getUsers->whereIn($field, (array) $val);
+                    } else {
+                        $getUsers->where($field, $op, $op === 'like' ? "%{$val}%" : $val);
+                    }
+                } else {
+                    $getUsers->where($field, $criteria);
+                }
+            }
+        }
+
+        return $getUsers->get();
     }
 
     function emptyDriver(Request $request)

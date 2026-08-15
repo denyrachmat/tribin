@@ -22,12 +22,13 @@ use Illuminate\Support\Facades\Crypt;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use App\Traits\gencodeTraits;
+use App\Traits\taxesTraits;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class QuotationController extends Controller
 {
-    use gencodeTraits;
+    use gencodeTraits, taxesTraits;
     protected $fpdf;
     protected $dedicatedConnection;
 
@@ -1522,6 +1523,17 @@ class QuotationController extends Controller
             ];
         }
 
+        $taxes = $this->getTaxes($doc, $this->dedicatedConnection);
+        $total = 0;
+        foreach ($RSDetail as $key => $value) {
+            $total += $value['TQUODETA_PRC'] * $value['TQUODETA_ITMQT'];
+        }
+
+        $totalTax = 0;
+        foreach ($taxes as $key => $valueTaxes) {
+            $totalTax += $valueTaxes['TTAXM_TAXAMT'];
+        }
+       
         $pdf = Pdf::loadView('pdf.quotation', [
             'header' => $RSCG->letter_head,
             'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
@@ -1536,6 +1548,9 @@ class QuotationController extends Controller
             'checkIsTruckCount' => $checkItemTruck,
             'paymentList' => $branchPaymentAccount,
             'approvalList' => $hasilApproval,
+            'taxes' => $taxes,
+            'total' => $total,
+            'totalTax' => $totalTax,
         ]);
 
         return base64_encode($pdf->output());
@@ -1658,6 +1673,7 @@ class QuotationController extends Controller
         ], $quotationHeader);
 
         T_QUODETA::on($this->dedicatedConnection)->where('TQUODETA_QUOCD', $newQuotationCode['quocode'])->delete();
+        $getTotalAmnt = 0;
         foreach ($request->DET as $key => $value) {
             T_QUODETA::on($this->dedicatedConnection)->create([
                 'TQUODETA_QUOCD' => $newQuotationCode['quocode'],
@@ -1673,6 +1689,8 @@ class QuotationController extends Controller
                 // 'created_at' => date('Y-m-d H:i:s'),
                 'TQUODETA_BRANCH' => Auth::user()->branch
             ]);
+
+            $getTotalAmnt += $value['price'] * $value['qty'];
         }
 
         T_QUOCOND::on($this->dedicatedConnection)->where('TQUOCOND_QUOCD', $newQuotationCode['quocode'])->delete();
@@ -1687,6 +1705,15 @@ class QuotationController extends Controller
             ]);
         }
 
+        if ($request->has('TAX_CODE') && !empty($request->TAX_CODE)) {
+            $tax = $this->storeTaxes(new Request([
+                'TTAXM_DOCNO' => $newQuotationCode['quocode'],
+                'TTAXM_CG' => $this->dedicatedConnection,
+                'AMOUNT' => $getTotalAmnt,
+                'MTAX_CODE' => $request->TAX_CODE,
+            ]));
+        }
+
         return [
             'msg' => 'OK'
         ];
@@ -1695,8 +1722,10 @@ class QuotationController extends Controller
     public function deleteQuotation($quoID)
     {
         $deleteHeader = T_QUOHEAD::on($this->dedicatedConnection)->where('TQUO_QUOCD', base64_decode($quoID))->delete();
-        $deleteDetail = T_QUODETA::where('TQUODETA_QUOCD', base64_decode($quoID))->delete();
-        $deleteCondition = T_QUOCOND::where('TQUOCOND_QUOCD', base64_decode($quoID))->delete();
+        $deleteDetail = T_QUODETA::on($this->dedicatedConnection)->where('TQUODETA_QUOCD', base64_decode($quoID))->delete();
+        $deleteCondition = T_QUOCOND::on($this->dedicatedConnection)->where('TQUOCOND_QUOCD', base64_decode($quoID))->delete();
+        
+        $taxes = $this->deleteTaxes(base64_decode($quoID), $this->dedicatedConnection);
 
         return [
             'msg' => 'Quotation deleted !!',
@@ -1704,6 +1733,7 @@ class QuotationController extends Controller
                 $deleteHeader,
                 $deleteDetail,
                 $deleteCondition,
+                $taxes,
             ]
         ];
     }
@@ -1757,6 +1787,8 @@ class QuotationController extends Controller
             ->where('TQUOPAYDETA_QUOCD', base64_decode($id))
             ->get();
 
+        $taxes = $this->getTaxes(base64_decode($id), $this->dedicatedConnection);
+
         if ($dataHeader) {
             return [
                 'status' => true,
@@ -1767,7 +1799,8 @@ class QuotationController extends Controller
                         'det' => $dataDetail,
                         'condlist' => $condDetail,
                         'cond' => count($condDetail) > 0 ? $condDetail[0]['TQUOCOND_GROUP'] : '',
-                        'payment' => $paymentDetail
+                        'payment' => $paymentDetail,
+                        'taxes' => $taxes
                     ]
                 )
             ];

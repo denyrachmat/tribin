@@ -598,9 +598,10 @@ class InventoryController extends Controller
         $spreadsheetPath = storage_path('app/public/upload_stock_take/' . $nama_file);
         $reader = IOFactory::createReaderForFile($spreadsheetPath);
         $reader->setReadDataOnly(true);
-        $loadedSheet = $reader->loadWorksheet($spreadsheetPath);
+        $loadedSpreadsheet = $reader->load($spreadsheetPath);
+        $loadedSheet = $loadedSpreadsheet->getActiveSheet();
         $totalRows = max(0, $loadedSheet->getHighestRow() - 1);
-        $loadedSheet->disconnectWorksheets();
+        $loadedSpreadsheet->disconnectWorksheets();
 
         Cache::put($totalRowsKey, $totalRows, now()->addHours(1));
         Cache::put($currentRowKey, 0, now()->addHours(1));

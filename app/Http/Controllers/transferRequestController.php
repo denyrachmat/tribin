@@ -340,12 +340,14 @@ class transferRequestController extends Controller
                     SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
                     WHERE CITRN_DOCNO = TLOCREQ_DOCNO
                     AND CITRN_LOCCD = 'WH-SRV'
+                    AND CITRN_FORM = 'INC-TRF-LOC'
                 ) as checkstock"),
                 DB::raw('(select max(TLOCREQ_ISREP) from T_LOC_REQ tlr where tlr.TLOCREQ_DOCNO = TLOCREQ_DOCNO limit 1) as TLOCREQ_ISREP'),
                 DB::raw("SUM(TLOCREQ_QTY) - (
                     SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
                     WHERE CITRN_DOCNO = TLOCREQ_DOCNO
                     AND CITRN_LOCCD = 'WH-SRV'
+                    AND CITRN_FORM = 'INC-TRF-LOC'
                 ) as OS_TF")
             )
             ->where('TLOCREQ_ISREP', 0)
@@ -408,6 +410,7 @@ class transferRequestController extends Controller
                             ->where('CITRN_DOCNO', $det->TLOCREQ_DOCNO)
                             ->where('CITRN_ITMCD', $det->TLOCREQ_ITMCD)
                             ->where('CITRN_LOCCD', $det->TLOCREQ_TOLOC)
+                            ->where('CITRN_FORM', 'INC-TRF-LOC')
                             ->groupBy('id_reff', 'CITRN_ITMCD')
                             ->get();
                         return $det;

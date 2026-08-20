@@ -338,6 +338,7 @@ class InvoiceController extends Controller
                     ->on('c.MCUS_BRANCH', '=', 'h.TDLVORD_BRANCH');
             })
             ->selectRaw("MAX(c.MCUS_CUSNM) AS sort_cusnm")
+            ->selectRaw("MAX(c.MCUS_CUSCD) AS sort_cuscd")
             // join ke DETA + SLO untuk sort TSLO_*
             ->leftJoin('T_DLVORDDETA as d', DB::raw('SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,\'/\',1)'), '=', DB::raw("$parentExpr"))
             ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
@@ -357,6 +358,7 @@ class InvoiceController extends Controller
                 'TDLVORD_CONDGRP' => 'sort_condgrp',
                 'TDLVORD_INVCD' => 'sort_invcd',
                 'MCUS_CUSNM' => 'sort_cusnm',
+                'MCUS_CUSCD' => 'sort_cuscd',
                 // DLV_TYPE_DESC itu label; sort pakai type numeriknya
                 'DLV_TYPE_DESC' => 'sort_type',
                 'TDLVORD_REMARK' => 'sort_loc'
@@ -383,6 +385,7 @@ class InvoiceController extends Controller
             'TSLO_SLOCD',
             'TDLVORD_CONDGRP',
             'TDLVORD_INVCD',
+            'MCUS_CUSCD',
             'MCUS_CUSNM',
             'DLV_TYPE_DESC',
             'TDLVORDDETA_ITMCD',
@@ -442,6 +445,17 @@ class InvoiceController extends Controller
                             ->whereRaw('c.MCUS_CUSCD = h.TDLVORD_CUSCD')
                             ->whereRaw('c.MCUS_BRANCH = h.TDLVORD_BRANCH')
                             ->where('c.MCUS_CUSNM', 'like', '%' . $searchValue . '%');
+                    });
+                    break;
+
+                case 'MCUS_CUSCD':
+                    // tetap di step-1 pakai EXISTS (lebih aman daripada join)
+                    $parentQuery->whereExists(function ($q) use ($searchValue) {
+                        $q->selectRaw('1')
+                            ->from('M_CUS as c')
+                            ->whereRaw('c.MCUS_CUSCD = h.TDLVORD_CUSCD')
+                            ->whereRaw('c.MCUS_BRANCH = h.TDLVORD_BRANCH')
+                            ->where('c.MCUS_CUSCD', 'like', '%' . $searchValue . '%');
                     });
                     break;
 
@@ -506,12 +520,15 @@ class InvoiceController extends Controller
         // =========================
         $rowsQ = DB::connection($conn)
             ->table('T_DLVORDHEAD as h')
+            ->selectRaw("CONCAT($parentExpr, ' - ', c.MCUS_CUSNM) AS LABEL")
             ->selectRaw("$parentExpr AS TDLVORD_DLVCD")
             ->selectRaw("ANY_VALUE(s.TSLO_QUOCD) AS TSLO_QUOCD")
             ->selectRaw("ANY_VALUE(s.TSLO_SLOCD) AS TSLO_SLOCD")
             ->selectRaw("ANY_VALUE(h.TDLVORD_CONDGRP) AS TDLVORD_CONDGRP")
             ->selectRaw("ANY_VALUE(h.TDLVORD_INVCD) AS TDLVORD_INVCD")
             ->selectRaw("ANY_VALUE(c.MCUS_CUSNM) AS MCUS_CUSNM")
+            ->selectRaw("ANY_VALUE(c.MCUS_CUSCD) AS MCUS_CUSCD")
+            ->selectRaw("ANY_VALUE(c.MCUS_CUSCD) AS TDLVORD_CUSCD")
             ->selectRaw("
         CASE 
             WHEN ANY_VALUE(h.TDLVORD_TYPE) = 1 THEN 'Sales'

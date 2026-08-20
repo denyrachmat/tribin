@@ -68,8 +68,8 @@ class ServiceAdminController extends Controller
 
         // $cekHariIni = T_SRV_HEAD::on($this->dedicatedConnection)->whereBetween('created_at', [date('y-m-d 00:00:00'), date('y-m-d 23:59:59')])->orderBy('created_at', 'desc')->first();
         // $IDSPK = 'JAT/SRV/' . date('y/m/d') . '/' . (empty($cekHariIni) ? '0001' : sprintf('%04d', (int) substr($cekHariIni->SRVH_DOCNO, -3) + 1));
-        
-        $IDSPK = $this->getGencodeData('srv', $this->dedicatedConnection, true)->getData(true)[ 'data' ] ?? null;
+
+        $IDSPK = $this->getGencodeData('srv', $this->dedicatedConnection, true)->getData(true)['data'] ?? null;
 
         $headerStore = T_SRV_HEAD::on($this->dedicatedConnection)->updateOrCreate([
             'SRVH_DOCNO' => $IDSPK
@@ -226,7 +226,8 @@ class ServiceAdminController extends Controller
                         'LOCTO' => 'WH-SRV-DONE',
                         'ITMCD' => $valueDet['TSRVF_ITMCD'],
                         'QTY' => $valueDet['TSRVF_QTY'],
-                        'DOC' => "{$doc->SRVH_DOCNO}-" . base64_decode($id)
+                        'DOC' => "{$doc->SRVH_DOCNO}-" . $doc->TSRVD_LINE,
+                        'BC' => $valueDet['TSRVF_BC'] ?? null
                     ]));
                 }
 
@@ -243,7 +244,7 @@ class ServiceAdminController extends Controller
 
                 $postToDelivery = [];
                 $createReq = new Request([
-                    'TDLVORD_DLVCD' => $doc->SRVH_DOCNO,
+                    'TDLVORD_DLVCD' => $doc->SRVH_DOCNO . '-' . $doc->TSRVD_LINE,
                     'TDLVORD_CUSCD' => $doc->SRVH_CUSCD,
                     'TDLVORD_ISSUDT' => $doc->SRVH_ISSDT,
                     'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
@@ -526,26 +527,62 @@ class ServiceAdminController extends Controller
             ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
             ->join('M_CUS', 'MCUS_CUSCD', 'SRVH_CUSCD')
             ->where('TSRVD_FLGSTS', 5)
-            ->get();
+            ->get()
+            ->toArray();
 
         return $unapproveService;
     }
 
     public function viewUnapproveDetail($id)
     {
-        $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->first();
+        $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', base64_decode($id))->first()->toArray();
         $unapproveService = T_SRV_DET::on($this->dedicatedConnection)
             ->select(
                 'T_SRV_DET.*',
                 DB::raw('T_SRV_HEAD.SRVH_ISINT as SRVH_ISINT'),
             )
-            ->where('TSRVH_ID', $head->id)
+            ->where('TSRVH_ID', $head['id'])
             ->with('listFixDet', 'header')
             ->join('T_SRV_HEAD', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
             ->get()
             ->toArray();
 
-        return $unapproveService;
+        $listPartReq = [];
+        foreach ($unapproveService as $keyDet => $valueDet) {
+            $getListOPR = [];
+            $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$valueDet['id']}";
+            foreach ($this->getGencode(base64_encode($IDCode)) as $key => $valueGenCode) {
+                $getListOPR[] = [
+                    'OPRTYPE' => $valueGenCode['MGECD_VALUE'],
+                    'OPRNAME' => $valueGenCode['MGECD_DESC'],
+                ];
+            }
+
+            $getListType = [];
+            $IDCodeType = "SRV_TYPE_{$this->dedicatedConnection}_{$valueDet['id']}";
+            foreach ($this->getGencode(base64_encode($IDCodeType)) as $key => $valueGenCode) {
+                $getListType[] = [
+                    'OPRNAME' => $valueGenCode['MGECD_VALUE'],
+                ];
+            }
+
+            $listPartReq[] = array_merge(
+                $valueDet,
+                [
+                    'partReq' => T_LOC_REQ::on($this->dedicatedConnection)
+                        ->where('TLOCREQ_DOCNO', $head['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
+                        ->get()
+                        ->toArray(),
+                    'opr' => $getListOPR,
+                    'type' => $getListType
+                ]
+            );
+        }
+        $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $head['id'])->where('TSRVD_FLGSTS', 0)->get()->toArray();
+        $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $head['id'])->where('TSRVD_FLGSTS', 1)->get()->toArray();
+        $hasil[] = array_merge($head, ['detail' => $listPartReq, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
+
+        return $hasil;
     }
 
     public function viewUnapproveMgr()

@@ -40,8 +40,7 @@
     <div class="col-md-6 mb-1">
         <label for="rhistory_cmb_wh" class="form-label">Warehouse</label>
         <div class="input-group">
-            <select class="form-select" id="rhistory_cmb_wh">
-                <option value="WH1">WH1</option>
+            <select class="form-select" id="rhistory_cmb_wh" multiple size="4">
             </select>
         </div>
     </div>
@@ -114,7 +113,7 @@
         let dt1 = document.getElementById('rhistory_txt_dt').value;
         let dt2 = document.getElementById('rhistory_txt_dt2').value;
         let itmcd = document.getElementById('rhistory_txt_assy').value;
-        let wh = document.getElementById('rhistory_cmb_wh').value;
+        let whlocs = rhistorySelectedLocations();
 
         Cookies.set('CKPSI_DDT1', dt1, {
             expires: 365
@@ -125,7 +124,7 @@
         Cookies.set('CKPSI_DITEMCD', itmcd, {
             expires: 365
         });
-        Cookies.set('CKPSI_DWH', wh, {
+        Cookies.set('CKPSI_DWH', whlocs, {
             expires: 365
         });
         Cookies.set('CKPSI_SEARCHBY', rhistory_cmb_search_by.value, {
@@ -149,10 +148,39 @@
     rhistory_txt_dt.value = moment().format('YYYY-MM-DD')
     rhistory_txt_dt2.value = moment().format('YYYY-MM-DD')
 
+    function rhistory_load_warehouses() {
+        $.ajax({
+            type: "post",
+            url: "/location/searchAPI",
+            data: {},
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            dataType: "json",
+            success: function(response) {
+                const sel = document.getElementById('rhistory_cmb_wh');
+                sel.innerHTML = '';
+                (response.data || []).forEach((loc) => {
+                    const opt = document.createElement('option');
+                    opt.value = loc.MLOC_LOCCD;
+                    opt.text = loc.MLOC_LOCNM;
+                    opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            },
+            error: function(xhr, xopt, xthrow) {
+                console.error(xthrow);
+            }
+        });
+    }
+    rhistory_load_warehouses();
+
+    function rhistorySelectedLocations() {
+        return Array.from(document.getElementById('rhistory_cmb_wh').selectedOptions).map((o) => o.value);
+    }
+
     function rhistory_generate_report() {
         document.getElementById('rhistory_btn_gen').disabled = true;
 
-        let wh = document.getElementById('rhistory_cmb_wh').value;
+        let wh = rhistorySelectedLocations();
         $("#rhistory_tbl tbody").empty();
         rhistory_tbl.getElementsByTagName('tbody')[0].innerHTML = '<tr><td colspan="10" class="text-center">Please wait...</td></tr>'
 
@@ -173,7 +201,6 @@
                 document.getElementById('rhistory_btn_gen').disabled = false;
                 let ttlrows = response.data.length;
                 if (ttlrows > 0) {
-                    let wh = document.getElementById('rhistory_cmb_wh').value;
                     document.getElementById('rhistory_lblinfo').innerText = ttlrows + ' row(s) found';
                     let mydes = document.getElementById("rhistory_divku");
                     let myfrag = document.createDocumentFragment();
@@ -203,7 +230,7 @@
                         newcell = newrow.insertCell(2)
                         newcell.innerHTML = response.data[i].MITM_ITMNM
                         newcell = newrow.insertCell(3);
-                        newcell.innerHTML = wh
+                        newcell.innerHTML = response.data[i].WH
                         newcell = newrow.insertCell(4);
                         newcell.classList.add('text-center')
                         newcell.innerHTML = response.data[i].EVENT
@@ -263,7 +290,7 @@
         const data = {
             searchBy: rhistory_cmb_search_by.value,
             searchValue: rhistory_txt_assy.value,
-            location: rhistory_cmb_wh.value,
+            location: rhistorySelectedLocations(),
             date: rhistory_txt_dt.value,
             date2: rhistory_txt_dt2.value,
         }
@@ -275,7 +302,7 @@
                 const blob = new Blob([response], {
                     type: "application/vnd.ms-excel"
                 })
-                const fileName = `Stock Ledger Report ${rhistory_cmb_wh.value} ${rhistory_txt_dt.value} to ${rhistory_txt_dt2.value}.xlsx`
+                const fileName = `Stock Ledger Report ${rhistorySelectedLocations().join('+')} ${rhistory_txt_dt.value} to ${rhistory_txt_dt2.value}.xlsx`
                 saveAs(blob, fileName)
                 pthis.innerHTML = `<span style="color: MediumSeaGreen"><i class="fas fa-file-excel"></i></span> Spreadsheet`
                 pthis.classList.remove('disabled')

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\C_ITRN;
+use App\Models\M_GENCODE;
 use App\Models\T_SLODETA;
+use App\Models\T_SRV_FIXDET;
 use Illuminate\Http\Request;
 use App\Models\T_DLVORDHEAD;
 use App\Models\T_DLVORDDETA;
@@ -27,7 +29,7 @@ use App\Models\T_DLVACCESSORY;
 use App\Models\M_COND_GROUP;
 use App\Models\C_SPK;
 use App\Models\T_SRV_HEAD;
-use App\Models\T_SRVDETA;
+use App\Models\T_SRV_DET;
 use App\Traits\taxesTraits;
 use App\Traits\accTraits;
 use App\Models\hrm\HRMEmployee;
@@ -57,10 +59,28 @@ class InvoiceController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'invoice']);
     }
 
-    public function indexWithParam($datas)
+    public function indexWithParam($title, $datas = '')
     {
 
-        return view('tribinapp_layouts', ['routeApp' => 'invoice/' . $datas]);
+        return view('tribinapp_layouts', ['routeApp' => 'invoice/' . $title . ($datas ? '/' . $datas : '')]);
+    }
+
+    public function getInvoiceColumns(Request $request)
+    {
+        $cg = Crypt::decryptString($request->cg);
+        $list = M_GENCODE::where('MGECD_CG', $cg)
+            ->where('MGECD_CODE', 'SET_INV_COL')
+            ->where('MGECD_VALUE', $request->title)
+            ->orderBy('MGECD_ORDER')
+            ->get()
+            ->map(fn($g) => [
+                'name' => $g->MGECD_DESC,
+                'label' => $g->MGECD_DESC2 ?: $g->MGECD_DESC,
+                'field' => $g->MGECD_DESC,
+                'align' => 'left'
+            ]);
+
+        return response()->json(['success' => true, 'data' => $list]);
     }
 
     /**
@@ -311,6 +331,7 @@ class InvoiceController extends Controller
             ->selectRaw("MAX(h.TDLVORD_CONDGRP) AS sort_condgrp")
             ->selectRaw("MAX(h.TDLVORD_INVCD) AS sort_invcd")
             ->selectRaw("MAX(h.TDLVORD_TYPE) AS sort_type") // buat DLV_TYPE_DESC
+            ->selectRaw("MAX(h.TDLVORD_REMARK) as sort_loc")
             // join customer untuk sort MCUS_CUSNM
             ->leftJoin('M_CUS as c', function ($join) {
                 $join->on('c.MCUS_CUSCD', '=', 'h.TDLVORD_CUSCD')
@@ -338,6 +359,7 @@ class InvoiceController extends Controller
                 'MCUS_CUSNM' => 'sort_cusnm',
                 // DLV_TYPE_DESC itu label; sort pakai type numeriknya
                 'DLV_TYPE_DESC' => 'sort_type',
+                'TDLVORD_REMARK' => 'sort_loc'
             ];
 
             if (isset($sortMap[$sortBy])) {
@@ -363,7 +385,8 @@ class InvoiceController extends Controller
             'TDLVORD_INVCD',
             'MCUS_CUSNM',
             'DLV_TYPE_DESC',
-            'TDLVORDDETA_ITMCD'
+            'TDLVORDDETA_ITMCD',
+            'TDLVORD_REMARK'
         ];
 
         if ($searchValue !== '' && in_array($searchBy, $allowed, true)) {
@@ -451,6 +474,10 @@ class InvoiceController extends Controller
                             ->where("d.$searchBy", 'like', '%' . $searchValue . '%');
                     });
                     break;
+
+                case 'TDLVORD_REMARK':
+                    $parentQuery->where('h.TDLVORD_REMARK', 'like', '%' . $searchValue . '%');
+                    break;
             }
         }
 
@@ -501,6 +528,7 @@ class InvoiceController extends Controller
             ->selectRaw("ANY_VALUE(qh.TQUO_SBJCT) AS TQUO_SBJCT")
             ->selectRaw("ANY_VALUE(c.MCUS_TELNO) AS MCUS_TELNO")
             ->selectRaw("ANY_VALUE(s.TSLO_POCD) AS TSLO_POCD")
+            ->selectRaw("ANY_VALUE(h.TDLVORD_REMARK) AS TDLVORD_LOC")
             ->leftJoin('T_DLVORDDETA as d', DB::raw("CASE
                 WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5 THEN TDLVORDDETA_DLVCD
                 ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD,'/',1)
@@ -1661,67 +1689,6 @@ class InvoiceController extends Controller
                 $getDO = $RSDetail[$i]->TDLVORDDETA_DLVCD;
             }
 
-            $this->fpdf->AddPage("L", 'A5');
-            $this->fpdf->SetAutoPageBreak(true, 0);
-            $this->fpdf->SetFont('Arial', 'B', 12);
-            $this->fpdf->SetXY(3, 5);
-            $this->fpdf->Cell(45, 5, $this->sanitizeText($Company->name), 0, 0, 'L');
-            $this->fpdf->SetFont('Arial', '', 10);
-            $this->fpdf->SetXY(3, 10);
-            $this->writeWrappedText(3, 10, 70, 4, $Company->address . ' Telp.' . $Company->phone);
-
-            $this->fpdf->SetFont('Arial', '', 8);
-            $rightY = $this->writeWrappedText(150, 5, 55, 4, $Branch->MBRANCH_NM . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate));
-            $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM);
-            $this->fpdf->SetFont('Arial', '', 5);
-            $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_ADDR1);
-            $this->fpdf->SetFont('Arial', '', 8);
-            $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_REFF_MKT);
-            $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_TELNO);
-
-            $this->fpdf->SetFont('Arial', 'U', 10);
-            $this->fpdf->SetXY(90, 15);
-            $this->fpdf->Cell(29, 5, 'SURAT JALAN', 0, 0, 'C');
-            $this->fpdf->SetFont('Arial', '', 10);
-            $this->fpdf->SetXY(90, 20);
-            $this->fpdf->Cell(29, 5, 'NO : ' . $this->sanitizeText($getDO), 0, 0, 'C');
-
-            $this->fpdf->SetFont('Arial', '', 9);
-            $this->fpdf->SetXY(3, 30);
-            $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami ' . ($type == 'out' ? 'kirimkan' : 'ambil') . ' barang-barang di bawah ini :' : ''), 0, 0, 'L');
-            if (count($RSHeader->spk) == 0) {
-                $this->fpdf->SetXY(70, 30);
-                $this->fpdf->Cell(29, 5, ', kami ' . ($type == 'out' ? 'kirimkan' : 'ambil') . ' barang-barang di bawah ini :', 0, 0, 'L');
-            }
-            $this->fpdf->SetXY(150, 30);
-            // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
-            $this->fpdf->Line(3, 35, 205, 35);
-            $this->fpdf->Line(3, 36, 205, 36);
-            $this->fpdf->Line(3, 42, 205, 42);
-            $this->fpdf->Line(3, 43, 205, 43);
-
-            // Isi Header
-            $this->fpdf->SetXY(3, 36.5);
-            $this->fpdf->Cell(29, 5, 'No', 0, 0, 'L');
-            $this->fpdf->SetXY(15, 36.5);
-            $this->fpdf->Cell(29, 5, 'Part Number', 0, 0, 'L');
-            $this->fpdf->SetXY(45, 36.5);
-            $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
-            $this->fpdf->SetXY(100, 36.5);
-            $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
-            if ($RSHeader->TDLVORD_TYPE != 4) {
-                $this->fpdf->SetXY(120, 36.5);
-                $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
-                $this->fpdf->SetXY(145, 36.5);
-                $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
-            }
-            $this->fpdf->SetXY(170, 36.5);
-            $this->fpdf->Cell(29, 5, 'Keterangan', 0, 0, 'L');
-
-            # body
-            $nomor = 1;
-            $Y = 45;
-
             $listDetail = $RSDetail;
 
             // Jika split SJ
@@ -1729,204 +1696,299 @@ class InvoiceController extends Controller
                 $listDetail = [$RSDetail[$i]];
             }
 
-            foreach ($listDetail as $r) {
-                if ($Y > 130) {
-                    $this->fpdf->AddPage("L", 'A5');
-                    $this->fpdf->SetAutoPageBreak(true, 0);
+            // distribusi baris & halaman: footer/sign hanya di halaman terakhir,
+            // jadi halaman non-terakhir muat lebih banyak baris.
+            $itemsFlat = collect($listDetail)->values();
+            $itemCount = $itemsFlat->count();
 
-                    $Y = 10;
+            // tinggi tiap baris berbeda tergantung jenis (kolom kanan: forklift / HM/Solar)
+            $rowStep = $RSHeader->TDLVORD_TYPE == 4 ? 10 : (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift') ? 10 : 26);
+
+            // kapasitas halaman: non-last pakai penuh (tanpa footer), last cuma sisa di atas footer (y 45-85)
+            $rowsPerPage = max(1, (int) floor((140 - 45) / $rowStep));
+            $lastRows = max(1, (int) floor((85 - 45) / $rowStep));
+
+            // hitung total halaman (halaman terakhir selalu reserve $lastRows baris utk footer)
+            $totalPages = 0;
+            $cursor = 0;
+            while ($cursor < $itemCount) {
+                $totalPages++;
+                $remain = $itemCount - $cursor;
+                $cursor += ($remain <= $lastRows) ? $remain : min($rowsPerPage, $remain - $lastRows);
+            }
+
+            $pageCursor = 0;
+            $pageNo = 0;
+
+            while ($pageCursor < $itemCount) {
+                $pageNo++;
+                $remainNow = $itemCount - $pageCursor;
+                $isLastPage = $remainNow <= $lastRows;
+                $take = $isLastPage ? $remainNow : min($rowsPerPage, $remainNow - $lastRows);
+
+                $this->fpdf->AddPage("L", 'A5');
+                $this->fpdf->SetAutoPageBreak(true, 0);
+                $this->fpdf->SetFont('Arial', 'B', 12);
+                $this->fpdf->SetXY(3, 5);
+                $this->fpdf->Cell(45, 5, $this->sanitizeText($Company->name), 0, 0, 'L');
+                $this->fpdf->SetFont('Arial', '', 10);
+                $this->fpdf->SetXY(3, 10);
+                $this->writeWrappedText(3, 10, 70, 4, $Company->address . ' Telp.' . $Company->phone);
+
+                $this->fpdf->SetFont('Arial', '', 8);
+                $rightY = $this->writeWrappedText(150, 5, 55, 4, $Branch->MBRANCH_NM . ', ' . ($type === 'inc' ? date('d-M-Y', strtotime($RSHeader->TRCV_ISSUDT)) : $DOIssuDate));
+                $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, 'Kepada ' . $RSHeader->MCUS_CUSNM);
+                $this->fpdf->SetFont('Arial', '', 5);
+                $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_ADDR1);
+                $this->fpdf->SetFont('Arial', '', 8);
+                $rightY = $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_REFF_MKT);
+                $this->writeWrappedText(150, $rightY + 1, 55, 4, $RSHeader->MCUS_TELNO);
+
+                $this->fpdf->SetFont('Arial', 'U', 10);
+                $this->fpdf->SetXY(90, 15);
+                $this->fpdf->Cell(29, 5, 'SURAT JALAN', 0, 0, 'C');
+                $this->fpdf->SetFont('Arial', '', 10);
+                $this->fpdf->SetXY(90, 20);
+                $this->fpdf->Cell(29, 5, 'NO : ' . $this->sanitizeText($getDO), 0, 0, 'C');
+
+                $this->fpdf->SetFont('Arial', '', 9);
+                $this->fpdf->SetXY(3, 30);
+                $this->fpdf->Cell(29, 5, 'Dengan kendaraan No. Pol: ' . (count($RSHeader->spk) > 0 ? $RSHeader->spk[0]->CSPK_VEHICLE_REGNUM . ', kami ' . ($type == 'out' ? 'kirimkan' : 'ambil') . ' barang-barang di bawah ini :' : ''), 0, 0, 'L');
+                if (count($RSHeader->spk) == 0) {
+                    $this->fpdf->SetXY(70, 30);
+                    $this->fpdf->Cell(29, 5, ', kami ' . ($type == 'out' ? 'kirimkan' : 'ambil') . ' barang-barang di bawah ini :', 0, 0, 'L');
                 }
+                $this->fpdf->SetXY(150, 30);
+                // $this->fpdf->Cell(25, 5, date('d M Y H:i:s'), 0, 0, 'L');
+                $this->fpdf->Line(3, 35, 205, 35);
+                $this->fpdf->Line(3, 36, 205, 36);
+                $this->fpdf->Line(3, 42, 205, 42);
+                $this->fpdf->Line(3, 43, 205, 43);
 
-                $qtyNya = $r->TDLVORDDETA_ITMQT;
-
-                $rowHeight = 5;
-                $this->fpdf->SetXY(3, $Y);
-                $this->fpdf->MultiCell(10, $rowHeight, $nomor++, 0, 'L');
-                $this->fpdf->SetXY(15, $Y);
-                $this->fpdf->MultiCell(25, $rowHeight, $this->sanitizeText($r->TDLVORDDETA_ITMCD_ACT), 0, 'L');
-                $this->fpdf->SetXY(45, $Y);
-                $this->fpdf->MultiCell(50, $rowHeight, $this->sanitizeText($r->MITM_ITMNM), 0, 'L');
-                $this->fpdf->SetXY(100, $Y);
-                $this->fpdf->MultiCell(18, $rowHeight, $this->sanitizeText("{$qtyNya} {$r->MITM_STKUOM}"), 0, 'L');
-                $this->fpdf->SetXY(120, $Y);
-                $this->fpdf->MultiCell(22, $rowHeight, empty($RSDetail[$i]->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_FR)), 0, 'L');
-                $this->fpdf->SetXY(145, $Y);
-                $this->fpdf->MultiCell(22, $rowHeight, empty($RSDetail[$i]->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_TO)), 0, 'L');
+                // Isi Header
+                $this->fpdf->SetXY(3, 36.5);
+                $this->fpdf->Cell(29, 5, 'No', 0, 0, 'L');
+                $this->fpdf->SetXY(15, 36.5);
+                $this->fpdf->Cell(29, 5, 'Part Number', 0, 0, 'L');
+                $this->fpdf->SetXY(45, 36.5);
+                $this->fpdf->Cell(29, 5, 'Nama Barang', 0, 0, 'L');
+                $this->fpdf->SetXY(100, 36.5);
+                $this->fpdf->Cell(29, 5, 'Qty', 0, 0, 'L');
                 if ($RSHeader->TDLVORD_TYPE != 4) {
+                    $this->fpdf->SetXY(120, 36.5);
+                    $this->fpdf->Cell(29, 5, 'Tanggal Awal', 0, 0, 'L');
+                    $this->fpdf->SetXY(145, 36.5);
+                    $this->fpdf->Cell(29, 5, 'Tanggal Akhir', 0, 0, 'L');
+                }
+                $this->fpdf->SetXY(170, 36.5);
+                $this->fpdf->Cell(29, 5, 'Keterangan', 0, 0, 'L');
+
+                # body
+                $nomor = $pageCursor + 1;
+                $Y = 45;
+
+                foreach ($itemsFlat->slice($pageCursor, $take) as $r) {
+                    $qtyNya = $r->TDLVORDDETA_ITMQT;
+
+                    $rowHeight = 6;
+                    $this->fpdf->SetXY(3, $Y);
+                    $this->fpdf->MultiCell(10, $rowHeight, $nomor++, 0, 'L');
+                    $this->fpdf->SetXY(15, $Y);
+                    $this->fpdf->MultiCell(25, $rowHeight, $this->sanitizeText($r->TDLVORDDETA_ITMCD_ACT), 0, 'L');
+                    $this->fpdf->SetXY(45, $Y);
+                    $this->fpdf->MultiCell(50, $rowHeight, $this->sanitizeText($r->MITM_ITMNM), 0, 'L');
+                    $this->fpdf->SetXY(100, $Y);
+                    $this->fpdf->MultiCell(18, $rowHeight, $this->sanitizeText("{$qtyNya} {$r->MITM_STKUOM}"), 0, 'L');
+                    $this->fpdf->SetXY(120, $Y);
+                    $this->fpdf->MultiCell(22, $rowHeight, empty($RSDetail[$i]->TSLODETA_PERIOD_FR) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_FR)), 0, 'L');
+                    $this->fpdf->SetXY(145, $Y);
+                    $this->fpdf->MultiCell(22, $rowHeight, empty($RSDetail[$i]->TSLODETA_PERIOD_TO) ? '-' : date('d M Y', strtotime($RSDetail[$i]->TSLODETA_PERIOD_TO)), 0, 'L');
+                    if ($RSHeader->TDLVORD_TYPE != 4) {
+                        if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
+                            $this->fpdf->SetXY(170, $Y);
+                            $this->fpdf->MultiCell(35, $rowHeight, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 'L');
+                            $this->fpdf->SetXY(170, $Y + 5);
+                            $this->fpdf->MultiCell(35, $rowHeight, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 'L');
+                        } else {
+                            $this->fpdf->SetXY(170, $Y);
+                            $this->fpdf->MultiCell(35, $rowHeight, $this->sanitizeText($r->MITM_ITMCAT), 0, 'L');
+                            $Y += 5;
+                            $this->fpdf->SetXY(170, $Y);
+                            $this->fpdf->MultiCell(35, $rowHeight, 'HM :', 0, 'L');
+                            $Y += 5;
+                            $this->fpdf->SetXY(170, $Y);
+                            $this->fpdf->MultiCell(35, $rowHeight, 'Solar :', 0, 'L');
+                        }
+                    }
+
+                    if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
+                        $Y += 10;
+                    } else {
+                        $Y += 10;
+                    }
+                }
+
+                $pageCursor += $take;
+
+                if ($isLastPage) {
+                    # baris bawah
+                    $this->fpdf->Line(3, 90, 205, 90);
+                    $this->fpdf->Line(3, 91, 205, 91);
+                    $this->fpdf->Line(3, 97, 205, 97);
+                    $this->fpdf->Line(3, 98, 205, 98);
+
+                    $this->fpdf->SetXY(3, 91.5);
+                    // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
+                    $locationValue = $RSHeader->TDLVORD_TYPE == 4 && !empty($Subject->TQUO_PROJECT_LOCATION)
+                        ? $Subject->TQUO_PROJECT_LOCATION
+                        : $RSHeader->TQUO_PROJECT_LOCATION;
+                    $this->writeWrappedText(3, 91.5, 160, 3, 'Lokasi : ' . $locationValue);
+                    $this->fpdf->SetXY(170, 91.5);
+                    $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
+                    $this->fpdf->SetFont('Arial', 'B', 10);
+                    // $this->fpdf->SetXY(3, 100);
+                    // $this->fpdf->Cell(29, 5, "Terbilang : {$this->numberToSentence($RSHeader->TSLODETA_ITMQT * $RSHeader->TSLODETA_PRC)}", 0, 0, 'L');
+
+                    $this->fpdf->SetFont('Arial', '', 7);
+
+                    if (count($RSHeader->condition) > 0) {
+                        $startCond = 98.5;
+                        foreach ($RSHeader->condition as $keyCond => $valueCond) {
+                            if (!isset($startCond) || !is_numeric($startCond)) {
+                                $startCond = 98;
+                            }
+                            $this->fpdf->SetXY(1, $startCond);
+                            $cond = $this->sanitizeText($valueCond->MCONDITION_DESCRIPTION);
+
+                            $desc = wordwrap('- ' . $cond, 210, "\n", false);
+                            $this->fpdf->MultiCell(210, 3, $desc, 0, 'L');
+                            $startCond = $this->fpdf->GetY();
+                        }
+                    } else {
+                        $startCond = 100;
+                        $this->fpdf->SetXY(3, $startCond);
+                        $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
+                        $startCond += 3;
+                        $this->fpdf->SetXY(3, $startCond);
+                        $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
+                        $startCond += 3;
+                    }
+
+                    $getApproval = $this->getGencode(
+                        base64_encode('APPROVAL_SETUP'),
+                        base64_encode('sj'),
+                        empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+                    );
+
+                    $getApprovalForklift = $this->getGencode(
+                        base64_encode('APPROVAL_SETUP'),
+                        base64_encode('sj_forklift'),
+                        empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
+                    );
+
+                    // return $getApproval;
+
+                    $hasilApproval = [];
+                    foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
+                        $hasilApproval[] = [
+                            'name' => $value['isOwnApproval']
+                                ? $Dibuat->name : (
+                                    $value['isSupplierOrCustApproval']
+                                    ? $RSHeader->MCUS_CUSNM
+                                    : (isset($value['isOtherApproval']) && $value['isOtherApproval'] ? $value['username'] : '')
+                                ),
+                            'remarks' => $value['remarks'],
+                        ];
+                    }
+
+                    $hasilApprovalForklift = [];
+                    foreach (json_decode($getApprovalForklift['MGECD_DESC'], true) as $key => $value) {
+                        $hasilApprovalForklift[] = [
+                            'name' => $value['isOwnApproval']
+                                ? $Dibuat->name : (
+                                    $value['isSupplierOrCustApproval']
+                                    ? $RSHeader->MCUS_CUSNM
+                                    : (isset($value['isOtherApproval']) && $value['isOtherApproval'] ? $value['username'] : '')
+                                ),
+                            'remarks' => $value['remarks'],
+                        ];
+                    }
+
+                    $this->fpdf->SetFont('Arial', '', 9);
+                    $this->fpdf->SetXY(15, $startCond + 3);
+
+                    $getDriverSPK = $RSHeader->spk->where('CSPK_PIC_AS', 'DRIVER')->first();
+                    $getDriverProfile = !empty($getDriverSPK->CSPK_PIC_NAME) ? HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first() : '';
+                    $getDriverProfile = !empty($getDriverProfile) ? $getDriverProfile->toArray() : ['full_name' => ''];
+
+                    $spkCollection = collect($RSHeader->spk);
+                    $getOperator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
+                    $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'DRIVER'))->CSPK_PIC_NAME ?? '-';
+
+                    $getEmployeeName = function ($employeeId, $keys_ob) {
+                        if (empty($employeeId)) {
+                            return [$keys_ob => ''];
+                        }
+                        $employee = HRMEmployee::where('employee_id', $employeeId)->first();
+                        return $employee ? [$keys_ob => $employee->full_name] : [$keys_ob => ''];
+                    };
+
+                    $getOperator = $getEmployeeName($getOperator, 'full_name');
+                    $getDriver = $getEmployeeName($getDriver, 'full_name');
+
                     if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
-                        $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->MultiCell(35, $rowHeight, 'Jam Keluar :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_STARTDT)), 0, 'L');
-                        $this->fpdf->SetXY(170, $Y + 5);
-                        $this->fpdf->MultiCell(35, $rowHeight, 'Jam Masuk :' . date('H:i', strtotime($RSHeader->TDLVSJDETA_ENDDT)), 0, 'L');
-                    } else {
-                        $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->MultiCell(35, $rowHeight, $this->sanitizeText($r['MITM_ITMCAT']), 0, 'L');
-                        $Y += 5;
-                        $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->MultiCell(35, $rowHeight, 'HM :', 0, 'L');
-                        $Y += 5;
-                        $this->fpdf->SetXY(170, $Y);
-                        $this->fpdf->MultiCell(35, $rowHeight, 'Solar :', 0, 'L');
-                    }
-                }
-
-                if ($RSHeader->TDLVSJDETA_TYPE == 'forklift') {
-                    $Y += 10;
-                } else {
-                    $Y += 10;
-                }
-            }
-
-            # baris bawah
-            $this->fpdf->Line(3, 90, 205, 90);
-            $this->fpdf->Line(3, 91, 205, 91);
-            $this->fpdf->Line(3, 97, 205, 97);
-            $this->fpdf->Line(3, 98, 205, 98);
-
-            $this->fpdf->SetXY(3, 91.5);
-            // $this->fpdf->Cell(29, 5, 'Ket:' . $RSHeader->TDLVORD_REMARK, 0, 0, 'L');
-            $locationValue = $RSHeader->TDLVORD_TYPE == 4 && !empty($Subject->TQUO_PROJECT_LOCATION)
-                ? $Subject->TQUO_PROJECT_LOCATION
-                : $RSHeader->TQUO_PROJECT_LOCATION;
-            $this->writeWrappedText(3, 91.5, 160, 3, 'Lokasi : ' . $locationValue);
-            $this->fpdf->SetXY(170, 91.5);
-            $this->fpdf->Cell(29, 5, date('d M Y H:i:s'), 0, 0, 'L');
-            $this->fpdf->SetFont('Arial', 'B', 10);
-            // $this->fpdf->SetXY(3, 100);
-            // $this->fpdf->Cell(29, 5, "Terbilang : {$this->numberToSentence($RSHeader->TSLODETA_ITMQT * $RSHeader->TSLODETA_PRC)}", 0, 0, 'L');
-
-            $this->fpdf->SetFont('Arial', '', 7);
-
-            if (count($RSHeader->condition) > 0) {
-                $startCond = 98.5;
-                foreach ($RSHeader->condition as $keyCond => $valueCond) {
-                    if (!isset($startCond) || !is_numeric($startCond)) {
-                        $startCond = 98;
-                    }
-                    $this->fpdf->SetXY(1, $startCond);
-                    $cond = $this->sanitizeText($valueCond->MCONDITION_DESCRIPTION);
-
-                    $desc = wordwrap('- ' . $cond, 210, "\n", false);
-                    $this->fpdf->MultiCell(210, 3, $desc, 0, 'L');
-                    $startCond = $this->fpdf->GetY();
-                }
-            } else {
-                $startCond = 100;
-                $this->fpdf->SetXY(3, $startCond);
-                $this->fpdf->Cell(29, 5, '- Jam Kerja (08:00-16:00), di luar jam kerja ditambah biaya lembur 50%', 0, 0, 'L');
-                $startCond += 3;
-                $this->fpdf->SetXY(3, $startCond);
-                $this->fpdf->Cell(29, 5, '- Bila terjadi sesuatu kecelakaan/kerusakan barang di waktu kerja, semuanya ditanggung oleh penyewa', 0, 0, 'L');
-                $startCond += 3;
-            }
-
-            $getApproval = $this->getGencode(
-                base64_encode('APPROVAL_SETUP'),
-                base64_encode('sj'),
-                empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
-            );
-
-            $getApprovalForklift = $this->getGencode(
-                base64_encode('APPROVAL_SETUP'),
-                base64_encode('sj_forklift'),
-                empty($conn) ? $_COOKIE['CGID'] : base64_decode($conn)
-            );
-
-            // return $getApproval;
-
-            $hasilApproval = [];
-            foreach (json_decode($getApproval['MGECD_DESC'], true) as $key => $value) {
-                $hasilApproval[] = [
-                    'name' => $value['isOwnApproval']
-                        ? $Dibuat->name : (
-                            $value['isSupplierOrCustApproval']
-                            ? $RSHeader->MCUS_CUSNM
-                            : (isset($value['isOtherApproval']) && $value['isOtherApproval'] ? $value['username'] : '')
-                        ),
-                    'remarks' => $value['remarks'],
-                ];
-            }
-
-            $hasilApprovalForklift = [];
-            foreach (json_decode($getApprovalForklift['MGECD_DESC'], true) as $key => $value) {
-                $hasilApprovalForklift[] = [
-                    'name' => $value['isOwnApproval']
-                        ? $Dibuat->name : (
-                            $value['isSupplierOrCustApproval']
-                            ? $RSHeader->MCUS_CUSNM
-                            : (isset($value['isOtherApproval']) && $value['isOtherApproval'] ? $value['username'] : '')
-                        ),
-                    'remarks' => $value['remarks'],
-                ];
-            }
-
-            $this->fpdf->SetFont('Arial', '', 9);
-            $this->fpdf->SetXY(15, $startCond + 3);
-
-            $getDriverSPK = $RSHeader->spk->where('CSPK_PIC_AS', 'DRIVER')->first();
-            $getDriverProfile = !empty($getDriverSPK->CSPK_PIC_NAME) ? HRMEmployee::where('employee_id', $getDriverSPK->CSPK_PIC_NAME)->first() : '';
-            $getDriverProfile = !empty($getDriverProfile) ? $getDriverProfile->toArray() : ['full_name' => ''];
-
-            $spkCollection = collect($RSHeader->spk);
-            $getOperator = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'OPERATOR'))->CSPK_PIC_NAME ?? '-';
-            $getDriver = optional($spkCollection->firstWhere('CSPK_PIC_AS', 'DRIVER'))->CSPK_PIC_NAME ?? '-';
-
-            $getEmployeeName = function ($employeeId, $keys_ob) {
-                if (empty($employeeId)) {
-                    return [$keys_ob => ''];
-                }
-                $employee = HRMEmployee::where('employee_id', $employeeId)->first();
-                return $employee ? [$keys_ob => $employee->full_name] : [$keys_ob => ''];
-            };
-
-            $getOperator = $getEmployeeName($getOperator, 'full_name');
-            $getDriver = $getEmployeeName($getDriver, 'full_name');
-
-            if (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) {
-                $startCountF = 52;
-                foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
-                    $this->fpdf->Cell($startCountF, 5, 'Penerima', 0, 0, 'L');
-                }
-                $this->fpdf->SetXY(13, 135);
-                foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
-                    if (!empty($valueRemarksForklift['name'])) {
-                        try {
-                            $getName = ($valueRemarksForklift['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarksForklift['name']];
-                            $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
-                        } catch (\Throwable $e) {
-                            $this->fpdf->Cell($startCount, 5, '(' . ($valueRemarksForklift['name'] ?? '                   ') . ')', 0, 0, 'L');
+                        $startCountF = 52;
+                        foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
+                            $this->fpdf->Cell($startCountF, 5, 'Penerima', 0, 0, 'L');
+                        }
+                        $this->fpdf->SetXY(13, 135);
+                        foreach ($hasilApprovalForklift as $key => $valueRemarksForklift) {
+                            if (!empty($valueRemarksForklift['name'])) {
+                                try {
+                                    $getName = ($valueRemarksForklift['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarksForklift['name']];
+                                    $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
+                                } catch (\Throwable $e) {
+                                    $this->fpdf->Cell($startCount, 5, '(' . ($valueRemarksForklift['name'] ?? '                   ') . ')', 0, 0, 'L');
+                                }
+                            } else {
+                                $this->fpdf->Cell($startCountF, 5, '(                   )', 0, 0, 'L');
+                            }
                         }
                     } else {
-                        $this->fpdf->Cell($startCountF, 5, '(                   )', 0, 0, 'L');
-                    }
-                }
-            } else {
-                $startCount = 40;
-                foreach ($hasilApproval as $key => $valueRemarks) {
-                    $this->fpdf->Cell($startCount, 5, $valueRemarks['remarks'], 0, 0, 'L');
-                }
-                $this->fpdf->SetXY(13, 135);
-                foreach ($hasilApproval as $key => $valueRemarks) {
-                    if (!empty($valueRemarks['name'])) {
-                        try {
-                            $getName = ($valueRemarks['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarks['name']];
-                            $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
-                        } catch (\Throwable $e) {
-                            $this->fpdf->Cell($startCount, 5, '(' . ($valueRemarks['name'] ?? '                   ') . ')', 0, 0, 'L');
+                        $startCount = 40;
+                        foreach ($hasilApproval as $key => $valueRemarks) {
+                            $this->fpdf->Cell($startCount, 5, $valueRemarks['remarks'], 0, 0, 'L');
                         }
-                    } else {
-                        $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                        $this->fpdf->SetXY(13, 135);
+                        foreach ($hasilApproval as $key => $valueRemarks) {
+                            if (!empty($valueRemarks['name'])) {
+                                try {
+                                    $getName = ($valueRemarks['name'] === 'full_name' ? $getDriver : $getOperator)[$valueRemarks['name']];
+                                    $this->fpdf->Cell($startCount, 5, '(' . $getName . ')', 0, 0, 'L');
+                                } catch (\Throwable $e) {
+                                    $this->fpdf->Cell($startCount, 5, '(' . ($valueRemarks['name'] ?? '                   ') . ')', 0, 0, 'L');
+                                }
+                            } else {
+                                $this->fpdf->Cell($startCount, 5, '(                   )', 0, 0, 'L');
+                            }
+                        }
                     }
-                }
-            }
 
-            $this->fpdf->SetXY(5, 140);
-            $this->fpdf->Cell(45, 5, 'Putih : Penyewa', 0, 0, 'L');
-            $this->fpdf->Cell(45, 5, 'Merah : Supir / Operator', 0, 0, 'L');
-            $this->fpdf->Cell(45, 5, 'Kuning : Penyewa', 0, 0, 'L');
-            $this->fpdf->Cell(40, 5, 'Hijau : Lap. Harian', 0, 0, 'L');
-            $this->fpdf->Cell(45, 5, 'Biru : Arsip', 0, 0, 'L');
-        }
+                    $this->fpdf->SetXY(5, 140);
+                    $this->fpdf->Cell(45, 5, 'Putih : Penyewa', 0, 0, 'L');
+                    $this->fpdf->Cell(45, 5, 'Merah : Supir / Operator', 0, 0, 'L');
+                    $this->fpdf->Cell(45, 5, 'Kuning : Penyewa', 0, 0, 'L');
+                    $this->fpdf->Cell(40, 5, 'Hijau : Lap. Harian', 0, 0, 'L');
+                    $this->fpdf->Cell(45, 5, 'Biru : Arsip', 0, 0, 'L');
+                }
+
+                // penomoran halaman "Halaman x/n"
+                $this->fpdf->SetFont('Arial', '', 6);
+                $this->fpdf->SetXY(180, 143);
+                $this->fpdf->Cell(25, 4, 'Halaman ' . $pageNo . ' / ' . $totalPages, 0, 0, 'R');
+            } // while page
+
+        } // for perulangan
 
         $pdfFile = $this->fpdf->Output("", "S");
 
@@ -2402,6 +2464,41 @@ class InvoiceController extends Controller
                 T_DLVORDDETA::on($this->dedicatedConnection)
                     ->where('TDLVORDDETA_DLVCD', base64_decode($doc))
                     ->delete();
+
+                if ($RSHeader->TDLVORD_TYPE == 4) {
+                    C_ITRN::on($this->dedicatedConnection)
+                        ->where('CITRN_DOCNO', base64_decode($doc))
+                        ->where('CITRN_LOCCD', '=', 'WH-SRV')
+                        ->where('CITRN_FORM', '=', 'OUT-TRF-LOC')
+                        ->delete();
+
+                    C_ITRN::on($this->dedicatedConnection)
+                        ->where('CITRN_DOCNO', base64_decode($doc))
+                        ->where('CITRN_LOCCD', '=', 'WH-SRV-DONE')
+                        ->delete();
+
+                    $splitDoc = explode('-', base64_decode($doc));
+
+                    $cekHead = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', $splitDoc[0])->first();
+                    if (!empty($cekHead)) {
+                        $getDetailID = T_SRV_DET::on($this->dedicatedConnection)
+                            ->where('TSRVH_ID', $cekHead->id)
+                            ->where('TSRVD_LINE', $splitDoc[1])
+                            ->first();
+
+                        if (!empty($getDetailID)) {
+                            T_SRV_DET::on($this->dedicatedConnection)->where('id', $getDetailID->id)->update([
+                                'TSRVD_FLGSTS' => 1,
+                                // 'TSRVD_REMARK' => $getDetailID->TSRVD_REMARK. ' - Additional items.'
+                            ]);
+
+                            T_SRV_FIXDET::on($this->dedicatedConnection)->where('TSRVD_ID', $getDetailID->id)
+                                ->update([
+                                    'TSRVF_ISCONF' => 0,
+                                ]);
+                        }
+                    }
+                }
             }
         }
 

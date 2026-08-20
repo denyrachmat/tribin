@@ -43,8 +43,7 @@
     <div class="col-md-6 mb-1">
         <div class="input-group input-group-sm">
             <span class="input-group-text">Warehouse</span>
-            <select class="form-select" id="inventoryLocation">
-                <option value="WH1">WH1</option>
+            <select class="form-select" id="inventoryLocation" multiple size="4">
             </select>
         </div>
     </div>
@@ -93,12 +92,41 @@
 
     inventoryDate.value = moment().format('YYYY-MM-DD')
 
+    function inventoryLoadLocations() {
+        $.ajax({
+            type: "post",
+            url: "/location/searchAPI",
+            data: {},
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            dataType: "json",
+            success: function(response) {
+                const sel = document.getElementById('inventoryLocation');
+                sel.innerHTML = '';
+                (response.data || []).forEach((loc) => {
+                    const opt = document.createElement('option');
+                    opt.value = loc.MLOC_LOCCD;
+                    opt.text = loc.MLOC_LOCNM;
+                    opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            },
+            error: function(xhr, xopt, xthrow) {
+                console.error(xthrow);
+            }
+        });
+    }
+    inventoryLoadLocations();
+
+    function inventorySelectedLocations() {
+        return Array.from(document.getElementById('inventoryLocation').selectedOptions).map((o) => o.value);
+    }
+
     function inventorySearchButtonOnClick(pthis) {
         const data = {
             searchBy: inventorySearchBy.value,
             searchValue: inventorySearch.value,
             date: inventoryDate.value,
-            location: inventoryLocation.value
+            location: inventorySelectedLocations()
         }
         pthis.disabled = true
         pthis.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`
@@ -157,7 +185,7 @@
             searchBy: inventorySearchBy.value,
             searchValue: inventorySearch.value,
             date: inventoryDate.value,
-            location: inventoryLocation.value
+            location: inventorySelectedLocations()
         }
         $.ajax({
             type: "GET",

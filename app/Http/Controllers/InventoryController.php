@@ -46,16 +46,18 @@ class InventoryController extends Controller
             'MITM_ITMCD',
             'MITM_ITMNM',
         ];
+        $loc = (array) $param['location'];
+
         $OpeningBalance = C_ITRN::on($this->dedicatedConnection)
             ->where('CITRN_ISSUDT', '<', $param['date'])
-            ->where('CITRN_LOCCD', $param['location'])
+            ->whereIn('CITRN_LOCCD', $loc)
             ->where('CITRN_BRANCH', Auth::user()->branch)
             ->select('CITRN_ITMCD', DB::raw("SUM(CITRN_ITMQT) OPENINGQT"))
             ->groupBy('CITRN_ITMCD');
 
         $InOut = C_ITRN::on($this->dedicatedConnection)
             ->where('CITRN_ISSUDT', $param['date'])
-            ->where('CITRN_LOCCD', $param['location'])
+            ->whereIn('CITRN_LOCCD', $loc)
             ->where('CITRN_BRANCH', Auth::user()->branch)
             ->select(
                 'CITRN_ITMCD',
@@ -75,7 +77,7 @@ class InventoryController extends Controller
             ->leftJoinSub($InOut, 'V2', function ($join) {
                 $join->on('C_ITRN.CITRN_ITMCD', '=', 'V2.CITRN_ITMCD');
             })
-            ->where('CITRN_LOCCD', $param['location'])
+            ->whereIn('CITRN_LOCCD', $loc)
             ->where($columnMap[$param['searchBy']], 'like', '%' . $param['searchValue'] . '%')
             ->where('CITRN_ISSUDT', '<=', $param['date'])
             ->where('CITRN_BRANCH', Auth::user()->branch)
@@ -157,49 +159,54 @@ class InventoryController extends Controller
             'MITM_ITMNM',
         ];
 
+        $loc = (array) $param['location'];
+
         $AllItemPerLocation = C_ITRN::on($this->dedicatedConnection)
             ->leftJoin('M_ITM', function ($join) {
                 $join->on('CITRN_BRANCH', '=', 'MITM_BRANCH')->on('CITRN_ITMCD', '=', 'MITM_ITMCD');
             })
-            ->where('CITRN_LOCCD', $param['location'])
+            ->whereIn('CITRN_LOCCD', $loc)
             ->where($columnMap[$param['searchBy']], 'like', '%' . $param['searchValue'] . '%')
             ->where('CITRN_BRANCH', Auth::user()->branch)
-            ->select('CITRN_ITMCD', 'CITRN_BRANCH', 'MITM_STKUOM', 'MITM_ITMNM')
-            ->groupBy('CITRN_ITMCD', 'CITRN_BRANCH', 'MITM_STKUOM', 'MITM_ITMNM');
+            ->select('id', 'CITRN_ITMCD', 'CITRN_BRANCH', 'MITM_STKUOM', 'MITM_ITMNM', 'CITRN_LOCCD')
+            ->groupBy('CITRN_ITMCD', 'CITRN_BRANCH', 'MITM_STKUOM', 'MITM_ITMNM', 'CITRN_LOCCD');
 
         $OpeningBalance = C_ITRN::on($this->dedicatedConnection)
             ->where('CITRN_ISSUDT', '<', $param['date'])
-            ->where('CITRN_LOCCD', $param['location'])
+            ->whereIn('CITRN_LOCCD', $loc)
             ->where('CITRN_BRANCH', Auth::user()->branch)
-            ->select('CITRN_ITMCD', DB::raw("SUM(CITRN_ITMQT) OPENINGQT"))
-            ->groupBy('CITRN_ITMCD');
+            ->select('CITRN_ITMCD', 'CITRN_LOCCD', DB::raw("SUM(CITRN_ITMQT) OPENINGQT"))
+            ->groupBy('CITRN_ITMCD', 'CITRN_LOCCD');
 
         $OpeningAllBalance = DB::connection($this->dedicatedConnection)
             ->query()
             ->fromSub($AllItemPerLocation, 'V1')
             ->leftJoinSub($OpeningBalance, 'V2', function ($join) {
-                $join->on('V1.CITRN_ITMCD', '=', 'V2.CITRN_ITMCD');
+                $join->on('V1.CITRN_ITMCD', '=', 'V2.CITRN_ITMCD')
+                    ->on('V1.CITRN_LOCCD', '=', 'V2.CITRN_LOCCD');
             })
-            ->select('V1.CITRN_ITMCD', 'MITM_STKUOM', 'MITM_ITMNM', DB::raw('IFNULL(OPENINGQT,0) OPENINGQT'))
+            ->select('V1.CITRN_ITMCD', 'V1.CITRN_LOCCD', 'MITM_STKUOM', 'MITM_ITMNM', DB::raw('IFNULL(OPENINGQT,0) OPENINGQT'))
+            ->orderBy('V1.id')
             ->get();
         if ($OpeningAllBalance) {
             $DetailTransaction = C_ITRN::on($this->dedicatedConnection)
                 ->where('CITRN_ISSUDT', '>=', $param['date'])
                 ->where('CITRN_ISSUDT', '<=', $param['date2'])
-                ->where('CITRN_LOCCD', $param['location'])
+                ->whereIn('CITRN_LOCCD', $loc)
                 ->where('CITRN_BRANCH', Auth::user()->branch)
                 ->select(
                     'CITRN_ITMCD',
                     'CITRN_ISSUDT',
                     'CITRN_FORM',
                     'CITRN_DOCNO',
+                    'CITRN_LOCCD',
                     DB::raw("SUM(CASE WHEN CITRN_ITMQT > 0 THEN CITRN_ITMQT END) INQT"),
                     DB::raw("SUM(CASE WHEN CITRN_ITMQT < 0 THEN CITRN_ITMQT * -1 END) OUTQT"),
 
                 )
-                ->groupBy('CITRN_ITMCD', 'CITRN_ISSUDT', 'CITRN_FORM', 'CITRN_DOCNO')
+                ->groupBy('CITRN_ITMCD', 'CITRN_ISSUDT', 'CITRN_FORM', 'CITRN_DOCNO', 'CITRN_LOCCD')
+                ->orderBy('id')
                 ->orderBy('CITRN_ITMCD')
-                ->orderBy('CITRN_ISSUDT')
                 ->get();
             $dataArray = json_decode(json_encode($DetailTransaction), true);
             $data = [];
@@ -209,6 +216,7 @@ class InventoryController extends Controller
                     'MITM_ITMNM' => $t->MITM_ITMNM,
                     'EVENT' => '',
                     'CITRN_DOCNO' => '',
+                    'WH' => $t->CITRN_LOCCD,
                     'DATEKU' => '',
                     'INQT' => '',
                     'OUTQT' => '',
@@ -217,13 +225,14 @@ class InventoryController extends Controller
                 ];
                 $balance = $t->OPENINGQT;
                 foreach ($dataArray as $r) {
-                    if ($r['CITRN_ITMCD'] == $t->CITRN_ITMCD) {
+                    if ($r['CITRN_ITMCD'] == $t->CITRN_ITMCD && $r['CITRN_LOCCD'] == $t->CITRN_LOCCD) {
                         $balance += $r['INQT'] - $r['OUTQT'];
                         $data[] = [
                             'CITRN_ITMCD' => $t->CITRN_ITMCD,
                             'MITM_ITMNM' => $t->MITM_ITMNM,
                             'EVENT' => $r['CITRN_FORM'],
                             'CITRN_DOCNO' => $r['CITRN_DOCNO'],
+                            'WH' => $r['CITRN_LOCCD'],
                             'DATEKU' => $r['CITRN_ISSUDT'],
                             'INQT' => $r['INQT'],
                             'OUTQT' => $r['OUTQT'],
@@ -282,7 +291,7 @@ class InventoryController extends Controller
             $sheet->setCellValue([1, $y], $r['DATEKU']);
             $sheet->setCellValue([2, $y], $r['CITRN_ITMCD']);
             $sheet->setCellValue([3, $y], $r['MITM_ITMNM']);
-            $sheet->setCellValue([4, $y], $request->location);
+            $sheet->setCellValue([4, $y], is_array($request->location) ? implode(', ', $request->location) : $request->location);
             $sheet->setCellValue([5, $y], $r['EVENT']);
             $sheet->setCellValue([6, $y], $r['CITRN_DOCNO']);
             $sheet->setCellValue([7, $y], $r['INQT']);

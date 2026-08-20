@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use App\Models\M_GENCODE;
 
 use App\Traits\gencodeTraits;
+use function PHPUnit\Framework\isArray;
 
 class gencodeController extends Controller
 {
@@ -17,7 +18,7 @@ class gencodeController extends Controller
     {
         $data = $this->getGencode(
             base64_encode($request->has('code') ? $request->code : 'GEN_LIST_SETUP'),
-            '',
+            $request->has('value') ? base64_encode($request->value): '',
             $request->cg,
             $branch,
             $request->has('exactSearch') ? $request->exactSearch : false,
@@ -25,8 +26,11 @@ class gencodeController extends Controller
         );
 
         // return $data;
+
+        // $data = is_array($data) ? $data: [$data];
+
         $hasil = [];
-        if (count($data) > 0) {
+        if (!empty($data) && count($data) > 0) {
             $parental = function($data, $cg) use (&$parental) {
                 $parent = [
                     'idx'  => $data['id'],

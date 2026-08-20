@@ -265,6 +265,7 @@
             success: function(response) {
                 let innerHTML = ''
                 approvalContainer.innerHTML = ''
+                    console.log(response.data, 'arrayItem')
                 response.data.forEach((arrayItem) => {
                     const col = document.createElement('div')
                     col.classList.add('col')

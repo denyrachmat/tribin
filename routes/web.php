@@ -293,9 +293,10 @@ Route::group(['middleware' => 'cors'], function () {
             Route::delete('{id}', [DeliveryController::class, 'delete']);
         });
 
-        Route::get('invoice/{datas}', [InvoiceController::class, 'indexWithParam'])->where('datas', '.*');
+        Route::get('invoice/{title}/{datas?}', [InvoiceController::class, 'indexWithParam'])->where('datas', '.*')->where('title', '[^/]+');
         Route::resource('invoice', InvoiceController::class);
         Route::prefix('invoices')->group(function () {
+            Route::post('getInvoiceColumns', [InvoiceController::class, 'getInvoiceColumns']);
             Route::post('search', [InvoiceController::class, 'search']);
             Route::post('searchUpdate', [InvoiceController::class, 'searchUpdate']);
             Route::post('searchAPIForInvoice', [InvoiceController::class, 'searchAPIForInvoice']);
@@ -501,6 +502,8 @@ Route::group(['middleware' => 'cors'], function () {
             Route::prefix('transferRequest')->group(function () {
                 Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);
                 Route::get('approve/{id}', [transferRequestController::class, 'approveData']);
+                Route::post('unbarcodedStock', [transferRequestController::class, 'unbarcodedStock']);
+                Route::post('assignBarcode', [transferRequestController::class, 'assignBarcode']);
 
                 Route::resource('', transferRequestController::class);
             });

@@ -6,9 +6,10 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Jobs\StockInventoryChunkJob;
 
-class ImportStockTake implements ToCollection, WithStartRow, WithChunkReading
+class ImportStockTake implements ToCollection, WithStartRow, WithChunkReading, ShouldQueue
 {
     public function __construct(
         private string $date,

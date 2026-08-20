@@ -720,6 +720,17 @@ class InventoryController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
+    function stockTakeHeaderId()
+    {
+        $row = T_RCV_HEAD::on($this->dedicatedConnection)
+            ->where('TRCV_DOCNO', "STK-" . date('Ymd'))
+            ->first();
+
+        return response()->json([
+            'headerId' => $row ? (int) $row->id : null,
+        ]);
+    }
+
     function stockTakeProgress()
     {
         // 1. Ambil sisa pending job di Redis

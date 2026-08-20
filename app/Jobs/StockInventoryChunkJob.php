@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 use App\Models\M_ITM;
+use App\Models\C_ITRN;
 use Illuminate\Support\Facades\DB;
 use App\Traits\LocationTraits;
 use Illuminate\Http\Request;
@@ -61,6 +62,11 @@ class StockInventoryChunkJob implements ShouldQueue
             $total = Cache::get($totalRowsKey, $validRows->count());
             $chunkTotal = $validRows->count();
 
+            $stkDocNo = (string) DB::connection($this->conn)
+                ->table('T_RCV_HEAD')
+                ->where('id', $this->id)
+                ->value('TRCV_DOCNO');
+
             foreach ($validRows as $row) {
                 $current = Cache::increment($currentRowKey);
                 $itemCode = $row[0] ?? 'unknown';
@@ -96,6 +102,11 @@ class StockInventoryChunkJob implements ShouldQueue
                         logger('StockInventoryChunkJob - Item code ' . $itemCode . ' not found in M_ITM. Skipping row.');
                         throw new \RuntimeException('Item not found in M_ITM');
                     }
+
+                    // REPLACE prior STK adjustments for this item+loc in this batch:
+                    // removes old ADJ rows (and their orphaned barcode-detail rows) so a
+                    // re-upload overwrites instead of stacking onto the ledger.
+                    $this->deletePriorAdjustments($stkDocNo, $itemCode, $loc);
 
                     // current stock for this item+location = SUM over ALL id_reff rows of V_STOCK_CHECK
                     $currentQty = (float) DB::connection($this->conn)
@@ -174,6 +185,44 @@ class StockInventoryChunkJob implements ShouldQueue
             logger('StockInventoryChunkJob - Error processing chunk. Date: ' . $this->date . ', ID: ' . $this->id . '. Error: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    protected function deletePriorAdjustments(string $stkDocNo, string $itemCode, string $loc): void
+    {
+        if (empty($stkDocNo) || empty($itemCode)) {
+            return;
+        }
+
+        $conn = $this->conn;
+
+        $prior = DB::connection($conn)
+            ->table('C_ITRN')
+            ->where('CITRN_DOCNO', $stkDocNo)
+            ->where('CITRN_ITMCD', $itemCode)
+            ->where('CITRN_LOCCD', $loc)
+            ->whereIn('CITRN_FORM', ['ADJ-OUT', 'ADJ-INC', 'SA'])
+            ->get();
+
+        if ($prior->isEmpty()) {
+            return;
+        }
+
+        $reffs = $prior->pluck('id_reff')->filter()->unique()->values();
+
+        DB::connection($conn)->transaction(function () use ($conn, $prior, $reffs) {
+            foreach ($prior as $row) {
+                C_ITRN::on($conn)->where('id', $row->id)->delete();
+            }
+
+            if ($reffs->isNotEmpty()) {
+                DB::connection($conn)
+                    ->table('T_RCV_BC_DETAIL')
+                    ->whereIn('TRCVBC_BCCD', $reffs)
+                    ->delete();
+            }
+        });
+
+        logger(sprintf('StockInventoryChunkJob - Replaced %d prior STK row(s) for %s @ %s', $prior->count(), $itemCode, $loc));
     }
 
     public function failed(\Throwable $e): void

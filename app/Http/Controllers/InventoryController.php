@@ -722,14 +722,17 @@ class InventoryController extends Controller
 
     function stockTakeProgress()
     {
-        $pendingCount = DB::table('jobs')->where('queue', 'stockTake')->count();
+        // 1. Ambil sisa pending job di Redis
+        $pendingCount = Queue::size('stockTake');
+
+        // 2. Ambil total yang di-dispatch dari Cache
+        $totalDispatched = Cache::get('stocktake_total_dispatched', 0);
+        $completed = max(0, $totalDispatched - $pendingCount);
+
+        // 3. Hitung failed jobs dari tabel DB (1 jam terakhir)
         $failedCount = DB::table('failed_jobs')
-            ->where('queue', 'stockTake')
             ->where('failed_at', '>=', now()->subHours(1))
             ->count();
-
-        $totalDispatched = Cache::get('stocktake_total_dispatched', 0);
-        $completed = $totalDispatched - $pendingCount;
 
         if ($totalDispatched > 0) {
             $percent = round(($completed / $totalDispatched) * 100);
@@ -740,9 +743,9 @@ class InventoryController extends Controller
         return response()->json([
             'pending' => $pendingCount,
             'total' => $totalDispatched,
-            'completed' => max(0, $completed),
+            'completed' => $completed,
             'percent' => min(100, max(0, $percent)),
-            'failed' => $failedCount,
+            'failed' => $failedCount, // <--- FAILED COUNT DIKEMBALIKAN
             'is_done' => $pendingCount === 0 && $totalDispatched > 0,
         ]);
     }

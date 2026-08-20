@@ -324,7 +324,31 @@ class PriceBuyController extends Controller
             }
         }
 
-        $results = $query->get();
+        $results = $query->get()->map(function ($item) use ($request) {
+            $getMargin = \App\Models\M_GENCODE::where('MGECD_CODE', 'MPRC_TYPE')
+                        ->where('MGECD_CG', Crypt::decryptString($request->cg))
+                        ->where('MGECD_BRANCH', $item->MITMBPRC_BRANCH)
+                        ->where('MGECD_CODE', 'PRICE_SET_GLOBAL')
+                        ->first();
+
+            $salesPrice = $item->MITMSPRC_PRC > 0 ? $item->MITMSPRC_PRC : (
+                !empty($getMargin) ? ($item->MITMBPRC_PRC + $item->MITMBPRC_PRC * (1 + ($getMargin->MGECD_DESC / 100)) ): $item->MITMBPRC_PRC
+            );
+            return [
+                'id' => $item->id,
+                'MITMBPRC_ITMCD' => $item->MITMBPRC_ITMCD,
+                'MITMBPRC_PRC' => $item->MITMBPRC_PRC,
+                'MITMBPRC_STARTDT' => $item->MITMBPRC_STARTDT,
+                'MITMBPRC_ENDDT' => $item->MITMBPRC_ENDDT,
+                'MITMBPRC_ACTIVE' => $item->MITMBPRC_ACTIVE,
+                'MITMBPRC_CG' => $item->MITMBPRC_CG,
+                'MITMBPRC_BRANCH' => $item->MITMBPRC_BRANCH,
+                'MITMSPRC_PRC' => $salesPrice,
+                'MITMSPRC_TYPE' => $item->MITMSPRC_TYPE,
+                'MITM_ITMNM' => $item->MITM_ITMNM,
+                'MITMSPRC_TYPEDESC' => $item->MITMSPRC_TYPEDESC,
+            ];
+        });
         return response()->json(['data' => $results]);
     }
 

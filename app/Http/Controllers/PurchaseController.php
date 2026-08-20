@@ -1420,6 +1420,7 @@ class PurchaseController extends Controller
             ->leftJoin('T_RCV_DETAIL', function ($join) {
                 $join->on('T_RCV_HEAD.id', 'id_header');
                 $join->on('T_PCHORDDETA.TPCHORDDETA_ITMCD', 'item_code');
+                $join->where('T_RCV_DETAIL.updated_by', null);
             })
             ->leftJoin(DB::raw("(SELECT * FROM jatpower_tribin.T_TAX_MAP WHERE TTAXM_CG = '" . $this->dedicatedConnection . "') AS T_TAX_MAP"), function ($join) {
                 $join->on('TPCHORD_PCHCD', '=', 'TTAXM_DOCNO');

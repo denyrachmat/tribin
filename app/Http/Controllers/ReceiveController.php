@@ -457,7 +457,18 @@ class ReceiveController extends Controller
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
-        return ['data' => $RS->get()];
+        $perPage = $request->get('perPage', 20);
+        $page = $request->get('page', 1);
+
+        $paginated = $RS->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'data' => $paginated->items(),
+            'total' => $paginated->total(),
+            'per_page' => $paginated->perPage(),
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+        ];
     }
 
     function getConfirmedIncomingList(Request $request)

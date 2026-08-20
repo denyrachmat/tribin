@@ -89,7 +89,7 @@ class StockInventoryChunkJob implements ShouldQueue
                                     $row[0],
                                     $this->date,
                                     $cekStock->CITRN_ITMQT - $row[2], // qty
-                                    $row[4] ?? 0, // price
+                                    $row[3] ?? 0, // price
                                     $row[5] ?? '', // fr wh
                                     'ADJ-OUT', // fr loc
                                     '', // to wh
@@ -103,7 +103,7 @@ class StockInventoryChunkJob implements ShouldQueue
                                     $row[0],
                                     $this->date,
                                     $row[2] - $cekStock->CITRN_ITMQT, // qty
-                                    $row[4] ?? 0, // price
+                                    $row[3] ?? 0, // price
                                     '', // fr wh
                                     '', // fr loc
                                     $row[5] ?? '', // to wh
@@ -118,7 +118,7 @@ class StockInventoryChunkJob implements ShouldQueue
                                 $row[0],
                                 $this->date,
                                 $row[2], // qty
-                                $row[4] ?? 0, // price
+                                $row[3] ?? 0, // price
                                 '', // fr wh
                                 '', // fr loc
                                 $row[5] ?? '', // to wh
@@ -193,8 +193,8 @@ class StockInventoryChunkJob implements ShouldQueue
                     # code...
                     $priceData = [
                         'MITMBPRC_ITMCD' => $row[0],
-                        'MITMBPRC_PRC' => 1,
-                        'MITMSPRC_PRC' => (float) $row[3],
+                        'MITMBPRC_PRC' => (float) $row[3],
+                        'MITMSPRC_PRC' => (float) $row[4],
                         'MITMSPRC_TYPE' => 'RTL',
                         'MITMBPRC_STARTDT' => $this->date,
                         'MITMBPRC_ENDDT' => '',

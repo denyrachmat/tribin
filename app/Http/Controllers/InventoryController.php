@@ -680,7 +680,7 @@ class InventoryController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $headers = ['Item Code', 'Item Name', 'Qty', 'Price', 'Price 2', 'Location Code', 'UOM'];
+        $headers = ['Item Code', 'Item Name', 'Qty', 'Price Buy', 'Price Sell', 'Location Code', 'UOM'];
         foreach ($headers as $col => $header) {
             $cell = $sheet->getCellByColumnAndRow($col + 1, 1);
             $cell->setValue($header);

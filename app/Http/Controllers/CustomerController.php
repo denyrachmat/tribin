@@ -89,7 +89,7 @@ class CustomerController extends Controller
         ], [
             'MCUS_CUSNM.required' => 'Customer Name cannot be empty !',
             'MCUS_CURCD.required' => 'Customer Curr cannot be empty !',
-            'MCUS_TAXREG.required' => 'Customer NPWP cannot be empty !',
+            // 'MCUS_TAXREG.required' => 'Customer NPWP cannot be empty !',
             'MCUS_ADDR1.required' => 'Customer Address cannot be empty !',
             'MCUS_TELNO.required' => 'Customer Phone cannot be empty !',
             // 'MCUS_PIC_NAME.required' => 'Customer PIC Name cannot be empty !',

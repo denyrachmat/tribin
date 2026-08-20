@@ -47,7 +47,15 @@ class StockInventoryChunkJob implements ShouldQueue
         try {
             logger('StockInventoryChunkJob - Started processing chunk. Date: ' . $this->date . ', ID: ' . $this->id . ', isUpdateItem: ' . ($this->isUpdateItem ? 'true' : 'false') . ', Connection: ' . $this->conn);
 
-            $validRows = collect($this->rows)->filter(fn($row) => !empty($row[0]) || !empty($row[1]))->values();
+            $validRows = collect($this->rows)
+                ->filter(fn($row) => !empty($row[0]) || !empty($row[1]))
+                // dedupe: keep last row per (item, location) so the same pair nested-by-chunk
+                // is not adjusted multiple times against the live V_STOCK_CHECK view
+                ->reverse()
+                ->unique(fn($row) => ($row[0] ?? '') . '|' . ($row[5] ?? ''))
+                ->reverse()
+                ->values();
+
             $totalRowsKey = 'stocktake_total_' . $this->id;
             $currentRowKey = 'stocktake_current_' . $this->id;
             $total = Cache::get($totalRowsKey, $validRows->count());
@@ -58,13 +66,21 @@ class StockInventoryChunkJob implements ShouldQueue
                 $itemCode = $row[0] ?? 'unknown';
 
                 try {
-                    // === COPAS LOGIC LAMA (per row) ===
+                    // === STOCK-TAKE ADJUSTMENT (per row) ===
+                    $itemCode = $row[0] ?? '';
+                    $loc = $row[5] ?? '';
+                    $targetQty = (float) ($row[2] ?? 0);
+                    $price = (float) ($row[3] ?? 0);
+
+                    if ($targetQty < 0) {
+                        throw new \InvalidArgumentException('Qty cannot be negative');
+                    }
+
                     $cekItem = M_ITM::on($this->conn)
                         ->where('MITM_ITMCD', $row[0])
                         ->first();
 
-                if ($this->isUpdateItem === true) {
-                    if (empty($cekItem)) {
+                    if ($this->isUpdateItem === true && empty($cekItem)) {
                         M_ITM::on($this->conn)->updateOrCreate([
                             'MITM_ITMCD' => $row[0]
                         ], [
@@ -73,145 +89,65 @@ class StockInventoryChunkJob implements ShouldQueue
                             'MITM_STKUOM' => $row[6] ?? '',
                             'MITM_BRANCH' => $this->user['branch'] ?? ''
                         ]);
+                        $cekItem = M_ITM::on($this->conn)->where('MITM_ITMCD', $row[0])->first();
                     }
 
-                    $cekStock = DB::connection($this->conn)
+                    if (empty($cekItem)) {
+                        logger('StockInventoryChunkJob - Item code ' . $itemCode . ' not found in M_ITM. Skipping row.');
+                        throw new \RuntimeException('Item not found in M_ITM');
+                    }
+
+                    // current stock for this item+location = SUM over ALL id_reff rows of V_STOCK_CHECK
+                    $currentQty = (float) DB::connection($this->conn)
                         ->table('V_STOCK_CHECK')
-                        ->where('CITRN_ITMCD', $row[0])
-                        ->where('CITRN_LOCCD', $row[5] ?? '')
-                        ->first();
+                        ->where('CITRN_ITMCD', $itemCode)
+                        ->where('CITRN_LOCCD', $loc)
+                        ->sum('CITRN_ITMQT');
 
-                    if (($row[2] ?? 0) > 0) {
-                        if (!empty($cekStock)) {
-                            if ($cekStock->CITRN_ITMQT > $row[2]) {
-                                $this->createBarcode(
-                                    $this->id,
-                                    $row[0],
-                                    $this->date,
-                                    $cekStock->CITRN_ITMQT - $row[2], // qty
-                                    $row[3] ?? 0, // price
-                                    $row[5] ?? '', // fr wh
-                                    'ADJ-OUT', // fr loc
-                                    '', // to wh
-                                    '', // to loc
-                                    $this->user,
-                                    $this->conn
-                                );
-                            } elseif ($cekStock->CITRN_ITMQT < $row[2]) {
-                                $this->createBarcode(
-                                    $this->id,
-                                    $row[0],
-                                    $this->date,
-                                    $row[2] - $cekStock->CITRN_ITMQT, // qty
-                                    $row[3] ?? 0, // price
-                                    '', // fr wh
-                                    '', // fr loc
-                                    $row[5] ?? '', // to wh
-                                    'ADJ-INC', // to loc
-                                    $this->user,
-                                    $this->conn
-                                );
-                            }
-                        } else {
-                            $this->createBarcode(
-                                $this->id,
-                                $row[0],
-                                $this->date,
-                                $row[2], // qty
-                                $row[3] ?? 0, // price
-                                '', // fr wh
-                                '', // fr loc
-                                $row[5] ?? '', // to wh
-                                'SA', // to loc
-                                $this->user,
-                                $this->conn
-                            );
-                        }
+                    logger(sprintf('StockInventoryChunkJob - Item %s loc %s: current=%s target=%s', $itemCode, $loc, $currentQty, $targetQty));
+
+                    // diff > 0 => surplus, remove from location; diff < 0 => deficit, add to location
+                    $diff = $currentQty - $targetQty;
+
+                    if (abs($diff) > 0.000001) {
+                        $this->createBarcode(
+                            $this->id,
+                            $itemCode,
+                            $this->date,
+                            abs($diff),
+                            $price,
+                            $diff > 0 ? $loc : '',      // fr wh  (source when removing surplus)
+                            $diff > 0 ? 'ADJ-OUT' : '', // fr loc
+                            $diff < 0 ? $loc : '',      // to wh  (destination when adding deficit)
+                            $diff < 0 ? 'ADJ-INC' : '', // to loc
+                            $this->user,
+                            $this->conn
+                        );
                     }
-                } else {
-                    if (($row[2] ?? 0) > 0) {
-                        if (!empty($cekItem)) {
-                            $cekStock = DB::connection($this->conn)
-                                ->table('V_STOCK_CHECK')
-                                ->where('CITRN_ITMCD', $row[0])
-                                ->where('CITRN_LOCCD', $row[5] ?? '')
-                                ->first();
 
-                            if (!empty($cekStock)) {
-                                if ($cekStock->CITRN_ITMQT > $row[2]) {
-                                    $this->createBarcode(
-                                        $this->id,
-                                        $row[0],
-                                        $this->date,
-                                        $cekStock->CITRN_ITMQT - $row[2], // qty
-                                        $row[3] ?? 0, // price
-                                        $row[5] ?? '', // fr wh
-                                        'ADJ-OUT', // fr loc
-                                        '', // to wh
-                                        '', // to loc
-                                        $this->user,
-                                        $this->conn
-                                    );
-                                } elseif ($cekStock->CITRN_ITMQT < $row[2]) {
-                                    $this->createBarcode(
-                                        $this->id,
-                                        $row[0],
-                                        $this->date,
-                                        $row[2] - $cekStock->CITRN_ITMQT, // qty
-                                        $row[3] ?? 0, // price
-                                        '', // fr wh
-                                        '', // fr loc
-                                        $row[5], // ⚠️ ini dari kode kamu (tapi ini qty, bukan wh) — cek lagi
-                                        'ADJ-INC', // to loc
-                                        $this->user,
-                                        $this->conn
-                                    );
-                                }
-                            } else {
-                                $this->createBarcode(
-                                    $this->id,
-                                    $row[0],
-                                    $this->date,
-                                    $row[2], // qty
-                                    $row[3] ?? 0, // price
-                                    '', // fr wh
-                                    '', // fr loc
-                                    $row[5], // ⚠️ ini dari kode kamu (tapi ini qty, bukan wh) — cek lagi
-                                    'SA', // to loc
-                                    $this->user,
-                                    $this->conn
-                                );
-                            }
-                        } else {
-                            logger('StockInventoryChunkJob - Item code ' . $row[0] . ' not found in M_ITM. Skipping row.');
-                        }
+                    // Update price beli per item jika ada harga di kolom price
+                    if (!empty($row[3]) && $row[3] > 0) {
+                        $priceData = [
+                            'MITMBPRC_ITMCD' => $row[0],
+                            'MITMBPRC_PRC' => (float) $row[3],
+                            'MITMSPRC_PRC' => (float) $row[4],
+                            'MITMSPRC_TYPE' => 'RTL',
+                            'MITMBPRC_STARTDT' => $this->date,
+                            'MITMBPRC_ENDDT' => '',
+                            'MITMBPRC_ACTIVE' => 'Y',
+                            'MITMBPRC_CG' => $this->conn,
+                            'MITMBPRC_BRANCH' => $this->user['branch'] ?? '',
+                            'created_by' => $this->user['nick_name'] ?? '',
+                        ];
+
+                        logger(json_encode($priceData));
+
+                        $controller = new PriceBuyController();
+                        $request = new Request($priceData);
+                        $controller->store($request);
                     }
-                }
 
-                // Update price beli per item jika ada harga di kolom price
-                if (!empty($row[3]) && $row[3] > 0) {
-                    # code...
-                    $priceData = [
-                        'MITMBPRC_ITMCD' => $row[0],
-                        'MITMBPRC_PRC' => (float) $row[3],
-                        'MITMSPRC_PRC' => (float) $row[4],
-                        'MITMSPRC_TYPE' => 'RTL',
-                        'MITMBPRC_STARTDT' => $this->date,
-                        'MITMBPRC_ENDDT' => '',
-                        'MITMBPRC_ACTIVE' => 'Y',
-                        'MITMBPRC_CG' => $this->conn,
-                        'MITMBPRC_BRANCH' => $this->user['branch'] ?? '',
-                        'created_by' => $this->user['nick_name'] ?? '',
-                    ];
-
-                    logger(json_encode($priceData));
-
-                    $controller = new PriceBuyController();
-                    $request = new Request($priceData);
-                    $controller->store($request);
-                }
-
-                // === END logic per row ===
+                    // === END logic per row ===
 
                     event(new StockTakeProgress(
                         (int) $this->id,

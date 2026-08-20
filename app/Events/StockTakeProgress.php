@@ -35,7 +35,7 @@ class StockTakeProgress implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('stocktake.' . $this->headerId),
+            new Channel('stocktake.' . $this->headerId),
         ];
     }
 

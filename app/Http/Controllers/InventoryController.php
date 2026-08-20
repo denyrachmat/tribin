@@ -23,6 +23,8 @@ use App\Models\M_ITM;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\T_RCV_HEAD;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Redis;
 
 class InventoryController extends Controller
 {
@@ -534,14 +536,18 @@ class InventoryController extends Controller
         set_time_limit(0);
 
 
-        // (A) Cek apakah masih ada queue stockTake yang pending
-        // lebih aman pakai exists()
-        $hasPending = DB::table('jobs')->where('queue', 'stockTake')->exists();
-        if ($hasPending) {
-            $count = DB::table('jobs')->where('queue', 'stockTake')->count();
+        // (A) Cek apakah masih ada queue stockTake yang pending di Redis
+        $pendingCount = Queue::size('stockTake');
+
+        // Opsional: Cek juga job yang sedang "dalam proses" (reserved) oleh worker
+        $reservedCount = Redis::llen('laravel_database_queues:stockTake:reserved');
+
+        $totalPending = $pendingCount + $reservedCount;
+
+        if ($totalPending > 0) {
             return response()->json([
                 [
-                    "There is still exists upload batch not done yet, please wait until it's done, {$count} Rows remaining"
+                    "There is still exists upload batch not done yet, please wait until it's done, {$totalPending} Jobs remaining"
                 ]
             ], 406);
         }
@@ -619,7 +625,7 @@ class InventoryController extends Controller
             storage_path('app/public/upload_stock_take/' . $nama_file)
         );
 
-        $pendingNow = DB::table('jobs')->where('queue', 'stockTake')->count();
+        $pendingNow = Queue::size('stockTake');
         Cache::put('stocktake_total_dispatched', $pendingNow, now()->addHours(1));
 
         return ['msg' => 'Upload Success', 'headerId' => (int) $createdHeader->id, 'total_rows' => $pendingNow];
@@ -636,22 +642,22 @@ class InventoryController extends Controller
                 DB::raw('COALESCE(SUM(CITRN_ITMQT),0) AS STOCK'),
                 'MITM_ITMCD',
                 'MITM_ITMNM',
-                 DB::raw('COALESCE((MITMBPRC_PRC),0) AS MITMBPRC_PRC'),
-                 DB::raw('COALESCE((MITMSPRC_PRC),0) AS MITMSPRC_PRC'),
-                 DB::raw('id_reff AS BC')
+                DB::raw('COALESCE((MITMBPRC_PRC),0) AS MITMBPRC_PRC'),
+                DB::raw('COALESCE((MITMSPRC_PRC),0) AS MITMSPRC_PRC'),
+                DB::raw('id_reff AS BC')
             )
             ->join('M_ITM', 'MITM_ITMCD', 'CITRN_ITMCD')
-            ->leftjoin(DB::raw('jatpower_tribin.M_ITMBPRICE'), function($j) {
+            ->leftjoin(DB::raw('jatpower_tribin.M_ITMBPRICE'), function ($j) {
                 $j->on('MITMBPRC_ITMCD', 'CITRN_ITMCD')
-                  ->on('MITMBPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
-                  ->on('MITMBPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
-                  ->where('MITMBPRC_ACTIVE', 1);
+                    ->on('MITMBPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
+                    ->on('MITMBPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
+                    ->where('MITMBPRC_ACTIVE', 1);
             })
-            ->leftjoin(DB::raw('jatpower_tribin.M_ITMSPRICE'), function($j) {
+            ->leftjoin(DB::raw('jatpower_tribin.M_ITMSPRICE'), function ($j) {
                 $j->on('MITMSPRC_ITMCD', 'CITRN_ITMCD')
-                  ->on('MITMSPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
-                  ->on('MITMSPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
-                  ->where('MITMSPRC_ACTIVE', 1);
+                    ->on('MITMSPRC_BRANCH', DB::raw("'" . Auth::user()->branch . "'"))
+                    ->on('MITMSPRC_CG', DB::raw("'" . $this->dedicatedConnection . "'"))
+                    ->where('MITMSPRC_ACTIVE', 1);
             })
             ->where('id_reff', $bc)
             ->groupBy(

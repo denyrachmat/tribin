@@ -29,8 +29,15 @@ trait LocationTraits
         }
 
         $cekStock = DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
+            ->select(
+                'CITRN_ITMCD',
+                'CITRN_LOCCD',
+                DB::raw('SUM(CITRN_ITMQT) as STOCK'),
+                'id_reff'
+            )
             ->where('CITRN_ITMCD', $request->ITMCD)
-            ->where('CITRN_LOCCD', $request->LOCFROM);
+            ->where('CITRN_LOCCD', $request->LOCFROM)
+            ->groupBy('CITRN_ITMCD', 'CITRN_LOCCD', 'id_reff');
 
         if ($request->has('BC') && !empty($request->BC)) {
             $cekStock = $cekStock->where('id_reff', $request->BC);
@@ -38,7 +45,7 @@ trait LocationTraits
 
         $cekStock = $cekStock->first();
 
-        if ($cekStock === null || (!empty($cekStock) && $cekStock->CITRN_ITMQT < $request->QTY)) {
+        if ($cekStock === null || (!empty($cekStock) && $cekStock->STOCK < $request->QTY)) {
             return response([
                 'status' => false,
                 'error' => 'Stock less than inputed qty or stock not exists!!',
@@ -49,6 +56,7 @@ trait LocationTraits
                     'ITMCD' => $request->ITMCD,
                     'QTY' => $request->QTY,
                     'BC' => $request->BC ?? null,
+                    'STOCK' => $cekStock ? $cekStock->STOCK : 0
                 ]
             ], 406);
         } else {

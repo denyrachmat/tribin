@@ -324,7 +324,7 @@ class PriceBuyController extends Controller
             }
         }
 
-        $results = $query->get()->map(function ($item) use ($request) {
+        $format = function ($item) use ($request) {
             $getMargin = \App\Models\M_GENCODE::where('MGECD_CODE', 'MPRC_TYPE')
                         ->where('MGECD_CG', Crypt::decryptString($request->cg))
                         ->where('MGECD_BRANCH', $item->MITMBPRC_BRANCH)
@@ -348,7 +348,23 @@ class PriceBuyController extends Controller
                 'MITM_ITMNM' => $item->MITM_ITMNM,
                 'MITMSPRC_TYPEDESC' => $item->MITMSPRC_TYPEDESC,
             ];
-        });
+        };
+
+        if ($request->has('paginate') && !empty($request->paginate)) {
+            $perPage = $request->paginate['rowsPerPage'] ?? 20;
+            $page = $request->paginate['page'] ?? 1;
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data' => collect($paginated->items())->map($format),
+                'total' => $paginated->total(),
+                'per_page' => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+            ]);
+        }
+
+        $results = $query->get()->map($format);
         return response()->json(['data' => $results]);
     }
 

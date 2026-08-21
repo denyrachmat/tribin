@@ -286,22 +286,22 @@ class PriceBuyController extends Controller
             'MITMBPRC_ACTIVE',
             'MITMBPRC_CG',
             'MITMBPRC_BRANCH',
-            'M_ITMSPRICE.MITMSPRC_PRC',
-            'M_ITMSPRICE.MITMSPRC_TYPE',
+            'MITMSPRC_PRC',
+            DB::raw("COALESCE(M_ITMSPRICE.MITMSPRC_TYPE, 'RTL') AS MITMSPRC_TYPE"),
             'M_ITM.MITM_ITMNM',
-            'typeCode.MGECD_DESC as MITMSPRC_TYPEDESC'
+            DB::raw("CASE WHEN M_ITMSPRICE.MITMSPRC_TYPE IS NULL THEN 'Retail' ELSE typeCode.MGECD_DESC END AS MITMSPRC_TYPEDESC")
         )
             ->leftJoin($conn . '.M_ITM', function ($join) use ($conn) {
                 $join->on('M_ITMBPRICE.MITMBPRC_ITMCD', '=', 'MITM_ITMCD');
             })
             ->leftJoin('M_ITMSPRICE', function ($join) {
-                $join->on('M_ITMBPRICE.id', '=', 'M_ITMSPRICE.MITMBPRC_ID');
+                $join->on(DB::raw('M_ITMBPRICE.id'), '=', 'MITMBPRC_ID');
             })
             ->leftJoin(DB::raw('M_GENCODE as typeCode'), function ($join) {
                 $join->on('M_ITMSPRICE.MITMSPRC_TYPE', '=', 'MGECD_VALUE')
                     ->where('MGECD_CODE', '=', 'MPRC_TYPE');
             })
-            ->where('M_ITMBPRICE.MITMBPRC_CG', '=', Crypt::decryptString($request->cg))
+            ->where('MITMBPRC_CG', '=', Crypt::decryptString($request->cg))
             ->where('MITMBPRC_ACTIVE', '=', 1)
             ->groupBy(
                 'M_ITMSPRICE.id',
@@ -311,28 +311,33 @@ class PriceBuyController extends Controller
                 'MITMBPRC_ENDDT',
                 'MITMBPRC_ACTIVE',
                 'MITMBPRC_CG',
-                'M_ITMSPRICE.MITMSPRC_PRC',
-                'M_ITMSPRICE.MITMSPRC_TYPE',
+                'MITMSPRC_PRC',
+                'MITMSPRC_TYPE',
                 'MITMBPRC_BRANCH',
                 'M_ITM.MITM_ITMNM',
                 'typeCode.MGECD_DESC'
             );
 
+
         if ($request->has('filter') && !empty($request->filter)) {
             foreach ($request->filter as $key => $valueFilter) {
-                $query->where("$key", 'like', "%$valueFilter%");
+                if ($key === 'MITMSPRC_TYPE') {
+                    $query->whereRaw("COALESCE(M_ITMSPRICE.MITMSPRC_TYPE, 'RTL') LIKE ?", ["%$valueFilter%"]);
+                } else {
+                    $query->where("$key", 'like', "%$valueFilter%");
+                }
             }
         }
 
         $format = function ($item) use ($request) {
-            $getMargin = \App\Models\M_GENCODE::where('MGECD_CODE', 'MPRC_TYPE')
-                        ->where('MGECD_CG', Crypt::decryptString($request->cg))
-                        ->where('MGECD_BRANCH', $item->MITMBPRC_BRANCH)
-                        ->where('MGECD_CODE', 'PRICE_SET_GLOBAL')
-                        ->first();
+            $getMargin = \App\Models\M_GENCODE::where('MGECD_CODE', 'PRICE_SET_GLOBAL')
+                ->where('MGECD_VALUE', 'PERCENTAGE_MARGIN')
+                ->where('MGECD_CG', Crypt::decryptString($request->cg))
+                ->where('MGECD_BRANCH', $item->MITMBPRC_BRANCH)
+                ->first();
 
             $salesPrice = $item->MITMSPRC_PRC > 0 ? $item->MITMSPRC_PRC : (
-                !empty($getMargin) ? ($item->MITMBPRC_PRC + $item->MITMBPRC_PRC * (1 + ($getMargin->MGECD_DESC / 100)) ): $item->MITMBPRC_PRC
+                !empty($getMargin) ? $item->MITMBPRC_PRC * (1 + ($getMargin->MGECD_DESC / 100)) : $item->MITMBPRC_PRC
             );
             return [
                 'id' => $item->id,

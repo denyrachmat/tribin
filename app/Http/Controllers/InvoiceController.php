@@ -1617,10 +1617,11 @@ class InvoiceController extends Controller
         foreach ($RSDetail as $r) {
             $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
             if ($RSHeader->TDLVORD_TYPE == 4) {
+                $splitDoc = explode('-', $r->TDLVORDDETA_DLVCD);
                 $Subject = T_SRV_HEAD::on($this->dedicatedConnection)
                     ->select(DB::raw('CONCAT(TSRVD_ITMCD, " - ", TSRVD_LOC) AS TQUO_PROJECT_LOCATION'))
                     ->join('T_SRV_DET', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
-                    ->where('SRVH_DOCNO', $r->TDLVORDDETA_DLVCD)
+                    ->where('SRVH_DOCNO', $splitDoc[0])
                     ->where('SRVH_BRANCH', Auth::user()->branch)
                     ->first();
             } else {

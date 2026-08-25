@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\T_SRV_HEAD;
+use App\Models\T_LOC_REQ;
 
 class HomeController extends Controller
 {
@@ -258,6 +259,23 @@ class HomeController extends Controller
                 ->join('T_SRV_DET', 'TSRVH_ID', 'T_SRV_HEAD.id')
                 ->where('TSRVD_FLGSTS', 5)
                 ->get();
+
+            $unapproveServiceTrf = T_LOC_REQ::on($this->dedicatedConnection)
+                ->select(
+                    DB::raw('TLOCREQ_DOCNO'),
+                    DB::raw('max(T_LOC_REQ.created_at) CREATED_AT'),
+                    DB::raw('GROUP_CONCAT(DISTINCT TLOCREQ_ITMCD) ITEMS'),
+                    DB::raw('SUM(TLOCREQ_QTY) QTY'),
+                    'TLOCREQ_FRLOC',
+                    'TLOCREQ_TOLOC'
+                )
+                ->whereNull('TLOCREQ_APPRVDT')
+                ->whereNotNull('TLOCREQ_SUBMITTED')
+                ->where('TLOCREQ_ISREP', 0)
+                ->groupBy('TLOCREQ_DOCNO', 'TLOCREQ_FRLOC', 'TLOCREQ_TOLOC')
+                ->get();
+        } else {
+            $unapproveServiceTrf = [];
         }
 
         return [
@@ -271,6 +289,7 @@ class HomeController extends Controller
             'dataDeliveryOrderUndelivered' => $dataDeliveryOrderUndelivered,
             'dataUnApprovedSPK' => $UnApprovedSPK,
             'dataUnApprovedService' => $unapproveService,
+            'dataUnApprovedServiceTrf' => $unapproveServiceTrf,
             'role' => $activeRole
         ];
     }
@@ -452,6 +471,24 @@ class HomeController extends Controller
                     ->whereNull('CSPK_GA_MGR_APPROVED_AT')->get();
 
                 // return $SPK;
+                // Service Transfer pending approval (internal service, awaiting manager/GM/root)
+                $serviceTransfer = T_LOC_REQ::on($value->connection)
+                    ->select(
+                        DB::raw("'Service Transfer' APP_CUSNM"),
+                        DB::raw('TLOCREQ_DOCNO APP_CD'),
+                        DB::raw('max(T_LOC_REQ.created_at) CREATED_AT'),
+                        DB::raw('GROUP_CONCAT(DISTINCT TLOCREQ_ITMCD) APP_SBJCT'),
+                        DB::raw('TLOCREQ_APPRVDT as APP_APPRVDT'),
+                        DB::raw('TLOCREQ_FRLOC'),
+                        DB::raw('TLOCREQ_TOLOC')
+                    )
+                    ->whereNull('TLOCREQ_APPRVDT')
+                    ->whereNotNull('TLOCREQ_SUBMITTED')
+                    ->where('TLOCREQ_ISREP', 0)
+                    ->groupBy('TLOCREQ_DOCNO', 'TLOCREQ_FRLOC', 'TLOCREQ_TOLOC')
+                    ->get()
+                    ->toArray();
+
                 $hasil[] = [
                     'connection' => $value->connection,
                     'name' => $value->name,
@@ -462,7 +499,9 @@ class HomeController extends Controller
                     'po_count' => count($dataPurchaseOrderTobeUpproved),
                     'po' => $dataPurchaseOrderTobeUpproved,
                     'spk_count' => count($SPK),
-                    'spk' => $SPK
+                    'spk' => $SPK,
+                    'service_trf_count' => count($serviceTransfer),
+                    'service_trf' => $serviceTransfer
                 ];
             }
         }

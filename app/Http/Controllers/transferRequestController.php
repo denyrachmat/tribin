@@ -48,49 +48,53 @@ class transferRequestController extends Controller
     public function store(Request $request)
     {
         foreach ($request->data as $key => $value) {
+            $deferService = $this->isServiceTransfer($value['TLOCREQ_DOCNO']);
+
             if (isset($value['listBarcode']) && count($value['listBarcode']) > 0) {
                 foreach ($value['listBarcode'] as $keyBC => $valueBC) {
-                    $cek = $this->transferLoc(
-                        new Request([
-                            'DOC' => $value['TLOCREQ_DOCNO'],
-                            'LOCFROM' => $value['TLOCREQ_FRLOC'],
-                            'LOCTO' => $value['TLOCREQ_TOLOC'],
-                            'ITMCD' => $value['TLOCREQ_ITMCD'],
-                            'QTY' => $value['TLOCREQ_QTY'],
-                            'BC' => $valueBC['TSRVF_BC']
-                        ])
-                    );
-
-                    $cekArray = is_array($cek) ? $cek : json_decode($cek->getContent(), true);
-                    if (isset($cekArray['status']) && $cekArray['status'] == false) {
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Transfer failed for item ' . $value['TLOCREQ_ITMCD'] . ' with BC: ' . $valueBC['TSRVF_BC'] . '. Error: ' . $cekArray['error'],
-                            'param' => [
-                                'cg_code' => $this->dedicatedConnection,
-                                'date' => date('Y-m-d'),
-                                'reference_number' => $value['TLOCREQ_DOCNO'],
-                                'journal_code' => '',
-                                'description' => '',
-                                'amount' => 0,
-                            ],
-                            'data' => $cekArray,
-                        ], 400);
-                    }
-
-                    if ($value['TLOCREQ_ISREP'] == 1) {
-                        $this->transferLoc(
+                    if (!$deferService) {
+                        $cek = $this->transferLoc(
                             new Request([
                                 'DOC' => $value['TLOCREQ_DOCNO'],
-                                'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                                'OUTFORM' => 'OUT-TRF-RPLC',
-                                'LOCTO' => 'WH-SCR',
-                                'INCFORM' => 'INC-TRF-RPLC',
+                                'LOCFROM' => $value['TLOCREQ_FRLOC'],
+                                'LOCTO' => $value['TLOCREQ_TOLOC'],
                                 'ITMCD' => $value['TLOCREQ_ITMCD'],
                                 'QTY' => $value['TLOCREQ_QTY'],
                                 'BC' => $valueBC['TSRVF_BC']
                             ])
                         );
+
+                        $cekArray = is_array($cek) ? $cek : json_decode($cek->getContent(), true);
+                        if (isset($cekArray['status']) && $cekArray['status'] == false) {
+                            return response()->json([
+                                'status' => false,
+                                'error' => 'Transfer failed for item ' . $value['TLOCREQ_ITMCD'] . ' with BC: ' . $valueBC['TSRVF_BC'] . '. Error: ' . $cekArray['error'],
+                                'param' => [
+                                    'cg_code' => $this->dedicatedConnection,
+                                    'date' => date('Y-m-d'),
+                                    'reference_number' => $value['TLOCREQ_DOCNO'],
+                                    'journal_code' => '',
+                                    'description' => '',
+                                    'amount' => 0,
+                                ],
+                                'data' => $cekArray,
+                            ], 400);
+                        }
+
+                        if ($value['TLOCREQ_ISREP'] == 1) {
+                            $this->transferLoc(
+                                new Request([
+                                    'DOC' => $value['TLOCREQ_DOCNO'],
+                                    'LOCFROM' => $value['TLOCREQ_TOLOC'],
+                                    'OUTFORM' => 'OUT-TRF-RPLC',
+                                    'LOCTO' => 'WH-SCR',
+                                    'INCFORM' => 'INC-TRF-RPLC',
+                                    'ITMCD' => $value['TLOCREQ_ITMCD'],
+                                    'QTY' => $value['TLOCREQ_QTY'],
+                                    'BC' => $valueBC['TSRVF_BC']
+                                ])
+                            );
+                        }
                     }
 
                     $splitDoc = explode('-', $value['TLOCREQ_DOCNO']);
@@ -119,66 +123,55 @@ class transferRequestController extends Controller
                     ->first();
 
                 if ($value['TLOCREQ_QTY'] > 0) {
-                    $this->transferLoc(
-                        new Request([
-                            'DOC' => $value['TLOCREQ_DOCNO'],
-                            'LOCFROM' => $value['TLOCREQ_FRLOC'],
-                            'LOCTO' => $value['TLOCREQ_TOLOC'],
-                            'ITMCD' => $value['TLOCREQ_ITMCD'],
-                            'QTY' => $value['TLOCREQ_QTY']
-                        ])
-                    );
-
-                    if ($value['TLOCREQ_ISREP'] == 1) {
-                        // $iss = C_ITRN::on($this->dedicatedConnection)->create([
-                        //     'CITRN_BRANCH' => Auth::user()->branch,
-                        //     'CITRN_LOCCD' => $value['TLOCREQ_TOLOC'],
-                        //     'CITRN_DOCNO' => $value['TLOCREQ_DOCNO'],
-                        //     'CITRN_ISSUDT' => date('Y-m-d'),
-                        //     'CITRN_FORM' => 'OUT-TRF-RPLC',
-                        //     'CITRN_ITMCD' => $value['TLOCREQ_ITMCD'],
-                        //     'CITRN_ITMQT' => $value['TLOCREQ_QTY'] * -1,
-                        //     'CITRN_PRCPER' => empty($cekForIss) ? 0 : $cekForIss->CITRN_PRCPER,
-                        //     'CITRN_PRCAMT' => empty($cekForIss) ? 0 : $value['TLOCREQ_QTY'] * $cekForIss->CITRN_PRCPER,
-                        //     'created_by' => Auth::user()->nick_name,
-                        //     'id_reff' => empty($cekForIss) ? 0 : $cekForIss->id_reff,
-                        // ]);
-
-                        // $rcv = C_ITRN::on($this->dedicatedConnection)->create([
-                        //     'CITRN_BRANCH' => Auth::user()->branch,
-                        //     'CITRN_LOCCD' => 'WH-SCR',
-                        //     'CITRN_DOCNO' => $value['TLOCREQ_DOCNO'],
-                        //     'CITRN_ISSUDT' => date('Y-m-d'),
-                        //     'CITRN_FORM' => 'INC-TRF-RPLC',
-                        //     'CITRN_ITMCD' => $value['TLOCREQ_ITMCD'],
-                        //     'CITRN_ITMQT' => $value['TLOCREQ_QTY'],
-                        //     'CITRN_PRCPER' => empty($cekForIss) ? 0 : $cekForIss->CITRN_PRCPER,
-                        //     'CITRN_PRCAMT' => empty($cekForIss) ? 0 : $value['TLOCREQ_QTY'] * $cekForIss->CITRN_PRCPER,
-                        //     'created_by' => Auth::user()->nick_name,
-                        //     'id_reff' => empty($cekForIss) ? 0 : $cekForIss->id_reff,
-                        // ]);
-
+                    if (!$deferService) {
                         $this->transferLoc(
                             new Request([
                                 'DOC' => $value['TLOCREQ_DOCNO'],
-                                'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                                'OUTFORM' => 'OUT-TRF-RPLC',
-                                'LOCTO' => 'WH-SCR',
-                                'INCFORM' => 'INC-TRF-RPLC',
+                                'LOCFROM' => $value['TLOCREQ_FRLOC'],
+                                'LOCTO' => $value['TLOCREQ_TOLOC'],
                                 'ITMCD' => $value['TLOCREQ_ITMCD'],
                                 'QTY' => $value['TLOCREQ_QTY']
                             ])
                         );
+
+                        if ($value['TLOCREQ_ISREP'] == 1) {
+                            $this->transferLoc(
+                                new Request([
+                                    'DOC' => $value['TLOCREQ_DOCNO'],
+                                    'LOCFROM' => $value['TLOCREQ_TOLOC'],
+                                    'OUTFORM' => 'OUT-TRF-RPLC',
+                                    'LOCTO' => 'WH-SCR',
+                                    'INCFORM' => 'INC-TRF-RPLC',
+                                    'ITMCD' => $value['TLOCREQ_ITMCD'],
+                                    'QTY' => $value['TLOCREQ_QTY']
+                                ])
+                            );
+                        }
                     }
 
-                    T_LOC_REQ::on($this->dedicatedConnection)
-                        ->where('id', $value['id'])
-                        ->update([
-                            'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
-                            'TLOCREQ_APPRVBY' => Auth::user()->nick_name
-                        ]);
+                    if (!$deferService) {
+                        T_LOC_REQ::on($this->dedicatedConnection)
+                            ->where('id', $value['id'])
+                            ->update([
+                                'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
+                                'TLOCREQ_APPRVBY' => Auth::user()->nick_name
+                            ]);
+                    }
                 }
             }
+        }
+
+        if ($deferService ?? false) {
+            // Warehouse submitted for manager approval: mark submitted,
+            // stock still not moved until approveData runs.
+            T_LOC_REQ::on($this->dedicatedConnection)
+                ->whereIn('TLOCREQ_DOCNO', collect($request->data)->pluck('TLOCREQ_DOCNO')->unique())
+                ->whereNull('TLOCREQ_APPRVDT')
+                ->update([
+                    'TLOCREQ_SUBMITTED' => date('Y-m-d H:i:s'),
+                ]);
+
+            return ['msg' => 'Transfer request submitted, awaiting approval !!'];
         }
 
         return ['msg' => 'Transfer Approved !!'];
@@ -348,9 +341,21 @@ class transferRequestController extends Controller
                     WHERE CITRN_DOCNO = TLOCREQ_DOCNO
                     AND CITRN_LOCCD = 'WH-SRV'
                     AND CITRN_FORM = 'INC-TRF-LOC'
-                ) as OS_TF")
+                ) as OS_TF"),
+                DB::raw('max(TLOCREQ_APPRVDT) as TLOCREQ_APPRVDT'),
+                DB::raw('max(TLOCREQ_SUBMITTED) as TLOCREQ_SUBMITTED')
             )
             ->where('TLOCREQ_ISREP', 0)
+            ->where(function ($q) {
+                // Non-service transfers: keep all rows (unchanged behavior).
+                // Service transfers: only show while warehouse has not yet
+                // submitted them for manager approval.
+                $q->whereNotExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('T_SRV_HEAD')
+                        ->whereColumn('SRVH_DOCNO', DB::raw("SUBSTRING_INDEX(TLOCREQ_DOCNO,'-',1)"));
+                })->orWhereNull('TLOCREQ_SUBMITTED');
+            })
             // ->havingRaw("SUM(TLOCREQ_QTY) - (
             //         SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
             //         WHERE CITRN_DOCNO = TLOCREQ_DOCNO
@@ -429,41 +434,163 @@ class transferRequestController extends Controller
         ];
     }
 
+    function isServiceTransfer($docno)
+    {
+        $splitDoc = explode('-', (string) $docno);
+        if (count($splitDoc) < 2) {
+            return false;
+        }
+        return T_SRV_HEAD::on($this->dedicatedConnection)
+            ->where('SRVH_DOCNO', $splitDoc[0])
+            ->exists();
+    }
+
     function approveData($id)
     {
-        $data = T_LOC_REQ::on($this->dedicatedConnection)
-            ->where('TLOCREQ_DOCNO', base64_decode($id))
-            ->get();
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        if (!in_array($activeRole['code'], ['manager', 'general_manager', 'root'])) {
+            return response()->json([
+                'msg' => 'Unauthorized, only Manager/GM/Root can approve this transfer.'
+            ], 403);
+        }
 
-        foreach ($data as $value) {
-            $this->transferLoc(new Request([
-                'DOC' => $value['TLOCREQ_DOCNO'],
-                'LOCFROM' => $value['TLOCREQ_FRLOC'],
-                'LOCTO' => $value['TLOCREQ_TOLOC'],
-                'ITMCD' => $value['TLOCREQ_ITMCD'],
-                'QTY' => $value['TLOCREQ_QTY'],
-            ]));
+        $docno = base64_decode($id);
+        $isService = $this->isServiceTransfer($docno);
 
-            if ($value['TLOCREQ_ISREP'] == 1) {
-                $this->transferLoc(new Request([
-                    'DOC' => $value['TLOCREQ_DOCNO'],
-                    'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                    'OUTFORM' => 'OUT-TRF-RPLC',
-                    'LOCTO' => 'WH-SCR',
-                    'INCFORM' => 'INC-TRF-RPLC',
-                    'ITMCD' => $value['TLOCREQ_ITMCD'],
-                    'QTY' => $value['TLOCREQ_QTY'],
-                ]));
+        // For service transfers, resolve barcode per item from service fix detail so
+        // barcoded stock keeps its id_reff when moved to WH-SRV.
+        $detPerItem = [];
+        if ($isService) {
+            $splitDoc = explode('-', $docno);
+            $getHeader = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', $splitDoc[0])->first();
+            if (!empty($getHeader)) {
+                $getDetailID = T_SRV_DET::on($this->dedicatedConnection)
+                    ->where('TSRVH_ID', $getHeader->id)
+                    ->where('TSRVD_LINE', $splitDoc[1])
+                    ->first();
+                if (!empty($getDetailID)) {
+                    $detPerItem = T_SRV_FIXDET::on($this->dedicatedConnection)
+                        ->where('TSRVD_ID', $getDetailID->id)
+                        ->whereNotNull('TSRVF_BC')
+                        ->pluck('TSRVF_BC', 'TSRVF_ITMCD')
+                        ->toArray();
+                }
             }
         }
 
+        $data = T_LOC_REQ::on($this->dedicatedConnection)
+            ->where('TLOCREQ_DOCNO', $docno)
+            ->get();
+
+        $cek0 = 0;
+        foreach ($data as $value) {
+            if ($value['TLOCREQ_QTY'] > 0) {
+                $bc = null;
+                if ($isService) {
+                    $bc = $detPerItem[$value['TLOCREQ_ITMCD']] ?? null;
+                }
+
+                $this->transferLoc(new Request([
+                    'DOC' => $value['TLOCREQ_DOCNO'],
+                    'LOCFROM' => $value['TLOCREQ_FRLOC'],
+                    'LOCTO' => $value['TLOCREQ_TOLOC'],
+                    'ITMCD' => $value['TLOCREQ_ITMCD'],
+                    'QTY' => $value['TLOCREQ_QTY'],
+                    'BC' => $bc,
+                ]));
+
+                if ($value['TLOCREQ_ISREP'] == 1) {
+                    $this->transferLoc(new Request([
+                        'DOC' => $value['TLOCREQ_DOCNO'],
+                        'LOCFROM' => $value['TLOCREQ_TOLOC'],
+                        'OUTFORM' => 'OUT-TRF-RPLC',
+                        'LOCTO' => 'WH-SCR',
+                        'INCFORM' => 'INC-TRF-RPLC',
+                        'ITMCD' => $value['TLOCREQ_ITMCD'],
+                        'QTY' => $value['TLOCREQ_QTY'],
+                        'BC' => $bc,
+                    ]));
+                }
+            }
+            $cek0++;
+        }
+
         T_LOC_REQ::on($this->dedicatedConnection)
-            ->where('TLOCREQ_DOCNO', base64_decode($id))
+            ->where('TLOCREQ_DOCNO', $docno)
             ->update([
                 'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
                 'TLOCREQ_APPRVBY' => Auth::user()->nick_name
             ]);
 
         return ['msg' => 'Transfer Approved !!'];
+    }
+
+    public function viewApprovalServiceTransfer()
+    {
+        return view('transaction.service_transfer_approval');
+    }
+
+    public function listApprovalServiceTransfer()
+    {
+        $data = T_LOC_REQ::on($this->dedicatedConnection)
+            ->select(
+                DB::raw('TLOCREQ_DOCNO'),
+                DB::raw('max(T_LOC_REQ.created_at) CREATED_AT'),
+                DB::raw('GROUP_CONCAT(DISTINCT TLOCREQ_ITMCD) ITEMS'),
+                DB::raw('SUM(TLOCREQ_QTY) QTY'),
+                'TLOCREQ_FRLOC',
+                'TLOCREQ_TOLOC'
+            )
+            ->whereNull('TLOCREQ_APPRVDT')
+            ->whereNotNull('TLOCREQ_SUBMITTED')
+            ->where('TLOCREQ_ISREP', 0)
+            ->groupBy('TLOCREQ_DOCNO', 'TLOCREQ_FRLOC', 'TLOCREQ_TOLOC')
+            ->orderBy('CREATED_AT', 'desc')
+            ->get();
+
+        return $data;
+    }
+
+    public function detailApprovalServiceTransfer($id)
+    {
+        $docno = base64_decode($id);
+
+        $data = T_LOC_REQ::on($this->dedicatedConnection)
+            ->select(
+                'TLOCREQ_ITMCD',
+                'MITM_ITMNM',
+                'TLOCREQ_QTY',
+                'TLOCREQ_FRLOC',
+                'TLOCREQ_TOLOC'
+            )
+            ->leftJoin('M_ITM', 'MITM_ITMCD', '=', 'TLOCREQ_ITMCD')
+            ->where('TLOCREQ_DOCNO', $docno)
+            ->where('TLOCREQ_ISREP', 0)
+            ->get()
+            ->toArray();
+
+        // Attach barcode per item from service fix detail
+        $splitDoc = explode('-', $docno);
+        $detPerItem = [];
+        $getHeader = T_SRV_HEAD::on($this->dedicatedConnection)->where('SRVH_DOCNO', $splitDoc[0] ?? '')->first();
+        if (!empty($getHeader)) {
+            $getDetailID = T_SRV_DET::on($this->dedicatedConnection)
+                ->where('TSRVH_ID', $getHeader->id)
+                ->where('TSRVD_LINE', $splitDoc[1] ?? null)
+                ->first();
+            if (!empty($getDetailID)) {
+                $detPerItem = T_SRV_FIXDET::on($this->dedicatedConnection)
+                    ->where('TSRVD_ID', $getDetailID->id)
+                    ->whereNotNull('TSRVF_BC')
+                    ->pluck('TSRVF_BC', 'TSRVF_ITMCD')
+                    ->toArray();
+            }
+        }
+
+        foreach ($data as $key => $value) {
+            $data[$key]['TSRVF_BC'] = $detPerItem[$value['TLOCREQ_ITMCD']] ?? '';
+        }
+
+        return $data;
     }
 }

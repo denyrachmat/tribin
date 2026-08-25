@@ -264,6 +264,13 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form/purchase-order', [PurchaseController::class, 'formApprovalPO']);
             Route::get('form/spk', [DeliveryController::class, 'formApprovalSPK']);
             Route::put('approve-spk/{id}', [DeliveryController::class, 'approveSPK']);
+
+            # Service transfer approval (server-rendered, frame dropdown)
+            Route::prefix('service-transfer')->group(function () {
+                Route::get('', [transferRequestController::class, 'viewApprovalServiceTransfer']);
+                Route::get('list', [transferRequestController::class, 'listApprovalServiceTransfer']);
+                Route::get('detail/{id}', [transferRequestController::class, 'detailApprovalServiceTransfer']);
+            });
         });
 
         # Terkait Delivery
@@ -498,7 +505,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('downloadStockTakeTemplate', [InventoryController::class, 'downloadStockTakeTemplate']);
             Route::get('stockTakeProgress', [InventoryController::class, 'stockTakeProgress']);
             Route::get('stockTakeHeaderId', [InventoryController::class, 'stockTakeHeaderId']);
-            Route::get('viewStockByItemLoc/{item}/{loc?}', [InventoryController::class, 'viewStockByItemLoc']);
+            Route::get('viewStockByItemLoc/{item}/{loc?}/{doc?}', [InventoryController::class, 'viewStockByItemLoc']);
             Route::get('findStockByBarcode/{barcode}/{loc?}', [InventoryController::class, 'findStockByBarcode']);
             Route::prefix('transferRequest')->group(function () {
                 Route::post('searchAPI', [transferRequestController::class, 'searchAPI']);

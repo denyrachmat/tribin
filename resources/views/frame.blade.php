@@ -332,9 +332,12 @@
                     // SPK
                     const totalNotifService = response.dataUnApprovedService.length
 
+                    // Service Transfer
+                    const totalNotifServiceTrf = (response.dataUnApprovedServiceTrf || []).length
+
                     const totalNotif = totalNotifQT + totalNotifApprovedQT + totalNotifQTPurchaseRequest + totalNotifApprovedQTPurchaseRequest + totalNotifQTSalesOrderDraft +
                         totalNotifQTPurchaseOrder + totalNotifQTDeliveryNoDriver + totalNotifQTDeliveryUndelivered +
-                        totalNotifQTUnApprovedSPK + totalNotifService
+                        totalNotifQTUnApprovedSPK + totalNotifService + totalNotifServiceTrf
                     labelNotifAll.innerHTML = totalNotif === 0 ? '' : totalNotif
 
                     // Quotations Group
@@ -359,6 +362,9 @@
 
                     // Service Group
                     createLiItem('linotif10', 'labelNotifUnApprovedService', 'Service Approval', totalNotifService, liHeadService, liUnApprovedServiceOnclick)
+
+                    // Service Transfer Group
+                    createLiItem('linotif11', 'labelNotifUnApprovedServiceTrf', 'Service Transfer Approval', totalNotifServiceTrf, liHeadService, liUnApprovedServiceTrfOnclick)
                 }
             });
         }
@@ -519,6 +525,21 @@
                 $.ajax({
                     type: "GET",
                     url: "/servicesAdmins/viewUnapproveMgr",
+                    success: function(response) {
+                        setInnerHTML(ContentContainer, response)
+                    }
+                });
+            }
+        }
+
+        function liUnApprovedServiceTrfOnclick(e) {
+            e.preventDefault()
+            if (labelNotifUnApprovedServiceTrf != null && labelNotifUnApprovedServiceTrf.innerText.length > 0) {
+                ContentContainer.innerHTML = 'Please wait'
+                $.ajax({
+                    type: "GET",
+                    url: "/approval/service-transfer",
+                    dataType: "text",
                     success: function(response) {
                         setInnerHTML(ContentContainer, response)
                     }

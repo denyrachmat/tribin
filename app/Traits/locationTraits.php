@@ -33,7 +33,8 @@ trait LocationTraits
                 'CITRN_ITMCD',
                 'CITRN_LOCCD',
                 DB::raw('SUM(CITRN_ITMQT) as STOCK'),
-                'id_reff'
+                'id_reff',
+                DB::raw('MAX(CITRN_PRCPER) as CITRN_PRCPER')
             )
             ->where('CITRN_ITMCD', $request->ITMCD)
             ->where('CITRN_LOCCD', $request->LOCFROM)

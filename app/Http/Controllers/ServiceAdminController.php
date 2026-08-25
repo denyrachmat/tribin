@@ -178,9 +178,15 @@ class ServiceAdminController extends Controller
             ->where('id', base64_decode($id))
             ->first();
 
+        // Internal service: skip customer confirmation, manager approve advances straight to fix (2)
+        $flagsts = $request->TSRVD_FLGSTS;
+        if (!empty($dataHead) && $dataHead->SRVH_ISINT == 1 && (int) $request->TSRVD_FLGSTS === 1) {
+            $flagsts = 2;
+        }
+
         $dataDet = T_SRV_DET::on($this->dedicatedConnection)
             ->where('TSRVH_ID', base64_decode($id))
-            ->update(['TSRVD_FLGSTS' => $request->TSRVD_FLGSTS]);
+            ->update(['TSRVD_FLGSTS' => $flagsts]);
 
         return ['msg' => 'Data has been updated', 'dataHead' => $dataHead];
     }

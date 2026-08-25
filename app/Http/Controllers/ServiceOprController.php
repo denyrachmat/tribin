@@ -13,6 +13,7 @@ use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
 use App\Models\T_SRV_FIXDET;
 use App\Models\T_LOC_REQ;
+use App\Models\C_ITRN;
 
 use App\Traits\LocationTraits;
 use App\Traits\gencodeTraits;
@@ -160,12 +161,9 @@ class ServiceOprController extends Controller
             $RSTemp->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
-        $head = $RSTemp->get()->toArray();
-
         // return $request->allFixed;
 
-        $hasil = [];
-        foreach ($head as $key => $value) {
+        $build = function ($value) use ($request) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
                 ->with([
                     'listFixDet' => function ($j) use ($request) {
@@ -220,6 +218,18 @@ class ServiceOprController extends Controller
                             ->where('TLOCREQ_DOCNO', $value['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
                             ->get()
                             ->toArray(),
+                        'listBarcode' => C_ITRN::on($this->dedicatedConnection)
+                            ->select(
+                                DB::raw('id_reff as TSRVF_BC'),
+                                DB::raw('CITRN_ITMCD as MITM_ITMCD'),
+                                DB::raw('SUM(CITRN_ITMQT) as STOCK')
+                            )
+                            ->where('CITRN_DOCNO', $value['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
+                            ->where('CITRN_LOCCD', 'WH-SRV')
+                            ->where('CITRN_FORM', 'INC-TRF-LOC')
+                            ->groupBy('id_reff', 'CITRN_ITMCD')
+                            ->get()
+                            ->toArray(),
                         'opr' => $getListOPR,
                         'type' => $getListType
                     ]
@@ -228,9 +238,24 @@ class ServiceOprController extends Controller
 
             $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 2 : 0)->get()->toArray();
             $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 3 : 1)->get()->toArray();
-            $hasil[] = array_merge($value, ['detail' => $listPartReq, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
+            return array_merge($value, ['detail' => $listPartReq, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
+        };
+
+        if ($request->has('paginate') && !empty($request->paginate)) {
+            $perPage = $request->paginate['rowsPerPage'] ?? 20;
+            $page = $request->paginate['page'] ?? 1;
+            $paginated = $RSTemp->paginate($perPage, ['*'], 'page', $page);
+
+            return [
+                'data' => array_map($build, $paginated->getCollection()->toArray()),
+                'total' => $paginated->total(),
+                'per_page' => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+            ];
         }
 
+        $hasil = array_map($build, $RSTemp->get()->toArray());
         return ['data' => $hasil];
     }
 

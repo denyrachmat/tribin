@@ -508,7 +508,7 @@ class InventoryController extends Controller
         return base64_encode($pdf->stream('part-handover.pdf'));
     }
 
-    function viewStockByItemLoc($item, $loc = 'V0gx')
+    function viewStockByItemLoc($item, $loc = 'V0gx', $doc = '')
     {
         $data = C_ITRN::on($this->dedicatedConnection)
             ->select(
@@ -517,6 +517,10 @@ class InventoryController extends Controller
             ->where('CITRN_ITMCD', base64_decode($item));
         if (!empty($loc)) {
             $data->where('CITRN_LOCCD', base64_decode($loc));
+        }
+
+        if (!empty($doc)) {
+            $data->where('CITRN_DOCNO', base64_decode($doc));
         }
 
         return $data

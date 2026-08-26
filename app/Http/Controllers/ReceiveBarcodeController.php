@@ -96,6 +96,9 @@ class ReceiveBarcodeController extends Controller
 
     function searchApi(Request $request)
     {
+        $perPage = (int) ($request->perPage ?? 20);
+        $page = (int) ($request->page ?? 1);
+
         $RS = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
             ->select(
                 'TRCVBC_BCCD',
@@ -120,7 +123,18 @@ class ReceiveBarcodeController extends Controller
             $RS->where($request->searchBy, 'like', "%".$request->searchValue."%");
         }
 
-        return ['data' => $RS->orderBy('T_RCV_BC_DETAIL.created_at', 'desc')->get(), 'sql' => (clone $RS)->toSql()];
+        $paginated = $RS->orderBy('T_RCV_BC_DETAIL.created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'data' => $paginated->items(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ];
     }
 
     public function printBarcode(Request $request)

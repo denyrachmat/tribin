@@ -546,6 +546,10 @@ class InvoiceController extends Controller
             ->selectRaw("ANY_VALUE(c.MCUS_TELNO) AS MCUS_TELNO")
             ->selectRaw("ANY_VALUE(s.TSLO_POCD) AS TSLO_POCD")
             ->selectRaw("ANY_VALUE(h.TDLVORD_REMARK) AS TDLVORD_LOC")
+            ->selectRaw("MAX(h.PRINTCNT_GSH) AS PRINTCNT_GSH")
+            ->selectRaw("MAX(h.PRINTCNT_INV) AS PRINTCNT_INV")
+            ->selectRaw("MAX(h.PRINTCNT_RCT) AS PRINTCNT_RCT")
+            ->selectRaw("MAX(h.PRINTCNT_SJ) AS PRINTCNT_SJ")
             ->leftJoin('T_DLVORDDETA as d', DB::raw("CASE
                 WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5 THEN TDLVORDDETA_DLVCD
                 ELSE SUBSTRING_INDEX(TDLVORDDETA_DLVCD,'/',1)
@@ -953,7 +957,21 @@ class InvoiceController extends Controller
             )
         );
 
+        $this->incrementPrintCount($request->TDLVORD_DLVCD, 'PRINTCNT_INV');
+
         return base64_encode($pdf->output());
+    }
+
+    private function incrementPrintCount($doc, $column)
+    {
+        if (empty($doc)) {
+            return;
+        }
+
+        T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->whereRaw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5 THEN TDLVORD_DLVCD ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) END = ?", [$doc])
+            ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->increment($column);
     }
 
     public function postDataDetail(Request $request)
@@ -1416,6 +1434,8 @@ class InvoiceController extends Controller
         $this->fpdf->Cell(50, 5, 'Note: Pembayaran dengan Giro/Cheque/Transfer dianggap sah apabila dan sudah masuk ke rekening kami', 0, 0, 'L');
 
         $pdfFile = $this->fpdf->Output("", "S");
+
+        $this->incrementPrintCount($doc, 'PRINTCNT_RCT');
 
         return base64_encode($pdfFile);
         // $this->fpdf->Output('delivery documents ' . $doc . '.pdf', 'I');
@@ -2010,6 +2030,8 @@ class InvoiceController extends Controller
 
         $pdfFile = $this->fpdf->Output("", "S");
 
+        $this->incrementPrintCount($doc, 'PRINTCNT_SJ');
+
         return base64_encode($pdfFile);
     }
 
@@ -2300,6 +2322,8 @@ class InvoiceController extends Controller
         }
 
         $pdfFile = $this->fpdf->Output("", "S");
+
+        $this->incrementPrintCount($doc, 'PRINTCNT_GSH');
 
         return base64_encode($pdfFile);
     }

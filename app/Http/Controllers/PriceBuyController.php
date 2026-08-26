@@ -342,7 +342,7 @@ class PriceBuyController extends Controller
             return [
                 'id' => $item->id,
                 'MITMBPRC_ITMCD' => $item->MITMBPRC_ITMCD,
-                'MITMBPRC_PRC' => $item->MITMBPRC_PRC,
+                'MITMBPRC_PRC' => (float)$item->MITMBPRC_PRC,
                 'MITMBPRC_STARTDT' => $item->MITMBPRC_STARTDT,
                 'MITMBPRC_ENDDT' => $item->MITMBPRC_ENDDT,
                 'MITMBPRC_ACTIVE' => $item->MITMBPRC_ACTIVE,

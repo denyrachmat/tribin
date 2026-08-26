@@ -354,7 +354,9 @@ class transferRequestController extends Controller
                     $sub->selectRaw('1')
                         ->from('T_SRV_HEAD')
                         ->whereColumn('SRVH_DOCNO', DB::raw("SUBSTRING_INDEX(TLOCREQ_DOCNO,'-',1)"));
-                })->orWhereNull('TLOCREQ_SUBMITTED');
+                });
+                $q->orWhereNull('TLOCREQ_SUBMITTED');
+                $q->orWhereNotNull('TLOCREQ_APPRVBY');
             })
             // ->havingRaw("SUM(TLOCREQ_QTY) - (
             //         SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN

@@ -130,7 +130,7 @@ class AccessRulesController extends Controller
         date_default_timezone_set('Asia/Jakarta');
         $grid = $request->input('groupID');
         $mnid = $request->input('menuID');
-        $usrlg = Auth::user()->name ? Auth::user()->nick_name : 'ada';
+        $usrlg = Auth::user()?->name ? Auth::user()->nick_name : 'ada';
 
         $RSTobeSave = [];
         for ($i = 0; $i < count($mnid); $i++) {

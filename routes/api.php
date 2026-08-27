@@ -75,4 +75,4 @@ Route::group(['prefix' => 'transaction', 'middleware' => ['api']], function () {
 Route::get('/menu', [AccessRulesController::class, 'getMenu'])->middleware('auth:sanctum');
 Route::get('/setting/tree', [AccessRulesController::class, 'getMenuForTreeSetting']);
 Route::get('/setting/tree/roles', [AccessRulesController::class, 'getAllAccessRoles']);
-Route::post('/setting/tree/roles', [AccessRulesController::class, 'setAccess'])->middleware('auth:sanctum');
+Route::post('/setting/tree/roles', [AccessRulesController::class, 'setAccess']);

@@ -727,11 +727,20 @@ class InventoryController extends Controller
     function stockTakeHeaderId()
     {
         $row = T_RCV_HEAD::on($this->dedicatedConnection)
-            ->where('TRCV_DOCNO', "STK-" . date('Ymd'))
-            ->first();
+            ->updateOrCreate([
+                'TRCV_DOCNO' => "STK-" . date('Ymd'),
+            ], [
+                'TRCV_BRANCH' => Auth::user()->branch,
+                'TRCV_RCVCD' => "STK-" . date('Ymd'),
+                'TRCV_ISSUDT' => date('Y-m-d'),
+                'TRCV_SUBMITTED_AT' => date('Y-m-d'),
+                'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
+                'TRCV_SUPCD' => '',
+                'created_by' => Auth::user()->nick_name,
+            ]);
 
         return response()->json([
-            'headerId' => $row ? (int) $row->id : null,
+            'headerId' => (int) $row->id,
         ]);
     }
 

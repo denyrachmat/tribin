@@ -87,10 +87,10 @@ class ReceiveBarcodeController extends Controller
             ->first();
 
         if (!empty($cekDB)) {
-            T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_BCCD', $id)->delete();
             C_ITRN::on($this->dedicatedConnection)->where('id_reff', $id)->delete();
         }
 
+            T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_BCCD', $id)->delete();
         return 'Delete Success';
     }
 

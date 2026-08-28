@@ -166,9 +166,11 @@ class transferRequestController extends Controller
             // stock still not moved until approveData runs.
             T_LOC_REQ::on($this->dedicatedConnection)
                 ->whereIn('TLOCREQ_DOCNO', collect($request->data)->pluck('TLOCREQ_DOCNO')->unique())
-                ->whereNull('TLOCREQ_APPRVDT')
+                // ->whereNull('TLOCREQ_APPRVDT')
                 ->update([
                     'TLOCREQ_SUBMITTED' => date('Y-m-d H:i:s'),
+                    'TLOCREQ_APPRVDT' => null,
+                    'TLOCREQ_APPRVBY' => null
                 ]);
 
             return ['msg' => 'Transfer request submitted, awaiting approval !!'];

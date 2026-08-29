@@ -222,7 +222,7 @@ class ServiceAdminController extends Controller
             } else {
                 $cekDataAll = (clone $hasil)->get()->toArray();
                 $doc = T_SRV_HEAD::on($this->dedicatedConnection)->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
-                    ->join('T_LOC_REQ', 'TLOCREQ_DOCNO', DB::raw("CONCAT(T_SRV_HEAD.SRVH_DOCNO, '-', T_SRV_DET.TSRVD_LINE)"))
+                    ->join('T_LOC_REQ', 'TLOCREQ_DOCNO', '=', DB::raw("CONCAT(T_SRV_HEAD.SRVH_DOCNO, '-', T_SRV_DET.TSRVD_LINE)"))
                     ->where('T_SRV_DET.id', base64_decode($id))
                     ->first();
 

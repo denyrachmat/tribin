@@ -7,6 +7,9 @@
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3" id="svctrfContainer">
 
     </div>
+    <nav aria-label="Service transfer pagination" class="mt-3">
+        <ul class="pagination pagination-sm justify-content-center" id="svctrfPagination"></ul>
+    </nav>
 </div>
 <div class="modal fade" id="svctrfModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -51,17 +54,26 @@
     </div>
 </div>
 <script>
-    function loadServiceTransferApproval() {
+    let svctrfPage = 1
+
+    function loadServiceTransferApproval(page) {
+        svctrfPage = page || 1
         svctrfContainer.innerHTML = 'Please wait'
         $.ajax({
             type: "GET",
             url: "/approval/service-transfer/list",
+            data: { page: svctrfPage },
             dataType: "json",
             success: function(response) {
                 svctrfContainer.innerHTML = ''
                 let list = Array.isArray(response) ? response : (response.data || [])
+                if (list.length === 0 && svctrfPage > 1) {
+                    loadServiceTransferApproval(svctrfPage - 1)
+                    return
+                }
                 if (list.length === 0) {
                     svctrfContainer.innerHTML = '<div class="col">No pending service transfer.</div>'
+                    renderServiceTransferPagination(null)
                     return
                 }
                 list.forEach(function(item) {
@@ -85,10 +97,36 @@
                     col.appendChild(card)
                     svctrfContainer.appendChild(col)
                 })
+                renderServiceTransferPagination(Array.isArray(response) ? null : response)
             },
             error: function(xhr) {
                 svctrfContainer.innerHTML = xhr.responseText
             }
+        })
+    }
+
+    function renderServiceTransferPagination(meta) {
+        const pag = document.getElementById('svctrfPagination')
+        pag.innerHTML = ''
+        if (!meta || !meta.last_page || meta.last_page <= 1) return
+        ;(meta.links || []).forEach(function(link) {
+            const li = document.createElement('li')
+            li.classList.add('page-item')
+            if (!link.url) li.classList.add('disabled')
+            if (link.active) li.classList.add('active')
+            const a = document.createElement('a')
+            a.classList.add('page-link')
+            a.href = '#'
+            a.innerHTML = link.label
+            if (link.url) {
+                a.onclick = function(e) {
+                    e.preventDefault()
+                    const m = link.url.match(/page=(\d+)/)
+                    loadServiceTransferApproval(m ? parseInt(m[1], 10) : 1)
+                }
+            }
+            li.appendChild(a)
+            pag.appendChild(li)
         })
     }
 
@@ -123,16 +161,24 @@
 
     function approveServiceTransfer() {
         if (!confirm('Approve service transfer ' + svctrfModalDoc.innerText + ' ?')) return
+        const btn = document.getElementById('btnSvctrfApprove')
+        const origHtml = btn.innerHTML
+        btn.disabled = true
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Approving...'
         $.ajax({
             type: "GET",
             url: "/inventory/transferRequest/approve/" + btoa(svctrfModalDoc.innerText),
             dataType: "json",
             success: function() {
+                btn.innerHTML = origHtml
+                btn.disabled = false
                 $("#svctrfModal").modal('hide')
-                loadServiceTransferApproval()
+                loadServiceTransferApproval(svctrfPage)
                 showNotificationToApprove()
             },
             error: function(xhr) {
+                btn.innerHTML = origHtml
+                btn.disabled = false
                 let msg = ''
                 try {
                     const resp = xhr.responseJSON

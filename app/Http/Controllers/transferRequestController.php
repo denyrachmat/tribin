@@ -451,6 +451,7 @@ class transferRequestController extends Controller
 
     function approveData($id)
     {
+        ini_set('max_execution_time', 600);
         $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
         if (!in_array($activeRole['code'], ['manager', 'general_manager', 'root'])) {
             return response()->json([
@@ -536,6 +537,10 @@ class transferRequestController extends Controller
 
     public function listApprovalServiceTransfer()
     {
+        ini_set('max_execution_time', 600);
+        $perPage = request()->input('per_page', 12);
+        $page = request()->input('page', 1);
+
         $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->select(
                 DB::raw('TLOCREQ_DOCNO'),
@@ -550,7 +555,7 @@ class transferRequestController extends Controller
             ->where('TLOCREQ_ISREP', 0)
             ->groupBy('TLOCREQ_DOCNO', 'TLOCREQ_FRLOC', 'TLOCREQ_TOLOC')
             ->orderBy('CREATED_AT', 'desc')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return $data;
     }

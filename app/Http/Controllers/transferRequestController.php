@@ -487,47 +487,69 @@ class transferRequestController extends Controller
             ->where('TLOCREQ_DOCNO', $docno)
             ->get();
 
-        $cek0 = 0;
-        foreach ($data as $value) {
-            if ($value['TLOCREQ_QTY'] > 0) {
-                $bc = null;
-                if ($isService) {
-                    $bc = $detPerItem[$value['TLOCREQ_ITMCD']] ?? null;
+        try {
+            DB::connection($this->dedicatedConnection)->transaction(function () use ($data, $isService, $detPerItem, $docno) {
+                foreach ($data as $value) {
+                    if ($value['TLOCREQ_QTY'] > 0) {
+                        $bc = null;
+                        if ($isService) {
+                            $bc = $detPerItem[$value['TLOCREQ_ITMCD']] ?? null;
+                        }
+
+                        $result = $this->transferLoc(new Request([
+                            'DOC' => $value['TLOCREQ_DOCNO'],
+                            'LOCFROM' => $value['TLOCREQ_FRLOC'],
+                            'LOCTO' => $value['TLOCREQ_TOLOC'],
+                            'ITMCD' => $value['TLOCREQ_ITMCD'],
+                            'QTY' => $value['TLOCREQ_QTY'],
+                            'BC' => $bc,
+                        ]));
+
+                        $this->assertTransferSucceeded($result, $value['TLOCREQ_ITMCD']);
+
+                        if ($value['TLOCREQ_ISREP'] == 1) {
+                            $resultRep = $this->transferLoc(new Request([
+                                'DOC' => $value['TLOCREQ_DOCNO'],
+                                'LOCFROM' => $value['TLOCREQ_TOLOC'],
+                                'OUTFORM' => 'OUT-TRF-RPLC',
+                                'LOCTO' => 'WH-SCR',
+                                'INCFORM' => 'INC-TRF-RPLC',
+                                'ITMCD' => $value['TLOCREQ_ITMCD'],
+                                'QTY' => $value['TLOCREQ_QTY'],
+                                'BC' => $bc,
+                            ]));
+
+                            $this->assertTransferSucceeded($resultRep, $value['TLOCREQ_ITMCD']);
+                        }
+                    }
                 }
 
-                $this->transferLoc(new Request([
-                    'DOC' => $value['TLOCREQ_DOCNO'],
-                    'LOCFROM' => $value['TLOCREQ_FRLOC'],
-                    'LOCTO' => $value['TLOCREQ_TOLOC'],
-                    'ITMCD' => $value['TLOCREQ_ITMCD'],
-                    'QTY' => $value['TLOCREQ_QTY'],
-                    'BC' => $bc,
-                ]));
-
-                if ($value['TLOCREQ_ISREP'] == 1) {
-                    $this->transferLoc(new Request([
-                        'DOC' => $value['TLOCREQ_DOCNO'],
-                        'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                        'OUTFORM' => 'OUT-TRF-RPLC',
-                        'LOCTO' => 'WH-SCR',
-                        'INCFORM' => 'INC-TRF-RPLC',
-                        'ITMCD' => $value['TLOCREQ_ITMCD'],
-                        'QTY' => $value['TLOCREQ_QTY'],
-                        'BC' => $bc,
-                    ]));
-                }
-            }
-            $cek0++;
+                T_LOC_REQ::on($this->dedicatedConnection)
+                    ->where('TLOCREQ_DOCNO', $docno)
+                    ->update([
+                        'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
+                        'TLOCREQ_APPRVBY' => Auth::user()->nick_name
+                    ]);
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'msg' => 'Approval failed, no items were approved: ' . $e->getMessage()
+            ], 500);
         }
 
-        T_LOC_REQ::on($this->dedicatedConnection)
-            ->where('TLOCREQ_DOCNO', $docno)
-            ->update([
-                'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
-                'TLOCREQ_APPRVBY' => Auth::user()->nick_name
-            ]);
-
         return ['msg' => 'Transfer Approved !!'];
+    }
+
+    private function assertTransferSucceeded($result, $itemCode)
+    {
+        if (is_object($result) && method_exists($result, 'getStatusCode') && $result->getStatusCode() >= 400) {
+            $error = method_exists($result, 'getData') ? ($result->getData(true)['error'] ?? '') : '';
+            throw new \Exception("Item {$itemCode} failed to transfer. " . $error);
+        }
+
+        if (is_array($result) && (!isset($result['status']) || $result['status'] !== true)) {
+            throw new \Exception("Item {$itemCode} failed to transfer. " . ($result['error'] ?? ''));
+        }
     }
 
     public function viewApprovalServiceTransfer()

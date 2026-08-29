@@ -54,7 +54,7 @@
     </div>
 </div>
 <script>
-    let svctrfPage = 1
+    window.svctrfPage = window.svctrfPage || 1
 
     function loadServiceTransferApproval(page) {
         svctrfPage = page || 1

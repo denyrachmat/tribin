@@ -147,11 +147,13 @@ class ServiceAdminController extends Controller
                 ->get();
 
             $listEmptyStock = [];
+            $svcIncLeg = $this->whFor('EVENT_LIST_SERVICE', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+            $svcIncLoc = $svcIncLeg['MGECD_VALUE'] ?? 'WH-SRV';
             foreach ($listDet as $key => $value) {
                 $cekStockonService = DB::connection($this->dedicatedConnection)
                     ->table('V_STOCK_CHECK')
                     ->where('CITRN_ITMCD', $value['TSRVF_ITMCD'])
-                    ->where('CITRN_LOCCD', 'WH-SRV')
+                    ->where('CITRN_LOCCD', $svcIncLoc)
                     ->first();
 
                 if (empty($cekStockonService) || (!empty($cekStockonService) && $cekStockonService->CITRN_ITMQT < $value['TSRVF_QTY'])) {
@@ -228,14 +230,16 @@ class ServiceAdminController extends Controller
 
                 foreach ($cekDataAll as $key => $valueDet) {
                     // Move Location from service to after service
-                    $this->transferLoc(new Request([
-                        'LOCFROM' => 'WH-SRV',
-                        'LOCTO' => 'WH-SRV-DONE',
-                        'ITMCD' => $valueDet['TSRVF_ITMCD'],
-                        'QTY' => $valueDet['TSRVF_QTY'],
-                        'DOC' => "{$doc->SRVH_DOCNO}-" . $doc->TSRVD_LINE,
-                        'BC' => $valueDet['TSRVF_BC'] ?? null
-                    ]));
+                    $this->runRoute(
+                        'EVENT_LIST_SERVICE_OK',
+                        [
+                            'ITMCD' => $valueDet['TSRVF_ITMCD'],
+                            'QTY' => $valueDet['TSRVF_QTY'],
+                            'DOC' => "{$doc->SRVH_DOCNO}-" . $doc->TSRVD_LINE,
+                            'BC' => $valueDet['TSRVF_BC'] ?? null
+                        ],
+                        $this->dedicatedConnection
+                    );
                 }
 
                 $listForDODet = [];

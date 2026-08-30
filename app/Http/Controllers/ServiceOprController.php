@@ -163,10 +163,13 @@ class ServiceOprController extends Controller
 
         // return $request->allFixed;
 
-        $build = function ($value) use ($request) {
+        $svcIncLeg = $this->whFor('EVENT_LIST_SERVICE', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+        $svcIncLoc = $svcIncLeg['MGECD_VALUE'] ?? 'WH-SRV';
+
+        $build = function ($value) use ($request, $svcIncLoc) {
             $getDet = T_SRV_DET::on($this->dedicatedConnection)
                 ->with([
-                    'listFixDet' => function ($j) use ($request) {
+                    'listFixDet' => function ($j) use ($request, $svcIncLoc) {
                         $j->select(
                             '*',
                             DB::raw('TSRVF_QTY * TSRVF_PRC as SUBTOT_AMT'),
@@ -174,7 +177,7 @@ class ServiceOprController extends Controller
                             SELECT COALESCE(SUM(CITRN_ITMQT),0) AS STOCK
                             FROM C_ITRN
                             WHERE CITRN_ITMCD = TSRVF_ITMCD
-                            AND CITRN_LOCCD = 'WH-SRV'
+                            AND CITRN_LOCCD = '{$svcIncLoc}'
                         ) as STOCK_BENGKEL"),
                             DB::raw('1 as SAVED_DATA')
                         );
@@ -193,6 +196,9 @@ class ServiceOprController extends Controller
             });
 
             $listPartReq = [];
+            $svcIncLeg = $this->whFor('EVENT_LIST_SERVICE', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+            $svcIncLoc = $svcIncLeg['MGECD_VALUE'] ?? 'WH-SRV';
+            $svcIncForm = $svcIncLeg['MGECD_DESC'] ?? 'INC-TRF-LOC';
             foreach ($getDet as $keyDet => $valueDet) {
                 $getListOPR = [];
                 $IDCode = "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$valueDet['id']}";
@@ -225,8 +231,8 @@ class ServiceOprController extends Controller
                                 DB::raw('SUM(CITRN_ITMQT) as STOCK')
                             )
                             ->where('CITRN_DOCNO', $value['SRVH_DOCNO'] . '-' . $valueDet['TSRVD_LINE'])
-                            ->where('CITRN_LOCCD', 'WH-SRV')
-                            ->where('CITRN_FORM', 'INC-TRF-LOC')
+                            ->where('CITRN_LOCCD', $svcIncLoc)
+                            ->where('CITRN_FORM', $svcIncForm)
                             ->groupBy('id_reff', 'CITRN_ITMCD')
                             ->get()
                             ->toArray(),

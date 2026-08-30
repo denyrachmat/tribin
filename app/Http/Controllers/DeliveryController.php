@@ -27,14 +27,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\accTraits;
-use App\Models\hrm\HRMEmployee;
 use App\Traits\gencodeTraits;
+use App\Traits\LocationTraits;
+use App\Models\hrm\HRMEmployee;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DeliveryController extends Controller
 {
-    use accTraits, gencodeTraits;
+    use accTraits, gencodeTraits, LocationTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -358,7 +359,7 @@ class DeliveryController extends Controller
             $newQuotationCode = $request->TDLVORD_DLVCD;
             $newInvoiceCode = $request->TDLVORD_INVCD;
 
-            $this->delete(base64_encode($newQuotationCode));
+            $this->delete(base64_encode($newQuotationCode), false);
         }
 
         $quotationHeader = [
@@ -446,24 +447,50 @@ class DeliveryController extends Controller
         ];
     }
 
-    public function delete($id)
+    public function delete($id, $reverseStock = true)
     {
-        $header = T_DLVORDHEAD::on($this->dedicatedConnection)->where(DB::raw("
-            CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
-                THEN TDLVORD_DLVCD
-                ELSE substring_index(TDLVORD_DLVCD, '/', 1)
-            END"), base64_decode($id))->first();
+        $headers = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->where(DB::raw("
+                CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), base64_decode($id))
+            ->get();
 
-        if (empty($header)) {
+        if ($headers->isEmpty()) {
             return response()->json(['msg' => 'Header not found'], 404);
         }
 
-        $det = T_DLVORDDETA::on($this->dedicatedConnection)->where('TDLVORDDETA_DLVCD', $header->TDLVORD_DLVCD)->delete();
+        $dlvcds = $headers->pluck('TDLVORD_DLVCD');
+
+        if ($reverseStock) {
+            C_ITRN::on($this->dedicatedConnection)
+                ->where('CITRN_BRANCH', Auth::user()->branch)
+                ->where(function ($q) use ($dlvcds) {
+                    $q->whereIn('CITRN_DOCNO', $dlvcds)
+                        ->orWhereIn(DB::raw("SUBSTRING_INDEX(CITRN_DOCNO, '/', 1)"), $dlvcds);
+                })
+                ->delete();
+        }
+
+        $det = T_DLVORDDETA::on($this->dedicatedConnection)
+            ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
+            ->whereIn('TDLVORDDETA_DLVCD', $dlvcds)
+            ->delete();
+
+        T_DLVACCESSORY::on($this->dedicatedConnection)
+            ->whereIn('TDLVACCESSORY_DLVCD', $dlvcds)
+            ->delete();
+
+        $head = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->where('TDLVORD_BRANCH', Auth::user()->branch)
+            ->whereIn('TDLVORD_DLVCD', $dlvcds)
+            ->delete();
 
         return [
             'msg' => 'OK',
             'data' => [
-                'head' => $header,
+                'head' => $head,
                 'det' => $det
             ],
         ];
@@ -2353,6 +2380,23 @@ class DeliveryController extends Controller
                 ]);
 
             $getTotalAmnt = 0;
+            $dlvType = (int) ($getInv->TDLVORD_TYPE ?? 1);
+            $confirmEvent = match ($dlvType) {
+                4 => 'EVENT_LIST_SERVICE_CONF',
+                2 => 'EVENT_LIST_OUT_FO_CONF',
+                3 => 'EVENT_LIST_OUT_RTN_CONF',
+                default => 'EVENT_LIST_OUT_SO_CONF',
+            };
+            $bookingEvent = match ($dlvType) {
+                1 => 'EVENT_LIST_OUT_SO',
+                2 => 'EVENT_LIST_OUT_FO',
+                3 => 'EVENT_LIST_OUT_RTN',
+                default => null,
+            };
+            $outLeg = $this->whFor($confirmEvent, self::FLAG_OUT, $this->dedicatedConnection, Auth::user()->branch);
+            $outLoc = $outLeg['MGECD_VALUE'] ?? 'WH1';
+            $outForm = $outLeg['MGECD_DESC'] ?? 'OUT-SHP';
+
             foreach ($request->data as $r) {
                 $dataDeta = T_DLVORDDETA::on($this->dedicatedConnection)
                     ->where('id', $r['id'])
@@ -2360,18 +2404,30 @@ class DeliveryController extends Controller
                         'TDLVORDDETA_ITMCD_ACT' => $r['TDLVORDDETA_ITMCD_ACT']
                     ]);
 
+                if (!empty($bookingEvent) && !empty($r['TDLVORDDETA_ITMCD_ACT'])) {
+                    $res = $this->runRoute($bookingEvent, [
+                        'DOC' => $r['TDLVORDDETA_DLVCD'],
+                        'ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
+                        'QTY' => $r['TDLVORDDETA_ITMQT'],
+                    ], $this->dedicatedConnection, Auth::user()->branch, true);
+
+                    if (is_array($res) && isset($res['status']) && $res['status'] === false) {
+                        return response()->json([[$res['error'] ?? 'Booking failed']], 406);
+                    }
+                }
+
                 C_ITRN::on($this->dedicatedConnection)->updateorcreate([
                     'CITRN_BRANCH' => Auth::user()->branch,
-                    'CITRN_LOCCD' => 'WH1',
+                    'CITRN_LOCCD' => $outLoc,
                     'CITRN_DOCNO' => $r['TDLVORDDETA_DLVCD'],
-                    'CITRN_FORM' => 'OUT-SHP',
+                    'CITRN_FORM' => $outForm,
                     'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
                 ], [
                     'CITRN_BRANCH' => Auth::user()->branch,
-                    'CITRN_LOCCD' => 'WH1',
+                    'CITRN_LOCCD' => $outLoc,
                     'CITRN_DOCNO' => $r['TDLVORDDETA_DLVCD'],
                     'CITRN_ISSUDT' => date('Y-m-d'),
-                    'CITRN_FORM' => 'OUT-SHP',
+                    'CITRN_FORM' => $outForm,
                     'CITRN_ITMCD' => $r['TDLVORDDETA_ITMCD_ACT'],
                     'CITRN_ITMQT' => $r['TDLVORDDETA_ITMQT'] * -1,
                     'CITRN_PRCPER' => 0,
@@ -2421,18 +2477,35 @@ class DeliveryController extends Controller
             'TDLVACCESSORY_BRANCH' => Auth::user()->branch
         ]);
 
+        $dlvHead = T_DLVORDHEAD::on($this->dedicatedConnection)
+            ->where(DB::raw("CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                    THEN TDLVORD_DLVCD
+                    ELSE substring_index(TDLVORD_DLVCD, '/', 1)
+                END"), $request->TDLVACCESSORY_DLVCD)
+            ->first();
+        $accDlvType = (int) ($dlvHead->TDLVORD_TYPE ?? 1);
+        $accConfirmEvent = match ($accDlvType) {
+            4 => 'EVENT_LIST_SERVICE_CONF',
+            2 => 'EVENT_LIST_OUT_FO_CONF',
+            3 => 'EVENT_LIST_OUT_RTN_CONF',
+            default => 'EVENT_LIST_OUT_SO_CONF',
+        };
+        $outLeg = $this->whFor($accConfirmEvent, self::FLAG_OUT, $this->dedicatedConnection, Auth::user()->branch);
+        $outLoc = $outLeg['MGECD_VALUE'] ?? 'WH1';
+        $outForm = $outLeg['MGECD_DESC'] ?? 'OUT-SHP';
+
         C_ITRN::on($this->dedicatedConnection)->updateorcreate([
             'CITRN_BRANCH' => Auth::user()->branch,
-            'CITRN_LOCCD' => 'WH1',
+            'CITRN_LOCCD' => $outLoc,
             'CITRN_DOCNO' => $request->TDLVACCESSORY_DLVCD,
-            'CITRN_FORM' => 'OUT-SHP',
+            'CITRN_FORM' => $outForm,
             'CITRN_ITMCD' => $request->TDLVACCESSORY_ITMCD,
         ], [
             'CITRN_BRANCH' => Auth::user()->branch,
-            'CITRN_LOCCD' => 'WH1',
+            'CITRN_LOCCD' => $outLoc,
             'CITRN_DOCNO' => $request->TDLVACCESSORY_DLVCD,
             'CITRN_ISSUDT' => date('Y-m-d'),
-            'CITRN_FORM' => 'OUT-SHP',
+            'CITRN_FORM' => $outForm,
             'CITRN_ITMCD' => $request->TDLVACCESSORY_ITMCD,
             'CITRN_ITMQT' => $request->TDLVACCESSORY_ITMQT * -1,
             'CITRN_PRCPER' => 0,

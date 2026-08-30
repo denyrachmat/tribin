@@ -55,6 +55,7 @@ class transferRequestController extends Controller
                     if (!$deferService) {
                         $cek = $this->transferLoc(
                             new Request([
+                                'EVENT' => 'EVENT_LIST_SERVICE',
                                 'DOC' => $value['TLOCREQ_DOCNO'],
                                 'LOCFROM' => $value['TLOCREQ_FRLOC'],
                                 'LOCTO' => $value['TLOCREQ_TOLOC'],
@@ -82,17 +83,15 @@ class transferRequestController extends Controller
                         }
 
                         if ($value['TLOCREQ_ISREP'] == 1) {
-                            $this->transferLoc(
-                                new Request([
+                            $this->runRoute(
+                                'EVENT_LIST_SERVICE_SCR',
+                                [
                                     'DOC' => $value['TLOCREQ_DOCNO'],
-                                    'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                                    'OUTFORM' => 'OUT-TRF-RPLC',
-                                    'LOCTO' => 'WH-SCR',
-                                    'INCFORM' => 'INC-TRF-RPLC',
                                     'ITMCD' => $value['TLOCREQ_ITMCD'],
                                     'QTY' => $value['TLOCREQ_QTY'],
                                     'BC' => $valueBC['TSRVF_BC']
-                                ])
+                                ],
+                                $this->dedicatedConnection
                             );
                         }
                     }
@@ -126,6 +125,7 @@ class transferRequestController extends Controller
                     if (!$deferService) {
                         $this->transferLoc(
                             new Request([
+                                'EVENT' => 'EVENT_LIST_SERVICE',
                                 'DOC' => $value['TLOCREQ_DOCNO'],
                                 'LOCFROM' => $value['TLOCREQ_FRLOC'],
                                 'LOCTO' => $value['TLOCREQ_TOLOC'],
@@ -135,16 +135,14 @@ class transferRequestController extends Controller
                         );
 
                         if ($value['TLOCREQ_ISREP'] == 1) {
-                            $this->transferLoc(
-                                new Request([
+                            $this->runRoute(
+                                'EVENT_LIST_SERVICE_SCR',
+                                [
                                     'DOC' => $value['TLOCREQ_DOCNO'],
-                                    'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                                    'OUTFORM' => 'OUT-TRF-RPLC',
-                                    'LOCTO' => 'WH-SCR',
-                                    'INCFORM' => 'INC-TRF-RPLC',
                                     'ITMCD' => $value['TLOCREQ_ITMCD'],
                                     'QTY' => $value['TLOCREQ_QTY']
-                                ])
+                                ],
+                                $this->dedicatedConnection
                             );
                         }
                     }
@@ -324,6 +322,10 @@ class transferRequestController extends Controller
         $perPage = (int) ($request->perPage ?? 20);
         $page = (int) ($request->page ?? 1);
 
+        $svcIncLeg = $this->whFor('EVENT_LIST_SERVICE', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+        $svcIncLoc = $svcIncLeg['MGECD_VALUE'] ?? 'WH-SRV';
+        $svcIncForm = $svcIncLeg['MGECD_DESC'] ?? 'INC-TRF-LOC';
+
         $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->select(
                 'TLOCREQ_DOCNO',
@@ -334,15 +336,15 @@ class transferRequestController extends Controller
                 DB::raw("(
                     SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
                     WHERE CITRN_DOCNO = TLOCREQ_DOCNO
-                    AND CITRN_LOCCD = 'WH-SRV'
-                    AND CITRN_FORM = 'INC-TRF-LOC'
+                    AND CITRN_LOCCD = '{$svcIncLoc}'
+                    AND CITRN_FORM = '{$svcIncForm}'
                 ) as checkstock"),
                 DB::raw('(select max(TLOCREQ_ISREP) from T_LOC_REQ tlr where tlr.TLOCREQ_DOCNO = TLOCREQ_DOCNO limit 1) as TLOCREQ_ISREP'),
                 DB::raw("SUM(TLOCREQ_QTY) - (
                     SELECT COALESCE(SUM(CITRN_ITMQT),0) FROM C_ITRN
                     WHERE CITRN_DOCNO = TLOCREQ_DOCNO
-                    AND CITRN_LOCCD = 'WH-SRV'
-                    AND CITRN_FORM = 'INC-TRF-LOC'
+                    AND CITRN_LOCCD = '{$svcIncLoc}'
+                    AND CITRN_FORM = '{$svcIncForm}'
                 ) as OS_TF"),
                 DB::raw('max(TLOCREQ_APPRVDT) as TLOCREQ_APPRVDT'),
                 DB::raw('max(TLOCREQ_SUBMITTED) as TLOCREQ_SUBMITTED')
@@ -409,7 +411,7 @@ class transferRequestController extends Controller
                     )
                     // ->where('TLOCREQ_ISREP', $value['TLOCREQ_ISREP'])
                     ->get()
-                    ->map(function ($det) {
+                    ->map(function ($det) use ($svcIncLoc, $svcIncForm) {
                         $det->listBarcode = C_ITRN::on($this->dedicatedConnection)
                             ->select(
                                 DB::raw('id_reff as TSRVF_BC'),
@@ -419,7 +421,7 @@ class transferRequestController extends Controller
                             ->where('CITRN_DOCNO', $det->TLOCREQ_DOCNO)
                             ->where('CITRN_ITMCD', $det->TLOCREQ_ITMCD)
                             ->where('CITRN_LOCCD', $det->TLOCREQ_TOLOC)
-                            ->where('CITRN_FORM', 'INC-TRF-LOC')
+                            ->where('CITRN_FORM', $svcIncForm)
                             ->groupBy('id_reff', 'CITRN_ITMCD')
                             ->get();
                         return $det;
@@ -497,6 +499,8 @@ class transferRequestController extends Controller
                         }
 
                         $result = $this->transferLoc(new Request([
+                            'EVENT' => 'EVENT_LIST_SERVICE',
+                            'DOCFROM' => '',
                             'DOC' => $value['TLOCREQ_DOCNO'],
                             'LOCFROM' => $value['TLOCREQ_FRLOC'],
                             'LOCTO' => $value['TLOCREQ_TOLOC'],
@@ -508,16 +512,16 @@ class transferRequestController extends Controller
                         $this->assertTransferSucceeded($result, $value['TLOCREQ_ITMCD']);
 
                         if ($value['TLOCREQ_ISREP'] == 1) {
-                            $resultRep = $this->transferLoc(new Request([
-                                'DOC' => $value['TLOCREQ_DOCNO'],
-                                'LOCFROM' => $value['TLOCREQ_TOLOC'],
-                                'OUTFORM' => 'OUT-TRF-RPLC',
-                                'LOCTO' => 'WH-SCR',
-                                'INCFORM' => 'INC-TRF-RPLC',
-                                'ITMCD' => $value['TLOCREQ_ITMCD'],
-                                'QTY' => $value['TLOCREQ_QTY'],
-                                'BC' => $bc,
-                            ]));
+                            $resultRep = $this->runRoute(
+                                'EVENT_LIST_SERVICE_SCR',
+                                [
+                                    'DOC' => $value['TLOCREQ_DOCNO'],
+                                    'ITMCD' => $value['TLOCREQ_ITMCD'],
+                                    'QTY' => $value['TLOCREQ_QTY'],
+                                    'BC' => $bc,
+                                ],
+                                $this->dedicatedConnection
+                            );
 
                             $this->assertTransferSucceeded($resultRep, $value['TLOCREQ_ITMCD']);
                         }

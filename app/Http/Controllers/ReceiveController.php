@@ -15,10 +15,11 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\warehouse\incomingBarcodeExport;
 use App\Traits\gencodeTraits;
+use App\Traits\LocationTraits;
 
 class ReceiveController extends Controller
 {
-    use gencodeTraits;
+    use gencodeTraits, LocationTraits;
 
     protected $dedicatedConnection;
 
@@ -616,6 +617,10 @@ class ReceiveController extends Controller
                     'TRCV_SUBMITTED_BY' => Auth::user()->nick_name
                 ]);
             if ($affectedRow) {
+                $incLeg = $this->whFor('EVENT_LIST_INC_PO', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+                $incLoc = $incLeg['MGECD_VALUE'] ?? 'WH1';
+                $incForm = $incLeg['MGECD_DESC'] ?? 'INC-SHP';
+
                 $t_rcv_detail = T_RCV_DETAIL::on($this->dedicatedConnection)
                     ->leftJoin('T_RCV_HEAD', 'id_header', '=', 'T_RCV_HEAD.id')
                     ->whereNull('T_RCV_DETAIL.deleted_at')
@@ -624,19 +629,34 @@ class ReceiveController extends Controller
                 $tobeSaved = [];
 
                 foreach ($t_rcv_detail as $r) {
+                    $exists = C_ITRN::on($this->dedicatedConnection)
+                        ->where('CITRN_LOCCD', $incLoc)
+                        ->where('CITRN_DOCNO', $r->TRCV_RCVCD)
+                        ->where('CITRN_FORM', $incForm)
+                        ->where('id_reff', $r->id)
+                        ->exists();
+
+                    $lineConfirmed = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+                        ->where('TRCVBC_DETID', $r->id)
+                        ->exists();
+
+                    if ($exists || $lineConfirmed) {
+                        continue;
+                    }
+
                     $tobeSaved[] = [
                         'CITRN_BRANCH' => Auth::user()->branch,
-                        'CITRN_LOCCD' => 'WH1',
+                        'CITRN_LOCCD' => $incLoc,
                         'CITRN_DOCNO' => $r->TRCV_RCVCD,
                         'CITRN_ISSUDT' => $r->TRCV_ISSUDT,
-                        'CITRN_FORM' => 'INC-SHP',
+                        'CITRN_FORM' => $incForm,
                         'CITRN_ITMCD' => $r->item_code,
                         'CITRN_ITMQT' => $r->quantity,
                         'CITRN_PRCPER' => $r->unit_price,
                         'CITRN_PRCAMT' => $r->unit_price * $r->quantity,
                         'created_by' => Auth::user()->nick_name,
                         'created_at' => date('Y-m-d H:i:s'),
-                        'id_reff' => $r->id_header,
+                        'id_reff' => $r->id,
                     ];
                 }
 
@@ -668,24 +688,32 @@ class ReceiveController extends Controller
         }
 
         foreach ($request->det as $key => $value) {
+            $incLeg = $this->whFor('EVENT_LIST_INC_PO', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+            $incLoc = $incLeg['MGECD_VALUE'] ?? 'WH1';
+            $incForm = $incLeg['MGECD_DESC'] ?? 'INC-SHP';
+
             $cek = C_ITRN::on($this->dedicatedConnection)
-                ->where('CITRN_LOCCD', 'WH1')
+                ->where('CITRN_LOCCD', $incLoc)
                 ->where('CITRN_DOCNO', $request->TRCV_RCVCD)
-                ->where('CITRN_FORM', 'INC-SHP')
+                ->where('CITRN_FORM', $incForm)
                 ->where('id_reff', $value['id'])
                 ->first();
 
-            if (empty($cek) && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
+            $cekLineConfirmed = T_RCV_BC_DETAIL::on($this->dedicatedConnection)
+                ->where('TRCVBC_DETID', $value['id'])
+                ->exists();
+
+            if (empty($cek) && !$cekLineConfirmed && isset($value['IS_CONFIRMED']) && $value['IS_CONFIRMED'] == 1) {
                 $bc = !empty($value['BARCODE'])
                     ? $value['BARCODE']
                     : $this->checkLastBarcode(true)['lastBarcode'];
 
                 C_ITRN::on($this->dedicatedConnection)->create([
                     'CITRN_BRANCH' => Auth::user()->branch,
-                    'CITRN_LOCCD' => 'WH1',
+                    'CITRN_LOCCD' => $incLoc,
                     'CITRN_DOCNO' => $request->TRCV_RCVCD,
                     'CITRN_ISSUDT' => $request->TRCV_ISSUDT,
-                    'CITRN_FORM' => 'INC-SHP',
+                    'CITRN_FORM' => $incForm,
                     'CITRN_ITMCD' => $value['item_code'],
                     'CITRN_ITMQT' => $value['CONFIRMED_QTY'],
                     'CITRN_PRCPER' => $value['unit_price'],

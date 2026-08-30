@@ -32,12 +32,13 @@ use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
 use App\Traits\taxesTraits;
 use App\Traits\accTraits;
+use App\Traits\LocationTraits;
 use App\Models\hrm\HRMEmployee;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 class InvoiceController extends Controller
 {
-    use taxesTraits, accTraits;
+    use taxesTraits, accTraits, LocationTraits;
     protected $dedicatedConnection;
 
     protected $fpdf;
@@ -2510,13 +2511,6 @@ class InvoiceController extends Controller
                 if ($RSHeader->TDLVORD_TYPE == 4) {
                     C_ITRN::on($this->dedicatedConnection)
                         ->where('CITRN_DOCNO', base64_decode($doc))
-                        ->where('CITRN_LOCCD', '=', 'WH-SRV')
-                        ->where('CITRN_FORM', '=', 'OUT-TRF-LOC')
-                        ->delete();
-
-                    C_ITRN::on($this->dedicatedConnection)
-                        ->where('CITRN_DOCNO', base64_decode($doc))
-                        ->where('CITRN_LOCCD', '=', 'WH-SRV-DONE')
                         ->delete();
 
                     $splitDoc = explode('-', base64_decode($doc));

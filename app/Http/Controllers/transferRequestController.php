@@ -537,6 +537,7 @@ class transferRequestController extends Controller
             });
         } catch (\Throwable $e) {
             return response()->json([
+                'status' => false,
                 'msg' => 'Approval failed, no items were approved: ' . $e->getMessage()
             ], 500);
         }

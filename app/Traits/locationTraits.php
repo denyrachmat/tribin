@@ -15,9 +15,6 @@ use App\Models\M_GENCODE;
 
 trait LocationTraits
 {
-    const FLAG_INC = 1;
-    const FLAG_OUT = 3;
-
     public function routeByEvent($event, $cg = null, $branch = null)
     {
         $query = M_GENCODE::where('MGECD_CODE', $event)

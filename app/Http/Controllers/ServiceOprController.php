@@ -14,6 +14,7 @@ use App\Models\T_SRV_DET;
 use App\Models\T_SRV_FIXDET;
 use App\Models\T_LOC_REQ;
 use App\Models\C_ITRN;
+use App\Models\M_GENCODE;
 
 use App\Traits\LocationTraits;
 use App\Traits\gencodeTraits;
@@ -137,6 +138,38 @@ class ServiceOprController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function deleteDet(string $id)
+    {
+        $det = T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->first();
+
+        if (empty($det)) {
+            return response()->json(['error' => ['Service line not found !!']], 406);
+        }
+
+        if ((int) $det->TSRVD_FLGSTS !== 2) {
+            return response()->json(['error' => ['Line can only be deleted while status is Waiting Fix (2) !!']], 406);
+        }
+
+        $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('id', $det->TSRVH_ID)->first();
+        $docLine = "{$head->SRVH_DOCNO}-{$det->TSRVD_LINE}";
+
+        $hasPartReq = T_LOC_REQ::on($this->dedicatedConnection)->where('TLOCREQ_DOCNO', $docLine)->exists();
+        $hasStock = C_ITRN::on($this->dedicatedConnection)->where('CITRN_DOCNO', $docLine)->exists();
+
+        if ($hasPartReq || $hasStock) {
+            return response()->json(['error' => ['Stock has been transferred for this line, delete not allowed !!']], 406);
+        }
+
+        T_SRV_FIXDET::on($this->dedicatedConnection)->where('TSRVD_ID', $det->id)->delete();
+
+        M_GENCODE::where('MGECD_CODE', 'like', "SRV_OPR_TYPE_{$this->dedicatedConnection}_{$det->id}%")->delete();
+        M_GENCODE::where('MGECD_CODE', 'like', "SRV_TYPE_{$this->dedicatedConnection}_{$det->id}%")->delete();
+
+        T_SRV_DET::on($this->dedicatedConnection)->where('id', $det->id)->delete();
+
+        return ['msg' => 'Service line has been deleted'];
     }
 
     public function search(Request $request)

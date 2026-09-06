@@ -572,6 +572,7 @@ Route::group(['middleware' => 'cors'], function () {
         Route::prefix('servicesOPRs')->group(function () {
             Route::post('search', [ServiceOprController::class, 'search']);
             Route::post('saveTransferLocDraft', [ServiceOprController::class, 'saveTransferLocDraft']);
+            Route::delete('deleteDet/{id}', [ServiceOprController::class, 'deleteDet']);
         });
 
         Route::prefix('acc')->group(function () {

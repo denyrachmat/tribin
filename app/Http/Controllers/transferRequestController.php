@@ -47,12 +47,24 @@ class transferRequestController extends Controller
      */
     public function store(Request $request)
     {
+        // Partial support: only process scanned items (listBarcode with at least one entry)
+        // Unscanned items are left untouched (no stock move, no approval)
+        $processedIds = [];
+        $deferService = false;
         foreach ($request->data as $key => $value) {
+            // validation only for scanned items - skip unscanned
+            $hasBarcode = isset($value['listBarcode']) && is_array($value['listBarcode']) && count($value['listBarcode']) > 0;
+            if (!$hasBarcode) {
+                // Leave unscanned untouched - do not auto-transfer via else branch
+                continue;
+            }
             $deferService = $this->isServiceTransfer($value['TLOCREQ_DOCNO']);
+            $processedIds[] = $value['id'] ?? null;
 
-            if (isset($value['listBarcode']) && count($value['listBarcode']) > 0) {
+            if ($hasBarcode) {
                 foreach ($value['listBarcode'] as $keyBC => $valueBC) {
                     if (!$deferService) {
+                        $qtyToTransfer = isset($valueBC['STOCK']) && $valueBC['STOCK'] > 0 ? $valueBC['STOCK'] : $value['TLOCREQ_QTY'];
                         $cek = $this->transferLoc(
                             new Request([
                                 'EVENT' => 'EVENT_LIST_SERVICE',
@@ -60,7 +72,7 @@ class transferRequestController extends Controller
                                 'LOCFROM' => $value['TLOCREQ_FRLOC'],
                                 'LOCTO' => $value['TLOCREQ_TOLOC'],
                                 'ITMCD' => $value['TLOCREQ_ITMCD'],
-                                'QTY' => $value['TLOCREQ_QTY'],
+                                'QTY' => $qtyToTransfer,
                                 'BC' => $valueBC['TSRVF_BC']
                             ])
                         );
@@ -83,12 +95,13 @@ class transferRequestController extends Controller
                         }
 
                         if ($value['TLOCREQ_ISREP'] == 1) {
+                            $qtyToTransferRep = $qtyToTransfer;
                             $this->runRoute(
                                 'EVENT_LIST_SERVICE_SCR',
                                 [
                                     'DOC' => $value['TLOCREQ_DOCNO'],
                                     'ITMCD' => $value['TLOCREQ_ITMCD'],
-                                    'QTY' => $value['TLOCREQ_QTY'],
+                                    'QTY' => $qtyToTransferRep,
                                     'BC' => $valueBC['TSRVF_BC']
                                 ],
                                 $this->dedicatedConnection
@@ -114,67 +127,45 @@ class transferRequestController extends Controller
                         }
                     }
                 }
-            } else {
-                $cekForIss = DB::connection($this->dedicatedConnection)
-                    ->table('V_STOCK_CHECK')
-                    ->where('CITRN_ITMCD', $value['TLOCREQ_ITMCD'])
-                    ->where('CITRN_ITMQT', '>', 0)
-                    ->first();
-
-                if ($value['TLOCREQ_QTY'] > 0) {
-                    if (!$deferService) {
-                        $this->transferLoc(
-                            new Request([
-                                'EVENT' => 'EVENT_LIST_SERVICE',
-                                'DOC' => $value['TLOCREQ_DOCNO'],
-                                'LOCFROM' => $value['TLOCREQ_FRLOC'],
-                                'LOCTO' => $value['TLOCREQ_TOLOC'],
-                                'ITMCD' => $value['TLOCREQ_ITMCD'],
-                                'QTY' => $value['TLOCREQ_QTY']
-                            ])
-                        );
-
-                        if ($value['TLOCREQ_ISREP'] == 1) {
-                            $this->runRoute(
-                                'EVENT_LIST_SERVICE_SCR',
-                                [
-                                    'DOC' => $value['TLOCREQ_DOCNO'],
-                                    'ITMCD' => $value['TLOCREQ_ITMCD'],
-                                    'QTY' => $value['TLOCREQ_QTY']
-                                ],
-                                $this->dedicatedConnection
-                            );
-                        }
-                    }
-
-                    if (!$deferService) {
-                        T_LOC_REQ::on($this->dedicatedConnection)
-                            ->where('id', $value['id'])
-                            ->update([
-                                'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
-                                'TLOCREQ_APPRVBY' => Auth::user()->nick_name
-                            ]);
-                    }
-                }
             }
+            // else branch removed for partial support: unscanned items are intentionally left untouched
+            // (no stock move, no approval) so they remain pending with OS_TF > 0
+        }
+
+        // Filter out null ids (in case data came without id)
+        $processedIds = array_filter($processedIds);
+        if (empty($processedIds)) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'No scanned items to process. Unscanned items were left untouched.'
+            ], 400);
         }
 
         if ($deferService ?? false) {
-            // Warehouse submitted for manager approval: mark submitted,
-            // stock still not moved until approveData runs.
+            // Warehouse submitted for manager approval: mark submitted ONLY for scanned items,
+            // stock still not moved until approveData runs. Unscanned remain untouched.
             T_LOC_REQ::on($this->dedicatedConnection)
-                ->whereIn('TLOCREQ_DOCNO', collect($request->data)->pluck('TLOCREQ_DOCNO')->unique())
-                // ->whereNull('TLOCREQ_APPRVDT')
+                ->whereIn('id', $processedIds)
                 ->update([
                     'TLOCREQ_SUBMITTED' => date('Y-m-d H:i:s'),
                     'TLOCREQ_APPRVDT' => null,
                     'TLOCREQ_APPRVBY' => null
                 ]);
 
-            return ['msg' => 'Transfer request submitted, awaiting approval !!'];
+            $skipped = count($request->data) - count($processedIds);
+            $msg = 'Transfer request submitted, awaiting approval !!';
+            if ($skipped > 0) {
+                $msg .= " ({$skipped} unscanned item(s) left untouched)";
+            }
+            return ['msg' => $msg];
         }
 
-        return ['msg' => 'Transfer Approved !!'];
+        $skipped = count($request->data) - count($processedIds);
+        $msg = 'Transfer Approved !!';
+        if ($skipped > 0) {
+            $msg = 'Partial transfer approved !! ' . count($processedIds) . ' scanned item(s) processed, ' . $skipped . ' unscanned left untouched';
+        }
+        return ['msg' => $msg];
     }
 
     /**
@@ -485,17 +476,37 @@ class transferRequestController extends Controller
             }
         }
 
+        // Partial support: only approve scanned/submitted items, leave unscanned untouched
         $data = T_LOC_REQ::on($this->dedicatedConnection)
             ->where('TLOCREQ_DOCNO', $docno)
+            ->whereNotNull('TLOCREQ_SUBMITTED')
+            ->whereNull('TLOCREQ_APPRVDT')
             ->get();
 
+        if ($data->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'No scanned/submitted items to approve for ' . $docno . '. Unscanned items were left untouched.'
+            ], 400);
+        }
+
+        // For partial feedback: count total vs to-approve
+        $totalForDoc = T_LOC_REQ::on($this->dedicatedConnection)->where('TLOCREQ_DOCNO', $docno)->count();
+
+        // Collect ids to update only processed rows (partial)
+        $idsToApprove = $data->pluck('id')->toArray();
+
         try {
-            DB::connection($this->dedicatedConnection)->transaction(function () use ($data, $isService, $detPerItem, $docno) {
+            DB::connection($this->dedicatedConnection)->transaction(function () use ($data, $isService, $detPerItem, $docno, $idsToApprove) {
                 foreach ($data as $value) {
                     if ($value['TLOCREQ_QTY'] > 0) {
                         $bc = null;
                         if ($isService) {
                             $bc = $detPerItem[$value['TLOCREQ_ITMCD']] ?? null;
+                            // For service partial: skip items without barcode (unscanned) - already filtered by SUBMITTED but keep guard
+                            if (empty($bc)) {
+                                continue;
+                            }
                         }
 
                         $result = $this->transferLoc(new Request([
@@ -529,7 +540,7 @@ class transferRequestController extends Controller
                 }
 
                 T_LOC_REQ::on($this->dedicatedConnection)
-                    ->where('TLOCREQ_DOCNO', $docno)
+                    ->whereIn('id', $idsToApprove)
                     ->update([
                         'TLOCREQ_APPRVDT' => date('Y-m-d H:i:s'),
                         'TLOCREQ_APPRVBY' => Auth::user()->nick_name
@@ -542,6 +553,10 @@ class transferRequestController extends Controller
             ], 500);
         }
 
+        $remaining = $totalForDoc - count($idsToApprove);
+        if ($remaining > 0) {
+            return ['msg' => 'Partial transfer approved !! ' . count($idsToApprove) . ' item(s) approved, ' . $remaining . ' unscanned left untouched'];
+        }
         return ['msg' => 'Transfer Approved !!'];
     }
 

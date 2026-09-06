@@ -1043,10 +1043,12 @@ class ReceiveOrderController extends Controller
             $query = DB::connection($this->dedicatedConnection)
                 ->table('V_SALES_REPORT as v')
                 ->leftJoin('M_CUS as c', 'c.MCUS_CUSCD', '=', 'v.MCUS_CUSCD')
+                ->leftJoin('T_DLVORDHEAD as dh', 'dh.TDLVORD_DLVCD', '=', 'v.TDLVORDDETA_DLVCD')
                 ->select(
                     'v.*',
                     'c.MCUS_CUSNM',
-                    'c.MCUS_TYPE'
+                    'c.MCUS_TYPE',
+                    DB::raw('dh.TDLVORD_TYPE as TDLVORD_TYPE')
                 )
                 ->whereIn('v.MCUS_CUSCD', $listCat)
                 ->whereBetween('v.SLODET_DATE', [
@@ -1063,11 +1065,125 @@ class ReceiveOrderController extends Controller
                 ->orderBy('v.SLODET_DATE')
                 ->get();
 
-            // Group per customer name
+            // Fix OPR: combine multiple SRV_OPR_TYPE records per service det with "," (was showing as "OPERATOR" per row)
+            // V_SALES_REPORT groups by op.MGECD_VALUE/DESC, so 2 OPR types become 2 rows. Combine them.
+            $rows = $rows->groupBy(function ($item) {
+                // Key that identifies same sales line ignoring OPR differences
+                return implode('|', [
+                    $item->TSLO_SLOCD ?? '',
+                    $item->MITM_ITMCD ?? '',
+                    $item->TDLVORDDETA_DLVCD ?? '',
+                    $item->SLODET_DATE ?? '',
+                    $item->QTY ?? $item->TSLODETA_ITMQT ?? '',
+                    $item->PRC ?? '',
+                    $item->MCUS_CUSCD ?? '',
+                    $item->MUSAGE_ALIAS ?? '',
+                ]);
+            })->map(function ($group) {
+                if ($group->count() > 1) {
+                    $first = $group->first();
+                    // Combine distinct operator names / AS with comma
+                    $names = $group->pluck('CSPK_PIC_NAME')->filter(fn($v) => !empty($v) && $v !== '-')->unique()->values();
+                    $asList = $group->pluck('CSPK_PIC_AS')->filter(fn($v) => !empty($v) && $v !== '-')->unique()->values();
+                    if ($names->isNotEmpty()) {
+                        $first->CSPK_PIC_NAME = $names->implode(', ');
+                    }
+                    if ($asList->isNotEmpty()) {
+                        // If multiple AS (e.g., OPERATOR, DRIVER) combine, else keep single
+                        $first->CSPK_PIC_AS = $asList->implode(', ');
+                    }
+                    // Keep COA/MUSAGE consistent (first)
+                    return $first;
+                }
+                return $group->first();
+            })->values();
+
+            // Enrich rows with COA and handle TDLVORD_TYPE fallback for service (service rows have cek/SERVICED_UNIT)
+            // Fix OPR display: cek = SRV_OPR_TYPE_connect_jos_service_162 should show "Mekanik (JOKO)" etc, not hardcoded "OPERATOR"
+            // Also translate codes like "MCH" -> "Mekanik", "MR" -> "Minor Repair (MR)" via generic lookup
+            $rows = $rows->map(function ($item) {
+                // Fix OPR: if cek present, fetch all OPR records for that service det and combine with ","
+                if (!empty($item->cek)) {
+                    $oprRows = DB::connection('mysql')->table('M_GENCODE')
+                        ->where('MGECD_CODE', $item->cek)
+                        ->where('MGECD_ACTIVE', 1)
+                        ->get();
+                    if ($oprRows->count() > 0) {
+                        $names = $oprRows->pluck('MGECD_DESC')->filter()->unique()->implode(', ');
+                        // Translate AS codes to full desc: MCH -> Mekanik, MR -> Minor Repair (MR)
+                        $asList = $oprRows->pluck('MGECD_VALUE')->filter()->unique()->map(function ($val) {
+                            $lookup = DB::connection('mysql')->table('M_GENCODE')
+                                ->where('MGECD_CODE', 'SRV_OPR_TYPE')
+                                ->where('MGECD_VALUE', $val)
+                                ->first();
+                            // If lookup found, use its DESC (full name), else keep original (already full like "Mekanik" or "Service Berkala (SR)")
+                            return $lookup ? $lookup->MGECD_DESC : $val;
+                        })->filter()->unique()->implode(', ');
+                        $item->CSPK_PIC_NAME = $names ?: $item->CSPK_PIC_NAME;
+                        $item->CSPK_PIC_AS = $asList ?: $item->CSPK_PIC_AS;
+                    }
+                }
+                $isServiceRow = !empty($item->SERVICED_UNIT) || !empty($item->cek) || (!empty($item->MUSAGE_ALIAS) && $item->MUSAGE_DESC !== null);
+                // TDLVORD_TYPE from join may be null for service (view uses SRVH_DOCNO not DLVCD), treat service as 4
+                $tdlType = isset($item->TDLVORD_TYPE) && $item->TDLVORD_TYPE !== null ? (int)$item->TDLVORD_TYPE : ($isServiceRow ? 4 : null);
+                $item->TDLVORD_TYPE = $tdlType;
+                // COA: exclusive for TDLVORD_TYPE = 4, else "-"
+                // For service rows, MUSAGE_ALIAS is srv_type.MGECD_VALUE (= COA), add DESC inside "()" if available
+                if ((int)$tdlType === 4) {
+                    $coaValue = $item->MUSAGE_ALIAS ?? null;
+                    $coaDesc = $item->MUSAGE_DESC ?? null;
+                    $coa = null;
+                    $g = null;
+                    // Try to get full gencode row for this service det
+                    if (!empty($item->cek) && preg_match('/_(\d+)$/', $item->cek, $m)) {
+                        $detId = $m[1];
+                        $code = 'SRV_TYPE_' . $this->dedicatedConnection . '_' . $detId;
+                        $g = DB::connection('mysql')->table('M_GENCODE')->where('MGECD_CODE', $code)->where('MGECD_ACTIVE',1)->first();
+                        if ($g) {
+                            $coaValue = $g->MGECD_VALUE ?? $coaValue;
+                            $coaDesc = $g->MGECD_DESC ?? $coaDesc;
+                        }
+                    }
+                    // Fallback to MUSAGE_ALIAS if still empty
+                    if (empty($coaValue) || $coaValue === '-') {
+                        $coaValue = $item->MUSAGE_ALIAS ?? '-';
+                    }
+                    // Translate short code like "MR" -> "Minor Repair (MR)" via generic SRV_TYPE
+                    if (!empty($coaValue) && $coaValue !== '-') {
+                        $genericCoa = DB::connection('mysql')->table('M_GENCODE')
+                            ->where('MGECD_CODE', 'SRV_TYPE')
+                            ->where('MGECD_VALUE', $coaValue)
+                            ->first();
+                        if ($genericCoa && !empty($genericCoa->MGECD_DESC) && $genericCoa->MGECD_DESC !== '-') {
+                            $coaValue = $genericCoa->MGECD_DESC; // e.g., MR -> Minor Repair (MR)
+                            $coaDesc = $genericCoa->MGECD_DESC;
+                        }
+                    }
+                    if (empty($coaValue) || $coaValue === '-') {
+                        $coa = '-';
+                    } else {
+                        // Add desc inside "()" if desc exists and not "-" and not already in value
+                        if (!empty($coaDesc) && $coaDesc !== '-' && $coaDesc !== $coaValue && stripos($coaValue, $coaDesc) === false) {
+                            $coa = $coaValue . ' (' . $coaDesc . ')';
+                        } else {
+                            $coa = $coaValue;
+                        }
+                    }
+                    $item->COA = $coa ?: '-';
+                } else {
+                    $item->COA = '-';
+                }
+                return $item;
+            });
+
+            // Group per customer name - split EXTERNAL by TDLVORD_TYPE
             $hasil = $rows->groupBy(function ($item) {
-                return $item->MCUS_TYPE != 3 ? 
-                'EXTERNAL'
-                : $item->MCUS_CUSNM ?? $item->MCUS_CUSCD ?? 'UNKNOWN CUSTOMER';
+                if ((int)$item->MCUS_TYPE === 3) {
+                    return $item->MCUS_CUSNM ?? $item->MCUS_CUSCD ?? 'UNKNOWN CUSTOMER';
+                }
+                // For EXTERNAL (MCUS_TYPE !=3), split by service vs non-service
+                $isService = (int)($item->TDLVORD_TYPE ?? 0) === 4;
+                return $isService ? 'EXTERNAL' : 'EXTERNAL CASH';
             });
         }
 

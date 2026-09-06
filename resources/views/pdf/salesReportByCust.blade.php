@@ -113,6 +113,7 @@
                 <th class="tg-0lax">Unit</th>
                 <th class="tg-0lax">Lokasi</th>
                 <th class="tg-0lax">Cost</th>
+                <th class="tg-0lax">COA</th>
             </tr>
         </thead>
         <tbody style="page-break-inside: avoid;">
@@ -121,7 +122,7 @@
             @endphp
             @foreach($data as $key => $rows)
                 <tr style="page-break-inside: avoid;">
-                    <td class="tg-0lax" style="text-align: center;" colspan="13">
+                    <td class="tg-0lax" style="text-align: center;" colspan="14">
                         <h3>{{ $key }}</h3>
                     </td>
                 </tr>
@@ -153,13 +154,13 @@
                         <td class="tg-0lax" style="text-align: right;">Rp {{ number_format($valueDet->totalTax) }}</td>
                         <td class="tg-0lax" style="text-align: right;">Rp
                             {{ number_format(($valueDet->TSLODETA_ITMQT * $valueDet->PRC) + $valueDet->totalTax) }}</td>
-                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->CSPK_PIC_NAME }} (
-                            {{ $valueDet->CSPK_PIC_AS ?? '-' }} )</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->CSPK_PIC_NAME ?? '-' }} ({{ $valueDet->CSPK_PIC_AS ?? '-' }})</td>
                         <td class="tg-0lax" style="text-align: left;">{{ $valueDet->MCUS_CUSNM }}</td>
                         <td class="tg-0lax" style="text-align: left;">{{ $valueDet->SERVICED_UNIT }} (
                             {{ $valueDet->SERVICED_UNIT_DESC ?? '-' }} )</td>
                         <td class="tg-0lax" style="text-align: left;">{{ strip_tags($valueDet->TQUO_PROJECT_LOCATION) }}</td>
                         <td class="tg-0lax" style="text-align: left;">Rp {{ number_format($valueDet->BPRICE) }}</td>
+                        <td class="tg-0lax" style="text-align: left;">{{ $valueDet->COA ?? '-' }}</td>
                     </tr>
                 @endforeach
 
@@ -172,7 +173,7 @@
                     <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{ number_format($subtotalTax) }}</td>
                     <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp
                         {{ number_format($subtotal + $subtotalTax) }}</td>
-                    <td class="tg-0laxa" style="text-align: center;" colspan="5"></td>
+                    <td class="tg-0laxa" style="text-align: center;" colspan="6"></td>
                 </tr>
             @endforeach
             <tr>
@@ -184,7 +185,7 @@
                 <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($totalTax)}}</td>
                 <td class="tg-0laxa" style="text-align: right; font-size:7px">Rp {{number_format($total + $totalTax)}}
                 </td>
-                <td class="tg-0laxa" style="text-align: center;" colspan="5">
+                <td class="tg-0laxa" style="text-align: center;" colspan="6">
                 </td>
             </tr>
         </tbody>

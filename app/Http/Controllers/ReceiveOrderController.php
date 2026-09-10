@@ -1183,7 +1183,7 @@ class ReceiveOrderController extends Controller
                 }
                 // For EXTERNAL (MCUS_TYPE !=3), split by service vs non-service
                 $isService = (int)($item->TDLVORD_TYPE ?? 0) === 4;
-                return $isService ? 'EXTERNAL' : 'EXTERNAL CASH';
+                return $isService ? 'JAT SERVICE' : 'EXTERNAL CASH';
             });
         }
 

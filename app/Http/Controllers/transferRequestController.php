@@ -338,7 +338,9 @@ class transferRequestController extends Controller
                     AND CITRN_FORM = '{$svcIncForm}'
                 ) as OS_TF"),
                 DB::raw('max(TLOCREQ_APPRVDT) as TLOCREQ_APPRVDT'),
-                DB::raw('max(TLOCREQ_SUBMITTED) as TLOCREQ_SUBMITTED')
+                DB::raw('max(TLOCREQ_SUBMITTED) as TLOCREQ_SUBMITTED'),
+                DB::raw("(SELECT sh.SRVH_CUSCD FROM T_SRV_HEAD sh WHERE sh.SRVH_DOCNO = SUBSTRING_INDEX(TLOCREQ_DOCNO,'-',1) LIMIT 1) as SRVH_CUSCD"),
+                DB::raw("(SELECT c.MCUS_CUSNM FROM T_SRV_HEAD sh JOIN M_CUS c ON c.MCUS_CUSCD = sh.SRVH_CUSCD AND c.MCUS_BRANCH = sh.SRVH_BRANCH WHERE sh.SRVH_DOCNO = SUBSTRING_INDEX(TLOCREQ_DOCNO,'-',1) LIMIT 1) as SRVH_CUSNM")
             )
             ->where('TLOCREQ_ISREP', 0)
             ->where(function ($q) {

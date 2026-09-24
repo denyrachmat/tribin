@@ -335,9 +335,12 @@
                     // Service Transfer
                     const totalNotifServiceTrf = (response.dataUnApprovedServiceTrf || []).length
 
+                    // Service Done Confirmation
+                    const totalNotifServiceDone = (response.dataUnApprovedServiceDone || []).length
+
                     const totalNotif = totalNotifQT + totalNotifApprovedQT + totalNotifQTPurchaseRequest + totalNotifApprovedQTPurchaseRequest + totalNotifQTSalesOrderDraft +
                         totalNotifQTPurchaseOrder + totalNotifQTDeliveryNoDriver + totalNotifQTDeliveryUndelivered +
-                        totalNotifQTUnApprovedSPK + totalNotifService + totalNotifServiceTrf
+                        totalNotifQTUnApprovedSPK + totalNotifService + totalNotifServiceTrf + totalNotifServiceDone
                     labelNotifAll.innerHTML = totalNotif === 0 ? '' : totalNotif
 
                     // Quotations Group
@@ -365,6 +368,9 @@
 
                     // Service Transfer Group
                     createLiItem('linotif11', 'labelNotifUnApprovedServiceTrf', 'Service Transfer Approval', totalNotifServiceTrf, liHeadService, liUnApprovedServiceTrfOnclick)
+
+                    // Service Done Confirmation Group
+                    createLiItem('linotif12', 'labelNotifUnApprovedServiceDone', 'Service Done Confirmation Approval', totalNotifServiceDone, liHeadService, liUnApprovedServiceDoneOnclick)
                 }
             });
         }
@@ -539,6 +545,21 @@
                 $.ajax({
                     type: "GET",
                     url: "/approval/service-transfer",
+                    dataType: "text",
+                    success: function(response) {
+                        setInnerHTML(ContentContainer, response)
+                    }
+                });
+            }
+        }
+
+        function liUnApprovedServiceDoneOnclick(e) {
+            e.preventDefault()
+            if (labelNotifUnApprovedServiceDone != null && labelNotifUnApprovedServiceDone.innerText.length > 0) {
+                ContentContainer.innerHTML = 'Please wait'
+                $.ajax({
+                    type: "GET",
+                    url: "/approval/service-done",
                     dataType: "text",
                     success: function(response) {
                         setInnerHTML(ContentContainer, response)

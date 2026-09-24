@@ -271,6 +271,14 @@ Route::group(['middleware' => 'cors'], function () {
                 Route::get('list', [transferRequestController::class, 'listApprovalServiceTransfer']);
                 Route::get('detail/{id}', [transferRequestController::class, 'detailApprovalServiceTransfer']);
             });
+
+            # Service done confirmation approval (server-rendered, frame dropdown)
+            Route::prefix('service-done')->group(function () {
+                Route::get('', [ServiceAdminController::class, 'viewDoneApproval']);
+                Route::get('list', [ServiceAdminController::class, 'listDoneApproval']);
+                Route::get('detail/{id}', [ServiceAdminController::class, 'detailDoneApproval']);
+                Route::post('approve/{id}', [ServiceAdminController::class, 'approveDoneItem']);
+            });
         });
 
         # Terkait Delivery
@@ -573,6 +581,7 @@ Route::group(['middleware' => 'cors'], function () {
             Route::post('search', [ServiceOprController::class, 'search']);
             Route::post('saveTransferLocDraft', [ServiceOprController::class, 'saveTransferLocDraft']);
             Route::delete('deleteDet/{id}', [ServiceOprController::class, 'deleteDet']);
+            Route::delete('deleteFixItem/{id}', [ServiceOprController::class, 'deleteFixItem']);
         });
 
         Route::prefix('acc')->group(function () {

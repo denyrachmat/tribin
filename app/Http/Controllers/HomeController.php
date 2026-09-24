@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\T_SRV_HEAD;
+use App\Models\T_SRV_DET;
 use App\Models\T_LOC_REQ;
 
 class HomeController extends Controller
@@ -274,8 +275,17 @@ class HomeController extends Controller
                 ->where('TLOCREQ_ISREP', 0)
                 ->groupBy('TLOCREQ_DOCNO', 'TLOCREQ_FRLOC', 'TLOCREQ_TOLOC')
                 ->get();
+
+            $unapproveServiceDone = T_SRV_DET::on($this->dedicatedConnection)
+                ->select('T_SRV_HEAD.*', 'T_SRV_DET.id', 'T_SRV_DET.TSRVD_LINE', 'T_SRV_DET.TSRVD_DONE_SUBMITTED')
+                ->join('T_SRV_HEAD', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
+                ->whereNotNull('T_SRV_DET.TSRVD_DONE_SUBMITTED')
+                ->whereNull('T_SRV_DET.TSRVD_DONE_APPRVDT')
+                ->where('T_SRV_DET.TSRVD_FLGSTS', 2)
+                ->get();
         } else {
             $unapproveServiceTrf = [];
+            $unapproveServiceDone = [];
         }
 
         return [
@@ -290,6 +300,7 @@ class HomeController extends Controller
             'dataUnApprovedSPK' => $UnApprovedSPK,
             'dataUnApprovedService' => $unapproveService,
             'dataUnApprovedServiceTrf' => $unapproveServiceTrf,
+            'dataUnApprovedServiceDone' => $unapproveServiceDone,
             'role' => $activeRole
         ];
     }

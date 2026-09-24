@@ -172,6 +172,53 @@ class ServiceOprController extends Controller
         return ['msg' => 'Service line has been deleted'];
     }
 
+    public function deleteFixItem(string $id)
+    {
+        $fix = T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', base64_decode($id))->first();
+
+        if (empty($fix)) {
+            return response()->json(['error' => ['Item line not found !!']], 406);
+        }
+
+        $det = T_SRV_DET::on($this->dedicatedConnection)->where('id', $fix->TSRVD_ID)->first();
+
+        if (empty($det)) {
+            return response()->json(['error' => ['Service line not found !!']], 406);
+        }
+
+        if ((int) $det->TSRVD_FLGSTS !== 2) {
+            return response()->json(['error' => ['Item can only be deleted while the line status is Waiting Fix (2) !!']], 406);
+        }
+
+        $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('id', $det->TSRVH_ID)->first();
+        $docLine = "{$head->SRVH_DOCNO}-{$det->TSRVD_LINE}";
+
+        $svcIncLeg = $this->whFor('EVENT_LIST_SERVICE', self::FLAG_INC, $this->dedicatedConnection, Auth::user()->branch);
+        $svcIncLoc = $svcIncLeg['MGECD_VALUE'] ?? 'WH-SRV';
+
+        // Only allowed while there is no stock on the service location for this item
+        // (i.e. the part request has not been fulfilled / transferred yet).
+        $stockOnLoc = (float) C_ITRN::on($this->dedicatedConnection)
+            ->where('CITRN_ITMCD', $fix->TSRVF_ITMCD)
+            ->where('CITRN_LOCCD', $svcIncLoc)
+            ->where('CITRN_DOCNO', $docLine)
+            ->sum('CITRN_ITMQT');
+
+        if ($stockOnLoc > 0) {
+            return response()->json(['error' => ['Stock is already on the service location for this item, delete not allowed !!']], 406);
+        }
+
+        // Cancel the part request (transfer request) for this item, if any.
+        T_LOC_REQ::on($this->dedicatedConnection)
+            ->where('TLOCREQ_DOCNO', $docLine)
+            ->where('TLOCREQ_ITMCD', $fix->TSRVF_ITMCD)
+            ->delete();
+
+        T_SRV_FIXDET::on($this->dedicatedConnection)->where('id', $fix->id)->delete();
+
+        return ['msg' => 'Item and its part request have been deleted'];
+    }
+
     public function search(Request $request)
     {
         $RSTemp = T_SRV_HEAD::on($this->dedicatedConnection)

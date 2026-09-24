@@ -222,60 +222,158 @@ class ServiceAdminController extends Controller
                     'data' => $cekData
                 ]);
             } else {
-                $cekDataAll = (clone $hasil)->get()->toArray();
-                $doc = T_SRV_HEAD::on($this->dedicatedConnection)->join('T_SRV_DET', 'T_SRV_HEAD.id', 'TSRVH_ID')
-                    ->join('T_LOC_REQ', 'TLOCREQ_DOCNO', '=', DB::raw("CONCAT(T_SRV_HEAD.SRVH_DOCNO, '-', T_SRV_DET.TSRVD_LINE)"))
-                    ->where('T_SRV_DET.id', base64_decode($id))
-                    ->first();
+                // All used parts are confirmed. Hold the line here and wait for
+                // "Service Done Confirmation Approval" before creating the delivery.
+                $det = T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->first();
 
-                foreach ($cekDataAll as $key => $valueDet) {
-                    // Move Location from service to after service
-                    $this->runRoute(
-                        'EVENT_LIST_SERVICE_OK',
-                        [
-                            'ITMCD' => $valueDet['TSRVF_ITMCD'],
-                            'QTY' => $valueDet['TSRVF_QTY'],
-                            'DOC' => "{$doc->SRVH_DOCNO}-" . $doc->TSRVD_LINE,
-                            'BC' => $valueDet['TSRVF_BC'] ?? null
-                        ],
-                        $this->dedicatedConnection
-                    );
+                if (empty($det)) {
+                    return response()->json('ID Not found, please check again !!', 406);
                 }
 
-                $listForDODet = [];
-                $getFixedDet = (clone $hasil)->get();
-                foreach ($getFixedDet as $key => $valueFixedDet) {
-                    $listForDODet[] = [
-                        'TSLODETA_ITMCD' => $valueFixedDet->TSRVF_ITMCD,
-                        'BALQT' => $valueFixedDet->TSRVF_QTY,
-                        'TSLODETA_PRC' => $valueFixedDet->TSRVF_PRC,
-                        'TDLVORDDETA_ITMCD_ACT' => $valueFixedDet->TSRVF_ITMCD,
-                    ];
+                if (empty($det->TSRVD_DONE_SUBMITTED)) {
+                    T_SRV_DET::on($this->dedicatedConnection)->where('id', $det->id)->update([
+                        'TSRVD_DONE_SUBMITTED' => now(),
+                    ]);
                 }
 
-                $postToDelivery = [];
-                $createReq = new Request([
-                    'TDLVORD_DLVCD' => $doc->SRVH_DOCNO . '-' . $doc->TSRVD_LINE,
-                    'TDLVORD_CUSCD' => $doc->SRVH_CUSCD,
-                    'TDLVORD_ISSUDT' => $doc->TLOCREQ_APPRVDT,
-                    'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
-                    'typeOutgoing' => 4,
-                    'SO_DET' => $listForDODet,
-                    'splitSJ' => 0,
-                ]);
-
-                $postToDelivery = app('App\Http\Controllers\DeliveryController')->save($createReq);
-
-                // Set to done
-                T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->update([
-                    'TSRVD_FLGSTS' => 3
-                ]);
-
-                return response(['msg' => 'All fixed item has been submited']);
+                return response(['msg' => 'All used parts confirmed, waiting Service Done Confirmation Approval']);
             }
         } else {
             return response()->json('ID Not found, please check again !!', 406);
         }
+    }
+
+    /**
+     * Approve a pending "Service Done Confirmation" line and create its delivery.
+     * The approver chooses the issue date (TDLVORD_ISSUDT); oldest allowed is H-1.
+     */
+    public function approveDoneItem(Request $request, string $id)
+    {
+        $det = T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->first();
+
+        if (empty($det)) {
+            return response()->json(['error' => ['Service line not found !!']], 406);
+        }
+
+        if ((int) $det->TSRVD_FLGSTS !== 2) {
+            return response()->json(['error' => ['Service line is not in Waiting Fix status !!']], 406);
+        }
+
+        if (empty($det->TSRVD_DONE_SUBMITTED) || !empty($det->TSRVD_DONE_APPRVDT)) {
+            return response()->json(['error' => ['This service line is not pending done confirmation approval !!']], 406);
+        }
+
+        $issueDate = $request->TSRVD_DONE_APPRVDT;
+        if (empty($issueDate)) {
+            return response()->json(['error' => ['Approval date is required !!']], 406);
+        }
+
+        // Oldest allowed date is H-1 (yesterday). Future dates are allowed.
+        $minDate = date('Y-m-d', strtotime('-1 day'));
+        if ($issueDate < $minDate) {
+            return response()->json(['error' => ["Approval date cannot be older than {$minDate} (H-1) !!"]], 406);
+        }
+
+        $head = T_SRV_HEAD::on($this->dedicatedConnection)->where('id', $det->TSRVH_ID)->first();
+        if (empty($head)) {
+            return response()->json(['error' => ['Service header not found !!']], 406);
+        }
+        $docLine = "{$head->SRVH_DOCNO}-{$det->TSRVD_LINE}";
+
+        $fixItems = T_SRV_FIXDET::on($this->dedicatedConnection)->where('TSRVD_ID', $det->id)->get();
+
+        foreach ($fixItems as $valueDet) {
+            // Move Location from service to after service
+            $this->runRoute(
+                'EVENT_LIST_SERVICE_OK',
+                [
+                    'ITMCD' => $valueDet->TSRVF_ITMCD,
+                    'QTY' => $valueDet->TSRVF_QTY,
+                    'DOC' => $docLine,
+                    'BC' => $valueDet->TSRVF_BC ?? null
+                ],
+                $this->dedicatedConnection
+            );
+        }
+
+        $listForDODet = [];
+        foreach ($fixItems as $valueFixedDet) {
+            $listForDODet[] = [
+                'TSLODETA_ITMCD' => $valueFixedDet->TSRVF_ITMCD,
+                'BALQT' => $valueFixedDet->TSRVF_QTY,
+                'TSLODETA_PRC' => $valueFixedDet->TSRVF_PRC,
+                'TDLVORDDETA_ITMCD_ACT' => $valueFixedDet->TSRVF_ITMCD,
+            ];
+        }
+
+        $createReq = new Request([
+            'TDLVORD_DLVCD' => $docLine,
+            'TDLVORD_CUSCD' => $head->SRVH_CUSCD,
+            'TDLVORD_ISSUDT' => $issueDate,
+            'TDLVORD_REMARK' => 'SERVICE-INTERNAL',
+            'typeOutgoing' => 4,
+            'SO_DET' => $listForDODet,
+            'splitSJ' => 0,
+        ]);
+
+        app('App\Http\Controllers\DeliveryController')->save($createReq);
+
+        // Set to done and record the approver + date
+        T_SRV_DET::on($this->dedicatedConnection)->where('id', $det->id)->update([
+            'TSRVD_FLGSTS' => 3,
+            'TSRVD_DONE_APPRVDT' => $issueDate,
+            'TSRVD_DONE_APPRVBY' => Auth::user()->nick_name,
+        ]);
+
+        return ['msg' => 'Service line has been approved and delivered'];
+    }
+
+    public function listDoneApproval()
+    {
+        $perPage = request()->input('per_page', 12);
+        $page = request()->input('page', 1);
+
+        $data = T_SRV_DET::on($this->dedicatedConnection)
+            ->select(
+                'T_SRV_DET.id',
+                'T_SRV_DET.TSRVD_LINE',
+                'T_SRV_DET.TSRVD_ITMCD',
+                'T_SRV_DET.TSRVD_DONE_SUBMITTED',
+                'T_SRV_HEAD.SRVH_DOCNO',
+                'T_SRV_HEAD.SRVH_ISSDT',
+                'M_CUS.MCUS_CUSNM'
+            )
+            ->join('T_SRV_HEAD', 'TSRVH_ID', '=', 'T_SRV_HEAD.id')
+            ->join('M_CUS', 'MCUS_CUSCD', '=', 'SRVH_CUSCD')
+            ->whereNotNull('T_SRV_DET.TSRVD_DONE_SUBMITTED')
+            ->whereNull('T_SRV_DET.TSRVD_DONE_APPRVDT')
+            ->where('T_SRV_DET.TSRVD_FLGSTS', 2)
+            ->orderBy('T_SRV_DET.TSRVD_DONE_SUBMITTED', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return $data;
+    }
+
+    public function detailDoneApproval($id)
+    {
+        $det = T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->first();
+
+        if (empty($det)) {
+            return response()->json(['error' => ['Service line not found !!']], 406);
+        }
+
+        $items = T_SRV_FIXDET::on($this->dedicatedConnection)
+            ->select('TSRVF_ITMCD', 'MITM_ITMNM', 'TSRVF_QTY', 'TSRVF_PRC', 'TSRVF_BC')
+            ->leftJoin('M_ITM', 'MITM_ITMCD', '=', 'TSRVF_ITMCD')
+            ->where('TSRVD_ID', $det->id)
+            ->get();
+
+        return ['det' => $det, 'items' => $items];
+    }
+
+    public function viewDoneApproval()
+    {
+        return view('transaction.service_done_approval');
     }
 
     /**

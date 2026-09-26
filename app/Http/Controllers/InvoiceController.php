@@ -1740,20 +1740,22 @@ class InvoiceController extends Controller
             $itemsFlat = collect($listDetail)->values();
             $itemCount = $itemsFlat->count();
 
-            // tinggi tiap baris berbeda tergantung jenis (kolom kanan: forklift / HM/Solar)
-            $rowStep = $RSHeader->TDLVORD_TYPE == 4 ? 10 : (str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift') ? 10 : 26);
+            // tinggi tiap baris: service (type 4) & forklift cuma 1 baris keterangan (10mm),
+            // selain itu ada 3 baris (kategori/HM/Solar) sehingga naik 20mm per item.
+            $rowStep = ($RSHeader->TDLVORD_TYPE != 4 && !str_contains($RSHeader->TDLVSJDETA_TYPE, 'forklift')) ? 20 : 10;
 
             // kapasitas halaman: non-last pakai penuh (tanpa footer), last cuma sisa di atas footer (y 45-85)
             $rowsPerPage = max(1, (int) floor((140 - 45) / $rowStep));
             $lastRows = max(1, (int) floor((85 - 45) / $rowStep));
 
-            // hitung total halaman (halaman terakhir selalu reserve $lastRows baris utk footer)
+            // hitung total halaman. Halaman non-terakhir diisi penuh ($rowsPerPage) dan
+            // sisakan minimal 1 baris untuk halaman terakhir (yang dibatasi $lastRows utk footer).
             $totalPages = 0;
             $cursor = 0;
             while ($cursor < $itemCount) {
                 $totalPages++;
                 $remain = $itemCount - $cursor;
-                $cursor += ($remain <= $lastRows) ? $remain : min($rowsPerPage, $remain - $lastRows);
+                $cursor += ($remain <= $lastRows) ? $remain : min($rowsPerPage, $remain - 1);
             }
 
             $pageCursor = 0;
@@ -1763,7 +1765,7 @@ class InvoiceController extends Controller
                 $pageNo++;
                 $remainNow = $itemCount - $pageCursor;
                 $isLastPage = $remainNow <= $lastRows;
-                $take = $isLastPage ? $remainNow : min($rowsPerPage, $remainNow - $lastRows);
+                $take = $isLastPage ? $remainNow : min($rowsPerPage, $remainNow - 1);
 
                 $this->fpdf->AddPage("L", 'A5');
                 $this->fpdf->SetAutoPageBreak(true, 0);

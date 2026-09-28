@@ -688,6 +688,7 @@ class ReceiveOrderController extends Controller
                 'deleted_at' => date('Y-m-d H:i:s'),
                 'deleted_by' => Auth::user()->nick_name
             ]);
+            
         return ['msg' => $affectedRow ? 'OK' : 'could not be deleted', 'affectedRow' => $affectedRow];
     }
 

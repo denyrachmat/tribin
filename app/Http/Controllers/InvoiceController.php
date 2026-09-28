@@ -321,6 +321,14 @@ class InvoiceController extends Controller
             END
             ";
 
+        // tentukan sort lebih dulu supaya join bisa digate
+        $hasSort = $request->has('pagination') && !empty($request->pagination['sortBy']);
+        $sortBy = $hasSort ? strtoupper((string) $request->pagination['sortBy']) : '';
+        $dir = ($hasSort && !empty($request->pagination['descending'])) ? 'desc' : 'asc';
+
+        // join DETA + SLO cuma perlu kalau sort-nya pakai kolom SLO
+        $needSlo = in_array($sortBy, ['TSLO_QUOCD', 'TSLO_SLOCD'], true);
+
         // =========================
         // STEP-1: query parent list
         // =========================
@@ -340,17 +348,18 @@ class InvoiceController extends Controller
             })
             ->selectRaw("MAX(c.MCUS_CUSNM) AS sort_cusnm")
             ->selectRaw("MAX(c.MCUS_CUSCD) AS sort_cuscd")
-            // join ke DETA + SLO untuk sort TSLO_*
-            ->leftJoin('T_DLVORDDETA as d', DB::raw('SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,\'/\',1)'), '=', DB::raw("$parentExpr"))
-            ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
-            ->selectRaw("MAX(s.TSLO_QUOCD) AS sort_quocd")
-            ->selectRaw("MAX(s.TSLO_SLOCD) AS sort_slocd")
             ->groupBy('parent_dlvcd');
 
-        if ($request->has('pagination') && !empty($request->pagination['sortBy'])) {
-            $dir = !empty($request->pagination['descending']) ? 'desc' : 'asc';
-            $sortBy = strtoupper($request->pagination['sortBy']);
+        // join ke DETA + SLO hanya kalau dipakai untuk sort (TDLVORD_DLVCD dll tidak butuh)
+        if ($needSlo) {
+            $parentQuery
+                ->leftJoin('T_DLVORDDETA as d', DB::raw('SUBSTRING_INDEX(d.TDLVORDDETA_DLVCD,\'/\',1)'), '=', DB::raw("$parentExpr"))
+                ->leftJoin('T_SLOHEAD as s', 's.TSLO_SLOCD', '=', 'd.TDLVORDDETA_SLOCD')
+                ->selectRaw("MAX(s.TSLO_QUOCD) AS sort_quocd")
+                ->selectRaw("MAX(s.TSLO_SLOCD) AS sort_slocd");
+        }
 
+        if ($hasSort) {
             $sortMap = [
                 'TDLVORD_DLVCD' => 'sort_dlvcd',
                 'TDLVORD_ISSUDT' => 'sort_issudt',
@@ -397,8 +406,8 @@ class InvoiceController extends Controller
             switch ($searchBy) {
 
                 case 'TDLVORD_DLVCD':
-                    // prefix search agar cepat (SP-26-0107%)
-                    $parentQuery->where(DB::raw($parentExpr), 'like', $searchValue . '%');
+                    // prefix search pakai kolom asli agar index terpakai (SP-26-0107%)
+                    $parentQuery->where('h.TDLVORD_DLVCD', 'like', $searchValue . '%');
                     break;
 
                 case 'TDLVORD_CONDGRP':
@@ -496,10 +505,12 @@ class InvoiceController extends Controller
             }
         }
 
-        // total parent (kalau mau cepat tanpa total, pakai simplePaginate)
+        // total parent (ORDER BY dibuang supaya count lebih ringan)
+        $countQuery = (clone $parentQuery)->cloneWithout(['orders'])->cloneWithoutBindings(['order']);
+
         $total = DB::connection($conn)
-            ->table(DB::raw("({$parentQuery->toSql()}) AS t"))
-            ->mergeBindings($parentQuery)
+            ->table(DB::raw("({$countQuery->toSql()}) AS t"))
+            ->mergeBindings($countQuery)
             ->count();
 
         // ambil parent codes page ini
@@ -562,7 +573,13 @@ class InvoiceController extends Controller
             })
             ->leftJoin('T_QUOHEAD as qh', 'qh.TQUO_QUOCD', '=', 's.TSLO_QUOCD')
             ->whereNotNull(DB::raw("NULLIF(d.TDLVORDDETA_ITMCD_ACT, '')")) // pastikan ada detail aktif
-            ->whereIn(DB::raw($parentExpr), $parents)
+            ->where(function ($q) use ($parents) {
+                // pakai kolom asli (index) alih-alih CASE parent: exact parent atau prefix parent + '/'
+                $q->whereIn('h.TDLVORD_DLVCD', $parents);
+                foreach ($parents as $p) {
+                    $q->orWhere('h.TDLVORD_DLVCD', 'like', $p . '/%');
+                }
+            })
             ->groupBy(DB::raw($parentExpr));
 
         $orderParents = implode(',', array_map(fn($p) => "'" . addslashes($p) . "'", $parents));

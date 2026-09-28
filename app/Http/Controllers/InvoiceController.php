@@ -1129,32 +1129,46 @@ class InvoiceController extends Controller
             end"), '=', base64_decode($id));
 
         if (isset($opt['osRcvOnly']) && $opt['osRcvOnly'] === true) {
-            $dlvdet = $dlvdetInit->leftJoin(DB::raw('(
-                SELECT
-                    trd.item_code,
-                    trh.TRCV_REFFNO,
-                    SUM(trd.quantity) as TOT_RCV_QTY
-                FROM T_RCV_DETAIL trd
-                inner join T_RCV_HEAD trh ON trd.id_header = trh.id
-                left join M_SUP msp ON msp.MSUP_SUPCD = trh.TRCV_SUPCD
-                                   AND msp.MSUP_BRANCH = trh.TRCV_BRANCH
-                WHERE msp.MSUP_SUPCD IS NULL
-                  AND trd.deleted_at IS NULL
-                  AND trh.deleted_at IS NULL
-                GROUP BY
-                    trd.item_code,
-                    trh.TRCV_REFFNO
-            ) RCV'), function ($join) {
-                $join->on('RCV.TRCV_REFFNO', '=', DB::raw("case
-                    when (TDLVOR_ISSPLITSJ <> 1) OR (TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5)
-                    then TDLVORDDETA_DLVCD
-                    else substr(TDLVORDDETA_DLVCD, 1, (length(TDLVORDDETA_DLVCD) - locate('/', reverse(TDLVORDDETA_DLVCD))))
-            end"))
-                    ->on('RCV.item_code', '=', 'T_DLVORDDETA.TDLVORDDETA_ITMCD_ACT');
-            })
-                ->where(DB::raw('COALESCE(TOT_RCV_QTY, 0)'), '<', DB::raw('T_DLVORDDETA.TDLVORDDETA_ITMQT'))
-                ->get()
+            // semua detail parent
+            $allDet = $dlvdetInit->get();
+
+            // total sudah di-return per item (hanya dokumen return/customer, abaikan soft-delete)
+            $returnedPerItem = DB::connection($this->dedicatedConnection)
+                ->table('T_RCV_HEAD as rh')
+                ->join('T_RCV_DETAIL as rd', 'rd.id_header', '=', 'rh.id')
+                ->leftJoin('M_SUP as msp', function ($join) {
+                    $join->on('msp.MSUP_SUPCD', '=', 'rh.TRCV_SUPCD')
+                        ->on('msp.MSUP_BRANCH', '=', 'rh.TRCV_BRANCH');
+                })
+                ->where('rh.TRCV_REFFNO', base64_decode($id))
+                ->whereNull('msp.MSUP_SUPCD')
+                ->whereNull('rh.deleted_at')
+                ->whereNull('rd.deleted_at')
+                ->selectRaw('rd.item_code, SUM(rd.quantity) AS ret_qty')
+                ->groupBy('rd.item_code')
+                ->pluck('ret_qty', 'item_code')
                 ->toArray();
+
+            // qty terkirim per item (item yang sama bisa terpecah di beberapa dokumen split)
+            $groupedDet = [];
+            foreach ($allDet as $row) {
+                $itemCode = $row->TDLVORDDETA_ITMCD_ACT;
+                if (!isset($groupedDet[$itemCode])) {
+                    $groupedDet[$itemCode] = $row->toArray();
+                    $groupedDet[$itemCode]['TDLVORDDETA_ITMQT'] = 0;
+                }
+                $groupedDet[$itemCode]['TDLVORDDETA_ITMQT'] += (float) $row->TDLVORDDETA_ITMQT;
+            }
+
+            // sisakan yang masih outstanding (terkirim - return)
+            $dlvdet = [];
+            foreach ($groupedDet as $itemCode => $row) {
+                $remaining = (float) $row['TDLVORDDETA_ITMQT'] - (float) ($returnedPerItem[$itemCode] ?? 0);
+                if ($remaining > 0) {
+                    $row['TDLVORDDETA_ITMQT'] = $remaining;
+                    $dlvdet[] = $row;
+                }
+            }
         } else {
             $dlvdet = isset($opt['isDlvDet']) && $opt['isDlvDet'] == true ? $dlvdetInit->get()->toArray() : [];
         }

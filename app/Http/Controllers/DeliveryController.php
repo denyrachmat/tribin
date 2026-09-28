@@ -68,6 +68,7 @@ class DeliveryController extends Controller
             ->whereNull('deleted_at')
             ->where('TDLVORDDETA_BRANCH', Auth::user()->branch)
             ->groupBy('TDLVORDDETA_SLOCD', 'TDLVORDDETA_BRANCH', 'TDLVORDDETA_ITMCD');
+            
         $SalesDetail = T_SLODETA::on($this->dedicatedConnection)->selectRaw('TSLODETA_SLOCD,TSLODETA_BRANCH,TSLODETA_ITMCD,sum(TSLODETA_ITMQT) SALESQT, TSLODETA_PRC')
             ->whereNull('deleted_at')
             ->where('TSLODETA_BRANCH', Auth::user()->branch)

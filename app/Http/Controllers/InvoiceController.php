@@ -505,6 +505,51 @@ class InvoiceController extends Controller
             }
         }
 
+        // rcv=1: hanya tampilkan dokumen yang belum habis di-return
+        // (full return disembunyikan; partial return tetap tampil untuk sisa qty-nya)
+        // NB: hanya dokumen return (customer, M_SUP tidak match) yang dihitung,
+        //     receive dari supplier/PO diabaikan.
+        // Aggregate dihitung sekali via derived table (bukan correlated subquery per-row).
+        if ((int) $request->input('rcv', 0) === 1) {
+            $hParentExpr = "CASE WHEN h.TDLVORD_TYPE = 4 OR h.TDLVORD_TYPE = 5
+                                THEN h.TDLVORD_DLVCD
+                                ELSE SUBSTRING_INDEX(h.TDLVORD_DLVCD, '/', 1) END";
+
+            // total qty terkirim per parent
+            $delPerParent = DB::raw("(
+                SELECT h2.pcode AS pcode, SUM(COALESCE(da.del_qty, 0)) AS del_qty
+                FROM (
+                    SELECT CASE WHEN TDLVORD_TYPE = 4 OR TDLVORD_TYPE = 5
+                                THEN TDLVORD_DLVCD
+                                ELSE SUBSTRING_INDEX(TDLVORD_DLVCD, '/', 1) END AS pcode,
+                           TDLVORD_DLVCD AS dlvcd
+                    FROM T_DLVORDHEAD
+                ) h2
+                LEFT JOIN (
+                    SELECT TDLVORDDETA_DLVCD AS dlvcd, SUM(TDLVORDDETA_ITMQT) AS del_qty
+                    FROM T_DLVORDDETA
+                    GROUP BY TDLVORDDETA_DLVCD
+                ) da ON da.dlvcd = h2.dlvcd
+                GROUP BY h2.pcode
+            ) delP");
+
+            // total qty sudah di-return per parent (hanya dokumen return/customer)
+            $retPerParent = DB::raw("(
+                SELECT rh.TRCV_REFFNO AS pcode, SUM(rd.quantity) AS ret_qty
+                FROM T_RCV_HEAD rh
+                INNER JOIN T_RCV_DETAIL rd ON rd.id_header = rh.id
+                LEFT JOIN M_SUP msp ON msp.MSUP_SUPCD = rh.TRCV_SUPCD
+                                   AND msp.MSUP_BRANCH = rh.TRCV_BRANCH
+                WHERE msp.MSUP_SUPCD IS NULL
+                GROUP BY rh.TRCV_REFFNO
+            ) retP");
+
+            $parentQuery
+                ->leftJoin($delPerParent, 'delP.pcode', '=', DB::raw($hParentExpr))
+                ->leftJoin($retPerParent, 'retP.pcode', '=', DB::raw($hParentExpr))
+                ->havingRaw("COALESCE(MAX(retP.ret_qty), 0) < COALESCE(MAX(delP.del_qty), 0)");
+        }
+
         // total parent (ORDER BY dibuang supaya count lebih ringan)
         $countQuery = (clone $parentQuery)->cloneWithout(['orders'])->cloneWithoutBindings(['order']);
 

@@ -528,6 +528,7 @@ class InvoiceController extends Controller
                 LEFT JOIN (
                     SELECT TDLVORDDETA_DLVCD AS dlvcd, SUM(TDLVORDDETA_ITMQT) AS del_qty
                     FROM T_DLVORDDETA
+                    WHERE deleted_at IS NULL
                     GROUP BY TDLVORDDETA_DLVCD
                 ) da ON da.dlvcd = h2.dlvcd
                 GROUP BY h2.pcode
@@ -541,6 +542,8 @@ class InvoiceController extends Controller
                 LEFT JOIN M_SUP msp ON msp.MSUP_SUPCD = rh.TRCV_SUPCD
                                    AND msp.MSUP_BRANCH = rh.TRCV_BRANCH
                 WHERE msp.MSUP_SUPCD IS NULL
+                  AND rh.deleted_at IS NULL
+                  AND rd.deleted_at IS NULL
                 GROUP BY rh.TRCV_REFFNO
             ) retP");
 
@@ -1133,6 +1136,11 @@ class InvoiceController extends Controller
                     SUM(trd.quantity) as TOT_RCV_QTY
                 FROM T_RCV_DETAIL trd
                 inner join T_RCV_HEAD trh ON trd.id_header = trh.id
+                left join M_SUP msp ON msp.MSUP_SUPCD = trh.TRCV_SUPCD
+                                   AND msp.MSUP_BRANCH = trh.TRCV_BRANCH
+                WHERE msp.MSUP_SUPCD IS NULL
+                  AND trd.deleted_at IS NULL
+                  AND trh.deleted_at IS NULL
                 GROUP BY
                     trd.item_code,
                     trh.TRCV_REFFNO

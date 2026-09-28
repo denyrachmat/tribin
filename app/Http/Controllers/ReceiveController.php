@@ -151,24 +151,35 @@ class ReceiveController extends Controller
             ->where('id', $id)
             ->first();
 
-        // return $cekDOC;
-
-        $deleteBarcode = T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_DOCNO', $cekDOC->TRCV_DOCNO)->delete();
-
-        if ($affectedRow) {
-            if ($countRow === 0) {
-                T_RCV_HEAD::on($this->dedicatedConnection)
-                    ->where('id', $id)
-                    ->update([
-                        'deleted_at' => date('Y-m-d H:i:s'),
-                        'deleted_by' => Auth::user()->nick_name,
-                    ]);
-            }
+        if (!$cekDOC) {
+            return [
+                'msg' => 'could not be deleted',
+                'affectedRow' => $affectedRow,
+                'headRowsCount' => $countRow,
+            ];
         }
+
+        if (!empty($cekDOC->TRCV_DOCNO)) {
+            T_RCV_BC_DETAIL::on($this->dedicatedConnection)->where('TRCVBC_DOCNO', $cekDOC->TRCV_DOCNO)->delete();
+        }
+
+        // Header tetap dihapus walau tidak ada detail (mis. data NG lama yang
+        // tersimpan tanpa line sebelum validasi FE ditambahkan).
+        $headerDeleted = 0;
+        if ($countRow === 0) {
+            $headerDeleted = T_RCV_HEAD::on($this->dedicatedConnection)
+                ->where('id', $id)
+                ->update([
+                    'deleted_at' => date('Y-m-d H:i:s'),
+                    'deleted_by' => Auth::user()->nick_name,
+                ]);
+        }
+
         return [
-            'msg' => $affectedRow ? 'OK' : 'could not be deleted',
+            'msg' => $countRow === 0 ? 'OK' : 'could not be deleted',
             'affectedRow' => $affectedRow,
             'headRowsCount' => $countRow,
+            'headerDeleted' => $headerDeleted,
         ];
     }
 

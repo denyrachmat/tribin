@@ -46,6 +46,7 @@ use App\Http\Controllers\transferRequestController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
 use App\Http\Controllers\gencodeController;
+use App\Http\Controllers\ItemMappingController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\DiscController;
 use App\Http\Controllers\PriceBuyController;
@@ -230,6 +231,20 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('form', [locationController::class, 'index']);
             Route::post('searchAPI', [locationController::class, 'searchAPI']);
             Route::post('searchAPI/{cg}', [locationController::class, 'searchAPIByCG']);
+        });
+
+        # Terkait Item Mapping Master
+        Route::prefix('item-mapping')->group(function () {
+            Route::get('form', [ItemMappingController::class, 'index']);
+            Route::get('companies', [ItemMappingController::class, 'companies']);
+            Route::get('branches', [ItemMappingController::class, 'branches']);
+            Route::get('items', [ItemMappingController::class, 'items']);
+            Route::get('locations', [ItemMappingController::class, 'locations']);
+            Route::get('roles', [ItemMappingController::class, 'roles']);
+            Route::get('', [ItemMappingController::class, 'search']);
+            Route::post('', [ItemMappingController::class, 'simpan']);
+            Route::put('{id}', [ItemMappingController::class, 'update']);
+            Route::delete('{id}', [ItemMappingController::class, 'delete']);
         });
 
         # Terkait Customer Master

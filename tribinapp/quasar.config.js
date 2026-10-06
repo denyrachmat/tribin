@@ -52,8 +52,26 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: "hash", // available values: 'hash', 'history'
       env: {
-        API: "https://jos.jatpowerindo.co.id/api/",
-        API_WEB: "https://jos.jatpowerindo.co.id/",
+        // Build target: set TRIBIN_ENV=staging (PowerShell: $env:TRIBIN_ENV="staging")
+        // before `npx quasar build` for the staging box.
+        // Default is production, so a plain build (deploy.ps1 to the live
+        // server) can never silently ship staging URLs to production.
+        // Per-value override is also possible without a preset:
+        //   $env:TRIBIN_API="https://..."; $env:TRIBIN_API_WEB="https://..."
+        API:
+          process.env.TRIBIN_API ||
+          ({
+            production: "https://jos.jatpowerindo.co.id/api/",
+            staging: "https://jos.idprofitsol.com/api/",
+          }[process.env.TRIBIN_ENV] ||
+            "https://jos.jatpowerindo.co.id/api/"),
+        API_WEB:
+          process.env.TRIBIN_API_WEB ||
+          ({
+            production: "https://jos.jatpowerindo.co.id/",
+            staging: "https://jos.idprofitsol.com/",
+          }[process.env.TRIBIN_ENV] ||
+            "https://jos.jatpowerindo.co.id/"),
         // API_ACC: "https://joss-accounting.ikhsanhamidan.my.id/api/",
         API_ACC: "https://acc.jatpowerindo.co.id/api/",
         API_KEY_ACC: "imaGrANdSILVwaNH5sTxk8O4f60fuule",

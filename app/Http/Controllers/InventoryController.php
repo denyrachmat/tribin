@@ -364,7 +364,7 @@ class InventoryController extends Controller
                         'CITRN_LOCCD' => $request->LOCFROM,
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'TRF-OUT',
+                        'CITRN_FORM' => 'OUT-TRF-LOC',
                         'CITRN_ITMCD' => $value['MITM_ITMNM'],
                         'CITRN_ITMQT' => $StockNow * -1,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
@@ -379,7 +379,7 @@ class InventoryController extends Controller
                         'CITRN_LOCCD' => $request->LOCTO,
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'TRF-INC',
+                        'CITRN_FORM' => 'INC-TRF-LOC',
                         'CITRN_ITMCD' => $value['MITM_ITMNM'],
                         'CITRN_ITMQT' => $StockNow,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
@@ -391,18 +391,20 @@ class InventoryController extends Controller
                     break;
                 } else {
                     $StockNow = $request->QTY - $valueStock['CITRN_ITMQT'];
+                    // Record the left-over quantity BEFORE mutating $StockNow
+                    $StockPart =  $valueStock['CITRN_ITMQT'];
 
                     // Issue
                     $cek[] = C_ITRN::on($request->CGFROM)->create([
                         'CITRN_BRANCH' => $value['MITM_BRANCH'],
-                        'CITRN_LOCCD' => 'WH1',
+                        'CITRN_LOCCD' => $request->LOCFROM,
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'TRF-OUT',
+                        'CITRN_FORM' => 'OUT-TRF-LOC',
                         'CITRN_ITMCD' => $value['MITM_ITMNM'],
-                        'CITRN_ITMQT' => $valueStock['CITRN_ITMQT'] * -1,
+                        'CITRN_ITMQT' => $StockPart * -1,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
-                        'CITRN_PRCAMT' => $valueStock['CITRN_ITMQT'] * $value['LATEST_PRC'],
+                        'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
                         'id_reff' => $valueStock['id_reff'],
                         'created_by' => Auth::user()->nick_name,
                     ]);
@@ -410,14 +412,14 @@ class InventoryController extends Controller
                     // Receive
                     $cek[] = C_ITRN::on($request->CGTO)->create([
                         'CITRN_BRANCH' => $value['MITM_BRANCH'],
-                        'CITRN_LOCCD' => 'WH1',
+                        'CITRN_LOCCD' => $request->LOCTO,
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'TRF-INC',
+                        'CITRN_FORM' => 'INC-TRF-LOC',
                         'CITRN_ITMCD' => $value['MITM_ITMNM'],
-                        'CITRN_ITMQT' => $valueStock['CITRN_ITMQT'],
+                        'CITRN_ITMQT' => $StockPart,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
-                        'CITRN_PRCAMT' => $valueStock['CITRN_ITMQT'] * $value['LATEST_PRC'],
+                        'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
                         'id_reff' => $valueStock['id_reff'],
                         'created_by' => Auth::user()->nick_name,
                     ]);

@@ -12,8 +12,9 @@ import { Notify } from 'quasar'
 // for each client)
 // const api = axios.create({ baseURL: process.env.API})
 
-const api = axios.create({ baseURL: "https://jos.jatpowerindo.co.id/api/"})
-const api_web = axios.create({ baseURL: "https://jos.jatpowerindo.co.id/"})
+// Single source of truth: API / API_WEB are defined in quasar.config.js build.env
+const api = axios.create({ baseURL: process.env.API || "https://jos.idprofitsol.com/api/" })
+const api_web = axios.create({ baseURL: process.env.API_WEB || "https://jos.idprofitsol.com/" })
 // const api = axios.create({ baseURL: "http://tribin.test/api/"})
 // const api_web = axios.create({ baseURL: "http://tribin.test/"})
 const api_acc = axios.create({ baseURL: process.env.API_ACC})

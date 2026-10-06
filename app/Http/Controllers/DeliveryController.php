@@ -28,14 +28,16 @@ use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\accTraits;
 use App\Traits\gencodeTraits;
+use App\Traits\ItemMappingTraits;
 use App\Traits\LocationTraits;
+use App\Traits\SpkFuelTraits;
 use App\Models\hrm\HRMEmployee;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DeliveryController extends Controller
 {
-    use accTraits, gencodeTraits, LocationTraits;
+    use accTraits, gencodeTraits, LocationTraits, ItemMappingTraits, SpkFuelTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -243,6 +245,15 @@ class DeliveryController extends Controller
                 return response()->json([['Distance out of range, please register on distance price master']], 406);
             }
             $UANG_JALAN = $request->CSPK_WHEELS == 10 ? $RangePrice->PRICE_WHEEL_10 : $RangePrice->PRICE_WHEEL_4_AND_6;
+        }
+
+        # Same own-stock check as saveSPK: enough fuel at the mapped location?
+        if ($this->dedicatedConnection
+            && $this->spkUsesOwnFuel((object) ['CSPK_SUPPLIER' => $request->CSPK_SUPPLIER])) {
+            [$ok, $msg] = $this->validateSpkFuelStock($request->CSPK_LITER, $this->dedicatedConnection, Auth::user()->branch);
+            if (!$ok) {
+                return response()->json([[$msg]], 406);
+            }
         }
 
         # ubah data header
@@ -1480,14 +1491,26 @@ class DeliveryController extends Controller
 
     function deleteSPK(Request $request)
     {
+        $spkId = base64_decode($request->id);
+        $spk = C_SPK::on($this->dedicatedConnection)->where('id', $spkId)->first();
+
         $affectedRow = C_SPK::on($this->dedicatedConnection)
-            ->where('id', base64_decode($request->id))
+            ->where('id', $spkId)
             ->whereNull('deleted_at')
             ->update([
                 'deleted_at' => date('Y-m-d H:i:s'),
                 'deleted_by' => Auth::user()->nick_name
             ]);
         $message = $affectedRow ? 'Deleted' : 'Something wrong please contact admin';
+
+        # Soft-deleted SPK: return the fuel to the fuel location (if it was deducted).
+        if ($affectedRow && $spk && $this->spkUsesOwnFuel($spk)) {
+            $reversed = $this->reverseSpkFuel($spk, $this->dedicatedConnection, Auth::user()->branch);
+            if ($reversed) {
+                $message .= ' (fuel stock reversed)';
+            }
+        }
+
         return ['message' => $message];
     }
 
@@ -1590,6 +1613,16 @@ class DeliveryController extends Controller
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 406);
             }
+
+            # When the driver takes fuel from our own stock (supplier != SPBU),
+            # make sure the fuel location actually holds enough (Master > Item Mapping / Transfer Loc).
+            if ($this->spkUsesOwnFuel((object) ['CSPK_SUPPLIER' => $request->CSPK_SUPPLIER])
+                && $this->dedicatedConnection) {
+                [$ok, $msg] = $this->validateSpkFuelStock($request->CSPK_LITER, $this->dedicatedConnection, Auth::user()->branch);
+                if (!$ok) {
+                    return response()->json([[$msg]], 406);
+                }
+            }
         }
 
         $LastLine = DB::connection($this->dedicatedConnection)->table('C_SPK')
@@ -1642,6 +1675,9 @@ class DeliveryController extends Controller
 
     function autoPurchaseToSparepart($ParamData)
     {
+        # Which item counts as "fuel" for this company/branch (Master > Item Mapping, role SPK_FUEL)
+        $fuelItem = $this->mappedItemCode('SPK_FUEL', $this->dedicatedConnection, Auth::user()->branch) ?? 'SOLAR';
+
         # Periksa apakah sparepart sudah diregistrasi sebagai supplier
         $Supplier = M_SUP::on($this->dedicatedConnection)
             ->where('MSUP_CGCON', 'connect_jos_service')
@@ -1697,7 +1733,7 @@ class DeliveryController extends Controller
 
             $detailTable[] = [
                 'TPCHORDDETA_PCHCD' => $newPOCode,
-                'TPCHORDDETA_ITMCD' => 'SOLAR',
+                'TPCHORDDETA_ITMCD' => $fuelItem,
                 'TPCHORDDETA_ITMQT' => $ParamData['QTY'],
                 'TPCHORDDETA_ITMPRC_PER' => 0,
                 'created_by' => Auth::user()->nick_name,
@@ -1708,7 +1744,7 @@ class DeliveryController extends Controller
             $checkIfAlreadyExist = T_PCHORDDETA::on($this->dedicatedConnection)
                 ->where('TPCHORDDETA_BRANCH', Auth::user()->branch)
                 ->where('TPCHORDDETA_PCHCD', $newPOCode)
-                ->where('TPCHORDDETA_ITMCD', 'SOLAR')
+                ->where('TPCHORDDETA_ITMCD', $fuelItem)
                 ->count();
 
             if ($checkIfAlreadyExist > 0) {
@@ -2168,7 +2204,29 @@ class DeliveryController extends Controller
                 $ColumnFocusName => Auth::user()->nick_name,
                 $ColumnFocusTime => date('Y-m-d H:i:s')
             ]);
-        return ['msg' => $affectedRow ? 'OK' : 'No changes'];
+
+        # Final approval (GA Manager / root) => fuel leaves the fuel location (WH-GAP).
+        # Idempotent: deductSpkFuel() always replaces a previous row for the same document.
+        $fuelNote = null;
+        if ($affectedRow && $ColumnFocusName === 'CSPK_GA_MGR_APPROVED_BY') {
+            $spk = C_SPK::on($this->dedicatedConnection)->where('id', $request->id)->first();
+            if ($spk && !empty($spk->CSPK_GA_MGR_APPROVED_BY)) {
+                $cfg = $this->spkFuelConfig($this->dedicatedConnection, Auth::user()->branch);
+                if ($this->spkUsesOwnFuel($spk)) {
+                    if (empty($cfg['item']) || empty($cfg['loc'])) {
+                        $fuelNote = 'SPK approved, but fuel stock was NOT deducted: ' .
+                            'Item Mapping role SPK_FUEL or the EVENT_LIST_SPK_FUEL route is not configured.';
+                    } elseif ($this->deductSpkFuel($spk, $this->dedicatedConnection, Auth::user()->branch)) {
+                        $fuelNote = 'Fuel deducted: ' . rtrim(rtrim(number_format((float) $spk->CSPK_LITER, 2, '.', ''), '0'), '.') .
+                            ' ' . $cfg['item'] . ' from ' . $cfg['loc'] . '.';
+                    }
+                } else {
+                    $fuelNote = 'Supplier is SPBU - no stock deduction.';
+                }
+            }
+        }
+
+        return ['msg' => $affectedRow ? 'OK' : 'No changes', 'fuel' => $fuelNote];
     }
 
     function searchSPK(Request $request)

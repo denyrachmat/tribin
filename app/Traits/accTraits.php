@@ -8,8 +8,46 @@ use App\Traits\gencodeTraits;
 trait accTraits
 {
     use gencodeTraits;
+
+    /**
+     * Global kill switch for the ACC (accounting) interface.
+     *
+     * Enabled by default (production behaviour unchanged). To stop test
+     * transactions from posting journals to the ACC server, set
+     * ACC_ENABLED=false in that environment's .env - e.g. on staging.
+     * When false: sendACC/getACC/deleteACC return a success-shaped response
+     * WITHOUT contacting the ACC server.
+     *
+     * Note: Laravel env() already casts "false"/"true"/"(empty)" to booleans,
+     * so compare loosely against false instead of string-matching.
+     */
+    protected function accEnabled()
+    {
+        return filter_var(env('ACC_ENABLED', true), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function accDisabledResponse($method, $param)
+    {
+        return response()->json([
+            'status' => true,
+            'skipped' => true,
+            'error' => "ACC interface DISABLED locally (ACC_ENABLED=false) - {$method} not sent",
+            'param' => $param,
+            'data' => [],
+        ], 200);
+    }
+
     public function sendACC($conn, $date, $reference_number, $journal_code, $description, $amount)
     {
+        if (!$this->accEnabled()) {
+            return $this->accDisabledResponse('post-journal', [
+                'cg_code' => $conn,
+                'date' => $date,
+                'reference_number' => $reference_number,
+                'journal_code' => $journal_code,
+                'amount' => $amount,
+            ]);
+        }
         try {
             if ($amount < 1) {
                 return response()->json([
@@ -115,6 +153,17 @@ trait accTraits
 
     public function getACC($conn, $reference_number, $shouldExists = true)
     {
+        if (!$this->accEnabled()) {
+            if ($shouldExists) {
+                return $this->accDisabledResponse('journal-by-reference (read)', [
+                    'cg_code' => $conn,
+                    'reference_number' => $reference_number,
+                ]);
+            }
+            // Called internally as a pre-check: report "nothing found" so callers
+            // treat the reference as new and do not block the local transaction.
+            return [];
+        }
         try {
             $client = new \GuzzleHttp\Client();
             $response = $client->request('GET', env('ACC_URL', 'https://acc.jatpowerindo.co.id/') . 'api/journal-by-reference', [
@@ -163,6 +212,12 @@ trait accTraits
 
     public function deleteACC($conn, $reference_number)
     {
+        if (!$this->accEnabled()) {
+            return $this->accDisabledResponse('voidJournal', [
+                'cg_code' => $conn,
+                'reference_number' => $reference_number,
+            ]);
+        }
         try {
             $checkRef = $this->getACC($conn, $reference_number);
 

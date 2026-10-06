@@ -46,6 +46,7 @@ use App\Http\Controllers\transferRequestController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
 use App\Http\Controllers\gencodeController;
+use App\Http\Controllers\ApprovalHistoryController;
 use App\Http\Controllers\ItemMappingController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\DiscController;
@@ -267,6 +268,11 @@ Route::group(['middleware' => 'cors'], function () {
         #Terkait Approval
         Route::prefix('approval')->group(function () {
             Route::get('notifications', [HomeController::class, 'notifications']);
+
+            # Shared approval history (append-only event log)
+            Route::get('history/form', [ApprovalHistoryController::class, 'historyPage']);
+            Route::get('history', [ApprovalHistoryController::class, 'timeline']);
+            Route::get('history/recent', [ApprovalHistoryController::class, 'recent']);
             Route::get('notifications/top-user', [HomeController::class, 'TopUserNotifications']);
             Route::get('notificationsAPI/top-user', [HomeController::class, 'newDirNotif']);
             Route::get('quotation', [QuotationController::class, 'notifications']);

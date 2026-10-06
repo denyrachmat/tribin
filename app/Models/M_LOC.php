@@ -8,17 +8,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class M_LOC extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+
     protected $table = 'M_LOC';
+
     protected $fillable = [
         'MLOC_LOCCD',
         'MLOC_LOCNM',
-        'MLOC_LEVEL',
-        'MLOC_PARENTID',
-        'MLOC_CAPA',
-        'MLOC_ISACTIVE',
-        'MLOC_CG',
-        'MLOC_BRANCH',
+        'MLOC_LOCPRNTCD',
         'created_by',
     ];
 }

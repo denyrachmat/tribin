@@ -173,6 +173,9 @@
                     <li id="liHeadService">
                         <h6 class="dropdown-header">Service</h6>
                     </li>
+                    <li id="liHeadHistory">
+                        <h6 class="dropdown-header">History</h6>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -371,6 +374,7 @@
 
                     // Service Done Confirmation Group
                     createLiItem('linotif12', 'labelNotifUnApprovedServiceDone', 'Service Done Confirmation Approval', totalNotifServiceDone, liHeadService, liUnApprovedServiceDoneOnclick)
+                    createLiItem('linotif13', 'labelNotifApprovalHistory', 'Approval History', 0, liHeadHistory, liApprovalHistoryOnclick)
                 }
             });
         }
@@ -551,6 +555,19 @@
                     }
                 });
             }
+        }
+
+        function liApprovalHistoryOnclick(e) {
+            e.preventDefault()
+            ContentContainer.innerHTML = 'Please wait'
+            $.ajax({
+                type: "GET",
+                url: "/approval/history/form",
+                dataType: "text",
+                success: function(response) {
+                    setInnerHTML(ContentContainer, response)
+                }
+            });
         }
 
         function liUnApprovedServiceDoneOnclick(e) {

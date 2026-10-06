@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use App\Traits\accTraits;
+use App\Traits\ApprovalLogTraits;
 use App\Traits\gencodeTraits;
 use App\Traits\ItemMappingTraits;
 use App\Traits\LocationTraits;
@@ -37,7 +38,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DeliveryController extends Controller
 {
-    use accTraits, gencodeTraits, LocationTraits, ItemMappingTraits, SpkFuelTraits;
+    use accTraits, ApprovalLogTraits, gencodeTraits, LocationTraits, ItemMappingTraits, SpkFuelTraits;
     protected $dedicatedConnection;
     protected $fpdf;
     protected $monthOfRoma = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -247,15 +248,6 @@ class DeliveryController extends Controller
             $UANG_JALAN = $request->CSPK_WHEELS == 10 ? $RangePrice->PRICE_WHEEL_10 : $RangePrice->PRICE_WHEEL_4_AND_6;
         }
 
-        # Same own-stock check as saveSPK: enough fuel at the mapped location?
-        if ($this->dedicatedConnection
-            && $this->spkUsesOwnFuel((object) ['CSPK_SUPPLIER' => $request->CSPK_SUPPLIER])) {
-            [$ok, $msg] = $this->validateSpkFuelStock($request->CSPK_LITER, $this->dedicatedConnection, Auth::user()->branch);
-            if (!$ok) {
-                return response()->json([[$msg]], 406);
-            }
-        }
-
         # ubah data header
         $affectedRow = C_SPK::on($this->dedicatedConnection)
             ->where('id', base64_decode($request->id))
@@ -290,7 +282,9 @@ class DeliveryController extends Controller
                 'form' => 'SPK',
                 'code' => base64_decode($request->id),
                 'type' => '2',
+                'action' => self::APRV_REVISED,
                 'remark' => 'EDITED',
+                'note' => 'Edited',
                 'branch' => Auth::user()->branch,
             ]);
         }
@@ -1613,16 +1607,6 @@ class DeliveryController extends Controller
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 406);
             }
-
-            # When the driver takes fuel from our own stock (supplier != SPBU),
-            # make sure the fuel location actually holds enough (Master > Item Mapping / Transfer Loc).
-            if ($this->spkUsesOwnFuel((object) ['CSPK_SUPPLIER' => $request->CSPK_SUPPLIER])
-                && $this->dedicatedConnection) {
-                [$ok, $msg] = $this->validateSpkFuelStock($request->CSPK_LITER, $this->dedicatedConnection, Auth::user()->branch);
-                if (!$ok) {
-                    return response()->json([[$msg]], 406);
-                }
-            }
         }
 
         $LastLine = DB::connection($this->dedicatedConnection)->table('C_SPK')
@@ -2074,6 +2058,41 @@ class DeliveryController extends Controller
 
     function submitSPK(Request $request)
     {
+        $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
+        $ColumnFocusName = '';
+        $ColumnFocusTime = '';
+        switch ($activeRole['code']) {
+            case 'ga_manager':
+                $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
+                $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
+                break;
+            case 'ga_spv':
+                $ColumnFocusName = 'CSPK_GA_SPV_APPROVED_BY';
+                $ColumnFocusTime = 'CSPK_GA_SPV_APPROVED_AT';
+                break;
+            case 'root':
+                $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
+                $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
+                break;
+        }
+
+        # This action is the approval step => validate fuel stock BEFORE writing
+        # anything, so an SPK that would drive the fuel location minus is refused.
+        $spk = C_SPK::on($this->dedicatedConnection)->where('id', base64_decode($request->id))->first();
+        if (empty($spk)) {
+            return ['message' => 'SPK not found'];
+        }
+        if ($ColumnFocusName === 'CSPK_GA_MGR_APPROVED_BY' && $this->spkUsesOwnFuel($spk)) {
+            [$ok, $msg] = $this->validateSpkFuelStock(
+                $spk->CSPK_LITER,
+                $this->dedicatedConnection,
+                $spk->CSPK_BRANCH ?? Auth::user()->branch
+            );
+            if (!$ok) {
+                return response()->json([[$msg]], 406);
+            }
+        }
+
         $affectedRow = C_SPK::on($this->dedicatedConnection)
             ->where('id', base64_decode($request->id))
             ->update([
@@ -2087,28 +2106,11 @@ class DeliveryController extends Controller
                 'form' => 'SPK',
                 'code' => base64_decode($request->id),
                 'type' => '1',
+                'action' => self::APRV_SUBMITTED,
                 'remark' => '',
+                'note' => 'Submitted',
                 'branch' => Auth::user()->branch,
             ]);
-
-
-            $activeRole = CompanyGroupController::getRoleBasedOnCompanyGroup($this->dedicatedConnection);
-            $ColumnFocusName = '';
-            $ColumnFocusTime = '';
-            switch ($activeRole['code']) {
-                case 'ga_manager':
-                    $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
-                    $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
-                    break;
-                case 'ga_spv':
-                    $ColumnFocusName = 'CSPK_GA_SPV_APPROVED_BY';
-                    $ColumnFocusTime = 'CSPK_GA_SPV_APPROVED_AT';
-                    break;
-                case 'root':
-                    $ColumnFocusName = 'CSPK_GA_MGR_APPROVED_BY';
-                    $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
-                    break;
-            }
 
             C_SPK::on($this->dedicatedConnection)
                 ->where('id', base64_decode($request->id))
@@ -2116,6 +2118,41 @@ class DeliveryController extends Controller
                     $ColumnFocusName => Auth::user()->nick_name,
                     $ColumnFocusTime => date('Y-m-d H:i:s')
                 ]);
+
+            # Record the approval as its own event (this action performs it)
+            if (!empty($ColumnFocusName)) {
+                $this->approvalLog(
+                    'SPK',
+                    base64_decode($request->id),
+                    self::APRV_APPROVED,
+                    'Approved at ' . ($ColumnFocusName === 'CSPK_GA_MGR_APPROVED_BY' ? 'GA Manager' : 'GA SPV') . ' level',
+                    ['column' => $ColumnFocusName],
+                    $this->dedicatedConnection,
+                    Auth::user()->branch,
+                    '3'
+                );
+            }
+
+            # Final approval (GA Manager / root) => deduct the fuel now.
+            $fuelNote = null;
+            if ($ColumnFocusName === 'CSPK_GA_MGR_APPROVED_BY') {
+                $fresh = C_SPK::on($this->dedicatedConnection)->where('id', base64_decode($request->id))->first();
+                if ($fresh && !empty($fresh->CSPK_GA_MGR_APPROVED_BY)) {
+                    $branch = $fresh->CSPK_BRANCH ?? Auth::user()->branch;
+                    $cfg = $this->spkFuelConfig($this->dedicatedConnection, $branch);
+                    if ($this->spkUsesOwnFuel($fresh)) {
+                        if (empty($cfg['item']) || empty($cfg['loc'])) {
+                            $fuelNote = 'Approved, but fuel stock NOT deducted: Item Mapping role SPK_FUEL or EVENT_LIST_SPK_FUEL route not configured.';
+                        } elseif ($this->deductSpkFuel($fresh, $this->dedicatedConnection, $branch)) {
+                            $fuelNote = 'Fuel deducted: ' . rtrim(rtrim(number_format((float) $fresh->CSPK_LITER, 2, '.', ''), '0'), '.') .
+                                ' ' . $cfg['item'] . ' from ' . $cfg['loc'] . '.';
+                        }
+                    } else {
+                        $fuelNote = 'Supplier is SPBU - no stock deduction.';
+                    }
+                }
+            }
+            return ['message' => 'Submitted', 'fuel' => $fuelNote];
         }
 
         return ['message' => 'Submitted'];
@@ -2197,6 +2234,24 @@ class DeliveryController extends Controller
                 $ColumnFocusTime = 'CSPK_GA_MGR_APPROVED_AT';
                 break;
         }
+        # Final approval (GA Manager / root) => validate fuel stock first, then deduct.
+        # SPKs are submitted freely; the check happens here so a minus stock
+        # can never be approved. Idempotent: deductSpkFuel() always replaces
+        # a previous row for the same document.
+        if ($ColumnFocusName === 'CSPK_GA_MGR_APPROVED_BY') {
+            $spk = C_SPK::on($this->dedicatedConnection)->where('id', $request->id)->first();
+            if ($spk && $this->spkUsesOwnFuel($spk)) {
+                [$ok, $msg] = $this->validateSpkFuelStock(
+                    $spk->CSPK_LITER,
+                    $this->dedicatedConnection,
+                    $spk->CSPK_BRANCH ?? Auth::user()->branch
+                );
+                if (!$ok) {
+                    return response()->json([[$msg]], 406);
+                }
+            }
+        }
+
         # ubah data header
         $affectedRow = C_SPK::on($this->dedicatedConnection)
             ->where('id', $request->id)
@@ -2205,8 +2260,6 @@ class DeliveryController extends Controller
                 $ColumnFocusTime => date('Y-m-d H:i:s')
             ]);
 
-        # Final approval (GA Manager / root) => fuel leaves the fuel location (WH-GAP).
-        # Idempotent: deductSpkFuel() always replaces a previous row for the same document.
         $fuelNote = null;
         if ($affectedRow && $ColumnFocusName === 'CSPK_GA_MGR_APPROVED_BY') {
             $spk = C_SPK::on($this->dedicatedConnection)->where('id', $request->id)->first();

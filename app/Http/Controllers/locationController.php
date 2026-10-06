@@ -53,13 +53,27 @@ class locationController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $hasil = M_LOC::where('MLOC_CG', $this->dedicatedConnection)->updateOrCreate([
+        # Guard against silently overwriting an existing location: the code is the
+        # natural key, so a plain "create" whose code already exists must be refused
+        # instead of renaming/replacing that row. Send is_update=1 to edit on purpose.
+        $existing = M_LOC::on($this->dedicatedConnection)
+            ->where('MLOC_LOCCD', $request->header['MLOC_LOCCD'])
+            ->first();
+
+        if ($existing && !$request->boolean('is_update')) {
+            return response()->json([[
+                "Location code '{$existing->MLOC_LOCCD}' already exists ({$existing->MLOC_LOCNM}). " .
+                "Use a different code, or open that location and edit it."
+            ]], 406);
+        }
+
+        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
         ],[
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
             'MLOC_LOCNM' => $request->header['MLOC_LOCNM'],
             'MLOC_LOCPRNTCD' => $request->header['MLOC_LOCPRNTCD'],
-            'created_by' => Auth::user()->username,
+            'created_by' => Auth::check() ? Auth::user()->nick_name : null,
         ]);
 
         return ['msg' => 'OK', 'data' => $hasil];
@@ -94,7 +108,7 @@ class locationController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $hasil = M_LOC::where('MLOC_CG', $this->dedicatedConnection)->updateOrCreate([
+        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
         ],[
             'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
@@ -115,7 +129,7 @@ class locationController extends Controller
     }
 
     public function searchAPI(Request $request) {
-        $RS = M_LOC::where('MLOC_CG', $this->dedicatedConnection);
+        $RS = M_LOC::on($this->dedicatedConnection);
 
         if (!empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
@@ -125,7 +139,7 @@ class locationController extends Controller
     }
 
     public function searchAPIByCG(Request $request, $cg) {
-        $RS = M_LOC::where('MLOC_CG', $cg);
+        $RS = M_LOC::on(Crypt::decryptString($cg));
 
         if (!empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');

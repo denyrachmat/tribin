@@ -324,7 +324,13 @@ class ServiceOprController extends Controller
 
             $getUnresolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 2 : 0)->get()->toArray();
             $getResolve = T_SRV_DET::on($this->dedicatedConnection)->where('TSRVH_ID', $value['id'])->where('TSRVD_FLGSTS', count($checkDataFlagApproved) > 0 ? 3 : 1)->get()->toArray();
-            return array_merge($value, ['detail' => $listPartReq, 'unresolve' => $getUnresolve, 'resolve' => $getResolve]);
+            return array_merge($value, [
+                'detail' => $listPartReq,
+                'unresolve' => $getUnresolve,
+                'resolve' => $getResolve,
+                'svc_inc_loc' => $svcIncLoc,
+                'svc_inc_form' => $svcIncForm,
+            ]);
         };
 
         if ($request->has('paginate') && !empty($request->paginate)) {

@@ -278,6 +278,7 @@ Route::group(['middleware' => 'cors'], function () {
                 Route::get('list', [ServiceAdminController::class, 'listDoneApproval']);
                 Route::get('detail/{id}', [ServiceAdminController::class, 'detailDoneApproval']);
                 Route::post('approve/{id}', [ServiceAdminController::class, 'approveDoneItem']);
+                Route::post('repair', [ServiceAdminController::class, 'repairStuckDoneSubmission']);
             });
         });
 

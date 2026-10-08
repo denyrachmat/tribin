@@ -215,6 +215,24 @@ class ServiceAdminController extends Controller
                     }
                 }
 
+                // Prevent doc from being stranded: if this pass confirmed ALL remaining items,
+                // auto-advance to the "Service Done Confirmation Approval" stage immediately.
+                $cekAllConfirmed = (clone $hasil)->where('TSRVF_ISCONF', 0)->count() === 0;
+                if ($cekAllConfirmed) {
+                    $det = T_SRV_DET::on($this->dedicatedConnection)->where('id', base64_decode($id))->first();
+                    if (empty($det->TSRVD_DONE_SUBMITTED)) {
+                        T_SRV_DET::on($this->dedicatedConnection)->where('id', $det->id)->update([
+                            'TSRVD_DONE_SUBMITTED' => now(),
+                        ]);
+                    }
+                    return response([
+                        'msg' => count(array_filter($cekData, function ($f) {
+                            return !$f['status'];
+                        })) > 0 ? 'Some item not updated !' : 'All used parts confirmed, waiting Service Done Confirmation Approval',
+                        'data' => $cekData
+                    ]);
+                }
+
                 return response([
                     'msg' => count(array_filter($cekData, function ($f) {
                         return !$f['status'];
@@ -241,6 +259,57 @@ class ServiceAdminController extends Controller
         } else {
             return response()->json('ID Not found, please check again !!', 406);
         }
+    }
+
+    /**
+     * Repair stranded service-done lines.
+     *
+     * A line is "stranded" when every used part has been confirmed (TSRVF_ISCONF = 1)
+     * but the line never reached the done-confirmation approval stage because
+     * TSRVD_DONE_SUBMITTED was never set. Without this, the line silently never
+     * produces a delivery / invoice.
+     *
+     * Optionally restrict to a single T_SRV_DET id (base64) via request->id.
+     */
+    public function repairStuckDoneSubmission(Request $request)
+    {
+        $conn = $this->dedicatedConnection;
+
+        // Candidate lines: status Waiting Fix, not yet submitted for done approval.
+        $query = T_SRV_DET::on($conn)
+            ->where('TSRVD_FLGSTS', 2)
+            ->whereNull('TSRVD_DONE_SUBMITTED')
+            ->whereNull('TSRVD_DONE_APPRVDT');
+
+        if ($request->has('id') && !empty($request->id)) {
+            $query->where('id', base64_decode($request->id));
+        }
+
+        $repaired = [];
+        foreach ($query->get() as $det) {
+            $detailCount = T_SRV_FIXDET::on($conn)->where('TSRVD_ID', $det->id)->count();
+            $unconfirmed = T_SRV_FIXDET::on($conn)
+                ->where('TSRVD_ID', $det->id)
+                ->where('TSRVF_ISCONF', 0)
+                ->count();
+
+            // Only treat as stuck when it HAS parts and ALL of them are confirmed.
+            if ($detailCount > 0 && $unconfirmed === 0) {
+                T_SRV_DET::on($conn)->where('id', $det->id)->update([
+                    'TSRVD_DONE_SUBMITTED' => now(),
+                ]);
+                $det->TSRVD_DONE_SUBMITTED = now();
+                $repaired[] = $det;
+            }
+        }
+
+        return [
+            'status' => true,
+            'msg' => count($repaired) > 0
+                ? 'Repaired ' . count($repaired) . ' stranded service-done line(s).'
+                : 'No stranded service-done line found.',
+            'repaired' => $repaired,
+        ];
     }
 
     /**

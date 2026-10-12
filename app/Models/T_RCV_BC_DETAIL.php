@@ -15,6 +15,8 @@ class T_RCV_BC_DETAIL extends Model
         'TRCVBC_DOCNO',
         'TRCVBC_BCQT',
         'TRCVBC_DETID',
+        'TRCVBC_ORIGIN',
+        'TRCVBC_REF',
     ];
 
     public function det() {

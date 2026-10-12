@@ -505,6 +505,12 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('', [ReceiveOrderController::class, 'searchDraft']);
         });
 
+        # Branch the signed-in user works in (multi-branch accounts)
+        Route::prefix('active-branch')->group(function () {
+            Route::get('options', [BranchController::class, 'options']);
+            Route::post('set', [BranchController::class, 'setActive']);
+        });
+
         # Terkait Branch
         Route::prefix('branch')->group(function () {
             Route::get('form', [BranchController::class, 'index']);
@@ -528,10 +534,31 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('ledger', [InventoryController::class, 'stockLedger']);
             Route::get('transferLocForm', [InventoryController::class, 'transferLocForm']);
             Route::post('transferLoc', [InventoryController::class, 'transferLoc']);
+            Route::post('previewTransferBarcodes', [InventoryController::class, 'previewTransferBarcodes']);
             Route::post('saveTransferLocDraft', [InventoryController::class, 'saveTransferLocDraft']);
             Route::post('printHandoverPDF', [InventoryController::class, 'printHandoverPDF']);
             Route::get('uploadStockTakeView', [InventoryController::class, 'uploadStockTakeView']);
             Route::post('uploadStockTake', [InventoryController::class, 'uploadStockTake']);
+
+            # Stock take approval gate
+            Route::get('stockTakeApproval/form', [InventoryController::class, 'stockTakeApprovalPage']);
+            Route::get('stockTakePending', [InventoryController::class, 'stockTakePending']);
+            Route::post('stockTakeApprovalDetail', [InventoryController::class, 'stockTakeApprovalDetail']);
+            Route::post('stockTakeApprove', [InventoryController::class, 'stockTakeApprove']);
+            Route::post('stockTakeReject', [InventoryController::class, 'stockTakeReject']);
+
+            # Stock adjustment (single-item, gated)
+            Route::get('stockAdjustment/form', [InventoryController::class, 'stockAdjustmentForm']);
+            Route::get('stockAdjustment/items', [InventoryController::class, 'stockAdjustmentItems']);
+            Route::get('stockAdjustment/locations', [InventoryController::class, 'stockAdjustmentLocations']);
+            Route::get('stockAdjustment/stock', [InventoryController::class, 'stockAdjustmentStock']);
+            Route::post('stockAdjustment/save', [InventoryController::class, 'stockAdjustmentSave']);
+            Route::get('stockAdjustmentApproval/form', [InventoryController::class, 'stockAdjustmentApprovalPage']);
+            Route::get('stockAdjustmentPending', [InventoryController::class, 'stockAdjustmentPending']);
+            Route::post('stockAdjustmentApprovalDetail', [InventoryController::class, 'stockAdjustmentApprovalDetail']);
+            Route::post('stockAdjustmentApprove', [InventoryController::class, 'stockAdjustmentApprove']);
+            Route::post('stockAdjustmentReject', [InventoryController::class, 'stockAdjustmentReject']);
+
             Route::get('downloadStockTakeTemplate', [InventoryController::class, 'downloadStockTakeTemplate']);
             Route::get('stockTakeProgress', [InventoryController::class, 'stockTakeProgress']);
             Route::get('stockTakeHeaderId', [InventoryController::class, 'stockTakeHeaderId']);

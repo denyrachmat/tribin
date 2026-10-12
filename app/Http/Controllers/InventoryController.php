@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\T_LOC_REQ;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\LocationTraits;
+use App\Traits\ApprovalLogTraits;
+use App\Traits\StockTakeApprovalTraits;
+use App\Traits\StockAdjustmentTraits;
+use App\Traits\BarcodeRegistryTraits;
+use App\Traits\TransferBarcodeTraits;
 use Illuminate\Http\File;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -28,7 +33,9 @@ use Illuminate\Support\Facades\Redis;
 
 class InventoryController extends Controller
 {
+    use ApprovalLogTraits, StockTakeApprovalTraits, StockAdjustmentTraits;
     use LocationTraits;
+    use BarcodeRegistryTraits, TransferBarcodeTraits;
     protected $dedicatedConnection;
 
     public function __construct()
@@ -329,6 +336,54 @@ class InventoryController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        // A CG transfer moves stock to another company. Behaviour differs by type:
+        //  - same-CG (loc) transfers are unchanged.
+        //  - cross-CG transfers move ONLY barcoded stock, and each moved barcode is
+        //    registered in the destination CG. When the barcode already exists
+        //    there the operator is warned first and, on confirm, the stock is
+        //    registered under a freshly minted barcode.
+        $isCgTransfer = ($request->TRFTYPE === 'cg') && !empty($request->CGTO)
+            && $request->CGTO !== $request->CGFROM;
+        $transferFreesBc = false;
+        $freshBarcodes = [];
+
+        if ($isCgTransfer) {
+            $preview = $this->previewCgBarcodeTransfer($request->CGFROM, $request->CGTO, collect($request->ITMCD)->map(fn($v) => [
+                'ITMCD'  => $v['MITM_ITMNM'] ?? null,
+                'QTY'    => $v['QTY'] ?? 0,
+                'BRANCH' => $v['MITM_BRANCH'] ?? null,
+            ])->all());
+
+            if (!empty($preview['blocked'])) {
+                return response()->json([
+                    'status'  => false,
+                    'error'   => 'Barcoded stock is required for a company transfer.',
+                    'blocked' => $preview['blocked'],
+                ], 406);
+            }
+
+            $conflicts = $preview['conflicts'];
+            if (!empty($conflicts) && !$request->boolean('CONFIRM_NEW_BC')) {
+                // Stop here: the operator must acknowledge that these barcodes
+                // already exist in the destination company.
+                return response()->json([
+                    'status'    => 'BARCODE_CONFLICT',
+                    'need_confirm' => true,
+                    'conflicts' => $conflicts,
+                    'messages'  => $this->barcodeConflictMessages($conflicts),
+                ], 409);
+            }
+
+            // Barcodes are never reused across companies: mint one per item for
+            // the receiving side, so the destination never shares a code that is
+            // already in use there. Numbered from the DESTINATION CG's own
+            // registry, matching checkLastBarcode()'s BC<date><seq> shape.
+            foreach ($request->ITMCD as $value) {
+                $freshBarcodes[$value['MITM_ITMNM']] = $this->nextBarcode($request->CGTO);
+            }
+            $transferFreesBc = true;
+        }
+
         $cek = [];
         foreach ($request->ITMCD as $key => $value) {
             // Cek Item Master
@@ -346,8 +401,30 @@ class InventoryController extends Controller
                     'MITM_MODEL' => $itemFrom->MITM_MODEL ?? '-'
                 ]);
             }
-            $getStock = DB::connection($request->CGFROM)->table('V_STOCK_CHECK')
+            // Read the ledger TABLE, not V_STOCK_CHECK: the view does not project
+            // CITRN_BRANCH (its column list is DOCNO/LOCCD/ITMCD/PRCPER/id_reff/ITMQT
+            // only), so filtering the view by branch fails with
+            // "Unknown column 'CITRN_BRANCH' in 'WHERE'" on every box. The table
+            // carries the column, and grouping by document + price keeps the same
+            // grain the view produced.
+            $getStock = DB::connection($request->CGFROM)->table('C_ITRN')
                 ->where('CITRN_ITMCD', $value['MITM_ITMNM'])
+                ->where('CITRN_LOCCD', $request->LOCFROM)
+                ->whereNull('deleted_at')
+                // The batch this transfer consumes belongs to the branch the item
+                // is being moved for, which is also what the C_ITRN rows below are
+                // written with.
+                ->where('CITRN_BRANCH', $value['MITM_BRANCH'])
+                ->groupBy('CITRN_DOCNO', 'CITRN_ITMCD', 'CITRN_PRCPER', 'id_reff', 'CITRN_BRANCH')
+                ->select(
+                    'CITRN_DOCNO',
+                    'CITRN_ITMCD',
+                    'CITRN_PRCPER',
+                    'CITRN_BRANCH',
+                    'id_reff',
+                    DB::raw('COALESCE(SUM(CITRN_ITMQT),0) as CITRN_ITMQT'),
+                    DB::raw('MAX(CITRN_PRCPER) as LATEST_PRC')
+                )
                 ->orderBy('id_reff')
                 ->get();
 
@@ -357,6 +434,13 @@ class InventoryController extends Controller
 
             $StockNow = (int) $value['QTY'];
             foreach ($getStock as $keyStock => $valueStock) {
+                // CG transfers move BARCODED stock only, and always under a fresh
+                // barcode in the destination (see TransferBarcodeTraits).
+                if ($transferFreesBc && empty($valueStock['id_reff'])) {
+                    continue;
+                }
+                $bcToDest = $transferFreesBc ? $freshBarcodes[$value['MITM_ITMNM']] : null;
+
                 if ($StockNow <= $valueStock['CITRN_ITMQT']) {
                     // Issue
                     $cek[] = C_ITRN::on($request->CGFROM)->create([
@@ -374,7 +458,7 @@ class InventoryController extends Controller
                     ]);
 
                     // Receive
-                    $cek[] = C_ITRN::on($request->CGTO)->create([
+                    $rcvRow = C_ITRN::on($request->CGTO)->create([
                         'CITRN_BRANCH' => $value['MITM_BRANCH'],
                         'CITRN_LOCCD' => $request->LOCTO,
                         'CITRN_DOCNO' => $request->DOC,
@@ -384,9 +468,11 @@ class InventoryController extends Controller
                         'CITRN_ITMQT' => $StockNow,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
                         'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
-                        'id_reff' => $valueStock['id_reff'],
+                        'id_reff' => $transferFreesBc ? $bcToDest : $valueStock['id_reff'],
                         'created_by' => Auth::user()->nick_name,
                     ]);
+                    $cek[] = $rcvRow;
+                    $this->registerTransferredBarcode($request, $value, $bcToDest, $StockNow, $rcvRow);
 
                     break;
                 } else {
@@ -410,7 +496,7 @@ class InventoryController extends Controller
                     ]);
 
                     // Receive
-                    $cek[] = C_ITRN::on($request->CGTO)->create([
+                    $rcvRow = C_ITRN::on($request->CGTO)->create([
                         'CITRN_BRANCH' => $value['MITM_BRANCH'],
                         'CITRN_LOCCD' => $request->LOCTO,
                         'CITRN_DOCNO' => $request->DOC,
@@ -420,14 +506,90 @@ class InventoryController extends Controller
                         'CITRN_ITMQT' => $StockPart,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
                         'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
-                        'id_reff' => $valueStock['id_reff'],
+                        'id_reff' => $transferFreesBc ? $bcToDest : $valueStock['id_reff'],
                         'created_by' => Auth::user()->nick_name,
                     ]);
+                    $cek[] = $rcvRow;
+                    $this->registerTransferredBarcode($request, $value, $bcToDest, $StockPart, $rcvRow);
                 }
             }
         }
 
         return ['msg' => 'OK', 'DATA' => $cek];
+    }
+
+    /**
+     * Mint the next barcode for a company DB, shaped like the existing
+     * receive flow's BC<YYYYmmdd><seq> and guaranteed free in that CG.
+     */
+    private function nextBarcode($cg)
+    {
+        $today = DB::connection($cg)->table('T_RCV_BC_DETAIL')
+            ->whereDate('created_at', date('Y-m-d'))
+            ->orderByDesc('id')
+            ->value('TRCVBC_BCCD');
+
+        $seq = empty($today) ? 1 : ((int) substr($today, -4)) + 1;
+
+        do {
+            $bc = 'BC' . date('Ymd') . sprintf('%04d', $seq);
+            $seq++;
+        } while (DB::connection($cg)->table('T_RCV_BC_DETAIL')->where('TRCVBC_BCCD', $bc)->exists());
+
+        return $bc;
+    }
+
+    /**
+     * Write the destination-CG registry row for one transferred stock line.
+     * Only the receiving side gets a registry row: it is the company that now
+     * holds the barcode, and a barcode string is only unique within a CG.
+     */
+    private function registerTransferredBarcode(Request $request, array $item, $bc, $qty, $rcvRow)
+    {
+        if (empty($bc)) {
+            return;
+        }
+
+        DB::connection($request->CGTO)->table('T_RCV_BC_DETAIL')->insert([
+            'TRCVBC_BCCD'   => $bc,
+            'TRCVBC_DOCNO'  => $request->DOC,
+            'TRCVBC_BCQT'   => (float) $qty,
+            'TRCVBC_DETID'  => null,
+            'TRCVBC_ORIGIN' => self::BC_ORIGIN_TRANSFER,
+            'TRCVBC_REF'    => $rcvRow->id ?? null,
+            'created_at'    => date('Y-m-d H:i:s'),
+            'updated_at'    => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * Dry run for the Transfer Location screen: what would move, and which
+     * barcodes already exist in the destination company. Read-only.
+     */
+    function previewTransferBarcodes(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'CGFROM' => 'required',
+            'CGTO'   => 'required',
+            'ITMCD'  => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 406);
+        }
+
+        $preview = $this->previewCgBarcodeTransfer($request->CGFROM, $request->CGTO, collect($request->ITMCD)->map(fn($v) => [
+            'ITMCD'  => $v['MITM_ITMNM'] ?? null,
+            'QTY'    => $v['QTY'] ?? 0,
+            'BRANCH' => $v['MITM_BRANCH'] ?? null,
+        ])->all());
+
+        return [
+            'items'     => $preview['items'],
+            'conflicts' => $preview['conflicts'],
+            'blocked'   => $preview['blocked'],
+            'messages'  => $this->barcodeConflictMessages($preview['conflicts']),
+        ];
     }
 
     function saveTransferLocDraft(Request $request)
@@ -545,8 +707,11 @@ class InventoryController extends Controller
         // (A) Cek apakah masih ada queue stockTake yang pending di Redis
         $pendingCount = Queue::size('stockTake');
 
-        // Opsional: Cek juga job yang sedang "dalam proses" (reserved) oleh worker
-        $reservedCount = Redis::llen('laravel_database_queues:stockTake:reserved');
+        // Opsional: Cek juga job yang sedang "dalam proses" (reserved) oleh worker.
+        // Laravel's redis queue stores "reserved" as a sorted set, so count it
+        // with ZCARD via the raw connection. (The Redis facade adds the
+        // laravel_database_ prefix itself - keys must NOT contain it.)
+        $reservedCount = (int) Redis::connection()->zcard('queues:stockTake:reserved');
 
         $totalPending = $pendingCount + $reservedCount;
 
@@ -567,7 +732,9 @@ class InventoryController extends Controller
 
         $req->file('file')->storeAs('public/upload_stock_take/', $nama_file);
 
-        // (C) Prepare header (tetap sama seperti kamu)
+        // (C) Prepare header. Status DRAFT while rows stream in; flipped to
+        // PENDING_APPROVAL once the whole sheet is staged. Approval is required
+        // before anything touches the stock ledger.
         $createdHeader = T_RCV_HEAD::on($this->dedicatedConnection)
             ->updateOrCreate([
                 'TRCV_DOCNO' => "STK-" . date('Ymd'),
@@ -579,6 +746,7 @@ class InventoryController extends Controller
                 'TRCV_SUBMITTED_BY' => Auth::user()->nick_name,
                 'TRCV_DOCNO' => "STK-" . date('Ymd'),
                 'TRCV_SUPCD' => '',
+                'TRCV_STK_STATUS' => 'DRAFT',
                 'created_by' => Auth::user()->nick_name,
             ]);
 
@@ -634,7 +802,239 @@ class InventoryController extends Controller
         $pendingNow = Queue::size('stockTake');
         Cache::put('stocktake_total_dispatched', $pendingNow, now()->addHours(1));
 
-        return ['msg' => 'Upload Success', 'headerId' => (int) $createdHeader->id, 'total_rows' => $pendingNow];
+        // NOTE: facade adds the laravel_database_ prefix itself - keys passed
+        // here must NOT already contain it.
+        $hasQueue = $pendingNow > 0
+            || Redis::llen('queues:stockTake:reserved') > 0
+            || DB::table('jobs')->where('queue', 'stockTake')->count() > 0;
+
+        // With a queue the rows are still streaming, so the flip to
+        // PENDING_APPROVAL happens when the queue drains (queue worker/driver).
+        // Without one (e.g. a box with no worker) the import is synchronous and
+        // the batch is ready right now.
+        if (!$hasQueue) {
+            $this->markStockTakePending((string) $createdHeader->id);
+        }
+
+        return [
+            'msg' => 'Upload Success',
+            'headerId' => (int) $createdHeader->id,
+            'total_rows' => $pendingNow,
+            'awaiting_approval' => !$hasQueue,
+        ];
+    }
+
+    /** Flip a batch from DRAFT to PENDING_APPROVAL once its rows are staged. */
+    public function markStockTakePending($headerId)
+    {
+        $head = T_RCV_HEAD::on($this->dedicatedConnection)->where('id', $headerId)->first();
+        if (empty($head)) {
+            return;
+        }
+
+        T_RCV_HEAD::on($this->dedicatedConnection)->where('id', $head->id)->update([
+            'TRCV_STK_STATUS' => 'PENDING_APPROVAL',
+            'updated_by' => Auth::check() ? Auth::user()->nick_name : null,
+        ]);
+
+        $rows = DB::connection($this->dedicatedConnection)->table('T_STK_STAGE')
+            ->where('STK_DOCNO', $head->TRCV_DOCNO)->where('STK_STATE', 0)->count();
+
+        $this->approvalLog('STK', $head->TRCV_DOCNO, self::APRV_SUBMITTED,
+            "Uploaded {$rows} counted item rows - awaiting approval",
+            ['rows' => $rows], $this->dedicatedConnection, $head->TRCV_BRANCH);
+    }
+
+    /** Approve/reject screen for stock take batches. */
+    function stockTakeApprovalPage(Request $request)
+    {
+        return view('approval.stock_take', ['postLimit' => self::SYNC_POST_ROW_LIMIT]);
+    }
+
+    /** Batches waiting for approval (frame dropdown / review screen). */
+    function stockTakePending()
+    {
+        $rows = $this->stockTakeBatches($this->dedicatedConnection, Auth::user()->branch, 'PENDING_APPROVAL');
+        return ['data' => $rows];
+    }
+
+    /** Row-by-row preview: staged target vs live stock vs the diff to be posted. */
+    function stockTakeApprovalDetail(Request $req)
+    {
+        $rows = $this->stockTakeReview($req->docno, $this->dedicatedConnection, Auth::user()->branch);
+        return ['data' => $rows];
+    }
+
+    function stockTakeApprove(Request $req)
+    {
+        $req->validate(['docno' => 'required|string']);
+        [$ok, $msg] = $this->approveStockTake($req->docno, $this->dedicatedConnection, Auth::user()->branch);
+
+        if (!$ok) {
+            return response()->json([[$msg]], 406);
+        }
+        return ['msg' => $msg];
+    }
+
+    function stockTakeReject(Request $req)
+    {
+        $req->validate(['docno' => 'required|string', 'note' => 'required|string|max:255']);
+        [$ok, $msg] = $this->rejectStockTake($req->docno, $req->note, $this->dedicatedConnection, Auth::user()->branch);
+
+        if (!$ok) {
+            return response()->json([[$msg]], 406);
+        }
+        return ['msg' => $msg];
+    }
+
+    /* ------------------------------------------------------------------
+     | Stock Adjustment (single-item, target = signed delta, gated)
+     | ------------------------------------------------------------------ */
+
+    /** Manual adjustment entry screen. */
+    function stockAdjustmentForm(Request $request)
+    {
+        return view('inventory.stock_adjustment');
+    }
+
+    /** Lookup items for the picker (code / name). */
+    function stockAdjustmentItems(Request $req)
+    {
+        $term = trim((string) $req->input('q', ''));
+        $q = M_ITM::on($this->dedicatedConnection)
+            ->where('MITM_BRANCH', Auth::user()->branch);
+
+        if ($term !== '') {
+            $q->where(function ($w) use ($term) {
+                $w->where('MITM_ITMCD', 'like', "%{$term}%")
+                    ->orWhere('MITM_ITMNM', 'like', "%{$term}%");
+            });
+        }
+
+        $rows = $q->select('MITM_ITMCD', 'MITM_ITMNM', 'MITM_STKUOM')
+            ->orderBy('MITM_ITMCD')
+            ->limit(50)
+            ->get();
+
+        return ['data' => $rows];
+    }
+
+    /** Current stock of one item at one location (picker preview). */
+    function stockAdjustmentStock(Request $req)
+    {
+        $req->validate(['item' => 'required|string', 'loc' => 'required|string']);
+
+        $stock = (float) DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
+            ->where('CITRN_ITMCD', $req->item)
+            ->where('CITRN_LOCCD', $req->loc)
+            // Balance is per branch; the same location code exists in every branch.
+            ->where('CITRN_BRANCH', Auth::user()->branch)
+            ->sum('CITRN_ITMQT');
+
+        return ['item' => $req->item, 'loc' => $req->loc, 'stock' => $stock];
+    }
+
+    /** Locations for the picker. */
+    function stockAdjustmentLocations()
+    {
+        $rows = DB::connection($this->dedicatedConnection)->table('M_LOC')
+            ->select('MLOC_LOCCD', 'MLOC_LOCNM')
+            ->orderBy('MLOC_LOCCD')
+            ->get();
+
+        return ['data' => $rows];
+    }
+
+    /** Save (stage) one or more adjustments - nothing posts until approved. */
+    function stockAdjustmentSave(Request $req)
+    {
+        $req->validate([
+            'rows' => 'required|array|min:1',
+            'rows.*.item' => 'required|string',
+            'rows.*.loc' => 'required|string',
+            'rows.*.qty' => 'required|numeric|gt:0',
+            'rows.*.type' => 'required|in:INC,OUT',
+            'note' => 'required|string|max:255',
+        ]);
+
+        // Validate items exist for this branch before staging.
+        $items = collect($req->rows)->pluck('item')->unique()->values();
+        $known = M_ITM::on($this->dedicatedConnection)
+            ->where('MITM_BRANCH', Auth::user()->branch)
+            ->whereIn('MITM_ITMCD', $items)
+            ->pluck('MITM_ITMCD')
+            ->all();
+        $unknown = $items->diff($known)->values();
+        if ($unknown->isNotEmpty()) {
+            return response()->json([['Unknown item(s) for this branch: ' . $unknown->implode(', ')]], 406);
+        }
+
+        // A decrease must not exceed the live balance.
+        foreach ($req->rows as $r) {
+            if ($r['type'] === 'OUT') {
+                $stock = (float) DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
+                    ->where('CITRN_ITMCD', $r['item'])
+                    ->where('CITRN_LOCCD', $r['loc'])
+                    // Balance is per branch; the same location code exists in each.
+                    ->where('CITRN_BRANCH', Auth::user()->branch)
+                    ->sum('CITRN_ITMQT');
+                if (abs((float) $r['qty']) > $stock + 0.0001) {
+                    return response()->json([[
+                        "Cannot decrease {$r['item']} at {$r['loc']} by {$r['qty']} - current stock is {$stock}."
+                    ]], 406);
+                }
+            }
+        }
+
+        $res = $this->stageStockAdjustment($req->rows, $this->dedicatedConnection, $req->note);
+
+        return [
+            'msg' => "Adjustment {$res['docno']} submitted - awaiting approval.",
+            'docno' => $res['docno'],
+            'rows' => $res['rows'],
+        ];
+    }
+
+    /** Batches awaiting approval (dropdown badge). */
+    function stockAdjustmentPending()
+    {
+        $rows = $this->adjustmentBatches($this->dedicatedConnection, Auth::user()->branch, 'PENDING_APPROVAL');
+        return ['data' => $rows];
+    }
+
+    /** Approve/reject screen. */
+    function stockAdjustmentApprovalPage(Request $request)
+    {
+        return view('approval.stock_adjustment', ['postLimit' => self::SYNC_POST_ROW_LIMIT]);
+    }
+
+    /** Row preview: current vs signed delta vs resulting balance. */
+    function stockAdjustmentApprovalDetail(Request $req)
+    {
+        $rows = $this->adjustmentReview($req->docno, $this->dedicatedConnection, Auth::user()->branch);
+        return ['data' => $rows];
+    }
+
+    function stockAdjustmentApprove(Request $req)
+    {
+        $req->validate(['docno' => 'required|string']);
+        [$ok, $msg] = $this->approveAdjustment($req->docno, $this->dedicatedConnection, Auth::user()->branch);
+
+        if (!$ok) {
+            return response()->json([[$msg]], 406);
+        }
+        return ['msg' => $msg];
+    }
+
+    function stockAdjustmentReject(Request $req)
+    {
+        $req->validate(['docno' => 'required|string', 'note' => 'required|string|max:255']);
+        [$ok, $msg] = $this->rejectAdjustment($req->docno, $req->note, $this->dedicatedConnection, Auth::user()->branch);
+
+        if (!$ok) {
+            return response()->json([[$msg]], 406);
+        }
+        return ['msg' => $msg];
     }
 
     function findStockByBarcode($bc, $loc = null)
@@ -766,13 +1166,26 @@ class InventoryController extends Controller
             $percent = $pendingCount > 0 ? 0 : 100;
         }
 
+        $isDone = $pendingCount === 0 && $totalDispatched > 0;
+
+        // Safety net for the batch handover. If the queue has drained but the
+        // header is still DRAFT (e.g. the worker died between the last chunk and
+        // its handover check), flip it to PENDING_APPROVAL here - the FE polls
+        // this endpoint right after an upload.
+        if ($isDone && $headerId = request()->input('headerId')) {
+            $head = T_RCV_HEAD::on($this->dedicatedConnection)->where('id', $headerId)->first();
+            if ($head && $head->TRCV_STK_STATUS === 'DRAFT') {
+                $this->markStockTakePending((string) $head->id);
+            }
+        }
+
         return response()->json([
             'pending' => $pendingCount,
             'total' => $totalDispatched,
             'completed' => $completed,
             'percent' => min(100, max(0, $percent)),
             'failed' => $failedCount, // <--- FAILED COUNT DIKEMBALIKAN
-            'is_done' => $pendingCount === 0 && $totalDispatched > 0,
+            'is_done' => $isDone,
         ]);
     }
 }

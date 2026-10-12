@@ -398,6 +398,8 @@ class ItemController extends Controller
             'MITM_MODEL',
             DB::raw('MAX(LATEST_PRC) as LATEST_PRC'),
             'CITRN_LOCCD',
+            DB::raw('SUM(CASE WHEN id_reff IS NOT NULL THEN CITRN_ITMQT ELSE 0 END) as STOCK_BC'),
+            DB::raw('SUM(CASE WHEN id_reff IS NULL THEN CITRN_ITMQT ELSE 0 END) as STOCK_NOBC'),
             DB::raw('SUM(CITRN_ITMQT) as STOCK')
         )
             ->where('MITM_BRANCH', Auth::user()->branch)

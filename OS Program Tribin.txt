@@ -22,3 +22,5 @@ Meeting 31 Jul 2024
 20. Mapping Purchase & Sales di COA
 21. Point Of Sales
 22. HR Payroll
+
+23. Transfer antar-CG: peringatan barcode sudah ada di CG tujuan + auto BC baru saat dikonfirmasi (backend verified di staging)

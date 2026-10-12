@@ -90,7 +90,6 @@
           map-options
           :loading="loading"
           @update:model-value="onChooseLocation"
-          :disable="loading"
         />
       </div>
       <div class="col-12 col-sm-6">
@@ -109,7 +108,6 @@
           emit-value
           map-options
           :loading="loading"
-          :disable="loading"
         />
       </div>
     </div>

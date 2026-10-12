@@ -93,10 +93,16 @@ const header = ref({
 const loading = ref(false);
 const listLoc = ref([]);
 
+// The dialog is used for BOTH create and edit, posting to the same endpoint.
+// Tell the backend which one this is so a create whose code already exists is
+// refused loudly, while an edit (opened from a row) updates that row.
+const isUpdate = ref(false);
+
 onMounted(async () => {
   await getLocation("");
 
   if (props.dataHeader && Object.values(props.dataHeader).length > 0) {
+    isUpdate.value = true;
     header.value = {
       MLOC_LOCCD: props.dataHeader.MLOC_LOCCD,
       MLOC_LOCNM: props.dataHeader.MLOC_LOCNM,
@@ -121,7 +127,7 @@ const filterFn = (val, update, abort, fun) => {
   });
 };
 
-const getLocation = async (val, cols = "MSUP_SUPNM") => {
+const getLocation = async (val, cols = "MLOC_LOCCD") => {
     loading.value = true;
   await api_web
     .post(`location/searchAPI`, {
@@ -148,6 +154,7 @@ const onSubmitData = () => {
     await api_web
       .post(`location`, {
         header: header.value,
+        is_update: isUpdate.value ? 1 : 0,
       })
       .then((response) => {
         loading.value = false;
@@ -159,8 +166,13 @@ const onSubmitData = () => {
 
         onDialogOK();
       })
-      .catch(() => {
+      .catch((err) => {
         loading.value = false;
+        const d = err?.response?.data;
+        $q.notify({
+          color: "red",
+          message: Array.isArray(d) && d[0] ? (typeof d[0] === "string" ? d[0] : JSON.stringify(d[0])) : "Save failed.",
+        });
       });
   });
 };

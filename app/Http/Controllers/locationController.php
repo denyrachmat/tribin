@@ -55,7 +55,8 @@ class locationController extends Controller
 
         # Guard against silently overwriting an existing location: the code is the
         # natural key, so a plain "create" whose code already exists must be refused
-        # instead of renaming/replacing that row. Send is_update=1 to edit on purpose.
+        # instead of renaming/replacing that row. The edit dialog (opened from a row)
+        # sends is_update=1, which is the deliberate-edit signal that allows the write.
         $existing = M_LOC::on($this->dedicatedConnection)
             ->where('MLOC_LOCCD', $request->header['MLOC_LOCCD'])
             ->first();
@@ -67,16 +68,22 @@ class locationController extends Controller
             ]], 406);
         }
 
-        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
-            'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
-        ],[
-            'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
+        # On a real update keep the original code/name owner: only the editable
+        # fields are written, so created_by is not overwritten by the editor.
+        $values = [
             'MLOC_LOCNM' => $request->header['MLOC_LOCNM'],
             'MLOC_LOCPRNTCD' => $request->header['MLOC_LOCPRNTCD'],
-            'created_by' => Auth::check() ? Auth::user()->nick_name : null,
-        ]);
+        ];
 
-        return ['msg' => 'OK', 'data' => $hasil];
+        if (empty($existing)) {
+            $values['created_by'] = Auth::check() ? Auth::user()->nick_name : null;
+        }
+
+        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
+            'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
+        ], $values);
+
+        return ['msg' => empty($existing) ? 'OK' : 'Updated', 'data' => $hasil];
     }
 
     /**
@@ -100,7 +107,11 @@ class locationController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
+        # The dialog nests the fields under `header` (same shape as store()), but
+        # accept flat top-level fields too so direct API callers keep working.
+        $payload = $request->input('header') ?: $request->all();
+
+        $validator = Validator::make($payload, [
             'MLOC_LOCNM' => 'required',
         ]);
 
@@ -108,16 +119,23 @@ class locationController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
-        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate([
-            'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
-        ],[
-            'MLOC_LOCCD' => $request->header['MLOC_LOCCD'],
-            'MLOC_LOCNM' => $request->header['MLOC_LOCNM'],
-            'MLOC_LOCPRNTCD' => $request->header['MLOC_LOCPRNTCD'],
-            'created_by' => $request->header['created_by'],
-        ]);
+        # The row is identified by $id when it carries one, otherwise by the code
+        # in the payload. Don't assume $id is base64 — a plain code is also valid.
+        $code = $payload['MLOC_LOCCD'] ?? null;
+        if (empty($code)) {
+            $decoded = base64_decode($id, true);
+            $code = ($decoded && ctype_print($decoded)) ? $decoded : $id;
+        }
 
-        return ['msg' => 'OK', 'data' => $hasil];
+        $hasil = M_LOC::on($this->dedicatedConnection)->updateOrCreate(
+            ['MLOC_LOCCD' => $code],
+            [
+                'MLOC_LOCNM' => $payload['MLOC_LOCNM'],
+                'MLOC_LOCPRNTCD' => $payload['MLOC_LOCPRNTCD'] ?? null,
+            ]
+        );
+
+        return ['msg' => 'Updated', 'data' => $hasil];
     }
 
     /**

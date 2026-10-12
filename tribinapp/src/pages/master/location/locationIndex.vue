@@ -138,7 +138,7 @@ const getLocationData = async () => {
     loading.value = true;
   await api_web
     .post(`location/searchAPI`, {
-      searchBy: filterCol.value,
+      searchBy: filterCol.value || "MLOC_LOCCD",
       searchValue: filter.value,
     })
     .then((response) => {

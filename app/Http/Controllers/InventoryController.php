@@ -336,6 +336,18 @@ class InventoryController extends Controller
             return response()->json($validator->errors(), 406);
         }
 
+        // The item list comes from the item-search grid, whose rows carry the item
+        // CODE in a column named MITM_ITMNM (M_ITM_GRP projects the code there, while
+        // M_ITM's MITM_ITMNM is the description). Rows may or may not carry an
+        // explicit MITM_ITMCD, so normalise once here and let the rest of this method
+        // treat MITM_ITMCD as authoritative - matching it against M_ITM by NAME is
+        // how items silently failed to resolve before.
+        $items = collect($request->ITMCD)->map(function ($v) {
+            $v['MITM_ITMCD'] = $v['MITM_ITMCD'] ?? $v['MITM_ITMNM'] ?? null;
+            return $v;
+        })->all();
+        $request->merge(['ITMCD' => $items]);
+
         // A CG transfer moves stock to another company. Behaviour differs by type:
         //  - same-CG (loc) transfers are unchanged.
         //  - cross-CG transfers move ONLY barcoded stock, and each moved barcode is
@@ -349,7 +361,7 @@ class InventoryController extends Controller
 
         if ($isCgTransfer) {
             $preview = $this->previewCgBarcodeTransfer($request->CGFROM, $request->CGTO, collect($request->ITMCD)->map(fn($v) => [
-                'ITMCD'  => $v['MITM_ITMNM'] ?? null,
+                'ITMCD'  => $v['MITM_ITMCD'] ?? $v['MITM_ITMNM'] ?? null,
                 'QTY'    => $v['QTY'] ?? 0,
                 'BRANCH' => $v['MITM_BRANCH'] ?? null,
             ])->all());
@@ -379,7 +391,7 @@ class InventoryController extends Controller
             // already in use there. Numbered from the DESTINATION CG's own
             // registry, matching checkLastBarcode()'s BC<date><seq> shape.
             foreach ($request->ITMCD as $value) {
-                $freshBarcodes[$value['MITM_ITMNM']] = $this->nextBarcode($request->CGTO);
+                $freshBarcodes[$value['MITM_ITMCD'] ?? $value['MITM_ITMNM']] = $this->nextBarcode($request->CGTO);
             }
             $transferFreesBc = true;
         }
@@ -387,12 +399,12 @@ class InventoryController extends Controller
         $cek = [];
         foreach ($request->ITMCD as $key => $value) {
             // Cek Item Master
-            $itemFrom = M_ITM::on($request->CGFROM)->where('MITM_ITMCD', $value['MITM_ITMNM'])->first();
-            $itemDest = M_ITM::on($request->CGTO)->where('MITM_ITMCD', $value['MITM_ITMNM'])->first();
+            $itemFrom = M_ITM::on($request->CGFROM)->where('MITM_ITMCD', $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'])->first();
+            $itemDest = M_ITM::on($request->CGTO)->where('MITM_ITMCD', $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'])->first();
 
             if (empty($itemDest)) {
                 $itemDest = M_ITM::on($request->CGTO)->create([
-                    'MITM_ITMCD' => $value['MITM_ITMNM'],
+                    'MITM_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
                     'MITM_BRANCH' => $value['MITM_BRANCH'],
                     'MITM_ITMCAT' => $value['MITM_ITMCAT'],
                     'MITM_ITMNM' => $itemFrom->MITM_ITMNM,
@@ -408,7 +420,7 @@ class InventoryController extends Controller
             // carries the column, and grouping by document + price keeps the same
             // grain the view produced.
             $getStock = DB::connection($request->CGFROM)->table('C_ITRN')
-                ->where('CITRN_ITMCD', $value['MITM_ITMNM'])
+                ->where('CITRN_ITMCD', $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'])
                 ->where('CITRN_LOCCD', $request->LOCFROM)
                 ->whereNull('deleted_at')
                 // The batch this transfer consumes belongs to the branch the item
@@ -439,7 +451,7 @@ class InventoryController extends Controller
                 if ($transferFreesBc && empty($valueStock['id_reff'])) {
                     continue;
                 }
-                $bcToDest = $transferFreesBc ? $freshBarcodes[$value['MITM_ITMNM']] : null;
+                $bcToDest = $transferFreesBc ? ($freshBarcodes[$value['MITM_ITMCD'] ?? $value['MITM_ITMNM']] ?? null) : null;
 
                 if ($StockNow <= $valueStock['CITRN_ITMQT']) {
                     // Issue
@@ -449,7 +461,7 @@ class InventoryController extends Controller
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
                         'CITRN_FORM' => 'OUT-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
                         'CITRN_ITMQT' => $StockNow * -1,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
                         'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
@@ -464,7 +476,7 @@ class InventoryController extends Controller
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
                         'CITRN_FORM' => 'INC-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
                         'CITRN_ITMQT' => $StockNow,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
                         'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
@@ -487,7 +499,7 @@ class InventoryController extends Controller
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
                         'CITRN_FORM' => 'OUT-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
                         'CITRN_ITMQT' => $StockPart * -1,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
                         'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
@@ -502,7 +514,7 @@ class InventoryController extends Controller
                         'CITRN_DOCNO' => $request->DOC,
                         'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
                         'CITRN_FORM' => 'INC-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMNM'],
+                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
                         'CITRN_ITMQT' => $StockPart,
                         'CITRN_PRCPER' => $value['LATEST_PRC'],
                         'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
@@ -579,7 +591,7 @@ class InventoryController extends Controller
         }
 
         $preview = $this->previewCgBarcodeTransfer($request->CGFROM, $request->CGTO, collect($request->ITMCD)->map(fn($v) => [
-            'ITMCD'  => $v['MITM_ITMNM'] ?? null,
+            'ITMCD'  => $v['MITM_ITMCD'] ?? $v['MITM_ITMNM'] ?? null,
             'QTY'    => $v['QTY'] ?? 0,
             'BRANCH' => $v['MITM_BRANCH'] ?? null,
         ])->all());

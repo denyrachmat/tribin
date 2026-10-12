@@ -42,9 +42,16 @@ trait TransferBarcodeTraits
             $itemCode = $item['ITMCD'] ?? null;
             $qty = (float) ($item['QTY'] ?? 0);
             $branch = $item['BRANCH'] ?? null;
-            if (empty($itemCode) || $qty <= 0) {
+            if (empty($itemCode)) {
                 continue;
             }
+
+            # qty <= 0 means "not chosen yet" (the dialog opens before the operator
+            # types a quantity). The barcode situation is qty-independent, so it is
+            # still reported: an operator must see the destination-collision warning
+            # while the dialog is open, not only after a failed save. Only the
+            # "is there enough stock" verdict needs a real requested quantity.
+            $qtyKnown = $qty > 0;
 
             $rows = DB::connection($cgFrom)->table('C_ITRN')
                 ->where('CITRN_ITMCD', $itemCode)
@@ -65,7 +72,9 @@ trait TransferBarcodeTraits
                 'QTY'          => $qty,
                 'BARCODED'     => $barcodedQty,
                 'UNBARCODED'   => $unbarcodedQty,
-                'CAN_TRANSFER' => $barcodedQty >= $qty && $barcodedQty > 0,
+                'CAN_TRANSFER' => $qtyKnown
+                    ? ($barcodedQty >= $qty && $barcodedQty > 0)
+                    : ($barcodedQty > 0),
             ];
 
             if ($barcodedQty <= 0) {
@@ -77,7 +86,7 @@ trait TransferBarcodeTraits
                 ];
                 continue;
             }
-            if ($barcodedQty < $qty) {
+            if ($qtyKnown && $barcodedQty < $qty) {
                 $blocked[] = [
                     'item_code' => $itemCode,
                     'reason'    => 'Barcoded stock is less than the requested quantity.',

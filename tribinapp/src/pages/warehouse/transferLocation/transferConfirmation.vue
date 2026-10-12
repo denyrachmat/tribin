@@ -122,7 +122,7 @@
 </template>
 <script setup>
 import { api, api_web } from "boot/axios";
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -183,6 +183,20 @@ onMounted(async () => {
     }
   }
 });
+
+// The barcode warning depends on the requested quantity (an item can be short of
+// barcoded stock for the qty typed), so re-check as the operator edits quantities
+// instead of only when the dialog opens. Debounced: a burst of keystrokes triggers
+// one request.
+let recheckTimer = null;
+watch(
+  () => (dataTRF.value.ITMCD || []).map((i) => i.QTY).join(","),
+  () => {
+    if (!isCgTransfer.value) return;
+    clearTimeout(recheckTimer);
+    recheckTimer = setTimeout(() => checkBarcodes(), 500);
+  }
+);
 
 // Dry run: which barcodes already live in the destination company, and which
 // items have no barcoded stock to move.

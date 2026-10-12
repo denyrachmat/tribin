@@ -139,12 +139,52 @@ class locationController extends Controller
     }
 
     public function searchAPIByCG(Request $request, $cg) {
-        $RS = M_LOC::on(Crypt::decryptString($cg));
+        // The Transfer-Location screen puts the selected company alias straight
+        // into the URL, so this receives a PLAIN connection name
+        // ("connect_jos_jatpt"). Every other cross-CG path in the app passes the
+        // plain name too. Only a value that is actually an encrypted payload is
+        // decrypted, so both shapes work.
+        $connection = $this->resolveCompanyConnection($cg);
+
+        if (empty($connection)) {
+            return response()->json([
+                'status' => false,
+                'error' => 'Unknown company connection: ' . $cg,
+            ], 406);
+        }
+
+        $RS = M_LOC::on($connection);
 
         if (!empty($request->searchValue)) {
             $RS->where($request->searchBy, 'like', '%' . $request->searchValue . '%');
         }
 
         return ['data' => $RS->get()];
+    }
+
+    /**
+     * Accept either a plain company alias or an encrypted payload and return a
+     * usable connection name (null when neither resolves to a real connection).
+     */
+    private function resolveCompanyConnection($cg)
+    {
+        if (empty($cg)) {
+            return null;
+        }
+
+        $candidates = [$cg];
+        try {
+            $candidates[] = Crypt::decryptString($cg);
+        } catch (\Throwable $e) {
+            // not an encrypted payload - the plain value is the intended one
+        }
+
+        foreach ($candidates as $candidate) {
+            if ($candidate !== '' && array_key_exists($candidate, config('database.connections'))) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

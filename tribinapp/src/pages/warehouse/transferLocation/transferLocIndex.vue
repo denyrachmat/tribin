@@ -219,6 +219,20 @@ const cols = ref([
     field: "STOCK",
     sortable: true,
   },
+  {
+    name: "STOCK_BC",
+    align: "left",
+    label: "Barcoded Stock",
+    field: "STOCK_BC",
+    sortable: true,
+  },
+  {
+    name: "STOCK_NOBC",
+    align: "left",
+    label: "Unbarcoded Stock",
+    field: "STOCK_NOBC",
+    sortable: true,
+  },
 ]);
 
 const rows = ref([])
@@ -254,7 +268,7 @@ const filterFn = (val, update, abort, fun) => {
   });
 };
 
-const getLocation = async (val, cols = "MSUP_SUPNM") => {
+const getLocation = async (val, cols = "MLOC_LOCCD") => {
   loading.value = true;
   await api_web
     .post(`location/searchAPI`, {
@@ -276,7 +290,7 @@ const onChooseCGTo = async (value) => {
   await getLocationTo("", "MLOC_LOCNM");
 };
 
-const getLocationTo = async (val, cols = "MSUP_SUPNM") => {
+const getLocationTo = async (val, cols = "MLOC_LOCCD") => {
   loading.value = true;
   await api_web
     .post(`location/searchAPI/${CGTO.value}`, {

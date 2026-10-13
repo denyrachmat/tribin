@@ -75,6 +75,14 @@ trait TransferBarcodeTraits
                 'CAN_TRANSFER' => $qtyKnown
                     ? ($barcodedQty >= $qty && $barcodedQty > 0)
                     : ($barcodedQty > 0),
+                # Per-barcode remainders at the source location, ordered the same way
+                # the transfer consumes them (id_reff asc). This is what lets the
+                # dialog show one row per barcode with its own transferable quantity,
+                # so the operator picks barcodes instead of a loose total.
+                'BARCODES'     => $barcoded->map(fn($r) => [
+                    'barcode'   => $r->id_reff,
+                    'remaining' => (float) $r->QTY,
+                ])->values()->all(),
             ];
 
             if ($barcodedQty <= 0) {

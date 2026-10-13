@@ -399,8 +399,23 @@ class InventoryController extends Controller
         $cek = [];
         foreach ($request->ITMCD as $key => $value) {
             // Cek Item Master
-            $itemFrom = M_ITM::on($request->CGFROM)->where('MITM_ITMCD', $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'])->first();
-            $itemDest = M_ITM::on($request->CGTO)->where('MITM_ITMCD', $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'])->first();
+            $itemCode = $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'];
+            $itemFrom = M_ITM::on($request->CGFROM)->where('MITM_ITMCD', $itemCode)->first();
+            $itemDest = M_ITM::on($request->CGTO)->where('MITM_ITMCD', $itemCode)->first();
+
+            // The ledger can still hold stock for an item whose master row was
+            // soft-deleted (M_ITM uses SoftDeletes, so the lookup above skips it)
+            // while the item grid keeps listing it. Without this guard the create
+            // below dies on a null master row and the operator just sees a 500.
+            if (empty($itemFrom)) {
+                return response()->json([
+                    'status' => false,
+                    'error'  => "Item '{$itemCode}' has no active item master record in the source company "
+                        . '(it may have been deleted) although the ledger still shows stock for it. '
+                        . 'Restore the item master entry first, then transfer.',
+                    'items'  => [$itemCode],
+                ], 406);
+            }
 
             if (empty($itemDest)) {
                 $itemDest = M_ITM::on($request->CGTO)->create([
@@ -445,85 +460,108 @@ class InventoryController extends Controller
             })->toArray();
 
             $StockNow = (int) $value['QTY'];
-            foreach ($getStock as $keyStock => $valueStock) {
-                // CG transfers move BARCODED stock only, and always under a fresh
-                // barcode in the destination (see TransferBarcodeTraits).
-                if ($transferFreesBc && empty($valueStock['id_reff'])) {
+
+            // Option (a): the operator may name specific barcodes on the dialog.
+            // Anything named is transferred exactly as asked, clamped to what that
+            // barcode actually holds at this location; any remaining quantity is
+            // then taken from the OTHER NAMED barcodes in id_reff order. A barcode
+            // the operator left unpicked is excluded from the move entirely, which
+            // is what makes "clear a row to leave that barcode behind" true.
+            $pins = collect($value['BARCODES'] ?? [])
+                ->map(fn($b) => [
+                    'barcode' => $b['barcode'] ?? null,
+                    'qty'     => (float) ($b['qty'] ?? 0),
+                ])
+                ->filter(fn($b) => !empty($b['barcode']))
+                ->all();
+
+            // Only barcodes with a positive quantity are eligible. An empty
+            // selection (or no BARCODES key at all) falls back to the historic
+            // behaviour of drawing from every barcoded batch.
+            $allowed = collect($pins)->filter(fn($b) => $b['qty'] > 0)
+                ->pluck('qty', 'barcode')->all();
+
+            // Allocate the requested quantity across the available batches. Each
+            // entry: ['stock' => batch, 'qty' => amount to take from it].
+            $plan = [];
+            $remaining = (float) $StockNow;
+
+            foreach ($getStock as $batch) {
+                if ($remaining <= 0) {
+                    break;
+                }
+                $bc = $batch['id_reff'];
+                if ($transferFreesBc && empty($bc)) {
                     continue;
                 }
+                if (!empty($allowed) && !isset($allowed[$bc])) {
+                    continue;
+                }
+
+                $already = 0;
+                foreach ($plan as $p) {
+                    if ($p['stock']['id_reff'] === $bc && $p['stock']['CITRN_DOCNO'] === $batch['CITRN_DOCNO']) {
+                        $already += $p['qty'];
+                    }
+                }
+                // With a named amount, take exactly that, clamped to what this
+                // barcode holds; without one, take as much as is needed and available.
+                $available = $batch['CITRN_ITMQT'] - $already;
+                $wanted = isset($allowed[$bc]) ? $allowed[$bc] : $remaining;
+                $take = min($wanted - $already, $available, $remaining);
+                if ($take > 0) {
+                    $plan[] = ['stock' => $batch, 'qty' => $take];
+                    $remaining -= $take;
+                }
+            }
+
+            // Never move less than asked: an operator who excluded the barcodes that
+            // held the quantity would otherwise get a silent partial transfer.
+            if ($remaining > 0) {
+                return response()->json([
+                    'status' => false,
+                    'error'  => "Only " . ($StockNow - $remaining) . " of {$StockNow} can be transferred from the selected "
+                        . "barcode(s) for item {$itemCode}. Select more barcodes, or reduce the amount.",
+                    'items'  => [$itemCode],
+                ], 406);
+            }
+
+            foreach ($plan as $step) {
+                $valueStock = $step['stock'];
+                $StockPart = $step['qty'];
                 $bcToDest = $transferFreesBc ? ($freshBarcodes[$value['MITM_ITMCD'] ?? $value['MITM_ITMNM']] ?? null) : null;
 
-                if ($StockNow <= $valueStock['CITRN_ITMQT']) {
-                    // Issue
-                    $cek[] = C_ITRN::on($request->CGFROM)->create([
-                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
-                        'CITRN_LOCCD' => $request->LOCFROM,
-                        'CITRN_DOCNO' => $request->DOC,
-                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'OUT-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
-                        'CITRN_ITMQT' => $StockNow * -1,
-                        'CITRN_PRCPER' => $value['LATEST_PRC'],
-                        'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
-                        'id_reff' => $valueStock['id_reff'],
-                        'created_by' => Auth::user()->nick_name,
-                    ]);
+                // Issue
+                $cek[] = C_ITRN::on($request->CGFROM)->create([
+                    'CITRN_BRANCH' => $value['MITM_BRANCH'],
+                    'CITRN_LOCCD' => $request->LOCFROM,
+                    'CITRN_DOCNO' => $request->DOC,
+                    'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                    'CITRN_FORM' => 'OUT-TRF-LOC',
+                    'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
+                    'CITRN_ITMQT' => $StockPart * -1,
+                    'CITRN_PRCPER' => $value['LATEST_PRC'],
+                    'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
+                    'id_reff' => $valueStock['id_reff'],
+                    'created_by' => Auth::user()->nick_name,
+                ]);
 
-                    // Receive
-                    $rcvRow = C_ITRN::on($request->CGTO)->create([
-                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
-                        'CITRN_LOCCD' => $request->LOCTO,
-                        'CITRN_DOCNO' => $request->DOC,
-                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'INC-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
-                        'CITRN_ITMQT' => $StockNow,
-                        'CITRN_PRCPER' => $value['LATEST_PRC'],
-                        'CITRN_PRCAMT' => $StockNow * $value['LATEST_PRC'],
-                        'id_reff' => $transferFreesBc ? $bcToDest : $valueStock['id_reff'],
-                        'created_by' => Auth::user()->nick_name,
-                    ]);
-                    $cek[] = $rcvRow;
-                    $this->registerTransferredBarcode($request, $value, $bcToDest, $StockNow, $rcvRow);
-
-                    break;
-                } else {
-                    $StockNow = $request->QTY - $valueStock['CITRN_ITMQT'];
-                    // Record the left-over quantity BEFORE mutating $StockNow
-                    $StockPart =  $valueStock['CITRN_ITMQT'];
-
-                    // Issue
-                    $cek[] = C_ITRN::on($request->CGFROM)->create([
-                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
-                        'CITRN_LOCCD' => $request->LOCFROM,
-                        'CITRN_DOCNO' => $request->DOC,
-                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'OUT-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
-                        'CITRN_ITMQT' => $StockPart * -1,
-                        'CITRN_PRCPER' => $value['LATEST_PRC'],
-                        'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
-                        'id_reff' => $valueStock['id_reff'],
-                        'created_by' => Auth::user()->nick_name,
-                    ]);
-
-                    // Receive
-                    $rcvRow = C_ITRN::on($request->CGTO)->create([
-                        'CITRN_BRANCH' => $value['MITM_BRANCH'],
-                        'CITRN_LOCCD' => $request->LOCTO,
-                        'CITRN_DOCNO' => $request->DOC,
-                        'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
-                        'CITRN_FORM' => 'INC-TRF-LOC',
-                        'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
-                        'CITRN_ITMQT' => $StockPart,
-                        'CITRN_PRCPER' => $value['LATEST_PRC'],
-                        'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
-                        'id_reff' => $transferFreesBc ? $bcToDest : $valueStock['id_reff'],
-                        'created_by' => Auth::user()->nick_name,
-                    ]);
-                    $cek[] = $rcvRow;
-                    $this->registerTransferredBarcode($request, $value, $bcToDest, $StockPart, $rcvRow);
-                }
+                // Receive
+                $rcvRow = C_ITRN::on($request->CGTO)->create([
+                    'CITRN_BRANCH' => $value['MITM_BRANCH'],
+                    'CITRN_LOCCD' => $request->LOCTO,
+                    'CITRN_DOCNO' => $request->DOC,
+                    'CITRN_ISSUDT' => date('Y-m-d H:i:s'),
+                    'CITRN_FORM' => 'INC-TRF-LOC',
+                    'CITRN_ITMCD' => $value['MITM_ITMCD'] ?? $value['MITM_ITMNM'],
+                    'CITRN_ITMQT' => $StockPart,
+                    'CITRN_PRCPER' => $value['LATEST_PRC'],
+                    'CITRN_PRCAMT' => $StockPart * $value['LATEST_PRC'],
+                    'id_reff' => $transferFreesBc ? $bcToDest : $valueStock['id_reff'],
+                    'created_by' => Auth::user()->nick_name,
+                ]);
+                $cek[] = $rcvRow;
+                $this->registerTransferredBarcode($request, $value, $bcToDest, $StockPart, $rcvRow);
             }
         }
 

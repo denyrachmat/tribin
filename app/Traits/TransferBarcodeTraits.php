@@ -53,6 +53,15 @@ trait TransferBarcodeTraits
             # "is there enough stock" verdict needs a real requested quantity.
             $qtyKnown = $qty > 0;
 
+            # A barcode's own ledger rows routinely sum to a NEGATIVE figure (a
+            # reversal or correction booked against that barcode), while the item's
+            # real stock is the NET of everything. Reporting only the positive
+            # barcodes therefore promised stock that does not exist: item SP-00017
+            # holds 11 units yet its six positive barcodes summed to 67. Allocate the
+            # item's net stock across the barcodes front-to-back instead, the same
+            # order and the same front-to-back draw the transfer itself uses, so the
+            # picker can never offer more than STOCK. Barcodes left with nothing
+            # available stay listed (0 available) so their history is still visible.
             $rows = DB::connection($cgFrom)->table('C_ITRN')
                 ->where('CITRN_ITMCD', $itemCode)
                 ->when(!empty($branch), fn($q) => $q->where('CITRN_BRANCH', $branch))
@@ -61,12 +70,23 @@ trait TransferBarcodeTraits
                     DB::raw('SUM(CITRN_ITMQT) as QTY')
                 )
                 ->groupBy('id_reff')
-                ->havingRaw('SUM(CITRN_ITMQT) > 0')
+                ->orderBy('id_reff')
                 ->get();
 
             $barcoded = $rows->filter(fn($r) => !empty($r->id_reff));
-            $barcodedQty = (float) $barcoded->sum('QTY');
             $unbarcodedQty = (float) $rows->filter(fn($r) => empty($r->id_reff))->sum('QTY');
+
+            $barcodedQty = (float) $barcoded->sum('QTY');
+            $allocatable = max($barcodedQty, 0);
+            $barcodeRows = [];
+            foreach ($barcoded as $r) {
+                $available = min(max((float) $r->QTY, 0), $allocatable);
+                $allocatable -= $available;
+                $barcodeRows[] = [
+                    'barcode'   => $r->id_reff,
+                    'remaining' => $available,
+                ];
+            }
 
             $summary[$itemCode] = [
                 'QTY'          => $qty,
@@ -75,14 +95,9 @@ trait TransferBarcodeTraits
                 'CAN_TRANSFER' => $qtyKnown
                     ? ($barcodedQty >= $qty && $barcodedQty > 0)
                     : ($barcodedQty > 0),
-                # Per-barcode remainders at the source location, ordered the same way
-                # the transfer consumes them (id_reff asc). This is what lets the
-                # dialog show one row per barcode with its own transferable quantity,
-                # so the operator picks barcodes instead of a loose total.
-                'BARCODES'     => $barcoded->map(fn($r) => [
-                    'barcode'   => $r->id_reff,
-                    'remaining' => (float) $r->QTY,
-                ])->values()->all(),
+                # What can actually be moved per barcode, in the order the transfer
+                # draws it. Never totals more than the item's barcoded stock.
+                'BARCODES'     => $barcodeRows,
             ];
 
             if ($barcodedQty <= 0) {

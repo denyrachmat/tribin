@@ -81,7 +81,12 @@
                           dense
                           v-model="b.picked"
                           :label="b.barcode"
+                          :disable="Number(b.remaining) <= 0"
+                          :class="Number(b.remaining) <= 0 ? 'text-grey-6' : ''"
                         />
+                        <span v-if="Number(b.remaining) <= 0" class="text-caption text-grey-6">
+                          — nothing left to move
+                        </span>
                       </div>
                       <div class="col-3">
                         <q-input

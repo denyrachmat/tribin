@@ -461,6 +461,18 @@ class InventoryController extends Controller
 
             $StockNow = (int) $value['QTY'];
 
+            // A barcode's rows can net to a negative figure (reversals booked against
+            // it), so the drawable amount is the NET of all barcoded batches and
+            // nothing may be taken from a batch that nets to zero or less - taking
+            // from one would push it further negative and silently destroy stock.
+            $barcodedNet = 0.0;
+            foreach ($getStock as $batch) {
+                if (!empty($batch['id_reff'])) {
+                    $barcodedNet += (float) $batch['CITRN_ITMQT'];
+                }
+            }
+            $target = min((float) $StockNow, max($barcodedNet, 0));
+
             // Option (a): the operator may name specific barcodes on the dialog.
             // Anything named is transferred exactly as asked, clamped to what that
             // barcode actually holds at this location; any remaining quantity is
@@ -484,7 +496,7 @@ class InventoryController extends Controller
             // Allocate the requested quantity across the available batches. Each
             // entry: ['stock' => batch, 'qty' => amount to take from it].
             $plan = [];
-            $remaining = (float) $StockNow;
+            $remaining = $target;
 
             foreach ($getStock as $batch) {
                 if ($remaining <= 0) {
@@ -492,6 +504,10 @@ class InventoryController extends Controller
                 }
                 $bc = $batch['id_reff'];
                 if ($transferFreesBc && empty($bc)) {
+                    continue;
+                }
+                // Nothing may come out of a batch that nets to zero or less.
+                if ((float) $batch['CITRN_ITMQT'] <= 0) {
                     continue;
                 }
                 if (!empty($allowed) && !isset($allowed[$bc])) {
@@ -520,7 +536,7 @@ class InventoryController extends Controller
             if ($remaining > 0) {
                 return response()->json([
                     'status' => false,
-                    'error'  => "Only " . ($StockNow - $remaining) . " of {$StockNow} can be transferred from the selected "
+                    'error'  => "Only " . ($target - $remaining) . " of {$StockNow} can be transferred from the selected "
                         . "barcode(s) for item {$itemCode}. Select more barcodes, or reduce the amount.",
                     'items'  => [$itemCode],
                 ], 406);

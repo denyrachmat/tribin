@@ -9,7 +9,25 @@
   >
     <q-card class="q-dialog-plugin bg-white q-pa-sm">
       <q-card-section>
-        <div class="text-h6">Please Confirm Transfer Qty</div>
+        <div class="row items-center q-col-gutter-md">
+          <div class="col text-h6">Please Confirm Transfer Qty</div>
+          <div class="col-auto">
+            <q-input
+              ref="scanRef"
+              dense
+              outlined
+              clearable
+              v-model="scanValue"
+              label="Scan / type barcode"
+              hint="Scanned barcode is selected on its item"
+              @keyup.enter="onScanBarcode"
+            >
+              <template v-slot:append>
+                <q-btn flat dense icon="search" @click="onScanBarcode" />
+              </template>
+            </q-input>
+          </div>
+        </div>
       </q-card-section>
 
       <q-card-section class="q-pa-sm">
@@ -20,10 +38,8 @@
               separator
               v-if="dataTRF && dataTRF.ITMCD && dataTRF.ITMCD.length > 0"
             >
-              <q-item
-                v-for="(itm, idx) in dataTRF.ITMCD"
-                :key="idx"
-              >
+              <template v-for="(itm, idx) in dataTRF.ITMCD" :key="idx">
+              <q-item>
                 <q-item-section>
                   <q-item-label>{{ itm.MITM_ITMNM }}</q-item-label>
                   <q-item-label caption>{{ itm.MITM_ITMNMREAL }}</q-item-label>
@@ -42,16 +58,22 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>
-                    <q-input type="number" dense filled v-model="itm.QTY"/>
+                    <q-input
+                      type="number"
+                      dense
+                      filled
+                      :disable="isBarcodeDriven(itm)"
+                      :model-value="qtyDisplay(itm)"
+                      @update:model-value="(v) => onQtyInput(itm, v)"
+                    />
                   </q-item-label>
-                  <q-item-label caption>Transfer Qty</q-item-label>
+                  <q-item-label caption>
+                    {{ isBarcodeDriven(itm) ? 'Transfer Qty (sum of barcodes)' : 'Transfer Qty' }}
+                  </q-item-label>
                 </q-item-section>
 
-                <!-- Stock moves barcode by barcode. All barcodes start fully
-                     selected, so typing a total alone behaves exactly as before;
-                     narrowing a row sends only that barcode's quantity. Typing
-                     more than a barcode holds takes its remainder and continues
-                     with the next barcode. -->
+                <!-- Stock moves barcode by barcode: the total above is the sum of
+                     the quantities entered against each barcode below. -->
                 <q-item-section side v-if="isCgTransfer && (itm.BARCODES || []).length > 0">
                   <q-btn
                     flat
@@ -63,27 +85,28 @@
                 </q-item-section>
               </q-item>
 
-              <q-item v-for="(itm, idx) in dataTRF.ITMCD" :key="'bcs' + idx"
-                      v-show="openBarcodes[idx] && (itm.BARCODES || []).length > 0">
+              <!-- Barcode detail lives under its own item, so a scanned or edited
+                   row is never confused with another item's barcodes. -->
+              <q-item
+                v-show="openBarcodes[idx] && (itm.BARCODES || []).length > 0"
+                class="bg-grey-2"
+              >
                 <q-item-section>
                   <div class="full-width">
                     <div class="text-caption text-grey-7 q-mb-xs">
-                      Barcodes for <b>{{ itm.MITM_ITMNM }}</b> — clear a row to leave
-                      that barcode behind, or edit its quantity.
+                      Barcodes for <b>{{ itm.MITM_ITMNM }}</b> — enter the quantity to
+                      move from each barcode.
                     </div>
                     <div
                       v-for="(b, bi) in itm.BARCODES"
                       :key="b.barcode"
                       class="row items-center q-col-gutter-sm q-mb-xs"
+                      :class="b.barcode === highlighted.barcode ? 'bg-yellow-2' : ''"
                     >
                       <div class="col">
-                        <q-checkbox
-                          dense
-                          v-model="b.picked"
-                          :label="b.barcode"
-                          :disable="Number(b.remaining) <= 0"
-                          :class="Number(b.remaining) <= 0 ? 'text-grey-6' : ''"
-                        />
+                        <span :class="Number(b.remaining) <= 0 ? 'text-grey-6' : ''">
+                          {{ b.barcode }}
+                        </span>
                         <span v-if="Number(b.remaining) <= 0" class="text-caption text-grey-6">
                           — nothing left to move
                         </span>
@@ -94,15 +117,16 @@
                           dense
                           filled
                           v-model="b.qty"
-                          :disable="!b.picked"
+                          :disable="Number(b.remaining) <= 0"
                           :hint="`has ${b.remaining}`"
-                          :rules="[val => !b.picked || Number(val) >= 0 || 'Must be 0 or more']"
+                          :rules="[val => Number(val) >= 0 || 'Must be 0 or more']"
                         />
                       </div>
                     </div>
                   </div>
                 </q-item-section>
               </q-item>
+              </template>
             </q-list>
           </div>
         </div>
@@ -158,7 +182,7 @@
           label="Yes, continue"
           color="primary"
           :loading="loading"
-          :disable="blocked.length > 0 || anyQtyZero"
+          :disable="!canSubmit"
           @click="onSavedata(true)"
         />
         <q-btn
@@ -166,7 +190,7 @@
           label="OK"
           color="primary"
           :loading="loading"
-          :disable="blocked.length > 0 || anyQtyZero"
+          :disable="!canSubmit"
           @click="onSavedata(false)"
         />
         <q-btn flat label="Cancel" color="red" :loading="loading" @click="onDialogCancel" />
@@ -176,7 +200,7 @@
 </template>
 <script setup>
 import { api, api_web } from "boot/axios";
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, nextTick } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
@@ -194,9 +218,82 @@ const conflicts = ref([]);
 const blocked = ref([]);
 const confirmed = ref(false);
 const openBarcodes = ref({});
+const scanValue = ref("");
+const scanRef = ref(null);
+const highlighted = ref({ barcode: null, at: 0 });
 
 const toggleBarcodes = (idx) => {
   openBarcodes.value = { ...openBarcodes.value, [idx]: !openBarcodes.value[idx] };
+};
+
+// A cross-CG move is driven entirely by the per-barcode quantities, so its
+// Transfer Qty is a read-only total. A same-CG (loc) move has no barcode rows to
+// enter against, so there the field stays editable as it always was.
+const isBarcodeDriven = (itm) =>
+  isCgTransfer.value && (itm.BARCODES || []).length > 0;
+
+const barcodeTotal = (itm) =>
+  (itm.BARCODES || []).reduce((sum, b) => sum + (Number(b.qty) || 0), 0);
+
+const qtyDisplay = (itm) =>
+  isBarcodeDriven(itm) ? barcodeTotal(itm) : itm.QTY;
+
+// A same-CG (loc) move still takes its quantity from this field directly.
+const onQtyInput = (itm, val) => {
+  if (!isBarcodeDriven(itm)) itm.QTY = val;
+};
+
+// Keep the item's QTY, which the transfer request sends, equal to what the barcode
+// rows add up to - the two must never disagree.
+watch(
+  () => (dataTRF.value.ITMCD || []).map((i) => (i.BARCODES || []).map((b) => b.qty).join("|")).join(","),
+  () => {
+    (dataTRF.value.ITMCD || []).forEach((itm) => {
+      if (isBarcodeDriven(itm)) itm.QTY = barcodeTotal(itm);
+    });
+  }
+);
+
+// A barcode scanner types the code and sends Enter. Match it against the item
+// list on screen (the operator picked those items) and fill that row's quantity
+// with what is available. Anything not found is reported by name so the operator
+// knows it belongs to another item rather than silently doing nothing.
+const onScanBarcode = () => {
+  const code = String(scanValue.value || "").trim();
+  if (!code) return;
+
+  for (const itm of dataTRF.value.ITMCD || []) {
+    const rows = itm.BARCODES || [];
+    const bi = rows.findIndex(
+      (b) => String(b.barcode).toUpperCase() === code.toUpperCase()
+    );
+    if (bi === -1) continue;
+
+    const row = rows[bi];
+    if (Number(row.remaining) <= 0) {
+      $q.notify({
+        color: "orange",
+        message: `Barcode ${row.barcode} has nothing left to move on ${itm.MITM_ITMNM}.`,
+      });
+      return;
+    }
+
+    row.qty = Number(row.remaining);
+    // Open the owning item's list so the operator sees what was filled.
+    openBarcodes.value = { ...openBarcodes.value, [dataTRF.value.ITMCD.indexOf(itm)]: true };
+    highlighted.value = { barcode: row.barcode, at: Date.now() };
+    scanValue.value = "";
+    $q.notify({
+      color: "green",
+      message: `Barcode ${row.barcode} filled on ${itm.MITM_ITMNM} (qty ${row.qty}).`,
+    });
+    return;
+  }
+
+  $q.notify({
+    color: "red",
+    message: `Barcode ${code} is not on the selected item(s).`,
+  });
 };
 
 // Only a real cross-company move needs the barcode check / new-barcode flow.
@@ -217,6 +314,19 @@ const anyQtyZero = computed(
     dataTRF.value.ITMCD.filter((f) => !f.QTY || Number(f.QTY) === 0).length > 0
 );
 
+// A cross-CG move is driven by the per-barcode quantities, so the request must
+// carry at least one positive amount for every item on the list. Without this the
+// dialog would submit zero-quantity transfers now that the fields start empty.
+const missingQty = computed(() =>
+  (dataTRF.value.ITMCD || []).filter(
+    (itm) => isBarcodeDriven(itm) && barcodeTotal(itm) <= 0
+  )
+);
+
+const canSubmit = computed(
+  () => blocked.value.length === 0 && missingQty.value.length === 0 && !anyQtyZero.value
+);
+
 const buildConflictRows = (raw) => {
   const out = [];
   Object.keys(raw || {}).forEach((bc) => {
@@ -230,10 +340,9 @@ const buildConflictRows = (raw) => {
   return out;
 };
 
-// Seed each item's barcode rows from the preview. Every barcode starts picked and
-// full, so an operator who only types a total gets the previous behaviour exactly;
-// clearing a row is what leaves that barcode behind. A barcode whose quantity was
-// already edited keeps the operator's number.
+// Seed each item's barcode rows from the preview. Every quantity starts at 0: the
+// operator enters what to move per barcode, and the Transfer Qty total above sums
+// those entries. A quantity already entered survives a re-check.
 const applyBarcodes = (items) => {
   Object.keys(items || {}).forEach((code) => {
     const itm = (dataTRF.value.ITMCD || []).find(
@@ -245,10 +354,9 @@ const applyBarcodes = (items) => {
     itm.BARCODES = (items[code].BARCODES || []).map((b) => ({
       barcode: b.barcode,
       remaining: b.remaining,
-      // Keep the operator's pick/unpick and quantity across re-checks; a barcode
-      // they have never touched starts picked at its full remainder.
-      picked: prev[b.barcode] !== undefined ? prev[b.barcode].picked : true,
-      qty: prev[b.barcode] !== undefined ? prev[b.barcode].qty : b.remaining,
+      // Quantities start at 0 - the operator enters what to move. A value already
+      // typed survives a re-check of the destination barcodes.
+      qty: prev[b.barcode] !== undefined ? prev[b.barcode].qty : 0,
     }));
   });
 };
@@ -264,6 +372,10 @@ onMounted(async () => {
       await checkBarcodes();
     }
   }
+  // A scanner should be usable the moment the dialog opens, without a click.
+  nextTick(() => {
+    scanRef.value?.focus?.();
+  });
 });
 
 // The barcode warning depends on the requested quantity (an item can be short of
@@ -308,13 +420,13 @@ const checkBarcodes = async () => {
 };
 
 const onSavedata = (withConfirm) => {
-  // Send the barcode selection alongside the item list: picked barcodes go with
-  // their quantities, unpicked ones are dropped so the backend leaves them behind.
+  // Send only the barcodes the operator actually filled in: a row left at 0 is
+  // stock that stays behind, and the backend treats the list as the selection.
   const items = (dataTRF.value.ITMCD || []).map((itm) => {
     if (!isCgTransfer.value || !(itm.BARCODES || []).length) return itm;
     return {
       ...itm,
-      BARCODES: itm.BARCODES.filter((b) => b.picked).map((b) => ({
+      BARCODES: itm.BARCODES.filter((b) => Number(b.qty) > 0).map((b) => ({
         barcode: b.barcode,
         qty: Number(b.qty) || 0,
       })),

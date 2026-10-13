@@ -20,14 +20,25 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('T_RCV_HEAD', function (Blueprint $table) {
+        // The stock-take header table is not shaped identically on every
+        // connection (the main DB's copy has no TRCV_REFFNO), so only anchor the
+        // new columns to it when it is actually there. Anchoring unconditionally
+        // made this migration fail with 'Unknown column TRCV_REFFNO' on any
+        // connection whose T_RCV_HEAD differs, which silently left the columns
+        // missing and broke every query that filters on them.
+        $anchor = Schema::hasColumn('T_RCV_HEAD', 'TRCV_REFFNO') ? 'TRCV_REFFNO' : null;
+
+        Schema::table('T_RCV_HEAD', function (Blueprint $table) use ($anchor) {
             if (!Schema::hasColumn('T_RCV_HEAD', 'TRCV_STK_STATUS')) {
                 // NULL = legacy/pre-gate batch (already posted)
                 // DRAFT = rows being imported
                 // PENDING_APPROVAL = imported, awaiting approver
                 // REJECTED = refused, nothing posted
                 // POSTED = adjustments applied to the ledger
-                $table->string('TRCV_STK_STATUS', 20)->nullable()->after('TRCV_REFFNO');
+                $col = $table->string('TRCV_STK_STATUS', 20)->nullable();
+                if ($anchor) {
+                    $col->after($anchor);
+                }
             }
             if (!Schema::hasColumn('T_RCV_HEAD', 'TRCV_STK_APPROVAL_NOTE')) {
                 $table->string('TRCV_STK_APPROVAL_NOTE', 255)->nullable()->after('TRCV_STK_STATUS');

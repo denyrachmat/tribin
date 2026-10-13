@@ -149,7 +149,11 @@ trait LocationTraits
                         ]));
                         $results[] = $res;
                         if (is_object($res) && method_exists($res, 'getStatusCode') && $res->getStatusCode() >= 400) {
-                            return ['status' => false, 'error' => $res->getData(true)['error'] ?? 'Transfer failed'];
+                            // transferLoc() may answer with a plain Response rather
+                            // than a JsonResponse, in which case there is no
+                            // getData() to read the message from.
+                            $detail = method_exists($res, 'getData') ? ($res->getData(true)['error'] ?? null) : null;
+                            return ['status' => false, 'error' => $detail ?? 'Transfer failed'];
                         }
                     }
                     $pendingOut = null;
@@ -190,7 +194,20 @@ trait LocationTraits
             return response()->json($validator->errors(), 406);
         }
 
-        $cekStockQuery = DB::connection($this->dedicatedConnection)->table('V_STOCK_CHECK')
+        // The stock lookup is grouped by document + barcode, the same grain the
+        // V_STOCK_CHECK view produced. It reads the ledger TABLE because the view
+        // projects only DOCNO/LOCCD/ITMCD/PRCPER/id_reff/ITMQT - filtering the view
+        // by branch fails with "Unknown column 'CITRN_BRANCH' in 'WHERE'".
+        //
+        // The branch filter applies ONLY when the caller states one. Several
+        // callers (the service transfer approval among them) transfer between
+        // warehouses and carry no branch of their own - their tables have no branch
+        // column - so falling back to the signed-in user's branch would look for
+        // the stock in the wrong branch and report "stock not exists" for stock
+        // that is plainly there.
+        $branchFilter = !empty($request->branch) ? $request->branch : null;
+
+        $cekStockQuery = DB::connection($this->dedicatedConnection)->table('C_ITRN')
             ->select(
                 'CITRN_ITMCD',
                 'CITRN_LOCCD',
@@ -198,8 +215,10 @@ trait LocationTraits
                 'id_reff',
                 DB::raw('MAX(CITRN_PRCPER) as CITRN_PRCPER')
             )
+            ->whereNull('deleted_at')
             ->where('CITRN_ITMCD', $request->ITMCD)
             ->where('CITRN_LOCCD', $request->LOCFROM)
+            ->when(!empty($branchFilter), fn($q) => $q->where('CITRN_BRANCH', $branchFilter))
             ->groupBy('CITRN_ITMCD', 'CITRN_LOCCD', 'id_reff');
 
         $docFrom = !empty($request->DOCFROM) ? $request->DOCFROM : (!empty($request->DOC) ? $request->DOC : null);

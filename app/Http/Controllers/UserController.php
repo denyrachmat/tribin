@@ -83,6 +83,7 @@ class UserController extends Controller
             'active' => 1,
             'role' => $request->role,
             'branch' => $request->branch,
+            'branches' => $request->input('branches'),
             'phone' => $request->phone,
         ]);
 
@@ -152,6 +153,7 @@ class UserController extends Controller
                 'email' => $request->email,
                 'active' => $request->active,
                 'branch' => $request->branch,
+                'branches' => $request->input('branches'),
                 'phone' => $request->phone,
             ]);
 

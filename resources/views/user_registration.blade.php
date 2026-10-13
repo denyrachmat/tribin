@@ -66,6 +66,19 @@
                 </select>
             </div>
         </div>
+        <div class="col-md-12 mb-1">
+            <div class="input-group input-group-sm mb-1">
+                <span class="input-group-text">Branches</span>
+                <select class="form-select" id="branches" multiple size="4"
+                    title="Branches this user may switch between. Leave empty to use only the default branch above.">
+                    @foreach($Branches as $r)
+                    <option value="{{ $r->MBRANCH_CD }}">{{ $r->MBRANCH_CD }} - {{ $r->MBRANCH_NM }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-text ms-2">Ctrl/Cmd-click to select several. These are the branches the user may switch
+                between; empty means they keep their single default branch.</div>
+        </div>
     </div>
     <div class="row">
         <div class="col-md-12 mb-1">
@@ -121,6 +134,7 @@
             role: role.value,
             phone: userPhone.value,
             branch: branch.value,
+            branches: Array.from(document.getElementById('branches').selectedOptions).map(o => o.value).join(','),
             _token: '{{ csrf_token() }}',
         }
         if (confirm(`Are you sure ?`)) {

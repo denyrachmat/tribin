@@ -176,6 +176,40 @@
                     <li id="liHeadHistory">
                         <h6 class="dropdown-header">History</h6>
                     </li>
+                    <li id="liHeadStockTake">
+                        <h6 class="dropdown-header">Stock Take</h6>
+                    </li>
+                </ul>
+            </div>
+        </div>
+@php
+    // Reflect the branch actually in use (the middleware applies the user's
+    // selection), on every page rather than only where a view passes one in.
+    $activeBranchName = '-';
+    try {
+        $cgConn = isset($_COOKIE['CGID']) && $_COOKIE['CGID'] !== '-'
+            ? \Illuminate\Support\Facades\Crypt::decryptString($_COOKIE['CGID'])
+            : null;
+        if ($cgConn) {
+            $activeBranchName = optional(
+                \App\Models\M_BRANCH::on($cgConn)
+                    ->select('MBRANCH_NM')
+                    ->where('MBRANCH_CD', Auth::user()->branch)
+                    ->first()
+            )->MBRANCH_NM ?? (Auth::user()->branch ?: '-');
+        }
+    } catch (\Throwable $e) {
+        $activeBranchName = Auth::user()->branch ?: '-';
+    }
+@endphp
+        <div class="navbar-nav">
+            <div class="nav-item dropdown text-nowrap">
+                <a class="nav-link dropdown-toggle col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" role="button" data-bs-toggle="dropdown" title="Branch">
+                    <span class="align-text-bottom fas fa-city"></span>
+                    <span class="badge bg-secondary" id="labelBranch">{{ $activeBranchName }}</span>
+                </a>
+                <ul class="dropdown-menu position-absolute dropdown-menu-lg-end dropdown-menu-md-end" id="branchMenu">
+                    <li><a class="dropdown-item" href="#" onclick="lishowBranchSelectionModal(event)">Select Branch</a></li>
                 </ul>
             </div>
         </div>
@@ -213,6 +247,30 @@
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" id="konten-div">
                 @yield('konten')
             </main>
+        </div>
+    </div>
+
+    <!-- Branch Modal -->
+    <div class="modal fade" id="branchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5">Select Branch</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col">
+                                <div class="table-responsive" id="branchTabelContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -341,9 +399,16 @@
                     // Service Done Confirmation
                     const totalNotifServiceDone = (response.dataUnApprovedServiceDone || []).length
 
+                    // Stock Take batches awaiting approval
+                    const totalNotifStockTake = (response.dataStockTakePending || []).length
+
+                    // Stock Adjustment batches awaiting approval
+                    const totalNotifStockAdjust = (response.dataStockAdjustPending || []).length
+
                     const totalNotif = totalNotifQT + totalNotifApprovedQT + totalNotifQTPurchaseRequest + totalNotifApprovedQTPurchaseRequest + totalNotifQTSalesOrderDraft +
                         totalNotifQTPurchaseOrder + totalNotifQTDeliveryNoDriver + totalNotifQTDeliveryUndelivered +
-                        totalNotifQTUnApprovedSPK + totalNotifService + totalNotifServiceTrf + totalNotifServiceDone
+                        totalNotifQTUnApprovedSPK + totalNotifService + totalNotifServiceTrf + totalNotifServiceDone +
+                        totalNotifStockTake + totalNotifStockAdjust
                     labelNotifAll.innerHTML = totalNotif === 0 ? '' : totalNotif
 
                     // Quotations Group
@@ -375,6 +440,8 @@
                     // Service Done Confirmation Group
                     createLiItem('linotif12', 'labelNotifUnApprovedServiceDone', 'Service Done Confirmation Approval', totalNotifServiceDone, liHeadService, liUnApprovedServiceDoneOnclick)
                     createLiItem('linotif13', 'labelNotifApprovalHistory', 'Approval History', 0, liHeadHistory, liApprovalHistoryOnclick)
+                    createLiItem('linotif14', 'labelNotifStockTakeApproval', 'Stock Take Approval', totalNotifStockTake, liHeadStockTake, liStockTakeApprovalOnclick)
+                    createLiItem('linotif15', 'labelNotifStockAdjustmentApproval', 'Stock Adjustment Approval', totalNotifStockAdjust, liHeadStockTake, liStockAdjustmentApprovalOnclick)
                 }
             });
         }
@@ -570,6 +637,32 @@
             });
         }
 
+        function liStockTakeApprovalOnclick(e) {
+            e.preventDefault()
+            ContentContainer.innerHTML = 'Please wait'
+            $.ajax({
+                type: "GET",
+                url: "/inventory/stockTakeApproval/form",
+                dataType: "text",
+                success: function(response) {
+                    setInnerHTML(ContentContainer, response)
+                }
+            });
+        }
+
+        function liStockAdjustmentApprovalOnclick(e) {
+            e.preventDefault()
+            ContentContainer.innerHTML = 'Please wait'
+            $.ajax({
+                type: "GET",
+                url: "/inventory/stockAdjustmentApproval/form",
+                dataType: "text",
+                success: function(response) {
+                    setInnerHTML(ContentContainer, response)
+                }
+            });
+        }
+
         function liUnApprovedServiceDoneOnclick(e) {
             e.preventDefault()
             if (labelNotifUnApprovedServiceDone != null && labelNotifUnApprovedServiceDone.innerText.length > 0) {
@@ -602,6 +695,73 @@
         function lishowCompanySelectionModal() {
             const myModal = new bootstrap.Modal(document.getElementById('companyModal'), {})
             myModal.show()
+        }
+
+        /**
+         * Branch picker. Populated from the branches the signed-in user may use
+         * in the company currently selected; switching reloads so every screen
+         * picks up the new branch.
+         */
+        function lishowBranchSelectionModal(e) {
+            if (e) e.preventDefault()
+            const container = document.getElementById('branchTabelContainer')
+            container.innerHTML = '<table class="table table-sm"><tbody><tr><td>Please wait</td></tr></tbody></table>'
+            const myModal = new bootstrap.Modal(document.getElementById('branchModal'), {})
+            myModal.show()
+
+            $.ajax({
+                type: 'GET',
+                url: 'active-branch/options',
+                dataType: 'json',
+                success: function(res) {
+                    const list = (res && res.data) ? res.data : []
+                    const current = res && res.current ? String(res.current) : ''
+                    if (list.length === 0) {
+                        container.innerHTML = '<div class="text-muted">No branch available for this company.</div>'
+                        return
+                    }
+                    let html = '<table class="table table-sm table-striped table-bordered table-hover" id="branchTabel">'
+                    html += '<thead class="table-light"><tr><th>Code</th><th>Branch Name</th><th></th></tr></thead><tbody>'
+                    list.forEach(function(b) {
+                        const code = b.MBRANCH_CD
+                        const isCurrent = String(code) === current
+                        html += '<tr class="' + (isCurrent ? 'table-info' : '') + '" style="cursor:pointer" onclick="frameSetBranch(\'' + code + '\', this)">'
+                        html += '<td>' + code + '</td><td>' + (b.MBRANCH_NM || '') + '</td>'
+                        html += '<td>' + (isCurrent ? '<span class="badge bg-info">current</span>' : '') + '</td></tr>'
+                    })
+                    html += '</tbody></table>'
+                    container.innerHTML = html
+                },
+                error: function(xhr) {
+                    container.innerHTML = '<div class="alert alert-warning">' + (xhr.responseText || 'Failed to load branches') + '</div>'
+                }
+            })
+        }
+
+        function frameSetBranch(code, row) {
+            const name = row && row.cells && row.cells[1] ? row.cells[1].innerText.trim() : code
+            $.ajax({
+                type: 'POST',
+                url: 'active-branch/set',
+                data: { _token: '{{ csrf_token() }}', branch: code },
+                dataType: 'json',
+                success: function(res) {
+                    $('#branchModal').modal('hide')
+                    if (typeof alertify !== 'undefined') {
+                        alertify.success(res.msg || ('Branch changed to ' + name))
+                    }
+                    // Reload so every screen, list and report picks up the new branch.
+                    setTimeout(function() { location.reload() }, 400)
+                },
+                error: function(xhr) {
+                    let msg = xhr.responseText
+                    try {
+                        const r = xhr.responseJSON
+                        if (r && r.error) msg = Array.isArray(r.error) ? r.error.join('<br>') : r.error
+                    } catch (e2) {}
+                    if (typeof alertify !== 'undefined') { alertify.error(msg) } else { alert(msg) }
+                }
+            })
         }
 
         function lishowCompanyAccessControlForm() {

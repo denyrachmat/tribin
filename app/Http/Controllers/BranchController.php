@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\M_BRANCH;
+use App\Http\Middleware\SetActiveBranch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -146,5 +147,69 @@ class BranchController extends Controller
                 'MBRANCH_NM' => $request->MBRANCH_NM
             ]);
         return ['msg' => $affectedRow ? 'OK' : 'No changes'];
+    }
+
+    /**
+     * Branches the signed-in user may pick from, for the company currently
+     * selected. Administrators see every branch of that company; everyone else
+     * only the codes listed on their account (users.branches).
+     */
+    function options(Request $request)
+    {
+        $user = Auth::user();
+
+        if (empty($this->dedicatedConnection) || $this->dedicatedConnection === '-') {
+            return ['data' => [], 'current' => null, 'canSwitch' => false];
+        }
+
+        $query = M_BRANCH::on($this->dedicatedConnection)->select('MBRANCH_CD', 'MBRANCH_NM');
+
+        if (! $user->hasFullBranchAccess()) {
+            $query->whereIn('MBRANCH_CD', $user->allowedBranches());
+        }
+
+        $branches = $query->orderBy('MBRANCH_CD')->get();
+
+        return [
+            'data' => $branches,
+            'current' => $user->branch,
+            'canSwitch' => $branches->count() > 1,
+        ];
+    }
+
+    /**
+     * Switch the branch in use for this session. The code is validated against
+     * the user's allowed list and against M_BRANCH for the active company, so a
+     * tampered value can neither widen access nor point at a foreign branch.
+     */
+    function setActive(Request $request)
+    {
+        $code = (string) $request->input('branch');
+        $user = Auth::user();
+
+        if ($code === '') {
+            return response()->json(['error' => ['Branch is required !!']], 406);
+        }
+
+        if (! $user->canAccessBranch($code)) {
+            return response()->json(['error' => ['You do not have access to this branch !!']], 403);
+        }
+
+        $branch = M_BRANCH::on($this->dedicatedConnection)
+            ->select('MBRANCH_CD', 'MBRANCH_NM')
+            ->where('MBRANCH_CD', $code)
+            ->first();
+
+        if (empty($branch)) {
+            return response()->json(['error' => ['Unknown branch for this company !!']], 406);
+        }
+
+        $request->session()->put(SetActiveBranch::SESSION, $code);
+
+        return [
+            'msg' => 'Branch changed to ' . $branch->MBRANCH_NM,
+            'branch' => $branch->MBRANCH_CD,
+            'branchName' => $branch->MBRANCH_NM,
+        ];
     }
 }

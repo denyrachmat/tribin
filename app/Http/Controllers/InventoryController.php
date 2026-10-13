@@ -678,7 +678,8 @@ class InventoryController extends Controller
                 'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
                 'TLOCREQ_FRLOC' => $request->TLOCREQ_FRLOC,
                 'TLOCREQ_TOLOC' => $request->TLOCREQ_TOLOC,
-                'TLOCREQ_ISREP' => 0
+                'TLOCREQ_ISREP' => 0,
+                'TLOCREQ_CREATEDBY' => Auth::check() ? Auth::user()->nick_name : null,
             ]);
 
             if ($value['TLOCREQ_ISREP'] == 1) {
@@ -688,7 +689,8 @@ class InventoryController extends Controller
                     'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
                     'TLOCREQ_FRLOC' => $request->TLOCREQ_TOLOC,
                     'TLOCREQ_TOLOC' => $request->TLOCREQ_FRLOC,
-                    'TLOCREQ_ISREP' => $value['TLOCREQ_ISREP']
+                    'TLOCREQ_ISREP' => $value['TLOCREQ_ISREP'],
+                    'TLOCREQ_CREATEDBY' => Auth::check() ? Auth::user()->nick_name : null,
                 ]);
             }
         }

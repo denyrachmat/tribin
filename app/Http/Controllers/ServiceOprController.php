@@ -100,7 +100,10 @@ class ServiceOprController extends Controller
                     'TSRVF_ITMCD' => $valueDet['TSRVF_ITMCD'],
                     'TSRVF_PRC' => $valueDet['TSRVF_PRC'],
                     'TSRVF_QTY' => $valueDet['TSRVF_QTY'],
-                    'TSRVF_BC' => $valueDet['TSRVF_BC'] ?? ''
+                    'TSRVF_BC' => $valueDet['TSRVF_BC'] ?? '',
+                    // The column existed but was never written, so requests could not be
+                    // attributed to the person who asked for the part.
+                    'created_by' => Auth::check() ? Auth::user()->nick_name : null,
                 ]);
             }
         }
@@ -393,7 +396,10 @@ class ServiceOprController extends Controller
                                 'TSRVF_ITMCD' => $valueDet['TLOCREQ_ITMCD'],
                                 'TSRVF_PRC' => $valueDet['TLOCREQ_PRC'],
                                 'TSRVF_QTY' => $valueDet['TLOCREQ_QTY'],
-                                'TSRVF_BC' => $valueDet['TSRVF_BC'] ?? ''
+                                'TSRVF_BC' => $valueDet['TSRVF_BC'] ?? '',
+                                // The column existed but was never written, so requests could not be
+                                // attributed to the person who asked for the part.
+                                'created_by' => Auth::check() ? Auth::user()->nick_name : null,
                             ]);
                         }
                     }
@@ -411,7 +417,8 @@ class ServiceOprController extends Controller
                 'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
                 'TLOCREQ_FRLOC' => $request->TLOCREQ_FRLOC,
                 'TLOCREQ_TOLOC' => $request->TLOCREQ_TOLOC,
-                'TLOCREQ_ISREP' => 0
+                'TLOCREQ_ISREP' => 0,
+                'TLOCREQ_CREATEDBY' => Auth::check() ? Auth::user()->nick_name : null,
             ]);
 
             if ($value['TLOCREQ_ISREP'] == 1) {
@@ -421,7 +428,8 @@ class ServiceOprController extends Controller
                     'TLOCREQ_QTY' => $value['TLOCREQ_QTY'],
                     'TLOCREQ_FRLOC' => $request->TLOCREQ_TOLOC,
                     'TLOCREQ_TOLOC' => $request->TLOCREQ_FRLOC,
-                    'TLOCREQ_ISREP' => $value['TLOCREQ_ISREP']
+                    'TLOCREQ_ISREP' => $value['TLOCREQ_ISREP'],
+                    'TLOCREQ_CREATEDBY' => Auth::check() ? Auth::user()->nick_name : null,
                 ]);
             }
         }

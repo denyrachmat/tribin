@@ -30,6 +30,7 @@ use App\Models\M_COND_GROUP;
 use App\Models\C_SPK;
 use App\Models\T_SRV_HEAD;
 use App\Models\T_SRV_DET;
+use App\Models\T_LOC_REQ;
 use App\Traits\taxesTraits;
 use App\Traits\accTraits;
 use App\Traits\LocationTraits;
@@ -1028,6 +1029,55 @@ class InvoiceController extends Controller
         return base64_encode($pdf->output());
     }
 
+    /**
+     * Who belongs on the Surat Jalan "Dibuat oleh" line.
+     *
+     * One SJ can be produced three ways, and each has a different natural creator:
+     *  - Sales (type 1) and POS (type 5): the operator who generated the delivery
+     *    order, which is already on the detail rows.
+     *  - Internal Service (type 4): the person who submitted the transfer request.
+     *    That was never stored (T_LOC_REQ had only a submitted datetime and the
+     *    approver), so older documents would name the approver instead. Read it from
+     *    the transfer request now that it is recorded, and fall back to the service
+     *    order's creator - the PIC who owns the transaction - for documents created
+     *    before the column existed.
+     */
+    private function resolveSjCreator($RSDetail, $RSHeader)
+    {
+        $detailCreator = optional($RSDetail->first())->created_by;
+
+        if ((int) $RSHeader->TDLVORD_TYPE !== 4) {
+            return $detailCreator;
+        }
+
+        $dlvcd = optional($RSDetail->first())->TDLVORDDETA_DLVCD
+            ?: $RSHeader->TDLVORD_DLVCD;
+
+        // A service SJ is keyed to its service order by the document prefix
+        // (JAT/SRV/26/09/16/0233-1 -> JAT/SRV/26/09/16/0233).
+        if (!empty($dlvcd)) {
+            $submitter = T_LOC_REQ::on($this->dedicatedConnection)
+                ->where('TLOCREQ_DOCNO', $dlvcd)
+                ->whereNotNull('TLOCREQ_CREATEDBY')
+                ->orderByDesc('id')
+                ->value('TLOCREQ_CREATEDBY');
+
+            if (!empty($submitter)) {
+                return $submitter;
+            }
+
+            $svcHead = T_SRV_HEAD::on($this->dedicatedConnection)
+                ->where('SRVH_DOCNO', explode('-', $dlvcd)[0])
+                ->value('created_by');
+
+            if (!empty($svcHead)) {
+                return $svcHead;
+            }
+        }
+
+        return $detailCreator;
+    }
+
     private function incrementPrintCount($doc, $column)
     {
         if (empty($doc)) {
@@ -1720,7 +1770,13 @@ class InvoiceController extends Controller
         $HargaSewa = NULL;
 
         foreach ($RSDetail as $r) {
-            $Dibuat = User::where('nick_name', $r->created_by)->select('name')->first();
+            // "Dibuat oleh" is per DOCUMENT, not per detail row: every row of one SJ
+            // shares the same creator, so resolving it inside this loop just repeated
+            // the same lookup (and would let the last row win if they ever differed).
+            $creatorNick = $this->resolveSjCreator($RSDetail, $RSHeader);
+            $Dibuat = $creatorNick
+                ? User::where('nick_name', $creatorNick)->select('name')->first()
+                : null;
             if ($RSHeader->TDLVORD_TYPE == 4) {
                 $splitDoc = explode('-', $r->TDLVORDDETA_DLVCD);
                 $Subject = T_SRV_HEAD::on($this->dedicatedConnection)

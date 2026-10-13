@@ -20,5 +20,6 @@ class T_LOC_REQ extends Model
         'TLOCREQ_APPRVBY',
         'TLOCREQ_SUBMITTED',
         'TLOCREQ_ISREP',
+        'TLOCREQ_CREATEDBY',
     ];
 }

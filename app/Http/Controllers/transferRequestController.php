@@ -149,7 +149,11 @@ class transferRequestController extends Controller
                 ->update([
                     'TLOCREQ_SUBMITTED' => date('Y-m-d H:i:s'),
                     'TLOCREQ_APPRVDT' => null,
-                    'TLOCREQ_APPRVBY' => null
+                    'TLOCREQ_APPRVBY' => null,
+                    // Who actually submitted. The submit is the moment the operator
+                    // commits the request, so this - not the approver - is the name
+                    // the Surat Jalan should carry as "Dibuat oleh".
+                    'TLOCREQ_CREATEDBY' => Auth::check() ? Auth::user()->nick_name : null,
                 ]);
 
             $skipped = count($request->data) - count($processedIds);

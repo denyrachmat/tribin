@@ -8,6 +8,12 @@
 .env
 .env.backup
 .env.production
+# Real env files and hand-made backups. The explicit name list above missed
+# .env.orig and .env.bak* - each holds APP_KEY, DB_PASSWORD, AWS and Pusher
+# secrets, and this repo is PUBLIC on GitHub, so one `git add -A` would
+# publish them. .env.example stays tracked (it is a template with empty values).
+.env.*
+!.env.example
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml

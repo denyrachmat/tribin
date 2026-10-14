@@ -4,6 +4,15 @@
 /public/hot
 /public/attachments/customer
 /storage/*.key
+
+# Runtime per-record upload dirs: storage/app/<id>/photo_service_*.jpg, created
+# by the app at runtime (one numeric dir per record, ~240 of them) and pure
+# noise in `git status`. Ignore ONLY the numeric dirs. storage/app/public/ is
+# intentionally tracked (dir_sign.jpg, mkt_sign.jpg, glExport.xlsx) and is NOT
+# matched by this pattern. Note: 11 older photo_service*.jpg files under numeric
+# dirs are already tracked from before this rule; they stay tracked and are left
+# untouched (none of this rule's contents are deleted or moved).
+/storage/app/[0-9]*/
 /vendor
 .env
 .env.backup

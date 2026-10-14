@@ -26,6 +26,9 @@ $CODES = ['TESTDISC10', 'TESTDISC20', 'TESTDISCAMT', 'TESTDISCBAD', 'TESTDISCX']
 // clean any leftovers from a previous run
 M_DISC::whereIn('MDISC_CODE', $CODES)->delete();
 
+// Baseline for the "left as found" check at the end.
+$rowsAtStart = M_DISC::count();
+
 $post = function (array $payload) use ($controller) {
     return $controller->store(Request::create('/disc', 'POST', $payload));
 };
@@ -96,7 +99,9 @@ foreach ($CODES as $c) {
 }
 $left = M_DISC::whereIn('MDISC_CODE', $CODES)->count();
 $check('all test rows removed', $left === 0, "left=$left");
-$check('table left as found (0 rows)', M_DISC::count() === 0, M_DISC::count() . ' rows');
+// The table may legitimately hold real rates, so assert it was left as FOUND
+// rather than assuming it starts empty.
+$check('table left as found', M_DISC::count() === $rowsAtStart, M_DISC::count() . ' rows, started with ' . $rowsAtStart);
 
 printf("\n%s (%d failure%s)\n", $fail ? 'FAILURES' : 'ALL CHECKS PASSED', $fail, $fail === 1 ? '' : 's');
 exit($fail ? 1 : 0);

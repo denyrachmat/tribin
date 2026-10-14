@@ -57,7 +57,7 @@
     <div class="header">
         <p style="font-size: 20px; font-weight: bold;">{{ $companyGroupData->name }}</p>
         <p style="font-size: 18px; font-weight: bold;">Purchase Order Report</p>
-        <p style="font-size: 15px; margin-top: 1em;">Date: {{ date('Y-m-d', strtotime($fdate)) }} to {{ date('Y-m-d', strtotime($ldate)) }}</p>
+        <p style="font-size: 15px; margin-top: 1em;">Date: {{\App\Support\Formatter::date($fdate ?? null, 'Y-m-d')}} to {{\App\Support\Formatter::date($ldate ?? null, 'Y-m-d')}}</p>
     </div>
 
     <table class="table">

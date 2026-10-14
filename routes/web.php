@@ -50,6 +50,7 @@ use App\Http\Controllers\ApprovalHistoryController;
 use App\Http\Controllers\ItemMappingController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\DiscController;
+use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\PriceBuyController;
 
 /*
@@ -365,6 +366,10 @@ Route::group(['middleware' => 'cors'], function () {
             Route::delete('itemsAPI/{id}', [ReceiveOrderController::class, 'deleteByID']);
             Route::get('salesReportForm', [ReceiveOrderController::class, 'salesReportForm']);
             Route::get('salesReportByCustForm', [ReceiveOrderController::class, 'salesReportByCustForm']);
+
+            # Sales Report with month picker + branch filter (reads V_SALES_REPORT_TMP when filtering)
+            Route::get('monthlySalesReportForm', [ReceiveOrderController::class, 'monthlySalesReportForm']);
+            Route::get('salesReportBranchOptions', [ReceiveOrderController::class, 'salesReportBranchOptions']);
 
             Route::post('marketingReport', [ReceiveOrderController::class, 'marketingReport']);
             Route::post('marketingReportByCustomer', [ReceiveOrderController::class, 'marketingReportByCust']);
@@ -736,6 +741,21 @@ Route::group(['middleware' => 'cors'], function () {
             Route::get('listTaxes', [TaxController::class, 'listTaxes']);
         });
         Route::resource('disc', DiscController::class);
+        Route::prefix('disc')->group(function () {
+            Route::post('searchAPI', [DiscController::class, 'searchAPI']);
+        });
+
+        # Discount attachment: per customer and per item category
+        Route::prefix('discount')->group(function () {
+            Route::get('customer/form', [DiscountController::class, 'customerForm']);
+            Route::get('item-category/form', [DiscountController::class, 'itemCategoryForm']);
+            Route::post('catalogue', [DiscountController::class, 'catalogue']);
+            Route::post('customer/list', [DiscountController::class, 'customerList']);
+            Route::post('customer/save', [DiscountController::class, 'customerSave']);
+            Route::post('item-category/list', [DiscountController::class, 'itemCategoryList']);
+            Route::post('item-category/save', [DiscountController::class, 'itemCategorySave']);
+            Route::post('preview-line', [DiscountController::class, 'previewLine']);
+        });
 
         Route::resource('price', PriceBuyController::class);
         Route::prefix('price')->group(function () {

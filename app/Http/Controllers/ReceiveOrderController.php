@@ -30,10 +30,11 @@ use App\Models\M_CUS;
 use App\Traits\gencodeTraits;
 use App\Traits\taxesTraits;
 use App\Traits\accTraits;
+use App\Traits\SalesReportFilterTraits;
 
 class ReceiveOrderController extends Controller
 {
-    use gencodeTraits, taxesTraits, accTraits;
+    use gencodeTraits, taxesTraits, accTraits, SalesReportFilterTraits;
     protected $dedicatedConnection;
     public function __construct()
     {
@@ -811,6 +812,25 @@ class ReceiveOrderController extends Controller
         return view('tribinapp_layouts', ['routeApp' => 'salesReport']);
     }
 
+    /**
+     * Sales Report with a month picker and a branch filter.
+     *
+     * Kept as its own form rather than replacing salesReportForm, so the existing
+     * report stays untouched for anyone who depends on the plain date range.
+     */
+    public function monthlySalesReportForm()
+    {
+        return view('tribinapp_layouts', ['routeApp' => 'monthlySalesReport']);
+    }
+
+    /**
+     * Branches this user may filter the report by, for the form's dropdown.
+     */
+    public function salesReportBranchOptions()
+    {
+        return ['data' => $this->salesReportBranchOptions()];
+    }
+
     public function salesReportByCustForm()
     {
         return view('tribinapp_layouts', ['routeApp' => 'salesReportByCust']);
@@ -858,11 +878,64 @@ class ReceiveOrderController extends Controller
         ];
 
         // ==== 1 query saja ====
+        // Month (mode=month) and branch filtering are optional; without them the
+        // resolved period is exactly the manual fdate/ldate the caller sent, and
+        // the plain view is queried, so the previous behaviour is preserved.
+        $period = $this->resolveSalesReportPeriod($request);
+
+        if ($period === null) {
+            return response()->json([
+                'error' => ['Pilih bulan laporan, atau isi tanggal awal dan tanggal akhir.'],
+            ], 406);
+        }
+
+        $filteringByBranch = $this->wantsSalesReportBranch($request);
+        $branch = $this->resolveSalesReportBranch($request);
+        $reportView = $this->resolveSalesReportView($filteringByBranch);
+
+        // A branch was asked for but could not be honoured: the view may be missing,
+        // or it may exist yet carry no branch column (service). Say so rather than
+        // showing every branch as if the filter had applied.
+        $branchFilterApplied = $filteringByBranch
+            && $branch !== ''
+            && $reportView === $this->salesReportBranchView
+            && $this->salesReportViewHasBranchColumn($reportView);
+
+        // Show a Cabang column whenever the view can supply a branch code. Branch
+        // names are resolved once below rather than per row.
+        $showBranchColumn = $this->salesReportViewHasBranchColumn($reportView);
+
+        $selectColumns = [
+            DB::raw("COALESCE(MITM_ITMCAT, '-') as MITM_ITMCAT"),
+            'MUSAGE_ALIAS',
+            'TSLO_SLOCD',
+            'MITM_ITMCD',
+            'MITM_ITMNM',
+            'TDLVORDDETA_DLVCD',
+            'TQUO_PROJECT_LOCATION',
+            'CSPK_PIC_AS',
+            'CSPK_PIC_NAME',
+            'MCUS_CUSNM',
+            'TSLODETA_ITMQT',
+            'totalTax',
+            'name',
+            'TSLODETA_PERIOD_FR',
+            'TSLODETA_PERIOD_TO',
+        ];
+
+        if ($showBranchColumn) {
+            // Only a branch-aware view carries this column.
+            $selectColumns[] = 'TSLO_BRANCH';
+        }
+
+        // code => name, for the Cabang column.
+        $branchNames = $showBranchColumn ? $this->salesReportBranchNames() : [];
+
         $q = DB::connection($this->dedicatedConnection)
-            ->table('V_SALES_REPORT')
+            ->table($reportView)
             ->whereBetween('SLODET_DATE', [
-                "{$request->input('fdate')} 00:00:00",
-                "{$request->input('ldate')} 23:59:59",
+                "{$period['fdate']} 00:00:00",
+                "{$period['ldate']} 23:59:59",
             ])
             ->when(!empty($listCat), function ($qq) use ($listCat) {
                 $qq->whereIn(DB::raw("COALESCE(MITM_ITMCAT, '-')"), $listCat);
@@ -870,24 +943,11 @@ class ReceiveOrderController extends Controller
             ->when(!in_array($activeRole['code'], ['root', 'accounting', 'director', 'manager', 'general_manager']), function ($qq) {
                 $qq->where('created_by', Auth::user()->nick_name);
             })
+            ->when($branchFilterApplied, function ($qq) use ($branch) {
+                $qq->where('TSLO_BRANCH', $branch);
+            })
             // Ambil kolom seperlunya (tambahkan kalau ada yang dipakai di view)
-            ->select([
-                DB::raw("COALESCE(MITM_ITMCAT, '-') as MITM_ITMCAT"),
-                'MUSAGE_ALIAS',
-                'TSLO_SLOCD',
-                'MITM_ITMCD',
-                'MITM_ITMNM',
-                'TDLVORDDETA_DLVCD',
-                'TQUO_PROJECT_LOCATION',
-                'CSPK_PIC_AS',
-                'CSPK_PIC_NAME',
-                'MCUS_CUSNM',
-                'TSLODETA_ITMQT',
-                'totalTax',
-                'name',
-                'TSLODETA_PERIOD_FR',
-                'TSLODETA_PERIOD_TO',
-            ])
+            ->select($selectColumns)
             ->orderBy('MITM_ITMCAT')
             ->orderBy('MUSAGE_ALIAS');
 
@@ -928,16 +988,21 @@ class ReceiveOrderController extends Controller
             $row['tax_fmt'] = $this->rupiah($tax);
             $row['total_fmt'] = $this->rupiah($qty + $tax);
 
-            $row['period_fr_fmt'] = !empty($row['TSLODETA_PERIOD_FR'])
-                ? date('d M Y', strtotime($row['TSLODETA_PERIOD_FR']))
-                : '-';
+            $row['period_fr_fmt'] = \App\Support\Formatter::date($row['TSLODETA_PERIOD_FR'] ?? null);
 
-            $row['period_to_fmt'] = !empty($row['TSLODETA_PERIOD_TO'])
-                ? date('d M Y', strtotime($row['TSLODETA_PERIOD_TO']))
-                : '-';
+            $row['period_to_fmt'] = \App\Support\Formatter::date($row['TSLODETA_PERIOD_TO'] ?? null);
 
             $row['driver_name'] = (($row['CSPK_PIC_AS'] ?? '') === 'DRIVER') ? ($row['CSPK_PIC_NAME'] ?? '') : '';
             $row['operator_name'] = (($row['CSPK_PIC_AS'] ?? '') === 'OPERATOR') ? ($row['CSPK_PIC_NAME'] ?? '') : '';
+
+            // Cabang: prefer the branch name, fall back to the raw code so a branch
+            // missing from M_BRANCH still shows something rather than a blank cell.
+            if ($showBranchColumn) {
+                $code = (string) ($row['TSLO_BRANCH'] ?? '');
+                $row['branch_name'] = $code === ''
+                    ? ''
+                    : ($branchNames[$code] ?? $code);
+            }
 
             // --- Push ke hasil ---
             $hasilTemp[$section][$cat][$usage][] = $row;
@@ -987,7 +1052,10 @@ class ReceiveOrderController extends Controller
             ->loadView('pdf.salesReport', [
                 'data' => $hasilTemp,
                 'meta' => $meta,
-                'dateRange' => [$request->fdate, $request->ldate],
+                'dateRange' => [$period['fdate'], $period['ldate']],
+                'periodLabel' => $this->salesReportPeriodLabel($period),
+                'branchLabel' => $this->salesReportBranchLabel($branchFilterApplied, $branch),
+                'showBranchColumn' => $showBranchColumn ?? false,
                 'header' => $companyGroupData->name,
                 'subHeader' => 'SALES & RENTAL DIESEL GENSET - FORKLIF - TRAVOLAS - TRUK',
                 'addr' => $companyGroupData->address,

@@ -122,8 +122,15 @@
   [$baruHead, $baruTail] = $splitFlat($flatBaru, $TAIL_ROWS);
   [$perpanjanganHead, $perpanjanganTail] = $splitFlat($flatPerpanjangan, $TAIL_ROWS);
 
-  // Helper render list rows (flat)
-  $renderFlatRows = function ($rows) {
+  // Column count lives in one place: every group-title / section / grand-total
+  // colspan depends on it, and a hand-edited number drifts the moment a column is
+  // added. 15 while the Cabang column is shown, otherwise 14.
+  $showBranchColumn = $showBranchColumn ?? false;
+  $COLS = 14 + ($showBranchColumn ? 1 : 0);
+
+  // Helper render list rows (flat). Closures do not inherit the enclosing scope, so
+  // anything read inside must be passed in explicitly.
+  $renderFlatRows = function ($rows) use ($showBranchColumn, $COLS) {
     $prevCat = null;
     $prevUsage = null;
 
@@ -133,17 +140,20 @@
       $r = $item['r'];
 
       if ($cat !== $prevCat) {
-        echo '<tr><td class="text-center group-title" colspan="14">' . e($cat) . '</td></tr>';
+        echo '<tr><td class="text-center group-title" colspan="' . $COLS . '">' . e($cat) . '</td></tr>';
         $prevUsage = null;
       }
       if ($usage !== $prevUsage) {
-        echo '<tr><td class="text-left group-title" colspan="14">' . e($usage) . '</td></tr>';
+        echo '<tr><td class="text-left group-title" colspan="' . $COLS . '">' . e($usage) . '</td></tr>';
       }
 
       echo '<tr>';
       echo '<td class="cell nowrap text-left">' . e($r['MITM_ITMCD'] ?? '') . '</td>';
       echo '<td class="cell text-left">' . e($r['MITM_ITMNM'] ?? '') . '</td>';
       echo '<td class="cell nowrap text-left">' . e($r['TDLVORDDETA_DLVCD'] ?? '') . '</td>';
+      if ($showBranchColumn) {
+        echo '<td class="cell nowrap text-left">' . e($r['branch_name'] ?? $r['TSLO_BRANCH'] ?? '') . '</td>';
+      }
       echo '<td class="cell text-left">' . e($r['TQUO_PROJECT_LOCATION'] ?? '') . '</td>';
       echo '<td class="cell text-left">' . e($r['driver_name'] ?? '') . '</td>';
       echo '<td class="cell text-left">' . e($r['operator_name'] ?? '') . '</td>';
@@ -162,11 +172,14 @@
     }
   };
 
-  $renderTableHeader = function () {
+  $renderTableHeader = function () use ($showBranchColumn) {
     echo '<thead><tr>';
     echo '<th class="cell nowrap">Item Code</th>';
     echo '<th class="cell">Item Name</th>';
     echo '<th class="cell nowrap">No Nota</th>';
+    if ($showBranchColumn) {
+      echo '<th class="cell nowrap">Cabang</th>';
+    }
     echo '<th class="cell">Lokasi</th>';
     echo '<th class="cell">Sopir</th>';
     echo '<th class="cell">Operator</th>';
@@ -196,8 +209,15 @@
 <div style="text-align: center;">
   <div style="font-weight: bold; font-size: 16px;">Sales Report by Category</div>
   <div style="font-weight: bold;">
-    From {{ date('d M Y', strtotime($dateRange[0])) }} to {{ date('d M Y', strtotime($dateRange[1])) }}
+    @if(!empty($periodLabel))
+      Periode: {{ $periodLabel }}
+    @else
+      From {{\App\Support\Formatter::date($dateRange[0] ?? null)}} to {{\App\Support\Formatter::date($dateRange[1] ?? null)}}
+    @endif
   </div>
+  @if(!empty($branchLabel))
+    <div style="font-weight: bold;">Cabang: {{ $branchLabel }}</div>
+  @endif
 </div>
 
 <hr>
@@ -208,10 +228,10 @@
     <thead>
       {{-- Judul section: ini akan repeat kalau tabel lanjut page berikutnya --}}
       <tr>
-        <th colspan="14" class="section-title-th">BARU</th>
+        <th colspan="{{ $COLS }}" class="section-title-th">BARU</th>
       </tr>
       <tr>
-        <th colspan="14" class="section-title-line"></th>
+        <th colspan="{{ $COLS }}" class="section-title-line"></th>
       </tr>
 
       {{-- Header kolom --}}
@@ -219,6 +239,9 @@
         <th class="cell nowrap">Item Code</th>
         <th class="cell">Item Name</th>
         <th class="cell nowrap">No Nota</th>
+        @if($showBranchColumn)
+          <th class="cell nowrap">Cabang</th>
+        @endif
         <th class="cell">Lokasi</th>
         <th class="cell">Sopir</th>
         <th class="cell">Operator</th>
@@ -237,7 +260,7 @@
       @php $renderFlatRows($flatBaru); @endphp
 
       <tr>
-        <td class="cell-bold text-left" colspan="7">Grand Total</td>
+        <td class="cell-bold text-left" colspan="{{ $showBranchColumn ? 8 : 7 }}">Grand Total</td>
         <td class="cell-bold nowrap text-right">{{ $meta['BARU']['grand']['qty_fmt'] }}</td>
         <td class="cell-bold nowrap text-right">{{ $meta['BARU']['grand']['tax_fmt'] }}</td>
         <td class="cell-bold nowrap text-right">{{ $meta['BARU']['grand']['total_fmt'] }}</td>
@@ -254,16 +277,19 @@
   <table class="tg">
     <thead>
       <tr>
-        <th colspan="14" class="section-title-th">PERPANJANGAN</th>
+        <th colspan="{{ $COLS }}" class="section-title-th">PERPANJANGAN</th>
       </tr>
       <tr>
-        <th colspan="14" class="section-title-line"></th>
+        <th colspan="{{ $COLS }}" class="section-title-line"></th>
       </tr>
 
       <tr>
         <th class="cell nowrap">Item Code</th>
         <th class="cell">Item Name</th>
         <th class="cell nowrap">No Nota</th>
+        @if($showBranchColumn)
+          <th class="cell nowrap">Cabang</th>
+        @endif
         <th class="cell">Lokasi</th>
         <th class="cell">Sopir</th>
         <th class="cell">Operator</th>
@@ -282,7 +308,7 @@
       @php $renderFlatRows($flatPerpanjangan); @endphp
 
       <tr>
-        <td class="cell-bold text-left" colspan="7">Grand Total</td>
+        <td class="cell-bold text-left" colspan="{{ $showBranchColumn ? 8 : 7 }}">Grand Total</td>
         <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['qty_fmt'] }}</td>
         <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['tax_fmt'] }}</td>
         <td class="cell-bold nowrap text-right">{{ $meta['PERPANJANGAN']['grand']['total_fmt'] }}</td>

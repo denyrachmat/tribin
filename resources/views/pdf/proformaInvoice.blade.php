@@ -193,7 +193,7 @@
                 <tr>
                     <td>Date</td>
                     <td>:</td>
-                    <td>{{date('d-M-Y', strtotime($TSLO_ISSUDT))}}</td>
+                    <td>{{\App\Support\Formatter::date($TSLO_ISSUDT ?? null, 'd-M-Y')}}</td>
                 </tr>
                 <tr>
                     <td>Telp. / Fax</td>
@@ -232,8 +232,8 @@
                         <tr>
                             <!-- <td class="tg-0lax">{{$value['MITM_BRAND']}}</td> -->
                             <td class="tg-0lax">{{$value['MITM_ITMNM']}}</td>
-                            <td class="tg-0lax">{{date('d M Y', strtotime($value['TSLODETA_PERIOD_FR']))}} -
-                                {{date('d M Y', strtotime($value['TSLODETA_PERIOD_TO']))}}</td>
+                            <td class="tg-0lax">{{\App\Support\Formatter::date($value['TSLODETA_PERIOD_FR'] ?? null)}} -
+                                {{\App\Support\Formatter::date($value['TSLODETA_PERIOD_TO'] ?? null)}}</td>
 
                             <td class="tg-0lax">{{$value['TSLODETA_ITMQT']}}</td>
                             <td class="tg-0lax">Rp {{number_format($value['TSLODETA_PRC'], 0, ".", ",") }}</td>

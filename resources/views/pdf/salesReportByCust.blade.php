@@ -90,8 +90,19 @@
 <div style="text-align: center;">
     <span style="font-family: Arial, sans-serif; font-style: bold; font-size: large;">Sales Report by Customer</span>
     <br>
-    <span style="font-family: Arial, sans-serif; font-style: bold">From {{date('d M Y', strtotime($dateRange[0]))}} to
-        {{date('d M Y', strtotime($dateRange[1]))}}</span>
+    <span style="font-family: Arial, sans-serif; font-style: bold">
+        {{-- Period line. Prefers the controller's label (monthly runs) and falls back
+             to the raw range; \App\Support\Formatter never prints a placeholder year. --}}
+        @if(!empty($periodLabel))
+            Periode: {{ $periodLabel }}
+        @else
+            From {{\App\Support\Formatter::date($dateRange[0] ?? null)}} to
+            {{\App\Support\Formatter::date($dateRange[1] ?? null)}}
+        @endif
+    </span>
+    @if(!empty($branchLabel))
+        <br><span style="font-family: Arial, sans-serif; font-style: bold">Cabang: {{ $branchLabel }}</span>
+    @endif
 </div>
 
 <hr>

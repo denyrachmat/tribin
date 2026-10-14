@@ -825,10 +825,15 @@ class ReceiveOrderController extends Controller
 
     /**
      * Branches this user may filter the report by, for the form's dropdown.
+     *
+     * This method name is also declared on SalesReportFilterTraits; the trait's
+     * version was renamed to salesReportBranchOptionList() because a class method
+     * always shadows a same-named trait method, which made this one recurse into
+     * itself until the memory limit was exhausted.
      */
     public function salesReportBranchOptions()
     {
-        return ['data' => $this->salesReportBranchOptions()];
+        return ['data' => $this->salesReportBranchOptionList()];
     }
 
     public function salesReportByCustForm()

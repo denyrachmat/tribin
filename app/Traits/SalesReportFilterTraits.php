@@ -316,7 +316,7 @@ trait SalesReportFilterTraits
      * Same rule as the header switcher (BranchController::options): full-access
      * roles see every branch, everyone else only their assigned list.
      */
-    protected function salesReportBranchOptions(): array
+    protected function salesReportBranchOptionList(): array
     {
         /** @var User|null $user */
         $user = Auth::user();

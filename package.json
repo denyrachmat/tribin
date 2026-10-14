@@ -2,7 +2,8 @@
     "private": true,
     "scripts": {
         "dev": "cd ./tribinapp && yarn quasar dev",
-        "build": "cd ./tribinapp && yarn quasar build && cd .. && npx mix"
+        "build": "cd ./tribinapp && yarn quasar build && cd .. && npx mix",
+        "build:staging": "TRIBIN_ENV=staging yarn run build"
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^5.2.4",

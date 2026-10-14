@@ -25,5 +25,14 @@ yarn-error.log
 /.vscode
 .aider*
 
+# Yarn is the single authoritative package manager (packageManager: yarn@3.6.1,
+# .yarnrc.yml -> nodeLinker: node-modules, yarn.lock is the source of truth).
+# npm/bun lockfiles are NOT authoritative - keeping them makes installs
+# non-reproducible and lets `npm install` (which fails here on vite peer
+# conflicts) silently resolve a different tree. One repo, one lockfile.
+/package-lock.json
+/tribinapp/package-lock.json
+/tribinapp/bun.lockb
+
 # Generated Quasar entry view (built/uploaded by tribinapp/deploy.ps1)
 /resources/views/tribinapp.blade.php

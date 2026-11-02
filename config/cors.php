@@ -19,9 +19,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => ['https://jos.jatpowerindo.co.id'],
 
-    'allowed_origins_patterns' => ['*'],
+    'allowed_origins_patterns' => ['#^https://jos\.jatpowerindo\.co\.id$#'],
 
     'allowed_headers' => ['*'],
 
